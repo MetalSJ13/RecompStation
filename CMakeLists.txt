@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS
-    Core Gui Quick QuickControls2 Sql
+    Core Gui Quick QuickControls2 Sql Test
 )
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -34,5 +34,23 @@ qt_add_qml_module(RecompStationApp
 target_link_libraries(RecompStationApp PRIVATE
     Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql
 )
+
+enable_testing()
+
+qt_add_executable(LibraryScannerTests
+    tests/LibraryScannerTest.cpp
+    src/core/PlatformManager.h
+    src/core/PlatformManager.cpp
+    src/core/LibraryScanner.h
+    src/core/LibraryScanner.cpp
+    src/database/DatabaseManager.h
+    src/database/DatabaseManager.cpp
+)
+
+target_link_libraries(LibraryScannerTests PRIVATE
+    Qt6::Core Qt6::Sql Qt6::Test
+)
+
+add_test(NAME LibraryScannerTests COMMAND LibraryScannerTests)
 
 install(TARGETS RecompStationApp RUNTIME DESTINATION bin)
