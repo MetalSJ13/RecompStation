@@ -15,8 +15,9 @@ class PlatformManager : public QObject
     )
 
 public:
+    explicit PlatformManager(QObject *parent = nullptr);
     explicit PlatformManager(
-        const QString &dataDirectory = QString(),
+        const QString &dataDirectory,
         QObject *parent = nullptr
     );
 
