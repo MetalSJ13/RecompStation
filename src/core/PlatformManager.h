@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <QObject>
@@ -16,7 +15,10 @@ class PlatformManager : public QObject
     )
 
 public:
-    explicit PlatformManager(QObject *parent = nullptr);
+    explicit PlatformManager(
+        const QString &dataDirectory = QString(),
+        QObject *parent = nullptr
+    );
 
     bool initialize();
 
