@@ -40,11 +40,18 @@ bool LibraryScanner::isDiscCompanionFile(const QString &filePath) const
 
 int LibraryScanner::scanAll()
 {
-    m_lastScanCount = 0;
-    m_lastError.clear();
+    int totalFound = 0;
+    QStringList errors;
+
     for (const QString &platform : m_platformManager->platforms()) {
-        scanPlatform(platform);
+        const int platformCount = scanPlatform(platform);
+        totalFound += platformCount;
+        if (!m_lastError.isEmpty())
+            errors.append(m_lastError);
     }
+
+    m_lastScanCount = totalFound;
+    m_lastError = errors.join("\\n");
     emit scanCompleted(m_lastScanCount);
     return m_lastScanCount;
 }
