@@ -34,6 +34,7 @@ private:
     DatabaseManager *m_databaseManager;
     int m_lastScanCount = 0;
     QString m_lastError;
+    bool m_scanningAll = false;
 
     QStringList supportedExtensions(const QString &platform) const;
     bool isDiscCompanionFile(const QString &filePath) const;
