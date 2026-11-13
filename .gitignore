@@ -1,0 +1,87 @@
+
+# =====================================
+# Build output
+# =====================================
+build/
+cmake-build-*/
+out/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+.ninja_deps
+.ninja_log
+
+# =====================================
+# Qt Creator
+# =====================================
+*.user
+*.qmlproject.user
+.qtcreator/
+
+# =====================================
+# Compiled files
+# =====================================
+*.o
+*.a
+*.so
+*.so.*
+*.dll
+*.exe
+
+# =====================================
+# Application databases
+# =====================================
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-shm
+*.sqlite-wal
+
+# =====================================
+# Game files
+# =====================================
+*.z64
+*.n64
+*.v64
+*.iso
+*.gcm
+*.gcz
+*.rvz
+*.wbfs
+*.bin
+*.cue
+*.chd
+*.pbp
+
+# =====================================
+# Downloaded launchers
+# =====================================
+data/launchers/*
+
+# Keep directory structure
+!data/launchers/.gitkeep
+
+# =====================================
+# Local application configuration
+# =====================================
+config.local.*
+*.local.ini
+
+# =====================================
+# IDE
+# =====================================
+.vscode/
+.idea/
+
+# =====================================
+# Temporary files
+# =====================================
+*.log
+*.tmp
+*~
+.DS_Store
+Thumbs.db
