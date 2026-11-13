@@ -49,9 +49,15 @@ bool LibraryScanner::isDiscCompanionFile(const QString &filePath) const
     if (extension != "bin" && extension != "img")
         return false;
 
-    return !info.dir().entryList(
-        {"*.cue", "*.CUE"}, QDir::Files
-    ).isEmpty();
+    const QStringList files = info.dir().entryList(QDir::Files);
+    for (const QString &fileName : files) {
+        if (QFileInfo(fileName).suffix().compare(
+                "cue", Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 int LibraryScanner::scanAll()
