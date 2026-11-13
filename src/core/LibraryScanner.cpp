@@ -53,7 +53,7 @@ int LibraryScanner::scanAll()
 
     m_scanningAll = false;
     m_lastScanCount = totalFound;
-    m_lastError = errors.join("\\n");
+    m_lastError = errors.join("\n");
     emit scanCompleted(m_lastScanCount);
     return m_lastScanCount;
 }
@@ -67,13 +67,13 @@ int LibraryScanner::scanPlatform(const QString &platform)
     const QStringList extensions = supportedExtensions(platform);
     if (directoryPath.isEmpty() || extensions.isEmpty()) {
         m_lastError = "Unknown platform: " + platform;
-        if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
+        if (!m_scanningAll) if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
         return m_lastScanCount;
     }
 
     if (!QDir(directoryPath).exists()) {
         m_lastError = "Game directory does not exist: " + directoryPath;
-        emit scanCompleted(m_lastScanCount);
+        if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
         return m_lastScanCount;
     }
 
@@ -98,6 +98,6 @@ int LibraryScanner::scanPlatform(const QString &platform)
         }
     }
 
-    emit scanCompleted(m_lastScanCount);
+    if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
     return m_lastScanCount;
 }
