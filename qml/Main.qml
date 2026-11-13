@@ -184,7 +184,9 @@ ApplicationWindow {
                                 databaseManager.games(selectedPlatform === "All Games" ? "" : selectedPlatform)
                             }
                             delegate: Rectangle {
-                                required property var modelData
+                                required property string title
+                                required property string platform
+                                required property string path
                                 width: gameList.width
                                 height: 76
                                 radius: 10
@@ -194,13 +196,13 @@ ApplicationWindow {
                                     anchors.margins: 14
                                     spacing: 3
                                     Label {
-                                        text: modelData.title
+                                        text: title
                                         color: "white"
                                         font.pixelSize: 16
                                         font.bold: true
                                     }
                                     Label {
-                                        text: modelData.platform + "  •  " + modelData.path
+                                        text: platform + "  •  " + path
                                         color: "#9999aa"
                                         font.pixelSize: 11
                                         elide: Text.ElideMiddle
