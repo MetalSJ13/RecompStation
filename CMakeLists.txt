@@ -41,18 +41,18 @@ if(BUILD_TESTING)
     find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
 
     qt_add_executable(LibraryScannerTests
-    tests/LibraryScannerTest.cpp
-    src/core/PlatformManager.h
-    src/core/PlatformManager.cpp
-    src/core/LibraryScanner.h
-    src/core/LibraryScanner.cpp
-    src/database/DatabaseManager.h
-    src/database/DatabaseManager.cpp
-)
+        tests/LibraryScannerTest.cpp
+        src/core/PlatformManager.h
+        src/core/PlatformManager.cpp
+        src/core/LibraryScanner.h
+        src/core/LibraryScanner.cpp
+        src/database/DatabaseManager.h
+        src/database/DatabaseManager.cpp
+    )
 
-target_link_libraries(LibraryScannerTests PRIVATE
-    Qt6::Core Qt6::Sql Qt6::Test
-)
+    target_link_libraries(LibraryScannerTests PRIVATE
+        Qt6::Core Qt6::Sql Qt6::Test
+    )
 
     add_test(NAME LibraryScannerTests COMMAND LibraryScannerTests)
 endif()
