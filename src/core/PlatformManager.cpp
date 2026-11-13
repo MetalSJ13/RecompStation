@@ -3,6 +3,11 @@
 #include <QDir>
 #include <QStandardPaths>
 
+PlatformManager::PlatformManager(QObject *parent)
+    : PlatformManager(QString(), parent)
+{
+}
+
 PlatformManager::PlatformManager(const QString &dataDirectory, QObject *parent)
     : QObject(parent)
 {
