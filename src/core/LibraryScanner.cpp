@@ -54,7 +54,7 @@ int LibraryScanner::scanAll()
     m_scanningAll = false;
     m_lastScanCount = totalFound;
     m_lastError = errors.join("\\n");
-    if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
+    emit scanCompleted(m_lastScanCount);
     return m_lastScanCount;
 }
 
