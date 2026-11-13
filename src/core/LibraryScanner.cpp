@@ -40,6 +40,7 @@ bool LibraryScanner::isDiscCompanionFile(const QString &filePath) const
 
 int LibraryScanner::scanAll()
 {
+    m_scanningAll = true;
     int totalFound = 0;
     QStringList errors;
 
@@ -50,9 +51,10 @@ int LibraryScanner::scanAll()
             errors.append(m_lastError);
     }
 
+    m_scanningAll = false;
     m_lastScanCount = totalFound;
     m_lastError = errors.join("\\n");
-    emit scanCompleted(m_lastScanCount);
+    if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
     return m_lastScanCount;
 }
 
@@ -65,7 +67,7 @@ int LibraryScanner::scanPlatform(const QString &platform)
     const QStringList extensions = supportedExtensions(platform);
     if (directoryPath.isEmpty() || extensions.isEmpty()) {
         m_lastError = "Unknown platform: " + platform;
-        emit scanCompleted(m_lastScanCount);
+        if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
         return m_lastScanCount;
     }
 
