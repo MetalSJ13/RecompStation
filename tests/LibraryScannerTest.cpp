@@ -6,6 +6,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
@@ -71,7 +72,7 @@ private slots:
         const QList<QPair<QString, QStringList>> filesByPlatform = {
             {"N64", {"Mario.z64", "Zelda.N64", "Pilotwings.v64"}},
             {"PS1", {"Game.cue", "Game.chd", "Game.pbp", "Game.iso",
-                     "Standalone.bin", "Standalone.img"}},
+                     "Standalone/Standalone.bin", "Standalone/Standalone.img"}},
             {"GameCube", {"Mario.iso", "Luigi.gcm", "Metroid.rvz", "Zelda.ciso"}},
             {"Wii", {"Galaxy.iso", "Kart.wbfs", "Zelda.rvz", "Sports.wud",
                      "Adventure.wux"}}
