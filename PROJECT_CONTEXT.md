@@ -88,7 +88,7 @@ Implemented in code:
 - SQLite registration with unique game-path protection.
 - Basic game listing in QML and platform filtering.
 
-Still requires local build/runtime verification on Arch Linux and broader format testing.
+Regression tests have been added for supported extensions, recursive discovery, duplicate scans, PS1 cue/bin/img companion handling, scan-completion signaling, and invalid platform handling. The suite still requires local build and execution on Arch Linux.
 
 ## Development Guidelines
 
