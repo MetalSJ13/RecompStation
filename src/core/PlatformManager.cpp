@@ -1,11 +1,15 @@
-
 #include "PlatformManager.h"
 
 #include <QDir>
 #include <QStandardPaths>
 
 PlatformManager::PlatformManager(QObject *parent)
-: QObject(parent)
+    : PlatformManager(QString(), parent)
+{
+}
+
+PlatformManager::PlatformManager(const QString &dataDirectory, QObject *parent)
+    : QObject(parent)
 {
     m_platforms = {
         "N64",
@@ -14,10 +18,9 @@ PlatformManager::PlatformManager(QObject *parent)
         "Wii"
     };
 
-    m_dataDirectory =
-    QStandardPaths::writableLocation(
-        QStandardPaths::AppDataLocation
-    );
+    m_dataDirectory = dataDirectory.isEmpty()
+        ? QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+        : dataDirectory;
 }
 
 bool PlatformManager::initialize()
@@ -36,25 +39,15 @@ bool PlatformManager::initialize()
     };
 
     for (const QString &directory : directories) {
-        if (!createDirectory(
-            m_dataDirectory + "/" + directory
-        )) {
+        if (!createDirectory(m_dataDirectory + "/" + directory))
             return false;
-        }
     }
 
     for (const QString &platform : m_platforms) {
+        const QString gamePath = m_dataDirectory + "/games/" + platform;
+        const QString launcherPath = m_dataDirectory + "/launchers/" + platform;
 
-        const QString gamePath =
-        m_dataDirectory + "/games/" + platform;
-
-        const QString launcherPath =
-        m_dataDirectory + "/launchers/" + platform;
-
-        if (!createDirectory(gamePath))
-            return false;
-
-        if (!createDirectory(launcherPath))
+        if (!createDirectory(gamePath) || !createDirectory(launcherPath))
             return false;
     }
 
@@ -71,22 +64,16 @@ QStringList PlatformManager::platforms() const
     return m_platforms;
 }
 
-QString PlatformManager::platformDirectory(
-    const QString &platform
-) const
+QString PlatformManager::platformDirectory(const QString &platform) const
 {
     if (!m_platforms.contains(platform))
         return {};
 
-    return m_dataDirectory +
-    "/games/" + platform;
+    return m_dataDirectory + "/games/" + platform;
 }
 
-bool PlatformManager::createDirectory(
-    const QString &path
-)
+bool PlatformManager::createDirectory(const QString &path)
 {
     QDir directory;
-
     return directory.mkpath(path);
 }

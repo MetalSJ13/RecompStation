@@ -15,8 +15,18 @@
 - [x] Basic game-library listing in QML
 
 ### In Progress
-- [ ] Build and runtime verification on Arch Linux
-- [ ] Scanner tests using representative game files and multi-file disc images
+- [ ] Build and run the new scanner regression test suite on Arch Linux
+- [ ] Validate scanner behavior with representative game files and multi-file disc images
+
+### Scanner regression coverage added
+- Supported extensions across N64, PS1, GameCube, and Wii
+- Recursive discovery and unsupported-file filtering
+- Duplicate-scan protection
+- PS1 cue-sheet companion handling, including mixed-case .cue extensions
+- Single completion notification for scan-all
+- Unknown-platform error reporting
+
+The tests are available through CTest when BUILD_TESTING is enabled.
 
 ### Upcoming
 - [ ] Artwork retrieval
@@ -24,3 +34,19 @@
 - [ ] GitHub integration
 - [ ] Launcher installation
 - [ ] Game launching
+
+
+### Build script
+From the repository root, run:
+
+```bash
+./scripts/build.sh
+```
+
+Run the build and scanner regression tests together:
+
+```bash
+./scripts/build.sh --test
+```
+
+Choose a build configuration with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`. The script enables tests by default and reuses the generator already configured in the build directory.
