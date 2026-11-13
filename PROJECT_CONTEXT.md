@@ -1,4 +1,3 @@
-
 # RecompStation - Project Context
 
 ## Project Objective
@@ -17,12 +16,12 @@ from their library.
 ## Technology Stack
 
 - Language: C++20
-- Framework: Qt 6
+- Framework: Qt 6.5 or newer
 - UI: QML / Qt Quick
 - Build system: CMake
 - Database: SQLite
-- Networking: Qt Network
-- Process management: QProcess
+- Networking: Qt Network (planned)
+- Process management: QProcess (planned)
 - Primary development OS: Arch Linux
 - Desktop environment: KDE Plasma
 
@@ -45,28 +44,28 @@ from their library.
 8. Native executable launching.
 9. Custom game and launcher directories.
 
-## Known Limitations
-
-- Graphics settings are controlled by individual launchers.
-- Controller configuration is launcher-dependent.
-- Save states are generally unavailable.
-- Cheats are launcher-dependent.
-
 ## Architecture
 
 The application uses a modular C++ backend and QML frontend.
 
-Planned backend modules:
-
-- GameManager
+Backend modules:
+- GameManager (planned)
 - PlatformManager
 - LibraryScanner
-- LauncherManager
-- GitHubManager
-- ProcessManager
-- MetadataManager
+- LauncherManager (planned)
+- GitHubManager (planned)
+- ProcessManager (planned)
+- MetadataManager (planned)
 - DatabaseManager
-- SettingsManager
+- SettingsManager (planned)
+
+The scanner currently supports these file extensions:
+- N64: .z64, .n64, .v64
+- PS1: .cue, .chd, .pbp, .iso, .bin, .img
+- GameCube: .iso, .gcm, .rvz, .ciso
+- Wii: .iso, .wbfs, .rvz, .wud, .wux
+
+PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated.
 
 ## Current Development Status
 
@@ -81,11 +80,15 @@ Completed:
 - Initial platform registration.
 - Successful application launch on Arch Linux.
 
-Next milestone:
-- Implement LibraryScanner.
-- Detect game files.
-- Register games in SQLite.
-- Display discovered games dynamically in QML.
+Milestone 2: Initial game library scanning.
+
+Implemented in code:
+- Recursive scanning of platform game folders.
+- Extension-based game-file discovery.
+- SQLite registration with unique game-path protection.
+- Basic game listing in QML and platform filtering.
+
+Still requires local build/runtime verification on Arch Linux and broader format testing.
 
 ## Development Guidelines
 
