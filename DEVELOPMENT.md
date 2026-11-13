@@ -34,3 +34,19 @@ The tests are available through CTest when BUILD_TESTING is enabled.
 - [ ] GitHub integration
 - [ ] Launcher installation
 - [ ] Game launching
+
+
+### Build script
+From the repository root, run:
+
+```bash
+./scripts/build.sh
+```
+
+Run the build and scanner regression tests together:
+
+```bash
+./scripts/build.sh --test
+```
+
+Choose a build configuration with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`. The script enables tests by default and reuses the generator already configured in the build directory.
