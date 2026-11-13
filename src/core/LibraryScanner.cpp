@@ -67,7 +67,7 @@ int LibraryScanner::scanPlatform(const QString &platform)
     const QStringList extensions = supportedExtensions(platform);
     if (directoryPath.isEmpty() || extensions.isEmpty()) {
         m_lastError = "Unknown platform: " + platform;
-        if (!m_scanningAll) if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
+        if (!m_scanningAll) emit scanCompleted(m_lastScanCount);
         return m_lastScanCount;
     }
 
