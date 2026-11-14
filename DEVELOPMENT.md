@@ -15,8 +15,9 @@
 - [x] Basic game-library listing in QML
 
 ### In Progress
-- [ ] Build and run the new scanner regression test suite on Arch Linux
+- [ ] Build and run scanner and metadata provider regression tests on Arch Linux
 - [ ] Validate scanner behavior with representative game files and multi-file disc images
+- [ ] Verify a live TheGamesDB search using the local environment variable
 
 ### Scanner regression coverage added
 - Supported extensions across N64, PS1, GameCube, and Wii
@@ -28,9 +29,19 @@
 
 The tests are available through CTest when BUILD_TESTING is enabled.
 
+### Metadata provider foundation added
+- Provider-independent GameMetadata data structure
+- Abstract MetadataProvider interface
+- Asynchronous TheGamesDB title search using RECOMPSTATION_TGDB_API_KEY
+- JSON parsing for game metadata and platform filtering
+- Regression tests for missing keys, empty search terms, response parsing, and malformed JSON
+
+The API key is read from the process environment and is never written into source files or logs. The client is not yet connected to the QML UI or database.
+
 ### Upcoming
-- [ ] Artwork retrieval
-- [ ] Metadata integration
+- [ ] Metadata persistence and matching local platform IDs to TheGamesDB platform IDs
+- [ ] Artwork retrieval and local caching
+- [ ] Metadata search and selection UI
 - [ ] GitHub integration
 - [ ] Launcher installation
 - [ ] Game launching
