@@ -15,7 +15,7 @@
 - [x] Basic game-library listing in QML
 
 ### In Progress
-- [ ] Build and run scanner and metadata manager regression tests on Arch Linux
+- [x] Build and run scanner, database, and metadata manager regression tests on Arch Linux
 - [ ] Validate scanner behavior with representative game files and multi-file disc images
 - [x] Verify live platform catalog retrieval and platform-filtered game search on Arch Linux
 
@@ -38,7 +38,7 @@ The tests are available through CTest when BUILD_TESTING is enabled.
 - Platform selector in Metadata Search; selected platform ID is passed to the existing platform-filtered game search
 - Regression tests for platform catalog parsing and all four supported platform mappings, alongside search parsing and configuration/error handling
 
-The API key is read from the process environment and is never written into source files or logs. MetadataManager now coordinates provider searches and exposes configuration, search state, results, and errors to QML. Search results are displayed in the Metadata Search page but are not yet persisted or associated with individual local ROM records.
+The API key is read from the process environment and is never written into source files or logs. MetadataManager now coordinates provider searches and exposes configuration, search state, results, and errors to QML. Search results are persisted through the ROM-to-metadata association feature described below.
 
 ### Metadata-to-ROM association
 - [x] Add a local metadata table linked one-to-one with scanned game records
@@ -47,10 +47,20 @@ The API key is read from the process environment and is never written into sourc
 - [x] Allow an existing association to be corrected or replaced
 - [x] Add database regression tests for association, replacement, and invalid game IDs
 
-The association feature is implemented on its feature branch and awaits local build, test, and UI validation. Metadata is stored separately from the scanner's local game title and path, so provider titles do not overwrite local ROM records.
+The association feature is merged into main and validated locally. Metadata is stored separately from the scanner's local game title and path, so provider titles do not overwrite local ROM records.
+
+### Artwork retrieval and local caching (in progress)
+- [x] Parse TheGamesDB front-cover artwork URLs from search results
+- [x] Persist artwork URLs with the metadata association
+- [x] Download supported HTTPS artwork asynchronously
+- [x] Cache artwork under the application data directory
+- [x] Persist cached artwork paths on local game records
+- [x] Display cached cover thumbnails in the game library
+- [x] Add artwork parser, database, and input-validation tests
+
+This feature branch awaits a local build, regression test run, and interactive validation.
 
 ### Upcoming
-- [ ] Artwork retrieval and local caching
 - [ ] GitHub integration
 - [ ] Launcher installation
 - [ ] Game launching
