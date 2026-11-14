@@ -15,7 +15,8 @@ ApplicationWindow {
     property string currentPage: "Library"
     property string selectedPlatform: "All Games"
     property int libraryRevision: 0
-    property int selectedMetadataPlatformId: 0\n    property string scanMessage: "Scan your platform folders to discover games."
+    property int selectedMetadataPlatformId: 0
+    property string scanMessage: "Scan your platform folders to discover games."
 
     palette.window: "#15151d"
     palette.windowText: "#ffffff"
