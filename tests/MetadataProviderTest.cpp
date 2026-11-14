@@ -102,6 +102,25 @@ private slots:
             QByteArray(R"({"data":{}})"), &results, &error));
         QVERIFY(error.contains(QStringLiteral("data.games")));
     }
+    void managerExposesProviderConfigurationAndErrors()
+    {
+        TheGamesDbClient client(QStringLiteral(""));
+        MetadataManager manager(&client);
+
+        QVERIFY(!manager.isConfigured());
+        QVERIFY(!manager.isSearching());
+
+        QSignalSpy failedSpy(&manager, &MetadataManager::searchFailed);
+        QVERIFY(failedSpy.isValid());
+
+        manager.searchGames(QStringLiteral("Super Mario 64"));
+
+        QCOMPARE(failedSpy.count(), 1);
+        QVERIFY(!manager.isSearching());
+        QVERIFY(manager.errorString().contains(
+            QStringLiteral("RECOMPSTATION_TGDB_API_KEY")));
+        QVERIFY(manager.results().isEmpty());
+    }
 };
 
 QTEST_GUILESS_MAIN(MetadataProviderTest)
