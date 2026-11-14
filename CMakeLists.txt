@@ -25,6 +25,7 @@ qt_add_executable(RecompStationApp
     src/database/DatabaseManager.h
     src/database/DatabaseManager.cpp
     src/metadata/GameMetadata.h
+    src/metadata/MetadataPlatformMapping.h
     src/metadata/MetadataProvider.h
     src/metadata/TheGamesDbClient.h
     src/metadata/TheGamesDbClient.cpp
@@ -70,6 +71,7 @@ if(BUILD_TESTING)
     qt_add_executable(MetadataProviderTests
         tests/MetadataProviderTest.cpp
         src/metadata/GameMetadata.h
+        src/metadata/MetadataPlatformMapping.h
         src/metadata/MetadataProvider.h
         src/metadata/TheGamesDbClient.h
         src/metadata/TheGamesDbClient.cpp
