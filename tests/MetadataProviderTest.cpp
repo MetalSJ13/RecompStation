@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include "metadata/TheGamesDbClient.h"
+#include "metadata/MetadataManager.h"
 
 #include <QSignalSpy>
 
