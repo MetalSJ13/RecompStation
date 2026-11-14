@@ -78,7 +78,17 @@ private slots:
         QCOMPARE(game.genreIds, (QList<int>{1, 8}));
     }
 
-    void acceptsArrayGamePayloadsToo()\n    {\n        const QByteArray json = R"({"data":{"games":[{"id":9,"game_title":"Example"}]}})";\n        QList<GameMetadata> results;\n        QString error;\n        QVERIFY2(TheGamesDbClient::parseSearchResponse(json, &results, &error), qPrintable(error));\n        QCOMPARE(results.size(), 1);\n        QCOMPARE(results.first().providerGameId, 9);\n    }\n\n    void rejectsMalformedOrUnexpectedResponses()
+    void acceptsArrayGamePayloadsToo()
+    {
+        const QByteArray json = R"({"data":{"games":[{"id":9,"game_title":"Example"}]}})";
+        QList<GameMetadata> results;
+        QString error;
+        QVERIFY2(TheGamesDbClient::parseSearchResponse(json, &results, &error), qPrintable(error));
+        QCOMPARE(results.size(), 1);
+        QCOMPARE(results.first().providerGameId, 9);
+    }
+
+    void rejectsMalformedOrUnexpectedResponses()
     {
         QList<GameMetadata> results;
         QString error;
