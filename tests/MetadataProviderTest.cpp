@@ -2,6 +2,7 @@
 
 #include "metadata/TheGamesDbClient.h"
 #include "metadata/MetadataManager.h"
+#include "metadata/MetadataPlatformMapping.h"
 
 #include <QSignalSpy>
 
@@ -102,6 +103,43 @@ private slots:
             QByteArray(R"({"data":{}})"), &results, &error));
         QVERIFY(error.contains(QStringLiteral("data.games")));
     }
+
+    void parsesTheGamesDbPlatformCatalog()
+    {
+        const QByteArray json = R"({
+            "code": 200,
+            "status": "Success",
+            "data": {
+                "count": 2,
+                "platforms": {
+                    "3": {"id": 3, "name": "Nintendo 64", "alias": "nintendo-64"},
+                    "7": {"id": 7, "name": "Sony Playstation", "alias": "sony-playstation"}
+                }
+            }
+        })";
+
+        QList<TheGamesDbPlatform> platforms;
+        QString error;
+        QVERIFY2(MetadataPlatformMapping::parsePlatformCatalog(json, &platforms, &error),
+                 qPrintable(error));
+        QCOMPARE(platforms.size(), 2);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("N64"), platforms), 3);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("PS1"), platforms), 7);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("GameCube"), platforms), 0);
+    }
+
+    void rejectsInvalidPlatformCatalog()
+    {
+        QList<TheGamesDbPlatform> platforms;
+        QString error;
+        QVERIFY(!MetadataPlatformMapping::parsePlatformCatalog(
+            QByteArray(R"({"data":{}})"), &platforms, &error));
+        QVERIFY(error.contains(QStringLiteral("data.platforms")));
+    }
+
     void managerExposesProviderConfigurationAndErrors()
     {
         TheGamesDbClient client(QStringLiteral(""));
