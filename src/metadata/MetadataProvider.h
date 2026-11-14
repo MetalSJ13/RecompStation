@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameMetadata.h"
+#include "GameMetadata.h"\n#include "MetadataPlatformMapping.h"
 
 #include <QObject>
 #include <QString>
@@ -24,5 +24,5 @@ public:
 
 signals:
     void searchCompleted(int requestId, const QList<GameMetadata> &results);
-    void requestFailed(int requestId, const QString &message);
+    void requestFailed(int requestId, const QString &message);\n    void platformsLoaded(const QList<TheGamesDbPlatform> &platforms);\n    void platformsFailed(const QString &message);
 };
