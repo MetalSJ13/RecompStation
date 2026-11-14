@@ -41,7 +41,7 @@ The API key is read from the process environment and is never written into sourc
 ### Upcoming
 - [ ] Metadata persistence and matching local platform IDs to TheGamesDB platform IDs
 - [ ] Artwork retrieval and local caching
-- [ ] Metadata search and selection UI
+- [ ] Metadata result selection and matching to local games
 - [ ] GitHub integration
 - [ ] Launcher installation
 - [ ] Game launching
