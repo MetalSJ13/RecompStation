@@ -93,6 +93,12 @@ ApplicationWindow {
                 }
                 Button {
                     Layout.fillWidth: true
+                    text: "Metadata Search"
+                    highlighted: currentPage === "Metadata Search"
+                    onClicked: currentPage = "Metadata Search"
+                }
+                Button {
+                    Layout.fillWidth: true
                     text: "Platforms"
                     highlighted: currentPage === "Platforms"
                     onClicked: currentPage = "Platforms"
@@ -127,9 +133,10 @@ ApplicationWindow {
                 currentIndex: {
                     switch (currentPage) {
                     case "Library": return 0
-                    case "Platforms": return 1
-                    case "Launchers": return 2
-                    case "Settings": return 3
+                    case "Metadata Search": return 1
+                    case "Platforms": return 2
+                    case "Launchers": return 3
+                    case "Settings": return 4
                     default: return 0
                     }
                 }
@@ -219,6 +226,151 @@ ApplicationWindow {
                             text: "No games found. Add supported game files to a platform folder, then scan."
                             color: "#9999aa"
                             wrapMode: Text.Wrap
+                        }
+                    }
+                }
+
+                Item {
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 18
+
+                        Label {
+                            text: "Metadata Search"
+                            font.pixelSize: 30
+                            font.bold: true
+                            color: "white"
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Search TheGamesDB for a game and review possible matches."
+                            color: "#9999aa"
+                            wrapMode: Text.Wrap
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            radius: 10
+                            color: "#252532"
+                            visible: !metadataManager.configured
+                            implicitHeight: keyNotice.implicitHeight + 28
+                            Label {
+                                id: keyNotice
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                text: "TheGamesDB is not configured. Set RECOMPSTATION_TGDB_API_KEY in the environment before launching RecompStation."
+                                color: "#e5bd79"
+                                wrapMode: Text.Wrap
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            TextField {
+                                id: metadataSearchField
+                                Layout.fillWidth: true
+                                placeholderText: "Enter a game title..."
+                                enabled: metadataManager.configured && !metadataManager.searching
+                                onAccepted: {
+                                    if (text.trim().length > 0)
+                                        metadataManager.searchGames(text)
+                                }
+                            }
+                            Button {
+                                text: metadataManager.searching ? "Searching..." : "Search"
+                                highlighted: true
+                                enabled: metadataManager.configured
+                                         && !metadataManager.searching
+                                         && metadataSearchField.text.trim().length > 0
+                                onClicked: metadataManager.searchGames(metadataSearchField.text)
+                            }
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            visible: metadataManager.errorString.length > 0
+                            text: metadataManager.errorString
+                            color: "#ff8b8b"
+                            wrapMode: Text.Wrap
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            visible: metadataManager.searching
+                            text: "Searching TheGamesDB..."
+                            color: "#a98cff"
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            visible: !metadataManager.searching
+                                     && metadataManager.errorString.length === 0
+                                     && metadataManager.results.length > 0
+                            text: metadataManager.results.length + " result(s) found."
+                            color: "#9999aa"
+                        }
+
+                        ListView {
+                            id: metadataResultsList
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            spacing: 10
+                            model: metadataManager.results
+                            delegate: Rectangle {
+                                required property string title
+                                required property string overview
+                                required property string releaseDate
+                                required property string rating
+                                required property int providerGameId
+                                width: metadataResultsList.width
+                                height: resultContent.implicitHeight + 28
+                                radius: 10
+                                color: "#252532"
+                                ColumnLayout {
+                                    id: resultContent
+                                    anchors.fill: parent
+                                    anchors.margins: 14
+                                    spacing: 5
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: title
+                                        color: "white"
+                                        font.pixelSize: 17
+                                        font.bold: true
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: (releaseDate.length > 0 ? releaseDate : "Release date unknown")
+                                              + "  •  " + (rating.length > 0 ? rating : "Rating unavailable")
+                                              + "  •  TheGamesDB ID: " + providerGameId
+                                        color: "#a98cff"
+                                        font.pixelSize: 11
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: overview.length > 0 ? overview : "No description available."
+                                        color: "#b7b7c5"
+                                        font.pixelSize: 12
+                                        wrapMode: Text.Wrap
+                                        maximumLineCount: 4
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                            }
+                            ScrollBar.vertical: ScrollBar {}
+                        }
+
+                        Label {
+                            Layout.alignment: Qt.AlignHCenter
+                            visible: !metadataManager.searching
+                                     && metadataManager.errorString.length === 0
+                                     && metadataResultsList.count === 0
+                                     && metadataManager.configured
+                            text: "Enter a game title above to search for metadata."
+                            color: "#9999aa"
                         }
                     }
                 }
