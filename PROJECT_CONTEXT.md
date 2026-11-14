@@ -55,7 +55,7 @@ Backend modules:
 - LauncherManager (planned)
 - GitHubManager (planned)
 - ProcessManager (planned)
-- MetadataProvider (implemented)\n- TheGamesDbClient (initial search client implemented)\n- MetadataManager (planned)
+- MetadataProvider (implemented)\n- TheGamesDbClient (initial search client implemented)\n- MetadataManager (implemented; exposes search state/results to QML)
 - DatabaseManager
 - SettingsManager (planned)
 
@@ -65,7 +65,7 @@ The scanner currently supports these file extensions:
 - GameCube: .iso, .gcm, .rvz, .ciso
 - Wii: .iso, .wbfs, .rvz, .wud, .wux
 
-PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The initial TheGamesDB client supports asynchronous title searches and normalizes basic game fields; metadata persistence, artwork downloading, and QML integration remain future work.
+PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The initial TheGamesDB client supports asynchronous title searches and normalizes basic game fields; metadata persistence, artwork downloading, and the dedicated search/selection UI remain future work. MetadataManager is exposed to QML.
 
 ## Current Development Status
 
