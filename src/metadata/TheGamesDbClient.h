@@ -19,7 +19,11 @@ public:
                      int platformId = 0) override;
     void fetchPlatforms() override;
 
-    static bool parsePlatformResponse(const QByteArray &response,\n                                      QList<TheGamesDbPlatform> *platforms,\n                                      QString *errorMessage = nullptr);\n\n    static bool parseSearchResponse(const QByteArray &response,
+    static bool parsePlatformResponse(const QByteArray &response,
+                                      QList<TheGamesDbPlatform> *platforms,
+                                      QString *errorMessage = nullptr);
+
+    static bool parseSearchResponse(const QByteArray &response,
                                     QList<GameMetadata> *results,
                                     QString *errorMessage = nullptr);
 
