@@ -28,6 +28,8 @@ qt_add_executable(RecompStationApp
     src/metadata/MetadataProvider.h
     src/metadata/TheGamesDbClient.h
     src/metadata/TheGamesDbClient.cpp
+    src/metadata/MetadataManager.h
+    src/metadata/MetadataManager.cpp
 )
 
 qt_add_qml_module(RecompStationApp
@@ -71,6 +73,8 @@ if(BUILD_TESTING)
         src/metadata/MetadataProvider.h
         src/metadata/TheGamesDbClient.h
         src/metadata/TheGamesDbClient.cpp
+        src/metadata/MetadataManager.h
+        src/metadata/MetadataManager.cpp
     )
 
     target_include_directories(MetadataProviderTests PRIVATE
