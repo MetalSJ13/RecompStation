@@ -214,6 +214,7 @@ bool DatabaseManager::associateMetadata(int gameId,
         return fail(gameQuery.lastError().text());
     if (!gameQuery.next())
         return fail("The selected local game no longer exists.");
+    gameQuery.finish();
 
     if (!m_database.transaction())
         return fail(m_database.lastError().text());
