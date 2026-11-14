@@ -22,6 +22,8 @@ qt_add_executable(RecompStationApp
     src/core/PlatformManager.cpp
     src/core/LibraryScanner.h
     src/core/LibraryScanner.cpp
+    src/core/ArtworkManager.h
+    src/core/ArtworkManager.cpp
     src/database/DatabaseManager.h
     src/database/DatabaseManager.cpp
     src/metadata/GameMetadata.h
@@ -72,6 +74,8 @@ if(BUILD_TESTING)
         tests/DatabaseManagerTest.cpp
         src/database/DatabaseManager.h
         src/database/DatabaseManager.cpp
+        src/core/ArtworkManager.h
+        src/core/ArtworkManager.cpp
     )
 
     target_include_directories(DatabaseManagerTests PRIVATE
