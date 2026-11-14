@@ -3,8 +3,7 @@
 #include "database/DatabaseManager.h"
 
 #include <QDir>
-#include <QFileInfo>
-#include <QMimeDatabase>
+#include <QFile>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSaveFile>
