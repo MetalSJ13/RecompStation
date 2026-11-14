@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDate>
+#include <QList>
 #include <QMetaType>
 #include <QString>
 #include <QStringList>
