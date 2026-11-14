@@ -17,6 +17,7 @@ ApplicationWindow {
     property int libraryRevision: 0
     property int selectedMetadataPlatformId: 0
     property int selectedLocalGameId: 0
+    property string metadataAssociationMessage: ""
     property string scanMessage: "Scan your platform folders to discover games."
 
     palette.window: "#15151d"
@@ -299,7 +300,10 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 textRole: "label"
                                 valueRole: "id"
-                                model: databaseManager.games()
+                                model: {
+                                    window.libraryRevision
+                                    databaseManager.games()
+                                }
                                 onActivated: window.selectedLocalGameId = currentValue
                             }
                         }
@@ -308,6 +312,15 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             text: "Choose the local ROM first, then associate one of the metadata results below."
                             color: "#9999aa"
+                            wrapMode: Text.Wrap
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            visible: window.metadataAssociationMessage.length > 0
+                            text: window.metadataAssociationMessage
+                            color: window.metadataAssociationMessage.startsWith("Metadata associated")
+                                   ? "#91d6a5" : "#ff8b8b"
                             wrapMode: Text.Wrap
                         }
 
@@ -424,9 +437,9 @@ ApplicationWindow {
                                             )
                                             if (saved) {
                                                 window.libraryRevision++
-                                                window.scanMessage = "Metadata associated with the selected ROM."
+                                                window.metadataAssociationMessage = "Metadata associated with the selected ROM."
                                             } else {
-                                                window.scanMessage = databaseManager.lastError
+                                                window.metadataAssociationMessage = databaseManager.lastError
                                             }
                                         }
                                     }
