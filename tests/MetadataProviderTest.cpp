@@ -46,7 +46,7 @@ private slots:
             "status": "Success",
             "data": {
                 "count": 1,
-                "games": [{
+                "games": { "4": {
                     "id": 4,
                     "game_title": "Star Fox 64",
                     "release_date": "1997-06-30",
@@ -56,7 +56,7 @@ private slots:
                     "developers": [6037],
                     "publishers": [3],
                     "genres": [1, 8]
-                }]
+                }}
             }
         })";
 
@@ -78,7 +78,7 @@ private slots:
         QCOMPARE(game.genreIds, (QList<int>{1, 8}));
     }
 
-    void rejectsMalformedOrUnexpectedResponses()
+    void acceptsArrayGamePayloadsToo()\n    {\n        const QByteArray json = R"({"data":{"games":[{"id":9,"game_title":"Example"}]}})";\n        QList<GameMetadata> results;\n        QString error;\n        QVERIFY2(TheGamesDbClient::parseSearchResponse(json, &results, &error), qPrintable(error));\n        QCOMPARE(results.size(), 1);\n        QCOMPARE(results.first().providerGameId, 9);\n    }\n\n    void rejectsMalformedOrUnexpectedResponses()
     {
         QList<GameMetadata> results;
         QString error;
