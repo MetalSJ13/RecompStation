@@ -39,7 +39,8 @@ private slots:
                      QStringLiteral("A bear and bird adventure."),
                      QStringLiteral("1998-06-29"),
                      3,
-                     QStringLiteral("E - Everyone")),
+                     QStringLiteral("E - Everyone"),
+                     QStringLiteral("https://cdn.example.test/banjo-front.jpg")),
                  qPrintable(database.lastError()));
 
         const QVariantMap saved = database.games(QStringLiteral("N64"))
@@ -59,6 +60,8 @@ private slots:
         QCOMPARE(saved.value("metadataPlatformId").toInt(), 3);
         QCOMPARE(saved.value("metadataRating").toString(),
                  QStringLiteral("E - Everyone"));
+        QCOMPARE(saved.value("metadataArtworkUrl").toString(),
+                 QStringLiteral("https://cdn.example.test/banjo-front.jpg"));
     }
 
     void reassociatingMetadataReplacesThePreviousMatch()
@@ -77,15 +80,31 @@ private slots:
         const int gameId = database.games().first().toMap().value("id").toInt();
         QVERIFY(database.associateMetadata(
             gameId, QStringLiteral("thegamesdb"), 100,
-            QStringLiteral("First Match"), {}, {}, 7, {}));
+            QStringLiteral("First Match"), {}, {}, 7, {}, {}));
         QVERIFY(database.associateMetadata(
             gameId, QStringLiteral("thegamesdb"), 200,
-            QStringLiteral("Corrected Match"), {}, {}, 7, {}));
+            QStringLiteral("Corrected Match"), {}, {}, 7, {}, {}));
 
         const QVariantMap saved = database.games().first().toMap();
         QCOMPARE(saved.value("metadataGameId").toInt(), 200);
         QCOMPARE(saved.value("metadataTitle").toString(),
                  QStringLiteral("Corrected Match"));
+    }
+
+    void storesCachedArtworkPath()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY(database.initialize(temporaryDirectory.path() + "/library.sqlite"));
+        QVERIFY(database.registerGame(QStringLiteral("Game"), QStringLiteral("N64"),
+                                      temporaryDirectory.path() + "/Game.z64"));
+        const int gameId = database.games().first().toMap().value("id").toInt();
+        const QString artworkPath = temporaryDirectory.path() + "/artwork/1.jpg";
+        QVERIFY(database.setArtworkPath(gameId, artworkPath));
+        QCOMPARE(database.games().first().toMap().value("artworkPath").toString(),
+                 artworkPath);
     }
 
     void rejectsAssociationForUnknownLocalGame()
@@ -99,7 +118,7 @@ private slots:
 
         QVERIFY(!database.associateMetadata(
             999, QStringLiteral("thegamesdb"), 123,
-            QStringLiteral("Unknown Game"), {}, {}, 3, {}));
+            QStringLiteral("Unknown Game"), {}, {}, 3, {}, {}));
         QVERIFY(database.lastError().contains(
             QStringLiteral("no longer exists")));
     }
