@@ -11,9 +11,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS
-    Core Gui Quick QuickControls2 Sql
+    Core Gui Quick QuickControls2 Sql Network
 )
 qt_standard_project_setup(REQUIRES 6.5)
+qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(RecompStationApp
     src/main.cpp
@@ -23,6 +24,13 @@ qt_add_executable(RecompStationApp
     src/core/LibraryScanner.cpp
     src/database/DatabaseManager.h
     src/database/DatabaseManager.cpp
+    src/metadata/GameMetadata.h
+    src/metadata/MetadataPlatformMapping.h
+    src/metadata/MetadataProvider.h
+    src/metadata/TheGamesDbClient.h
+    src/metadata/TheGamesDbClient.cpp
+    src/metadata/MetadataManager.h
+    src/metadata/MetadataManager.cpp
 )
 
 qt_add_qml_module(RecompStationApp
@@ -32,7 +40,7 @@ qt_add_qml_module(RecompStationApp
 )
 
 target_link_libraries(RecompStationApp PRIVATE
-    Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql
+    Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql Qt6::Network
 )
 
 include(CTest)
@@ -59,6 +67,27 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME LibraryScannerTests COMMAND LibraryScannerTests)
+
+    qt_add_executable(MetadataProviderTests
+        tests/MetadataProviderTest.cpp
+        src/metadata/GameMetadata.h
+        src/metadata/MetadataPlatformMapping.h
+        src/metadata/MetadataProvider.h
+        src/metadata/TheGamesDbClient.h
+        src/metadata/TheGamesDbClient.cpp
+        src/metadata/MetadataManager.h
+        src/metadata/MetadataManager.cpp
+    )
+
+    target_include_directories(MetadataProviderTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(MetadataProviderTests PRIVATE
+        Qt6::Core Qt6::Network Qt6::Test
+    )
+
+    add_test(NAME MetadataProviderTests COMMAND MetadataProviderTests)
 endif()
 
 install(TARGETS RecompStationApp RUNTIME DESTINATION bin)

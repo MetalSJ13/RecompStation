@@ -15,8 +15,9 @@
 - [x] Basic game-library listing in QML
 
 ### In Progress
-- [ ] Build and run the new scanner regression test suite on Arch Linux
+- [ ] Build and run scanner and metadata manager regression tests on Arch Linux
 - [ ] Validate scanner behavior with representative game files and multi-file disc images
+- [x] Verify live platform catalog retrieval and platform-filtered game search on Arch Linux
 
 ### Scanner regression coverage added
 - Supported extensions across N64, PS1, GameCube, and Wii
@@ -28,9 +29,21 @@
 
 The tests are available through CTest when BUILD_TESTING is enabled.
 
+### Metadata provider foundation added
+- Provider-independent GameMetadata data structure
+- Abstract MetadataProvider interface
+- Asynchronous TheGamesDB title search using RECOMPSTATION_TGDB_API_KEY
+- JSON parsing for game metadata and the TheGamesDB platform catalog
+- Runtime mapping from RecompStation's N64, PS1, GameCube, and Wii identifiers to TheGamesDB platform IDs
+- Platform selector in Metadata Search; selected platform ID is passed to the existing platform-filtered game search
+- Regression tests for platform catalog parsing and all four supported platform mappings, alongside search parsing and configuration/error handling
+
+The API key is read from the process environment and is never written into source files or logs. MetadataManager now coordinates provider searches and exposes configuration, search state, results, and errors to QML. Search results are displayed in the Metadata Search page but are not yet persisted or associated with individual local ROM records.
+
 ### Upcoming
-- [ ] Artwork retrieval
-- [ ] Metadata integration
+- [ ] Persist metadata and platform catalog mappings locally
+- [ ] Artwork retrieval and local caching
+- [ ] Metadata result selection and association with individual local ROM records
 - [ ] GitHub integration
 - [ ] Launcher installation
 - [ ] Game launching
