@@ -35,7 +35,7 @@ private slots:
                      gameId,
                      QStringLiteral("thegamesdb"),
                      1234,
-                     QStringLiteral("Banjo-Kazooie"),
+                     QStringLiteral("Banjo-Kazooie (North American release)"),
                      QStringLiteral("A bear and bird adventure."),
                      QStringLiteral("1998-06-29"),
                      3,
@@ -49,6 +49,8 @@ private slots:
                  QStringLiteral("thegamesdb"));
         QCOMPARE(saved.value("metadataGameId").toInt(), 1234);
         QCOMPARE(saved.value("metadataTitle").toString(),
+                 QStringLiteral("Banjo-Kazooie (North American release)"));
+        QCOMPARE(saved.value("title").toString(),
                  QStringLiteral("Banjo-Kazooie"));
         QCOMPARE(saved.value("metadataOverview").toString(),
                  QStringLiteral("A bear and bird adventure."));
