@@ -12,6 +12,11 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
     if (!m_provider)
         return;
 
+    m_platformOptions.append(QVariantMap{
+        {QStringLiteral("internalName"), QStringLiteral("All Platforms")},
+        {QStringLiteral("name"), QStringLiteral("All Platforms")},
+        {QStringLiteral("id"), 0}});
+
     connect(m_provider, &MetadataProvider::platformsLoaded,
             this, [this](const QList<TheGamesDbPlatform> &platforms) {
         m_platforms = platforms;
