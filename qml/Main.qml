@@ -432,6 +432,7 @@ ApplicationWindow {
                                 required property string rating
                                 required property int providerGameId
                                 required property int platformId
+                                required property string artworkUrl
                                 width: metadataResultsList.width
                                 height: resultContent.implicitHeight + 28
                                 radius: 10
