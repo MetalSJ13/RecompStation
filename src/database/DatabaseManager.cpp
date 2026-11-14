@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QUrl>
 #include <QStringList>
 
 DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent) {}
@@ -205,7 +206,9 @@ QVariantList DatabaseManager::games(const QString &platform) const
         game.insert("metadataReleaseDate", query.value(8).toString());
         game.insert("metadataPlatformId", query.value(9).toInt());
         game.insert("metadataRating", query.value(10).toString());
-        game.insert("artworkPath", query.value(11).toString());
+        const QString artworkPath = query.value(11).toString();
+        game.insert("artworkPath", artworkPath.isEmpty()
+                    ? QString() : QUrl::fromLocalFile(artworkPath).toString());
         game.insert("metadataArtworkUrl", query.value(12).toString());
         result.append(game);
     }
