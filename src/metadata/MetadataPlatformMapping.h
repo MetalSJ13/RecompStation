@@ -5,6 +5,8 @@
 #include <QJsonParseError>
 #include <QList>
 #include <QString>
+#include <QStringList>
+#include <QByteArray>
 
 struct TheGamesDbPlatform
 {
