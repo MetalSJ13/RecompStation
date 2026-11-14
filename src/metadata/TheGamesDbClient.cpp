@@ -81,7 +81,7 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
     query.addQueryItem(QStringLiteral("apikey"), m_apiKey);
     query.addQueryItem(QStringLiteral("name"), term);
     query.addQueryItem(QStringLiteral("fields"),
-                       QStringLiteral("overview,publishers,genres,platform"));
+                       QStringLiteral("overview,publishers,genres,platform,developers,rating"));
     query.addQueryItem(QStringLiteral("include"),
                        QStringLiteral("boxart,platform"));
 
