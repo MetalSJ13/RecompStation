@@ -20,7 +20,7 @@ from their library.
 - UI: QML / Qt Quick
 - Build system: CMake
 - Database: SQLite
-- Networking: Qt Network (planned)
+- Networking: Qt Network
 - Process management: QProcess (planned)
 - Primary development OS: Arch Linux
 - Desktop environment: KDE Plasma
@@ -55,7 +55,7 @@ Backend modules:
 - LauncherManager (planned)
 - GitHubManager (planned)
 - ProcessManager (planned)
-- MetadataManager (planned)
+- MetadataProvider (implemented)\n- TheGamesDbClient (initial search client implemented)\n- MetadataManager (planned)
 - DatabaseManager
 - SettingsManager (planned)
 
@@ -65,7 +65,7 @@ The scanner currently supports these file extensions:
 - GameCube: .iso, .gcm, .rvz, .ciso
 - Wii: .iso, .wbfs, .rvz, .wud, .wux
 
-PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated.
+PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The initial TheGamesDB client supports asynchronous title searches and normalizes basic game fields; metadata persistence, artwork downloading, and QML integration remain future work.
 
 ## Current Development Status
 
@@ -88,7 +88,7 @@ Implemented in code:
 - SQLite registration with unique game-path protection.
 - Basic game listing in QML and platform filtering.
 
-Regression tests have been added for supported extensions, recursive discovery, duplicate scans, PS1 cue/bin/img companion handling, scan-completion signaling, and invalid platform handling. The suite still requires local build and execution on Arch Linux.
+Regression tests cover supported extensions, recursive discovery, duplicate scans, PS1 cue/bin/img companion handling, scan-completion signaling, and invalid platform handling. Metadata provider tests cover missing API-key handling, empty searches, JSON parsing, and malformed responses. Both suites require local build and execution on Arch Linux.
 
 ## Development Guidelines
 
