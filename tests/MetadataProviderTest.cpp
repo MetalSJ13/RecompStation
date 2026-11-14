@@ -110,10 +110,12 @@ private slots:
             "code": 200,
             "status": "Success",
             "data": {
-                "count": 2,
+                "count": 4,
                 "platforms": {
                     "3": {"id": 3, "name": "Nintendo 64", "alias": "nintendo-64"},
-                    "7": {"id": 7, "name": "Sony Playstation", "alias": "sony-playstation"}
+                    "7": {"id": 7, "name": "Sony Playstation", "alias": "sony-playstation"},
+                    "10": {"id": 10, "name": "Nintendo GameCube", "alias": "nintendo-gamecube"},
+                    "11": {"id": 11, "name": "Nintendo Wii", "alias": "nintendo-wii"}
                 }
             }
         })";
@@ -122,13 +124,15 @@ private slots:
         QString error;
         QVERIFY2(MetadataPlatformMapping::parsePlatformCatalog(json, &platforms, &error),
                  qPrintable(error));
-        QCOMPARE(platforms.size(), 2);
+        QCOMPARE(platforms.size(), 4);
         QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
                      QStringLiteral("N64"), platforms), 3);
         QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
                      QStringLiteral("PS1"), platforms), 7);
         QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
-                     QStringLiteral("GameCube"), platforms), 0);
+                     QStringLiteral("GameCube"), platforms), 10);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("Wii"), platforms), 11);
     }
 
     void rejectsInvalidPlatformCatalog()
