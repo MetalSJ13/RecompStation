@@ -22,6 +22,7 @@ public:
     virtual bool isConfigured() const = 0;
     virtual void searchGames(const QString &searchTerm,
                              int platformId = 0) = 0;
+    virtual void fetchPlatforms() = 0;
 
 signals:
     void searchCompleted(int requestId, const QList<GameMetadata> &results);
