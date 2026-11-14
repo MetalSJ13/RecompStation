@@ -92,8 +92,7 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
     url.setQuery(query);
 
     QNetworkRequest request(url);
-    request.setHeader(QNetworkRequest::KnownHeaders::AcceptHeader,
-                      QStringLiteral("application/json"));
+    request.setRawHeader("Accept", "application/json");
     request.setTransferTimeout(15000);
 
     QNetworkReply *reply = m_network.get(request);
