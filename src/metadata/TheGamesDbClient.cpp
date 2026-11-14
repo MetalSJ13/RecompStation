@@ -22,6 +22,24 @@ QList<int> integerList(const QJsonValue &value)
     }
     return values;
 }
+
+QList<QJsonObject> gameObjects(const QJsonValue &value)
+{
+    QList<QJsonObject> objects;
+    if (value.isArray()) {
+        for (const QJsonValue &entry : value.toArray()) {
+            if (entry.isObject())
+                objects.append(entry.toObject());
+        }
+    } else if (value.isObject()) {
+        const QJsonObject keyedGames = value.toObject();
+        for (auto it = keyedGames.begin(); it != keyedGames.end(); ++it) {
+            if (it.value().isObject())
+                objects.append(it.value().toObject());
+        }
+    }
+    return objects;
+}
 }
 
 TheGamesDbClient::TheGamesDbClient(const QString &apiKey, QObject *parent)
@@ -134,22 +152,17 @@ bool TheGamesDbClient::parseSearchResponse(const QByteArray &response,
     const QJsonObject root = document.object();
     const QJsonObject data = root.value(QStringLiteral("data")).toObject();
     const QJsonValue gamesValue = data.value(QStringLiteral("games"));
-
-    if (!gamesValue.isArray()) {
+    if (!gamesValue.isArray() && !gamesValue.isObject()) {
         if (errorMessage)
             *errorMessage = QStringLiteral("TheGamesDB response is missing data.games.");
         return false;
     }
 
     QList<GameMetadata> parsedResults;
-    const QJsonArray games = gamesValue.toArray();
+    const QList<QJsonObject> games = gameObjects(gamesValue);
     parsedResults.reserve(games.size());
 
-    for (const QJsonValue &value : games) {
-        if (!value.isObject())
-            continue;
-
-        const QJsonObject game = value.toObject();
+    for (const QJsonObject &game : games) {
         GameMetadata metadata;
         metadata.provider = QStringLiteral("thegamesdb");
         metadata.providerGameId = game.value(QStringLiteral("id")).toInt();
