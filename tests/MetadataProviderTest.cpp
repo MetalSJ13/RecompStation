@@ -46,6 +46,12 @@ private slots:
         const QByteArray json = R"({
             "code": 200,
             "status": "Success",
+            "include": {
+                "boxart": {
+                    "base_url": {"original": "https://cdn.example.test/original/"},
+                    "data": {"4": [{"side": "front", "filename": "banjo-front.jpg"}]}
+                }
+            },
             "data": {
                 "count": 1,
                 "games": { "4": {
@@ -75,6 +81,8 @@ private slots:
         QCOMPARE(game.releaseDate, QDate(1997, 6, 30));
         QCOMPARE(game.platformId, 3);
         QCOMPARE(game.overview, QStringLiteral("A space combat game."));
+        QCOMPARE(game.artworkUrl,
+                 QStringLiteral("https://cdn.example.test/original/banjo-front.jpg"));
         QCOMPARE(game.developerIds, QList<int>{6037});
         QCOMPARE(game.publisherIds, QList<int>{3});
         QCOMPARE(game.genreIds, (QList<int>{1, 8}));

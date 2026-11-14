@@ -28,7 +28,9 @@ public:
                                        const QString &overview,
                                        const QString &releaseDate,
                                        int providerPlatformId,
-                                       const QString &rating);
+                                       const QString &rating,
+                                       const QString &artworkUrl);
+    Q_INVOKABLE bool setArtworkPath(int gameId, const QString &artworkPath);
 
 signals:
     void errorChanged();

@@ -5,6 +5,7 @@
 
 #include "core/PlatformManager.h"
 #include "core/LibraryScanner.h"
+#include "core/ArtworkManager.h"
 #include "database/DatabaseManager.h"
 #include "metadata/TheGamesDbClient.h"
 #include "metadata/MetadataManager.h"
@@ -33,11 +34,14 @@ int main(int argc, char *argv[])
     LibraryScanner libraryScanner(&platformManager, &databaseManager);
     TheGamesDbClient metadataProvider;
     MetadataManager metadataManager(&metadataProvider);
+    ArtworkManager artworkManager(&databaseManager,
+                                  platformManager.dataDirectory() + "/artwork");
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("platformManager", &platformManager);
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);
     engine.rootContext()->setContextProperty("libraryScanner", &libraryScanner);
     engine.rootContext()->setContextProperty("metadataManager", &metadataManager);
+    engine.rootContext()->setContextProperty("artworkManager", &artworkManager);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, []() { QCoreApplication::exit(-1); },

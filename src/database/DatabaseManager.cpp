@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QUrl>
 #include <QStringList>
 
 DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent) {}
@@ -76,6 +77,7 @@ bool DatabaseManager::createTables()
             release_date TEXT,
             provider_platform_id INTEGER,
             rating TEXT,
+            artwork_url TEXT,
             FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE
         ))"
     };
@@ -85,6 +87,24 @@ bool DatabaseManager::createTables()
             m_lastError = query.lastError().text();
             return false;
         }
+    }
+
+    // Upgrade databases created before artwork URLs were stored.
+    QSqlQuery columns(m_database);
+    if (!columns.exec("PRAGMA table_info(game_metadata)")) {
+        m_lastError = columns.lastError().text();
+        return false;
+    }
+    bool hasArtworkUrl = false;
+    while (columns.next()) {
+        if (columns.value(1).toString() == QStringLiteral("artwork_url"))
+            hasArtworkUrl = true;
+    }
+    columns.finish();
+    if (!hasArtworkUrl && !query.exec(
+            "ALTER TABLE game_metadata ADD COLUMN artwork_url TEXT")) {
+        m_lastError = query.lastError().text();
+        return false;
     }
 
     for (const QString &platform : QStringList{"N64", "PS1", "GameCube", "Wii"}) {
@@ -147,7 +167,9 @@ QVariantList DatabaseManager::games(const QString &platform) const
         "COALESCE(game_metadata.overview, ''), "
         "COALESCE(game_metadata.release_date, ''), "
         "COALESCE(game_metadata.provider_platform_id, 0), "
-        "COALESCE(game_metadata.rating, '') "
+        "COALESCE(game_metadata.rating, ''), "
+        "COALESCE(games.artwork_path, ''), "
+        "COALESCE(game_metadata.artwork_url, '') "
         "FROM games "
         "JOIN platforms ON games.platform_id = platforms.id "
         "LEFT JOIN game_metadata ON game_metadata.game_id = games.id ";
@@ -184,6 +206,10 @@ QVariantList DatabaseManager::games(const QString &platform) const
         game.insert("metadataReleaseDate", query.value(8).toString());
         game.insert("metadataPlatformId", query.value(9).toInt());
         game.insert("metadataRating", query.value(10).toString());
+        const QString artworkPath = query.value(11).toString();
+        game.insert("artworkPath", artworkPath.isEmpty()
+                    ? QString() : QUrl::fromLocalFile(artworkPath).toString());
+        game.insert("metadataArtworkUrl", query.value(12).toString());
         result.append(game);
     }
     return result;
@@ -196,7 +222,8 @@ bool DatabaseManager::associateMetadata(int gameId,
                                         const QString &overview,
                                         const QString &releaseDate,
                                         int providerPlatformId,
-                                        const QString &rating)
+                                        const QString &rating,
+                                        const QString &artworkUrl)
 {
     auto fail = [this](const QString &message) {
         m_lastError = message;
@@ -227,10 +254,10 @@ bool DatabaseManager::associateMetadata(int gameId,
     metadataQuery.prepare(R"(
         INSERT INTO game_metadata (
             game_id, provider, provider_game_id, title, overview,
-            release_date, provider_platform_id, rating
+            release_date, provider_platform_id, rating, artwork_url
         ) VALUES (
             :game_id, :provider, :provider_game_id, :title, :overview,
-            :release_date, :provider_platform_id, :rating
+            :release_date, :provider_platform_id, :rating, :artwork_url
         )
         ON CONFLICT(game_id) DO UPDATE SET
             provider = excluded.provider,
@@ -239,7 +266,8 @@ bool DatabaseManager::associateMetadata(int gameId,
             overview = excluded.overview,
             release_date = excluded.release_date,
             provider_platform_id = excluded.provider_platform_id,
-            rating = excluded.rating
+            rating = excluded.rating,
+            artwork_url = excluded.artwork_url
     )");
     metadataQuery.bindValue(":game_id", gameId);
     metadataQuery.bindValue(":provider", provider.trimmed());
@@ -249,6 +277,7 @@ bool DatabaseManager::associateMetadata(int gameId,
     metadataQuery.bindValue(":release_date", releaseDate);
     metadataQuery.bindValue(":provider_platform_id", providerPlatformId);
     metadataQuery.bindValue(":rating", rating);
+    metadataQuery.bindValue(":artwork_url", artworkUrl);
 
     if (!metadataQuery.exec()) {
         const QString error = metadataQuery.lastError().text();
@@ -264,3 +293,27 @@ bool DatabaseManager::associateMetadata(int gameId,
 }
 
 QString DatabaseManager::lastError() const { return m_lastError; }
+
+bool DatabaseManager::setArtworkPath(int gameId, const QString &artworkPath)
+{
+    if (!m_database.isOpen() || gameId <= 0 || artworkPath.trimmed().isEmpty()) {
+        m_lastError = QStringLiteral("A valid local game and artwork path are required.");
+        emit errorChanged();
+        return false;
+    }
+
+    QSqlQuery query(m_database);
+    query.prepare("UPDATE games SET artwork_path = :path WHERE id = :id");
+    query.bindValue(":path", artworkPath);
+    query.bindValue(":id", gameId);
+    if (!query.exec() || query.numRowsAffected() != 1) {
+        m_lastError = query.lastError().text();
+        if (m_lastError.isEmpty())
+            m_lastError = QStringLiteral("The selected local game no longer exists.");
+        emit errorChanged();
+        return false;
+    }
+    m_lastError.clear();
+    emit errorChanged();
+    return true;
+}

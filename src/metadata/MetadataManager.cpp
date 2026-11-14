@@ -69,6 +69,7 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
                              : QString());
             item.insert(QStringLiteral("platformId"), game.platformId);
             item.insert(QStringLiteral("rating"), game.rating);
+            item.insert(QStringLiteral("artworkUrl"), game.artworkUrl);
             results.append(item);
         }
 

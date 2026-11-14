@@ -18,6 +18,7 @@ ApplicationWindow {
     property int selectedMetadataPlatformId: 0
     property int selectedLocalGameId: 0
     property string metadataAssociationMessage: ""
+    property string artworkMessage: ""
     property string scanMessage: "Scan your platform folders to discover games."
 
     palette.window: "#15151d"
@@ -26,6 +27,17 @@ ApplicationWindow {
     palette.buttonText: "#ffffff"
     palette.highlight: "#8060e8"
     palette.highlightedText: "#ffffff"
+
+    Connections {
+        target: artworkManager
+        function onArtworkSaved(gameId, localPath) {
+            window.libraryRevision++
+            window.artworkMessage = "Artwork saved to the local cache."
+        }
+        function onArtworkFailed(gameId, message) {
+            window.artworkMessage = message
+        }
+    }
 
     Connections {
         target: libraryScanner
@@ -197,26 +209,53 @@ ApplicationWindow {
                                 required property string title
                                 required property string platform
                                 required property string path
+                                required property string artworkPath
                                 width: gameList.width
-                                height: 76
+                                height: 92
                                 radius: 10
                                 color: "#252532"
-                                ColumnLayout {
+                                RowLayout {
                                     anchors.fill: parent
-                                    anchors.margins: 14
-                                    spacing: 3
-                                    Label {
-                                        text: title
-                                        color: "white"
-                                        font.pixelSize: 16
-                                        font.bold: true
+                                    anchors.margins: 10
+                                    spacing: 12
+                                    Rectangle {
+                                        Layout.preferredWidth: 54
+                                        Layout.preferredHeight: 70
+                                        radius: 5
+                                        color: "#171720"
+                                        clip: true
+                                        Image {
+                                            anchors.fill: parent
+                                            source: artworkPath
+                                            fillMode: Image.PreserveAspectFit
+                                            asynchronous: true
+                                            visible: artworkPath.length > 0
+                                        }
+                                        Label {
+                                            anchors.centerIn: parent
+                                            text: "No\nArtwork"
+                                            color: "#777788"
+                                            font.pixelSize: 9
+                                            horizontalAlignment: Text.AlignHCenter
+                                            visible: artworkPath.length === 0
+                                        }
                                     }
-                                    Label {
-                                        text: platform + "  •  " + path
-                                        color: "#9999aa"
-                                        font.pixelSize: 11
-                                        elide: Text.ElideMiddle
+                                    ColumnLayout {
                                         Layout.fillWidth: true
+                                        spacing: 3
+                                        Label {
+                                            text: title
+                                            color: "white"
+                                            font.pixelSize: 16
+                                            font.bold: true
+                                        }
+                                        Label {
+                                            text: platform + "  •  " + path
+                                            color: "#9999aa"
+                                            font.pixelSize: 11
+                                            elide: Text.ElideMiddle
+                                            Layout.fillWidth: true
+                                        }
                                     }
                                 }
                             }
@@ -348,6 +387,14 @@ ApplicationWindow {
 
                         Label {
                             Layout.fillWidth: true
+                            visible: window.artworkMessage.length > 0
+                            text: window.artworkMessage
+                            color: window.artworkMessage.startsWith("Artwork saved") ? "#91d6a5" : "#a98cff"
+                            wrapMode: Text.Wrap
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
                             visible: metadataManager.errorString.length > 0
                             text: metadataManager.errorString
                             color: "#ff8b8b"
@@ -385,6 +432,7 @@ ApplicationWindow {
                                 required property string rating
                                 required property int providerGameId
                                 required property int platformId
+                                required property string artworkUrl
                                 width: metadataResultsList.width
                                 height: resultContent.implicitHeight + 28
                                 radius: 10
@@ -420,27 +468,47 @@ ApplicationWindow {
                                         maximumLineCount: 4
                                         elide: Text.ElideRight
                                     }
-                                    Button {
-                                        text: "Associate with selected ROM"
-                                        highlighted: true
-                                        enabled: window.selectedLocalGameId > 0
-                                        onClicked: {
-                                            const saved = databaseManager.associateMetadata(
-                                                window.selectedLocalGameId,
-                                                provider,
-                                                providerGameId,
-                                                title,
-                                                overview,
-                                                releaseDate,
-                                                platformId,
-                                                rating
-                                            )
-                                            if (saved) {
-                                                window.libraryRevision++
-                                                window.metadataAssociationMessage = "Metadata associated with the selected ROM."
-                                            } else {
-                                                window.metadataAssociationMessage = databaseManager.lastError
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Button {
+                                            text: artworkUrl.length > 0
+                                                  ? "Associate & Download Cover"
+                                                  : "Associate Metadata"
+                                            highlighted: true
+                                            enabled: window.selectedLocalGameId > 0
+                                            onClicked: {
+                                                const saved = databaseManager.associateMetadata(
+                                                    window.selectedLocalGameId,
+                                                    provider,
+                                                    providerGameId,
+                                                    title,
+                                                    overview,
+                                                    releaseDate,
+                                                    platformId,
+                                                    rating,
+                                                    artworkUrl
+                                                )
+                                                if (saved) {
+                                                    window.libraryRevision++
+                                                    window.metadataAssociationMessage = "Metadata associated with the selected ROM."
+                                                    if (artworkUrl.length > 0) {
+                                                        window.artworkMessage = "Downloading cover artwork..."
+                                                        artworkManager.downloadArtwork(window.selectedLocalGameId, artworkUrl)
+                                                    } else {
+                                                        window.artworkMessage = "No front-cover artwork is available for this result."
+                                                    }
+                                                } else {
+                                                    window.metadataAssociationMessage = databaseManager.lastError
+                                                }
                                             }
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            visible: artworkUrl.length === 0
+                                            text: "No cover image available"
+                                            color: "#9999aa"
+                                            font.pixelSize: 11
+                                            wrapMode: Text.Wrap
                                         }
                                     }
                                 }

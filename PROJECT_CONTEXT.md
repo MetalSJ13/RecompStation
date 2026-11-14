@@ -68,7 +68,7 @@ The scanner currently supports these file extensions:
 - GameCube: .iso, .gcm, .rvz, .ciso
 - Wii: .iso, .wbfs, .rvz, .wud, .wux
 
-PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The TheGamesDB client supports asynchronous title searches and platform catalog retrieval. MetadataManager maps the four supported internal platforms to provider IDs at runtime and exposes a platform selector to QML. The metadata search page displays provider results and supports filtering by the selected platform. Metadata search results can now be associated with an individual local ROM record through a separate game_metadata table. The local scanner title and ROM path remain unchanged; the provider ID and descriptive metadata are stored independently. Artwork downloading and caching remain future work.
+PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The TheGamesDB client supports asynchronous title searches and platform catalog retrieval. MetadataManager maps the four supported internal platforms to provider IDs at runtime and exposes a platform selector to QML. The metadata search page displays provider results and supports filtering by the selected platform. Metadata search results can be associated with an individual local ROM record through a separate game_metadata table. The local scanner title and ROM path remain unchanged; the provider ID and descriptive metadata are stored independently. TheGamesDB search parsing now extracts front-cover artwork URLs. ArtworkManager downloads supported HTTPS image responses into the application artwork directory and stores the local file path on the game record. The library exposes cached artwork paths to QML for display.
 
 ## Current Development Status
 
@@ -106,7 +106,7 @@ Live platform-filtered search has been confirmed on Arch Linux. The full regress
 
 Milestone 3B: Associate provider metadata with local ROM records.
 
-Implemented on the current feature branch:
+Implemented and merged into main:
 - Separate SQLite game_metadata table with a one-to-one foreign-key relationship to games.
 - Metadata association keyed by the local game's database ID.
 - QML selector for choosing a scanned local ROM.
@@ -114,7 +114,19 @@ Implemented on the current feature branch:
 - Safe replacement of an existing metadata match without changing the local game title or path.
 - Database regression tests for successful association, replacement, and unknown local game handling.
 
-This milestone awaits a local build, regression test run, and interactive validation before merge.
+Validated on Arch Linux with a successful build, all three regression test suites passing, and persistence confirmed after restarting the application.
+
+Milestone 4: Game artwork retrieval and local caching.
+
+Implemented on the current feature branch:
+- Parse TheGamesDB front-cover image URLs from search responses.
+- Persist the provider artwork URL with the local game metadata association.
+- Download supported HTTPS image responses asynchronously with response-size and MIME-type checks.
+- Cache artwork under the application data directory and persist each local game's artwork path.
+- Expose cached artwork to the QML library and display cover thumbnails.
+- Add regression coverage for artwork URL parsing, artwork path persistence, and download input validation.
+
+This milestone is awaiting a local build, regression test run, and interactive validation.
 
 ## Development Guidelines
 

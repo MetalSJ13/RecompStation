@@ -15,6 +15,7 @@ struct GameMetadata
     QDate releaseDate;
     int platformId = 0;
     QString rating;
+    QString artworkUrl;
     QList<int> developerIds;
     QList<int> publisherIds;
     QList<int> genreIds;

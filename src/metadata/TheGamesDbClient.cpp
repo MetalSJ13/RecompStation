@@ -41,6 +41,45 @@ QList<QJsonObject> gameObjects(const QJsonValue &value)
     }
     return objects;
 }
+
+QString frontBoxartUrl(const QJsonObject &root, int gameId)
+{
+    const QJsonObject boxart =
+        root.value(QStringLiteral("include")).toObject()
+            .value(QStringLiteral("boxart")).toObject();
+    const QJsonObject baseUrls =
+        boxart.value(QStringLiteral("base_url")).toObject();
+    QString baseUrl = baseUrls.value(QStringLiteral("original")).toString();
+    if (baseUrl.isEmpty())
+        baseUrl = baseUrls.value(QStringLiteral("large")).toString();
+    if (baseUrl.isEmpty())
+        return {};
+
+    const QJsonObject imagesByGame = boxart.value(QStringLiteral("data")).toObject();
+    const QJsonArray images =
+        imagesByGame.value(QString::number(gameId)).toArray();
+
+    QString filename;
+    for (const QJsonValue &entry : images) {
+        if (!entry.isObject())
+            continue;
+        const QJsonObject image = entry.toObject();
+        if (image.value(QStringLiteral("side")).toString()
+                == QStringLiteral("front")) {
+            filename = image.value(QStringLiteral("filename")).toString().trimmed();
+            if (!filename.isEmpty())
+                break;
+        }
+    }
+
+    if (filename.isEmpty())
+        return {};
+
+    if (!baseUrl.endsWith(QLatin1Char('/')))
+        baseUrl.append(QLatin1Char('/'));
+    const QUrl resolved = QUrl(baseUrl).resolved(QUrl(filename));
+    return resolved.scheme() == QStringLiteral("https") ? resolved.toString() : QString();
+}
 }
 
 TheGamesDbClient::TheGamesDbClient(const QString &apiKey, QObject *parent)
@@ -224,6 +263,7 @@ bool TheGamesDbClient::parseSearchResponse(const QByteArray &response,
             integerList(game.value(QStringLiteral("publishers")));
         metadata.genreIds =
             integerList(game.value(QStringLiteral("genres")));
+        metadata.artworkUrl = frontBoxartUrl(root, metadata.providerGameId);
 
         const QString releaseDate =
             game.value(QStringLiteral("release_date")).toString();
