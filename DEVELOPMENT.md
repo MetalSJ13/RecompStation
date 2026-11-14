@@ -40,10 +40,17 @@ The tests are available through CTest when BUILD_TESTING is enabled.
 
 The API key is read from the process environment and is never written into source files or logs. MetadataManager now coordinates provider searches and exposes configuration, search state, results, and errors to QML. Search results are displayed in the Metadata Search page but are not yet persisted or associated with individual local ROM records.
 
+### Metadata-to-ROM association
+- [x] Add a local metadata table linked one-to-one with scanned game records
+- [x] Expose local game IDs and existing metadata fields through the game query
+- [x] Allow a user to select a local ROM and associate a TheGamesDB result
+- [x] Allow an existing association to be corrected or replaced
+- [x] Add database regression tests for association, replacement, and invalid game IDs
+
+The association feature is implemented on its feature branch and awaits local build, test, and UI validation. Metadata is stored separately from the scanner's local game title and path, so provider titles do not overwrite local ROM records.
+
 ### Upcoming
-- [ ] Persist metadata and platform catalog mappings locally
 - [ ] Artwork retrieval and local caching
-- [ ] Metadata result selection and association with individual local ROM records
 - [ ] GitHub integration
 - [ ] Launcher installation
 - [ ] Game launching

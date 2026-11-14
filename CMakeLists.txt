@@ -68,6 +68,22 @@ if(BUILD_TESTING)
 
     add_test(NAME LibraryScannerTests COMMAND LibraryScannerTests)
 
+    qt_add_executable(DatabaseManagerTests
+        tests/DatabaseManagerTest.cpp
+        src/database/DatabaseManager.h
+        src/database/DatabaseManager.cpp
+    )
+
+    target_include_directories(DatabaseManagerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(DatabaseManagerTests PRIVATE
+        Qt6::Core Qt6::Sql Qt6::Test
+    )
+
+    add_test(NAME DatabaseManagerTests COMMAND DatabaseManagerTests)
+
     qt_add_executable(MetadataProviderTests
         tests/MetadataProviderTest.cpp
         src/metadata/GameMetadata.h

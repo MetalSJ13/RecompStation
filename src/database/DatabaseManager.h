@@ -8,6 +8,7 @@
 class DatabaseManager : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QString lastError READ lastError NOTIFY errorChanged)
 
 public:
     explicit DatabaseManager(QObject *parent = nullptr);
@@ -20,6 +21,17 @@ public:
                                   const QString &platform,
                                   const QString &gamePath);
     Q_INVOKABLE QVariantList games(const QString &platform = QString()) const;
+    Q_INVOKABLE bool associateMetadata(int gameId,
+                                       const QString &provider,
+                                       int providerGameId,
+                                       const QString &metadataTitle,
+                                       const QString &overview,
+                                       const QString &releaseDate,
+                                       int providerPlatformId,
+                                       const QString &rating);
+
+signals:
+    void errorChanged();
 
 private:
     QSqlDatabase m_database;

@@ -68,7 +68,7 @@ The scanner currently supports these file extensions:
 - GameCube: .iso, .gcm, .rvz, .ciso
 - Wii: .iso, .wbfs, .rvz, .wud, .wux
 
-PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The TheGamesDB client supports asynchronous title searches and platform catalog retrieval. MetadataManager maps the four supported internal platforms to provider IDs at runtime and exposes a platform selector to QML. The metadata search page displays provider results and supports filtering by the selected platform. Metadata persistence, artwork downloading, and associating a selected result with a local ROM record remain future work.
+PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The TheGamesDB client supports asynchronous title searches and platform catalog retrieval. MetadataManager maps the four supported internal platforms to provider IDs at runtime and exposes a platform selector to QML. The metadata search page displays provider results and supports filtering by the selected platform. Metadata search results can now be associated with an individual local ROM record through a separate game_metadata table. The local scanner title and ROM path remain unchanged; the provider ID and descriptive metadata are stored independently. Artwork downloading and caching remain future work.
 
 ## Current Development Status
 
@@ -103,6 +103,18 @@ Implemented:
 - Regression tests for provider response parsing and platform mapping.
 
 Live platform-filtered search has been confirmed on Arch Linux. The full regression test suite should still be run against the final branch state before the milestone is considered fully validated.
+
+Milestone 3B: Associate provider metadata with local ROM records.
+
+Implemented on the current feature branch:
+- Separate SQLite game_metadata table with a one-to-one foreign-key relationship to games.
+- Metadata association keyed by the local game's database ID.
+- QML selector for choosing a scanned local ROM.
+- Association action on each metadata search result.
+- Safe replacement of an existing metadata match without changing the local game title or path.
+- Database regression tests for successful association, replacement, and unknown local game handling.
+
+This milestone awaits a local build, regression test run, and interactive validation before merge.
 
 ## Development Guidelines
 
