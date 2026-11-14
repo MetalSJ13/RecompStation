@@ -14,6 +14,7 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS
     Core Gui Quick QuickControls2 Sql Network
 )
 qt_standard_project_setup(REQUIRES 6.5)
+qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(RecompStationApp
     src/main.cpp
