@@ -16,6 +16,7 @@ ApplicationWindow {
     property string selectedPlatform: "All Games"
     property int libraryRevision: 0
     property int selectedMetadataPlatformId: 0
+    property int selectedLocalGameId: 0
     property string scanMessage: "Scan your platform folders to discover games."
 
     palette.window: "#15151d"
@@ -289,6 +290,29 @@ ApplicationWindow {
 
                         RowLayout {
                             Layout.fillWidth: true
+                            Label {
+                                text: "Local ROM"
+                                color: "#b7b7c5"
+                            }
+                            ComboBox {
+                                id: localGameSelector
+                                Layout.fillWidth: true
+                                textRole: "label"
+                                valueRole: "id"
+                                model: databaseManager.games()
+                                onActivated: window.selectedLocalGameId = currentValue
+                            }
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Choose the local ROM first, then associate one of the metadata results below."
+                            color: "#9999aa"
+                            wrapMode: Text.Wrap
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
                             TextField {
                                 id: metadataSearchField
                                 Layout.fillWidth: true
@@ -341,11 +365,13 @@ ApplicationWindow {
                             spacing: 10
                             model: metadataManager.results
                             delegate: Rectangle {
+                                required property string provider
                                 required property string title
                                 required property string overview
                                 required property string releaseDate
                                 required property string rating
                                 required property int providerGameId
+                                required property int platformId
                                 width: metadataResultsList.width
                                 height: resultContent.implicitHeight + 28
                                 radius: 10
@@ -380,6 +406,29 @@ ApplicationWindow {
                                         wrapMode: Text.Wrap
                                         maximumLineCount: 4
                                         elide: Text.ElideRight
+                                    }
+                                    Button {
+                                        text: "Associate with selected ROM"
+                                        highlighted: true
+                                        enabled: window.selectedLocalGameId > 0
+                                        onClicked: {
+                                            const saved = databaseManager.associateMetadata(
+                                                window.selectedLocalGameId,
+                                                provider,
+                                                providerGameId,
+                                                title,
+                                                overview,
+                                                releaseDate,
+                                                platformId,
+                                                rating
+                                            )
+                                            if (saved) {
+                                                window.libraryRevision++
+                                                window.scanMessage = "Metadata associated with the selected ROM."
+                                            } else {
+                                                window.scanMessage = databaseManager.lastError
+                                            }
+                                        }
                                     }
                                 }
                             }
