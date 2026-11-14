@@ -3,6 +3,7 @@
 #include "database/DatabaseManager.h"
 
 #include <QTemporaryDir>
+#include <QUrl>
 
 class DatabaseManagerTest : public QObject
 {
@@ -104,7 +105,7 @@ private slots:
         const QString artworkPath = temporaryDirectory.path() + "/artwork/1.jpg";
         QVERIFY(database.setArtworkPath(gameId, artworkPath));
         QCOMPARE(database.games().first().toMap().value("artworkPath").toString(),
-                 artworkPath);
+                 QUrl::fromLocalFile(artworkPath).toString());
     }
 
     void rejectsAssociationForUnknownLocalGame()
