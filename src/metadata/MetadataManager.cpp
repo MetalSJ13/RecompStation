@@ -2,6 +2,7 @@
 
 #include "MetadataProvider.h"
 
+#include <QPair>
 #include <QVariantMap>
 
 MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
