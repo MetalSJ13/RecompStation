@@ -17,7 +17,7 @@
 ### In Progress
 - [ ] Build and run scanner and metadata manager regression tests on Arch Linux
 - [ ] Validate scanner behavior with representative game files and multi-file disc images
-- [ ] Verify live platform catalog retrieval and platform-filtered game search on Arch Linux
+- [x] Verify live platform catalog retrieval and platform-filtered game search on Arch Linux
 
 ### Scanner regression coverage added
 - Supported extensions across N64, PS1, GameCube, and Wii
@@ -38,7 +38,7 @@ The tests are available through CTest when BUILD_TESTING is enabled.
 - Platform selector in Metadata Search; selected platform ID is passed to the existing platform-filtered game search
 - Regression tests for platform catalog parsing and all four supported platform mappings, alongside search parsing and configuration/error handling
 
-The API key is read from the process environment and is never written into source files or logs. MetadataManager now coordinates provider searches and exposes configuration, search state, results, and errors to QML. Search results are not yet persisted or displayed in a dedicated UI.
+The API key is read from the process environment and is never written into source files or logs. MetadataManager now coordinates provider searches and exposes configuration, search state, results, and errors to QML. Search results are displayed in the Metadata Search page but are not yet persisted or associated with individual local ROM records.
 
 ### Upcoming
 - [ ] Persist metadata and platform catalog mappings locally
