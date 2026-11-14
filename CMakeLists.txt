@@ -74,8 +74,6 @@ if(BUILD_TESTING)
         tests/DatabaseManagerTest.cpp
         src/database/DatabaseManager.h
         src/database/DatabaseManager.cpp
-        src/core/ArtworkManager.h
-        src/core/ArtworkManager.cpp
     )
 
     target_include_directories(DatabaseManagerTests PRIVATE
