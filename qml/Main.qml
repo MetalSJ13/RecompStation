@@ -266,6 +266,28 @@ ApplicationWindow {
 
                         RowLayout {
                             Layout.fillWidth: true
+                            Label {
+                                text: "Platform"
+                                color: "#b7b7c5"
+                            }
+                            ComboBox {
+                                id: metadataPlatformSelector
+                                Layout.preferredWidth: 230
+                                textRole: "name"
+                                valueRole: "id"
+                                model: metadataManager.platformOptions
+                                enabled: !metadataManager.platformsLoading
+                                onActivated: window.selectedMetadataPlatformId = currentValue
+                            }
+                            Label {
+                                visible: metadataManager.platformsLoading
+                                text: "Loading platform catalog..."
+                                color: "#a98cff"
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
                             TextField {
                                 id: metadataSearchField
                                 Layout.fillWidth: true
