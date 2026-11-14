@@ -11,6 +11,41 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
     if (!m_provider)
         return;
 
+    connect(m_provider, &MetadataProvider::platformsLoaded,
+            this, [this](const QList<TheGamesDbPlatform> &platforms) {
+        m_platforms = platforms;
+        m_platformOptions.clear();
+        m_platformOptions.append(QVariantMap{
+            {QStringLiteral("internalName"), QStringLiteral("All Platforms")},
+            {QStringLiteral("name"), QStringLiteral("All Platforms")},
+            {QStringLiteral("id"), 0}});
+        const QList<QPair<QString, QString>> supported = {
+            {QStringLiteral("N64"), QStringLiteral("Nintendo 64")},
+            {QStringLiteral("PS1"), QStringLiteral("PlayStation")},
+            {QStringLiteral("GameCube"), QStringLiteral("Nintendo GameCube")},
+            {QStringLiteral("Wii"), QStringLiteral("Nintendo Wii")}
+        };
+        for (const auto &entry : supported) {
+            const int id = MetadataPlatformMapping::platformIdForInternalName(entry.first, m_platforms);
+            if (id <= 0)
+                continue;
+            m_platformOptions.append(QVariantMap{
+                {QStringLiteral("internalName"), entry.first},
+                {QStringLiteral("name"), entry.second},
+                {QStringLiteral("id"), id}});
+        }
+        m_platformsLoading = false;
+        emit platformOptionsChanged();
+        emit platformsLoadingChanged();
+    });
+    connect(m_provider, &MetadataProvider::platformsFailed,
+            this, [this](const QString &message) {
+        m_platformsLoading = false;
+        setErrorString(message);
+        emit platformsLoadingChanged();
+    });
+    m_provider->fetchPlatforms();
+
     connect(m_provider, &MetadataProvider::searchCompleted,
             this, [this](int, const QList<GameMetadata> &games) {
         QVariantList results;
@@ -64,6 +99,21 @@ QVariantList MetadataManager::results() const
 QString MetadataManager::errorString() const
 {
     return m_errorString;
+}
+
+QVariantList MetadataManager::platformOptions() const
+{
+    return m_platformOptions;
+}
+
+bool MetadataManager::platformsLoading() const
+{
+    return m_platformsLoading;
+}
+
+int MetadataManager::metadataPlatformId(const QString &internalPlatform) const
+{
+    return MetadataPlatformMapping::platformIdForInternalName(internalPlatform, m_platforms);
 }
 
 void MetadataManager::searchGames(const QString &searchTerm, int platformId)
