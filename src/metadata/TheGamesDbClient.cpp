@@ -5,7 +5,8 @@
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QNetworkReply>
-#include <QNetworkRequest>\n#include "MetadataPlatformMapping.h"
+#include <QNetworkRequest>
+#include "MetadataPlatformMapping.h"
 #include <QUrl>
 #include <QUrlQuery>
 
