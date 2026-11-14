@@ -168,11 +168,15 @@ QVariantList DatabaseManager::games(const QString &platform) const
         const QString title = query.value(1).toString();
         const QString platformName = query.value(2).toString();
         const QString path = query.value(3).toString();
+        const QString metadataTitle = query.value(6).toString();
         game.insert("id", id);
         game.insert("title", title);
         game.insert("platform", platformName);
         game.insert("path", path);
-        game.insert("label", title + " (" + platformName + ") — " + path);
+        game.insert("label", title + " (" + platformName + ") — " + path
+                    + (metadataTitle.isEmpty()
+                           ? QString()
+                           : "  •  Metadata: " + metadataTitle));
         game.insert("metadataProvider", query.value(4).toString());
         game.insert("metadataGameId", query.value(5).toInt());
         game.insert("metadataTitle", query.value(6).toString());
