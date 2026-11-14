@@ -86,6 +86,24 @@ if(BUILD_TESTING)
 
     add_test(NAME DatabaseManagerTests COMMAND DatabaseManagerTests)
 
+    qt_add_executable(ArtworkManagerTests
+        tests/ArtworkManagerTest.cpp
+        src/core/ArtworkManager.h
+        src/core/ArtworkManager.cpp
+        src/database/DatabaseManager.h
+        src/database/DatabaseManager.cpp
+    )
+
+    target_include_directories(ArtworkManagerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ArtworkManagerTests PRIVATE
+        Qt6::Core Qt6::Sql Qt6::Network Qt6::Test
+    )
+
+    add_test(NAME ArtworkManagerTests COMMAND ArtworkManagerTests)
+
     qt_add_executable(MetadataProviderTests
         tests/MetadataProviderTest.cpp
         src/metadata/GameMetadata.h
