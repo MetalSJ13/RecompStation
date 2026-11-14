@@ -5,7 +5,7 @@
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QNetworkReply>
-#include <QNetworkRequest>
+#include <QNetworkRequest>\n#include "MetadataPlatformMapping.h"
 #include <QUrl>
 #include <QUrlQuery>
 
@@ -57,6 +57,54 @@ QString TheGamesDbClient::providerId() const
 bool TheGamesDbClient::isConfigured() const
 {
     return !m_apiKey.isEmpty();
+}
+
+void TheGamesDbClient::fetchPlatforms()
+{
+    if (!isConfigured()) {
+        emit platformsFailed(QStringLiteral("TheGamesDB API key is not configured. Set RECOMPSTATION_TGDB_API_KEY."));
+        return;
+    }
+
+    QUrl url(QStringLiteral("https://api.thegamesdb.net/v1/Platforms"));
+    QUrlQuery query;
+    query.addQueryItem(QStringLiteral("apikey"), m_apiKey);
+    url.setQuery(query);
+
+    QNetworkRequest request(url);
+    request.setRawHeader("Accept", "application/json");
+    request.setTransferTimeout(15000);
+    QNetworkReply *reply = m_network.get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        const int statusCode =
+            reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (reply->error() != QNetworkReply::NoError) {
+            const QString message = QStringLiteral("TheGamesDB platform request failed (HTTP %1): %2")
+                                        .arg(statusCode).arg(reply->errorString());
+            reply->deleteLater();
+            emit platformsFailed(message);
+            return;
+        }
+
+        QList<TheGamesDbPlatform> platforms;
+        QString error;
+        const bool ok = parsePlatformResponse(reply->readAll(), &platforms, &error);
+        reply->deleteLater();
+        if (!ok) {
+            emit platformsFailed(error);
+            return;
+        }
+        emit platformsLoaded(platforms);
+    });
+}
+
+bool TheGamesDbClient::parsePlatformResponse(
+    const QByteArray &response,
+    QList<TheGamesDbPlatform> *platforms,
+    QString *errorMessage)
+{
+    return MetadataPlatformMapping::parsePlatformCatalog(
+        response, platforms, errorMessage);
 }
 
 void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
