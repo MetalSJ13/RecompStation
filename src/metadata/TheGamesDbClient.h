@@ -17,8 +17,9 @@ public:
     bool isConfigured() const override;
     void searchGames(const QString &searchTerm,
                      int platformId = 0) override;
+    void fetchPlatforms() override;
 
-    static bool parseSearchResponse(const QByteArray &response,
+    static bool parsePlatformResponse(const QByteArray &response,\n                                      QList<TheGamesDbPlatform> *platforms,\n                                      QString *errorMessage = nullptr);\n\n    static bool parseSearchResponse(const QByteArray &response,
                                     QList<GameMetadata> *results,
                                     QString *errorMessage = nullptr);
 
