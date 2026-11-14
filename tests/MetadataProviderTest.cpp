@@ -11,7 +11,7 @@ class MetadataProviderTest : public QObject
 private slots:
     void reportsMissingApiKeyWithoutMakingARequest()
     {
-        TheGamesDbClient client(QString());
+        TheGamesDbClient client(QStringLiteral(""));
         QVERIFY(!client.isConfigured());
 
         QSignalSpy failureSpy(&client, &MetadataProvider::requestFailed);
