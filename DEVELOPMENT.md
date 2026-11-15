@@ -1,139 +1,162 @@
-# Development Status
+# RecompStation Development Roadmap
 
-## Version 0.1.0
+This document is the authoritative development status and implementation order for RecompStation. Milestones are ordered by dependency and user experience: stabilize the working baseline, establish a coherent interface, then complete and expand the workflows behind it.
 
-### Completed
-- [x] Development environment setup
-- [x] Qt 6 project configuration
-- [x] QML interface
-- [x] Platform directory creation
-- [x] SQLite database initialization
-- [x] Successful Linux application launch
-- [x] Initial library scanner implementation
-- [x] Supported game-file discovery for N64, PS1, GameCube, and Wii
-- [x] SQLite game registration with duplicate-path protection
-- [x] Basic game-library listing in QML
+## Project status
 
-### In Progress
-- [x] Build and run scanner, database, and metadata manager regression tests on Arch Linux
-- [ ] Validate scanner behavior with representative game files and multi-file disc images
-- [x] Verify live platform catalog retrieval and platform-filtered game search on Arch Linux
+**Current development branch:** `ui/interface-redesign`  
+**Base:** The existing launcher download/installation and native-launch implementation, including the latest locally tested Play Game feature.  
+**Merge policy:** This work remains unmerged into `main` while the UI and remaining workflows are developed and validated. Do not merge without an explicit project decision.
 
-### Scanner regression coverage added
-- Supported extensions across N64, PS1, GameCube, and Wii
-- Recursive discovery and unsupported-file filtering
-- Duplicate-scan protection
-- PS1 cue-sheet companion handling, including mixed-case .cue extensions
-- Single completion notification for scan-all
-- Unknown-platform error reporting
+The current branch is a functional development baseline. UI work should preserve existing behavior and keep the application buildable at each step.
 
-The tests are available through CTest when BUILD_TESTING is enabled. The launcher archive extractor requires libarchive (the `libarchive` package on Arch Linux).
+## Completed foundation
 
-### Metadata provider foundation added
-- Provider-independent GameMetadata data structure
-- Abstract MetadataProvider interface
-- Asynchronous TheGamesDB title search using RECOMPSTATION_TGDB_API_KEY
-- JSON parsing for game metadata and the TheGamesDB platform catalog
-- Runtime mapping from RecompStation's N64, PS1, GameCube, and Wii identifiers to TheGamesDB platform IDs
-- Platform selector in Metadata Search; selected platform ID is passed to the existing platform-filtered game search
-- Regression tests for platform catalog parsing and all four supported platform mappings, alongside search parsing and configuration/error handling
+- [x] C++20, CMake, Qt 6.5+, and QML application foundation
+- [x] SQLite database initialization and platform directory creation
+- [x] Game scanning and library registration for N64, PS1, GameCube, and Wii
+- [x] TheGamesDB asynchronous search, platform catalog retrieval, and runtime platform-ID mapping
+- [x] Metadata association with local ROM records without overwriting local titles or paths
+- [x] Cover-art URL parsing, asynchronous download, local caching, and library thumbnails
+- [x] Asynchronous GitHub repository and latest-release discovery
+- [x] Curated, schema-validated recompilation project catalog with an initial Banjo: Recompiled entry
+- [x] Architecture-aware Linux release asset filtering
+- [x] Staged launcher downloads, safe archive extraction, installation validation, managed uninstall, and installed-launcher rediscovery
+- [x] Native launcher process startup and process-state/error reporting
+- [x] Regression tests for the implemented scanner, metadata, artwork, GitHub, catalog, archive, launcher-management, and process-launch components
 
-The API key is read from the process environment and is never written into source files or logs. MetadataManager now coordinates provider searches and exposes configuration, search state, results, and errors to QML. Search results are persisted through the ROM-to-metadata association feature described below.
+## Development principles
 
-### Metadata-to-ROM association
-- [x] Add a local metadata table linked one-to-one with scanned game records
-- [x] Expose local game IDs and existing metadata fields through the game query
-- [x] Allow a user to select a local ROM and associate a TheGamesDB result
-- [x] Allow an existing association to be corrected or replaced
-- [x] Add database regression tests for association, replacement, and invalid game IDs
+1. Keep `main` stable; develop and validate unfinished work on a dedicated branch.
+2. Keep the application buildable and runnable after each focused change.
+3. Preserve working behavior while improving presentation and architecture.
+4. Keep application/business logic in C++ and presentation/navigation in QML.
+5. Prefer small reusable QML components and focused pages over a monolithic main view.
+6. Avoid project-specific assumptions in shared launcher code; put project differences in catalog/configuration data where practical.
+7. Run the existing build and regression suite after meaningful changes, and add tests when backend behavior changes.
+8. Do not remove or invalidate a user's existing build directory or application data as part of routine UI work.
 
-The association feature is merged into main and validated locally. Metadata is stored separately from the scanner's local game title and path, so provider titles do not overwrite local ROM records.
+## Ordered development roadmap
 
-### Artwork retrieval and local caching
-- [x] Parse TheGamesDB front-cover artwork URLs from search results
-- [x] Persist artwork URLs with the metadata association
-- [x] Download supported HTTPS artwork asynchronously
-- [x] Cache artwork under the application data directory
-- [x] Persist cached artwork paths on local game records
-- [x] Display cached cover thumbnails in the game library
-- [x] Add artwork parser, database, and input-validation tests
+### Milestone 1: UI/UX audit and design foundation — current
 
-Merged into main and validated locally on Arch Linux; all four regression test suites passed and artwork association, download, and library display were confirmed.
+Goal: establish a consistent visual language and a clear application structure before adding more features.
 
-### Upcoming development goals
+- [ ] Review every existing page, dialog, navigation path, and major interaction
+- [ ] Record usability issues, inconsistent patterns, missing states, and redundant UI
+- [ ] Agree on the visual direction, including dark/light behavior and accent colors
+- [ ] Define reusable theme tokens for colors, typography, spacing, radii, borders, and elevation
+- [ ] Define shared controls and patterns for buttons, cards, inputs, dialogs, notifications, loading, empty, and error states
+- [ ] Agree on responsive window behavior and sensible minimum dimensions
+- [ ] Document the page hierarchy and navigation model before large-scale QML changes
 
-#### Milestone 5: GitHub API foundation
-- [x] Retrieve public repository information asynchronously
-- [x] Retrieve latest published release information asynchronously
-- [x] Parse release assets, including HTTPS download URLs, content types, and sizes
-- [x] Report API, network, and response-parsing errors
-- [x] Add regression tests for repository and release response parsing
+### Milestone 2: Application shell and navigation
 
-#### Milestone 6: Supported project catalog and Linux launcher discovery
-- [x] Add a versioned, bundled JSON catalog with schema validation
-- [x] Add the first curated project entry: Banjo: Recompiled for N64 Banjo-Kazooie
-- [x] Match associated metadata titles to catalog aliases using normalized title and platform matching
-- [x] Define x86-64 and ARM64 Linux release asset rules; explicitly exclude Windows and Flatpak archives from the initial native archive workflow
-- [x] Record repository identity, ROM revision notes, package format, and expected executable path
-- [x] Expose catalog lookup to the application/QML context
-- [x] Show supported recompilation project matches in the local game library
-- [x] Connect curated projects to GitHub latest-release discovery and present architecture-compatible Linux assets in the Launcher Discovery page
-- [ ] Expand catalog entries after validating the initial end-to-end workflow
+- [ ] Refine the main window, header, navigation/sidebar, content area, and page transitions
+- [ ] Establish consistent page titles, actions, spacing, and scroll behavior
+- [ ] Create reusable QML components only where they remove real duplication
+- [ ] Keep existing pages and backend connections functional throughout the shell refactor
 
-The catalog currently matches the associated metadata title and platform. It does not yet inspect ROM hashes/revisions; the Banjo: Recompiled entry documents its North American 1.0 requirement so we do not imply that title matching proves ROM compatibility.
+### Milestone 3: Game Library experience
 
-#### Milestone 7: Launcher download, installation, and updates
+- [ ] Redesign the library layout, game tiles/cards, cover-art presentation, and information hierarchy
+- [ ] Improve platform filtering, search, sorting, and library empty/loading states
+- [ ] Make metadata association and supported-project status clear without cluttering the library
+- [ ] Refine Play Game, running state, launch errors, and unavailable/incompatible states
+- [ ] Verify artwork fallback behavior and layouts with missing or differently sized cover images
 
-Release discovery is connected to the curated project catalog. The Launcher Discovery page queries a project's latest GitHub release, displays assets matching the current CPU architecture and catalog filename rules, and downloads selected assets to staging. A successful download now triggers background extraction and installation without a separate user action.
+### Milestone 4: Metadata and ROM management experience
 
-The application data directory prepares `downloads/staging` for temporary downloads and installs projects under `launchers/<project-id>`. Existing per-platform directories are retained for compatibility. Directory creation and project-ID path validation have regression tests.
+- [ ] Polish metadata search, platform selection, result presentation, and association workflow
+- [ ] Make selected-ROM context and existing associations clear
+- [ ] Improve scan progress, scan completion, duplicate handling, and error feedback
+- [ ] Provide clear explanations when metadata or artwork is unavailable
 
-The asynchronous download manager streams selected HTTPS release assets into per-project staging folders using atomic temporary files. It reports progress and completion/failure to the Launcher Discovery page, supports cancellation, rejects unsafe project IDs and asset filenames, blocks insecure redirects, limits downloads to 8 GiB, checks the received size against GitHub's reported asset size, and guards against staging-directory symlinks.
+### Milestone 5: Launcher Discovery and installation experience
 
-Installation runs on a background thread and currently supports catalog-declared `tar.gz` and `tar.xz` packages. It validates the expected executable, writes a RecompStation ownership marker and manifest, refuses to overwrite an existing project installation, and promotes the completed directory into its permanent location. The source archive is deleted only after successful installation; failed installs retain it for retry. Installed launchers are rediscovered from their ownership marker and manifest after application restarts. The Launcher Discovery page offers a confirmation-protected uninstall that targets only validated RecompStation-managed launcher directories. Launcher manager regression coverage now creates a small tar.gz fixture, verifies installation and executable permissions, checks discovery from a fresh manager instance, confirms existing installations are not overwritten, and verifies that unowned directories and unrelated files survive uninstall.
-- [x] Download selected release assets into a temporary staging area
-- [x] Safely extract supported tar.gz and tar.xz archives while rejecting path traversal, links, and special files
-- [x] Preserve required directory structure and supporting files during extraction
-- [x] Apply executable permissions and validate the expected launcher executable
-- [x] Install each project into a predictable, project-specific directory
-- [x] Remove downloaded archives only after successful installation
-- [x] Detect installed launchers across application restarts
-- [x] Uninstall managed launcher files after user confirmation
-- [ ] Track installed versions and support updates/rollback-safe replacement
-- [ ] Add recovery and cleanup for abandoned temporary extraction directories
+- [ ] Polish supported-project discovery and release/asset selection
+- [ ] Improve architecture compatibility explanations and unsupported-platform states
+- [ ] Refine download progress, cancellation, extraction, installation, and failure feedback
+- [ ] Improve installed-launcher status and confirmation-protected uninstall
+- [ ] Make it clear which release asset and version are being installed
 
-#### Optional release integrity verification
-- [ ] Detect published SHA-256 checksum files/manifests and verify downloaded assets when available
-- [ ] Detect detached signatures (for example, .sig files) and verify them using a trusted project-specific public key or documented trust mechanism
-- [ ] Store verification status and communicate whether an asset was verified, unavailable for verification, or failed verification
-- [ ] Do not block installation solely because a project publishes no checksum or signature
-- [ ] Treat a published checksum/signature that fails verification as an integrity error and stop installation unless the user explicitly chooses an informed override
+### Milestone 6: Settings, first-run setup, and application feedback
 
-#### Milestone 8: Native game launching
-- [x] Associate installed launchers with supported games in the Game Library
-- [x] Add a Play Game action for supported games with a validated installed launcher
-- [x] Launch the configured executable as a separate desktop process using its installation directory as the working directory
-- [x] Track running process state and report launch failures and unexpected exits
-- [x] Add regression coverage for launching a managed executable and tracking its process lifetime
-- [ ] Add project-specific launch arguments and ROM/revision compatibility checks
+- [ ] Design settings for library paths, platform directories, and application preferences
+- [ ] Improve first-run guidance and configuration validation
+- [ ] Standardize confirmations, notifications, errors, and recovery guidance
+- [ ] Ensure destructive actions are clear and protected
 
+### Milestone 7: UI accessibility, consistency, and regression pass
 
-### Build dependencies
+- [ ] Review keyboard navigation, focus visibility, accessible labels, and contrast
+- [ ] Check layout behavior at different window sizes and display scaling settings
+- [ ] Verify all pages use shared visual tokens and components consistently
+- [ ] Run a full build and regression suite; manually exercise all existing workflows
+- [ ] Fix regressions before considering the UI milestone complete
 
+### Milestone 8: Complete launcher lifecycle
+
+- [ ] Track installed launcher versions and display the installed version
+- [ ] Add update discovery and download flow
+- [ ] Implement rollback-safe replacement so a failed update preserves the last working install
+- [ ] Recover from or clean up abandoned staging/extraction directories safely
+- [ ] Add tests for update failure, recovery, and version state
+
+### Milestone 9: Project-specific launch configuration and compatibility
+
+- [ ] Support project-specific command-line arguments and launch configuration
+- [ ] Pass the correct ROM/game path when required by a project
+- [ ] Define catalog-driven launch behavior rather than hardcoding individual projects
+- [ ] Validate ROM revision/compatibility requirements where reliable data is available
+- [ ] Clearly distinguish title/platform matches from verified ROM compatibility
+
+### Milestone 10: Optional release integrity verification
+
+- [ ] Detect published SHA-256 checksum files or manifests and verify downloaded assets
+- [ ] Detect detached signatures (for example, `.sig`) where projects publish them
+- [ ] Verify signatures only against a trusted, documented project-specific key or trust mechanism
+- [ ] Record and display whether an asset was verified, had no published verification metadata, or failed verification
+- [ ] Do not block installation merely because a publisher provides no checksum or signature
+- [ ] Treat present-but-invalid verification data as an integrity failure and stop installation by default
+
+### Milestone 11: Expand supported project and platform coverage
+
+- [ ] Add curated recompilation projects only after validating their release assets, package layout, executable path, and launch requirements
+- [ ] Expand platform mappings and catalog coverage as supported projects become available
+- [ ] Add package-format support only when a real catalog entry requires it
+- [ ] Validate architecture and operating-system compatibility for each catalog entry
+- [ ] Document project-specific ROM requirements and limitations accurately
+
+## Build and development workflow
+
+Dependencies:
 - Qt 6.5 or newer
+- C++20 compiler and CMake
+- Ninja (recommended by the build script)
 - libarchive (Arch Linux package: `libarchive`)
 
-### Build script
-From the repository root, run:
+Build from the repository root:
 
 ```bash
 ./scripts/build.sh
 ```
 
-Run the build and scanner regression tests together:
+Build and run the regression tests:
 
 ```bash
 ./scripts/build.sh --test
 ```
 
-Choose a build configuration with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`. The script enables tests by default and reuses the generator already configured in the build directory.
+Choose a configuration:
+
+```bash
+./scripts/build.sh Release
+./scripts/build.sh RelWithDebInfo
+```
+
+The build script reuses the generator and build directory already configured. During UI work, prefer incremental builds and retain the existing build directory so normal iteration remains quick. Use a clean build only when diagnosing a build-system or stale-artifact problem, not as a routine step.
+
+## Definition of done
+
+A milestone is complete when its checklist is satisfied, the application builds, relevant automated tests pass, existing workflows have been manually checked where appropriate, and the documentation reflects the actual state. A feature being present in code does not by itself mean it is validated or ready to merge.
