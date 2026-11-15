@@ -84,14 +84,14 @@ The catalog currently matches the associated metadata title and platform. It doe
 
 #### Milestone 7: Launcher download, installation, and updates
 
-Release discovery is connected to the curated project catalog. The Launcher Discovery page can query a project's latest GitHub release, display assets matching the current CPU architecture and catalog filename rules, and download selected assets to staging. Archive extraction and installation are not implemented yet.
+Release discovery is connected to the curated project catalog. The Launcher Discovery page can query a project's latest GitHub release, display assets matching the current CPU architecture and catalog filename rules, and download selected assets to staging. The standalone archive extraction backend is implemented and tested; it is not yet connected to the QML download workflow or final installation process.
 The application data directory prepares `downloads/staging` for temporary downloads and exposes validated project-specific paths under `launchers/<project-id>`. Existing per-platform directories are retained for compatibility. Directory creation and project-ID path validation have regression tests.
 
-The asynchronous download manager now streams selected HTTPS release assets into per-project staging folders using atomic temporary files. It reports progress and completion/failure to the Launcher Discovery page, supports cancellation, rejects unsafe project IDs and asset filenames, blocks insecure redirects, limits downloads to 8 GiB, checks the received size against GitHub's reported asset size, and guards against staging-directory symlinks. Downloads are staged only; archive extraction and installation are not implemented yet.
+The asynchronous download manager now streams selected HTTPS release assets into per-project staging folders using atomic temporary files. It reports progress and completion/failure to the Launcher Discovery page, supports cancellation, rejects unsafe project IDs and asset filenames, blocks insecure redirects, limits downloads to 8 GiB, checks the received size against GitHub's reported asset size, and guards against staging-directory symlinks. Downloads are staged only; extraction is currently a separate backend step.
 - [x] Download selected release assets into a temporary staging area
-- [ ] Safely extract supported archives while preventing path traversal and writes outside the staging directory
-- [ ] Preserve required directory structure and supporting files
-- [ ] Apply executable permissions where appropriate and validate the installed launcher
+- [x] Safely extract supported tar.gz and tar.xz archives while rejecting path traversal, links, and special files
+- [x] Preserve required directory structure and supporting files during extraction
+- [x] Apply executable permissions and validate the expected launcher executable
 - [ ] Install each project into a predictable, project-specific directory
 - [ ] Remove downloaded archives and temporary files only after successful installation
 - [ ] Track installed versions and support updates/rollback-safe replacement
@@ -109,6 +109,11 @@ The asynchronous download manager now streams selected HTTPS release assets into
 - [ ] Launch the configured executable with project-specific arguments
 - [ ] Track process state and report launch/runtime errors
 
+
+### Build dependencies
+
+- Qt 6.5 or newer
+- libarchive (Arch Linux package: `libarchive`)
 
 ### Build script
 From the repository root, run:
