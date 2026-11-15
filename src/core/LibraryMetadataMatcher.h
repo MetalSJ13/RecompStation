@@ -28,7 +28,7 @@ public:
     int totalCount() const;
     QString status() const;
 
-    Q_INVOKABLE void scrapeLibrary();
+    Q_INVOKABLE void scrapeLibrary(bool includePreviouslyChecked = false);
 
     static int exactMatchIndex(const QString &localTitle,
                                const QVariantList &results);
