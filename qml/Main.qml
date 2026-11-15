@@ -740,46 +740,89 @@ Package: " + gameDetailsPopup.selectedAssetName
 
                         RowLayout {
                             Layout.fillWidth: true
+                            spacing: 16
+
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 4
+                                spacing: 5
                                 Label {
-                                    text: selectedPlatform === "All Games" ? "Game Library" : selectedPlatform
-                                    font.pixelSize: 30
+                                    text: selectedPlatform === "All Games" ? "Your Collection" : selectedPlatform
+                                    font.pixelSize: 32
                                     font.bold: true
-                                    color: "white"
+                                    color: theme.textPrimary
                                 }
-                                Label {
-                                    text: "Manage and launch your recompiled games."
-                                    color: "#9999aa"
-                                    font.pixelSize: 14
+                                RowLayout {
+                                    spacing: 8
+                                    Label {
+                                        text: gameGrid.count + (gameGrid.count === 1 ? " GAME" : " GAMES")
+                                        color: theme.accentHover
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                    }
+                                    Rectangle {
+                                        width: 4
+                                        height: 4
+                                        radius: 2
+                                        color: theme.textMuted
+                                    }
+                                    Label {
+                                        text: "Your recompiled game library"
+                                        color: theme.textMuted
+                                        font.pixelSize: 13
+                                    }
                                 }
                             }
+
                             TextField {
-                                Layout.preferredWidth: 230
-                                placeholderText: "Search your games..."
+                                Layout.preferredWidth: 220
+                                Layout.preferredHeight: 42
+                                placeholderText: "Search collection"
                                 selectByMouse: true
                                 onTextChanged: window.librarySearchText = text
                             }
                             ComboBox {
-                                Layout.preferredWidth: 190
+                                Layout.preferredWidth: 170
+                                Layout.preferredHeight: 42
                                 model: ["All Games"].concat(platformManager.platforms())
                                 currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
                                 onActivated: window.selectedPlatform = currentText
                             }
-                            Button {
-                                text: "Refresh Metadata & Artwork"
-                                onClicked: {
-                                    scanMessage = "Refreshing metadata and missing artwork..."
-                                    metadataMatcher.scrapeLibrary(true)
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 54
+                            radius: theme.radiusCard
+                            color: theme.surface
+                            border.color: theme.divider
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 14
+                                anchors.rightMargin: 10
+                                spacing: 10
+
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "LIBRARY MANAGEMENT"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                    font.letterSpacing: 1
                                 }
-                            }
-                            Button {
-                                text: "Scan Library"
-                                highlighted: true
-                                onClicked: {
-                                    scanMessage = "Scanning game folders..."
-                                    libraryScanner.scanAll()
+                                Button {
+                                    text: "Refresh Metadata"
+                                    onClicked: {
+                                        scanMessage = "Refreshing metadata and missing artwork..."
+                                        metadataMatcher.scrapeLibrary(true)
+                                    }
+                                }
+                                Button {
+                                    text: "Scan Library"
+                                    highlighted: true
+                                    onClicked: {
+                                        scanMessage = "Scanning game folders..."
+                                        libraryScanner.scanAll()
+                                    }
                                 }
                             }
                         }
@@ -796,8 +839,9 @@ Package: " + gameDetailsPopup.selectedAssetName
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            cellWidth: 194
-                            cellHeight: 270
+                            cellWidth: Math.max(184, Math.min(232,
+                                Math.floor(width / Math.max(1, Math.floor(width / 216)))))
+                            cellHeight: Math.round(cellWidth * 1.34)
                             keyNavigationEnabled: true
                             model: {
                                 window.libraryRevision
@@ -838,6 +882,10 @@ Package: " + gameDetailsPopup.selectedAssetName
                                 width: gameGrid.cellWidth - 14
                                 height: gameGrid.cellHeight - 14
                                 focus: GridView.isCurrentItem
+                                scale: tileMouse.containsMouse || gameTile.GridView.isCurrentItem ? 1.025 : 1.0
+                                Behavior on scale {
+                                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                                }
 
                                 Rectangle {
                                     anchors.fill: parent
@@ -846,6 +894,12 @@ Package: " + gameDetailsPopup.selectedAssetName
                                     border.width: tileMouse.containsMouse || gameTile.GridView.isCurrentItem ? 2 : 1
                                     border.color: tileMouse.containsMouse || gameTile.GridView.isCurrentItem
                                         ? theme.accent : theme.divider
+                                    Behavior on border.color {
+                                        ColorAnimation { duration: 140 }
+                                    }
+                                    Behavior on border.width {
+                                        NumberAnimation { duration: 140 }
+                                    }
 
                                     ColumnLayout {
                                         anchors.fill: parent
@@ -855,7 +909,7 @@ Package: " + gameDetailsPopup.selectedAssetName
                                         Rectangle {
                                             Layout.fillWidth: true
                                             Layout.fillHeight: true
-                                            Layout.minimumHeight: 150
+                                            Layout.minimumHeight: 165
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
                                             clip: true
@@ -930,14 +984,56 @@ Package: " + gameDetailsPopup.selectedAssetName
                             ScrollBar.vertical: ScrollBar {}
                         }
 
-                        Label {
-                            Layout.alignment: Qt.AlignHCenter
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
                             visible: gameGrid.count === 0
-                            text: window.librarySearchText.trim().length > 0
-                                ? "No games match your search."
-                                : "Your library is empty. Add game files to a platform folder, then scan."
-                            color: theme.textMuted
-                            wrapMode: Text.Wrap
+                            radius: theme.radiusLarge
+                            color: theme.surface
+                            border.color: theme.divider
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                width: Math.min(parent.width - 48, 440)
+                                spacing: 12
+                                Label {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: window.librarySearchText.trim().length > 0 ? "NO MATCHES" : "WELCOME TO YOUR COLLECTION"
+                                    color: theme.accentHover
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    font.letterSpacing: 1.4
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: window.librarySearchText.trim().length > 0
+                                        ? "No games match your search."
+                                        : "Your library is ready for its first game."
+                                    color: theme.textPrimary
+                                    font.pixelSize: 22
+                                    font.bold: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: window.librarySearchText.trim().length === 0
+                                    text: "Add game files to one of your platform folders, then scan your library to discover them."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 13
+                                    horizontalAlignment: Text.AlignHCenter
+                                    wrapMode: Text.Wrap
+                                }
+                                Button {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    visible: window.librarySearchText.trim().length === 0
+                                    text: "Scan Library"
+                                    highlighted: true
+                                    onClicked: {
+                                        scanMessage = "Scanning game folders..."
+                                        libraryScanner.scanAll()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
