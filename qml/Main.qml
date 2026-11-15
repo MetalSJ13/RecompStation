@@ -345,10 +345,17 @@ ApplicationWindow {
             : ({ loading: false, error: "", release: null, assets: [] })
         property var releaseInfo: releaseState && releaseState.release
             ? releaseState.release : null
+        // Keep nullable API objects out of text bindings. Release lookups are
+        // asynchronous, so these strings remain safe while the popup opens.
+        property string releaseTag: releaseState && releaseState.release
+            && releaseState.release.tagName
+            ? String(releaseState.release.tagName) : "Not available"
         property var compatibleAssets: releaseState && releaseState.assets
             ? releaseState.assets : []
         property var selectedAsset: compatibleAssets.length > 0
             ? compatibleAssets[0] : null
+        property string selectedAssetName: selectedAsset && selectedAsset.name
+            ? String(selectedAsset.name) : "Not available"
         property var downloadState: primaryProject && selectedAsset
             ? (window.downloadStates[primaryProject.id + "|" + selectedAsset.name]
                 || ({ loading: false, installing: false, error: "",
@@ -518,12 +525,9 @@ ApplicationWindow {
                             && !!gameDetailsPopup.releaseInfo
                             && gameDetailsPopup.selectedAsset !== null
                             && gameDetailsPopup.installedProject === null
-                        text: "Available version: "
-                            + (gameDetailsPopup.releaseInfo
-                                ? gameDetailsPopup.releaseInfo.tagName : "")
+                        text: "Available version: " + gameDetailsPopup.releaseTag
                             + "  •  Linux (" + projectCatalog.currentArchitecture + ")"
-                            + "\\nPackage: " + (gameDetailsPopup.selectedAsset
-                                ? gameDetailsPopup.selectedAsset.name : "")
+                            + "\\nPackage: " + gameDetailsPopup.selectedAssetName
                         color: theme.textSecondary
                         wrapMode: Text.Wrap
                     }
