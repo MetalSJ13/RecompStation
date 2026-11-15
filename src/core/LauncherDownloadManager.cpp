@@ -408,14 +408,16 @@ int LauncherDownloadManager::installDownloadedAsset(
     }
 
     const QString destination = QDir(canonicalLauncherRoot).filePath(projectId);
-    if (QFileInfo::exists(destination)) {
+    const QFileInfo destinationInfo(destination);
+    if (destinationInfo.exists() || destinationInfo.isSymLink()) {
         reject(QStringLiteral("A launcher is already installed for this project. Existing installations will not be overwritten."));
         return requestId;
     }
 
     const QString extractionPath = QDir(canonicalProjectStaging)
         .filePath(assetName + ".extracting-" + QUuid::createUuid().toString(QUuid::WithoutBraces));
-    if (QFileInfo::exists(extractionPath)) {
+    const QFileInfo extractionInfo(extractionPath);
+    if (extractionInfo.exists() || extractionInfo.isSymLink()) {
         reject(QStringLiteral("A temporary extraction directory already exists; refusing to overwrite it."));
         return requestId;
     }
@@ -453,7 +455,8 @@ int LauncherDownloadManager::installDownloadedAsset(
             return;
         }
 
-        if (QFileInfo::exists(destination)
+        const QFileInfo finalDestinationInfo(destination);
+        if (finalDestinationInfo.exists() || finalDestinationInfo.isSymLink()
             || !QDir().rename(extractionPath, destination)) {
             QDir(extractionPath).removeRecursively();
             emit installationFailed(requestId, QStringLiteral("Could not safely move the extracted launcher into its permanent installation directory. Existing files were left untouched."));
