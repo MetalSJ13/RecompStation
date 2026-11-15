@@ -42,7 +42,7 @@ QList<QJsonObject> gameObjects(const QJsonValue &value)
     return objects;
 }
 
-QString frontBoxartUrl(const QJsonObject &root, int gameId)
+QString frontBoxartUrl(const QJsonObject &root, int gameId, int *pixelCount)
 {
     const QJsonObject boxart =
         root.value(QStringLiteral("include")).toObject()
@@ -64,6 +64,8 @@ QString frontBoxartUrl(const QJsonObject &root, int gameId)
             .value(QString::number(gameId)).toArray();
     QString frontFilename;
     QString fallbackFilename;
+    QString frontResolution;
+    QString fallbackResolution;
     for (const QJsonValue &entry : images) {
         if (!entry.isObject())
             continue;
@@ -72,17 +74,33 @@ QString frontBoxartUrl(const QJsonObject &root, int gameId)
             image.value(QStringLiteral("filename")).toString().trimmed();
         if (filename.isEmpty())
             continue;
-        if (fallbackFilename.isEmpty())
+        if (fallbackFilename.isEmpty()) {
             fallbackFilename = filename;
+            fallbackResolution = image.value(QStringLiteral("resolution")).toString();
+        }
         if (image.value(QStringLiteral("side")).toString().compare(
                 QStringLiteral("front"), Qt::CaseInsensitive) == 0) {
             frontFilename = filename;
+            frontResolution = image.value(QStringLiteral("resolution")).toString();
             break;
         }
     }
 
-    const QString filename =
-        frontFilename.isEmpty() ? fallbackFilename : frontFilename;
+    const bool hasFront = !frontFilename.isEmpty();
+    const QString filename = hasFront ? frontFilename : fallbackFilename;
+    const QString resolution = hasFront ? frontResolution : fallbackResolution;
+    if (pixelCount) {
+        *pixelCount = 0;
+        const QStringList dimensions = resolution.split(QLatin1Char('x'));
+        if (dimensions.size() == 2) {
+            bool widthOk = false;
+            bool heightOk = false;
+            const int width = dimensions.at(0).toInt(&widthOk);
+            const int height = dimensions.at(1).toInt(&heightOk);
+            if (widthOk && heightOk && width > 0 && height > 0)
+                *pixelCount = width * height;
+        }
+    }
     if (filename.isEmpty())
         return {};
     if (!baseUrl.endsWith(QLatin1Char('/')))
@@ -273,7 +291,8 @@ bool TheGamesDbClient::parseSearchResponse(const QByteArray &response,
             integerList(game.value(QStringLiteral("publishers")));
         metadata.genreIds =
             integerList(game.value(QStringLiteral("genres")));
-        metadata.artworkUrl = frontBoxartUrl(root, metadata.providerGameId);
+        metadata.artworkUrl = frontBoxartUrl(
+            root, metadata.providerGameId, &metadata.artworkPixelCount);
 
         const QString releaseDate =
             game.value(QStringLiteral("release_date")).toString();
