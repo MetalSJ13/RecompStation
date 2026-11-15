@@ -660,7 +660,9 @@ ApplicationWindow {
                                 required property string metadataOverview
                                 required property string metadataReleaseDate
                                 required property string metadataRating
-                                property int gameId: model.id
+                                required property int id
+                                required property int index
+                                property int gameId: id
                                 function openDetails() {
                                     window.selectedGame = {
                                         id: gameTile.gameId,
@@ -759,7 +761,7 @@ ApplicationWindow {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     onClicked: {
-                                        gameGrid.currentIndex = index
+                                        gameGrid.currentIndex = gameTile.index
                                         gameTile.openDetails()
                                     }
                                 }
