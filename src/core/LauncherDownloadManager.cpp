@@ -78,8 +78,23 @@ int LauncherDownloadManager::downloadAsset(
         return requestId;
     }
 
+    const QString stagingDirectory = m_platformManager->stagingDirectory();
+    const QString canonicalStagingRoot =
+        QFileInfo(stagingDirectory).canonicalFilePath();
+    const QString expectedStagingRoot = QDir(stagingDirectory).absolutePath();
+    if (canonicalStagingRoot.isEmpty()
+        || canonicalStagingRoot != expectedStagingRoot) {
+        QTimer::singleShot(0, this, [this, requestId]() {
+            emit downloadFailed(
+                requestId,
+                QStringLiteral("The download staging directory must not resolve through a symlink.")
+            );
+        });
+        return requestId;
+    }
+
     const QString projectStagingPath =
-        QDir(m_platformManager->stagingDirectory()).filePath(projectId);
+        QDir(stagingDirectory).filePath(projectId);
     if (!QDir().mkpath(projectStagingPath)) {
         QTimer::singleShot(0, this, [this, requestId]() {
             emit downloadFailed(
@@ -90,15 +105,9 @@ int LauncherDownloadManager::downloadAsset(
         return requestId;
     }
 
-    const QString stagingDirectory = m_platformManager->stagingDirectory();
-    const QString canonicalStagingRoot =
-        QFileInfo(stagingDirectory).canonicalFilePath();
-    const QString expectedStagingRoot = QDir(stagingDirectory).absolutePath();
     const QString canonicalProjectStaging =
         QFileInfo(projectStagingPath).canonicalFilePath();
-    if (canonicalStagingRoot.isEmpty()
-        || canonicalStagingRoot != expectedStagingRoot
-        || canonicalProjectStaging.isEmpty()
+    if (canonicalProjectStaging.isEmpty()
         || !canonicalProjectStaging.startsWith(
             canonicalStagingRoot + QDir::separator())) {
         QTimer::singleShot(0, this, [this, requestId]() {
