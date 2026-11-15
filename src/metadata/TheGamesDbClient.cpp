@@ -49,32 +49,42 @@ QString frontBoxartUrl(const QJsonObject &root, int gameId)
             .value(QStringLiteral("boxart")).toObject();
     const QJsonObject baseUrls =
         boxart.value(QStringLiteral("base_url")).toObject();
-    QString baseUrl = baseUrls.value(QStringLiteral("original")).toString();
-    if (baseUrl.isEmpty())
-        baseUrl = baseUrls.value(QStringLiteral("large")).toString();
+    QString baseUrl;
+    for (const QString &size : {QStringLiteral("original"), QStringLiteral("large"),
+                                QStringLiteral("medium"), QStringLiteral("thumb")}) {
+        baseUrl = baseUrls.value(size).toString();
+        if (!baseUrl.isEmpty())
+            break;
+    }
     if (baseUrl.isEmpty())
         return {};
 
-    const QJsonObject imagesByGame = boxart.value(QStringLiteral("data")).toObject();
     const QJsonArray images =
-        imagesByGame.value(QString::number(gameId)).toArray();
-
-    QString filename;
+        boxart.value(QStringLiteral("data")).toObject()
+            .value(QString::number(gameId)).toArray();
+    QString frontFilename;
+    QString fallbackFilename;
     for (const QJsonValue &entry : images) {
         if (!entry.isObject())
             continue;
         const QJsonObject image = entry.toObject();
-        if (image.value(QStringLiteral("side")).toString()
-                == QStringLiteral("front")) {
-            filename = image.value(QStringLiteral("filename")).toString().trimmed();
-            if (!filename.isEmpty())
-                break;
+        const QString filename =
+            image.value(QStringLiteral("filename")).toString().trimmed();
+        if (filename.isEmpty())
+            continue;
+        if (fallbackFilename.isEmpty())
+            fallbackFilename = filename;
+        if (image.value(QStringLiteral("side")).toString().compare(
+                QStringLiteral("front"), Qt::CaseInsensitive) == 0) {
+            frontFilename = filename;
+            break;
         }
     }
 
+    const QString filename =
+        frontFilename.isEmpty() ? fallbackFilename : frontFilename;
     if (filename.isEmpty())
         return {};
-
     if (!baseUrl.endsWith(QLatin1Char('/')))
         baseUrl.append(QLatin1Char('/'));
     const QUrl resolved = QUrl(baseUrl).resolved(QUrl(filename));
