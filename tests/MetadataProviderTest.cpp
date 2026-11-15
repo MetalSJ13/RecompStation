@@ -88,6 +88,29 @@ private slots:
         QCOMPARE(game.genreIds, (QList<int>{1, 8}));
     }
 
+    void fallsBackToAvailableArtworkWhenFrontCoverIsMissing()
+    {
+        const QByteArray json = R"({
+            "include": {
+                "boxart": {
+                    "base_url": {"thumb": "https://cdn.example.test/thumb/"},
+                    "data": {"10": [{"side": "back", "filename": "game-back.jpg"}]}
+                }
+            },
+            "data": {
+                "games": [{"id": 10, "game_title": "Metroid Prime 3"}]
+            }
+        })";
+
+        QList<GameMetadata> results;
+        QString error;
+        QVERIFY2(TheGamesDbClient::parseSearchResponse(json, &results, &error),
+                 qPrintable(error));
+        QCOMPARE(results.size(), 1);
+        QCOMPARE(results.first().artworkUrl,
+                 QStringLiteral("https://cdn.example.test/thumb/game-back.jpg"));
+    }
+
     void acceptsArrayGamePayloadsToo()
     {
         const QByteArray json = R"({"data":{"games":[{"id":9,"game_title":"Example"}]}})";
