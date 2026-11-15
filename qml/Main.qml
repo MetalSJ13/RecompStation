@@ -554,16 +554,6 @@ ApplicationWindow {
                                             && !window.runningLaunchers[supportedProjects[0].id]
                                         onClicked: window.launchSupportedGame(supportedProjects[0].id)
                                     }
-                                    Button {
-                                        visible: installedProject !== null
-                                        text: installedProject !== null
-                                            && window.runningLaunchers[supportedProjects[0].id]
-                                            ? "Running…" : "Play Game"
-                                        highlighted: true
-                                        enabled: installedProject !== null
-                                            && !window.runningLaunchers[supportedProjects[0].id]
-                                        onClicked: window.launchSupportedGame(supportedProjects[0].id)
-                                    }
                                 }
                             }
                             ScrollBar.vertical: ScrollBar {}
