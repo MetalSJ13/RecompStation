@@ -661,6 +661,20 @@ ApplicationWindow {
                                 required property string metadataReleaseDate
                                 required property string metadataRating
                                 property int gameId: model.id
+                                function openDetails() {
+                                    window.selectedGame = {
+                                        id: gameTile.gameId,
+                                        title: gameTile.title,
+                                        platform: gameTile.platform,
+                                        path: gameTile.path,
+                                        artworkPath: gameTile.artworkPath,
+                                        metadataTitle: gameTile.metadataTitle,
+                                        metadataOverview: gameTile.metadataOverview,
+                                        metadataReleaseDate: gameTile.metadataReleaseDate,
+                                        metadataRating: gameTile.metadataRating
+                                    }
+                                    gameDetailsPopup.open()
+                                }
                                 width: gameGrid.cellWidth - 14
                                 height: gameGrid.cellHeight - 14
                                 focus: GridView.isCurrentItem
@@ -746,23 +760,12 @@ ApplicationWindow {
                                     hoverEnabled: true
                                     onClicked: {
                                         gameGrid.currentIndex = index
-                                        window.selectedGame = {
-                                            id: gameTile.gameId,
-                                            title: gameTile.title,
-                                            platform: gameTile.platform,
-                                            path: gameTile.path,
-                                            artworkPath: gameTile.artworkPath,
-                                            metadataTitle: gameTile.metadataTitle,
-                                            metadataOverview: gameTile.metadataOverview,
-                                            metadataReleaseDate: gameTile.metadataReleaseDate,
-                                            metadataRating: gameTile.metadataRating
-                                        }
-                                        gameDetailsPopup.open()
+                                        gameTile.openDetails()
                                     }
                                 }
 
-                                Keys.onReturnPressed: tileMouse.clicked(Qt.LeftButton)
-                                Keys.onEnterPressed: tileMouse.clicked(Qt.LeftButton)
+                                Keys.onReturnPressed: gameTile.openDetails()
+                                Keys.onEnterPressed: gameTile.openDetails()
                             }
                             ScrollBar.vertical: ScrollBar {}
                         }
