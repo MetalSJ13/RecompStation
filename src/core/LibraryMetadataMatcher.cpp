@@ -11,26 +11,11 @@
 namespace {
 QString normalizedTitle(QString title)
 {
-    // Region/revision tags commonly included in ROM filenames are not part
-    // of the canonical game title.
-    static const QRegularExpression releaseTag(
-        QStringLiteral(R"((\\([^)]*\\)|\\[[^]]*\\]))"));
-    static const QRegularExpression knownTag(
-        QStringLiteral(R"(^\\s*(usa|us|europe|eur|e|japan|jpn|jp|world|rev(?:ision)?\\s*[a-z0-9]*|v?\\d+(?:\\.\\d+)*|en|fr|de|es|it|u|e|j)\\s*$)"),
+    static const QRegularExpression regionTag(
+        QStringLiteral(R"(\\s*\\((?:USA|US|Europe|EUR|Japan|JPN|World|Rev(?:ision)? ?[A-Z0-9]*)\\)|\\s*\\[(?:!|b)\\])"),
         QRegularExpression::CaseInsensitiveOption);
-    QRegularExpressionMatchIterator tags = releaseTag.globalMatch(title);
-    QString cleaned;
-    int last = 0;
-    while (tags.hasNext()) {
-        const auto match = tags.next();
-        cleaned += title.mid(last, match.capturedStart() - last);
-        const QString tag = match.captured().mid(1, match.capturedLength() - 2);
-        if (!knownTag.match(tag).hasMatch())
-            cleaned += match.captured();
-        last = match.capturedEnd();
-    }
-    cleaned += title.mid(last);
-    title = cleaned.normalized(QString::NormalizationForm_D);
+    title.remove(regionTag);
+    title = title.normalized(QString::NormalizationForm_D);
     QString result;
     result.reserve(title.size());
 
@@ -45,7 +30,6 @@ QString normalizedTitle(QString title)
         else
             result.append(QLatin1Char(' '));
     }
-
     return result.simplified();
 }
 }
@@ -62,7 +46,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
     if (!m_metadata)
         return;
 
-    connect(m_metadata, &MetadataManager::platformOptionsChanged,
+    if (m_artwork) {\n        connect(m_artwork, &ArtworkManager::artworkFailed, this,\n                [this](int gameId, const QString &message) {\n            setStatus(QStringLiteral("Artwork for game %1 could not be downloaded: %2")\n                          .arg(gameId).arg(message));\n        });\n    }\n\n    connect(m_metadata, &MetadataManager::platformOptionsChanged,
             this, [this]() {
         if (!m_busy && !m_queue.isEmpty()) {
             setBusy(true);
@@ -164,7 +148,7 @@ int LibraryMetadataMatcher::exactMatchIndex(const QString &localTitle,
     return match;
 }
 
-void LibraryMetadataMatcher::scrapeLibrary()
+void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked)
 {
     if (m_busy || !m_database || !m_metadata)
         return;
@@ -174,7 +158,7 @@ void LibraryMetadataMatcher::scrapeLibrary()
         return;
     }
 
-    const QVariantList games = m_database->gamesNeedingMetadata();
+    const QVariantList games = m_database->gamesNeedingMetadata(includePreviouslyChecked);
     m_queue.clear();
     for (const QVariant &entry : games)
         m_queue.enqueue(entry.toMap());
