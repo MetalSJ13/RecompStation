@@ -883,10 +883,6 @@ Package: " + gameDetailsPopup.selectedAssetName
                                 width: gameGrid.cellWidth - 14
                                 height: gameGrid.cellHeight - 14
                                 focus: GridView.isCurrentItem
-                                scale: tileMouse.containsMouse || gameTile.GridView.isCurrentItem ? 1.025 : 1.0
-                                Behavior on scale {
-                                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-                                }
 
                                 Rectangle {
                                     anchors.fill: parent
