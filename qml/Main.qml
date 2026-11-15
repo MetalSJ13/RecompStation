@@ -815,6 +815,21 @@ ApplicationWindow {
                                                     enabled: !downloadState.loading && !downloadState.completed
                                                     onClicked: window.startAssetDownload(modelData.project, modelData)
                                                 }
+                                                Label {
+                                                    property string downloadKey: modelData.projectId + "|" + modelData.name
+                                                    property var downloadState: window.downloadStates[downloadKey]
+                                                        || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
+                                                    visible: downloadState.loading || downloadState.completed || downloadState.error.length > 0
+                                                    Layout.maximumWidth: 190
+                                                    text: downloadState.error.length > 0 ? downloadState.error
+                                                        : downloadState.completed ? "Saved to staging"
+                                                        : downloadState.bytesTotal > 0
+                                                            ? Math.floor(downloadState.bytesReceived / downloadState.bytesTotal * 100) + "%"
+                                                            : (downloadState.bytesReceived / 1048576).toFixed(1) + " MB"
+                                                    color: downloadState.error.length > 0 ? "#ff8b8b" : "#a98cff"
+                                                    font.pixelSize: 10
+                                                    wrapMode: Text.Wrap
+                                                }
                                             }
                                         }
                                     }
