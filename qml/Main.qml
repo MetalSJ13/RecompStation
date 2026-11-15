@@ -519,9 +519,11 @@ ApplicationWindow {
                             && gameDetailsPopup.selectedAsset !== null
                             && gameDetailsPopup.installedProject === null
                         text: "Available version: "
-                            + gameDetailsPopup.releaseInfo ? gameDetailsPopup.releaseInfo.tagName : ""
+                            + (gameDetailsPopup.releaseInfo
+                                ? gameDetailsPopup.releaseInfo.tagName : "")
                             + "  •  Linux (" + projectCatalog.currentArchitecture + ")"
-                            + "\\nPackage: " + gameDetailsPopup.selectedAsset ? gameDetailsPopup.selectedAsset.name : ""
+                            + "\\nPackage: " + (gameDetailsPopup.selectedAsset
+                                ? gameDetailsPopup.selectedAsset.name : "")
                         color: theme.textSecondary
                         wrapMode: Text.Wrap
                     }
