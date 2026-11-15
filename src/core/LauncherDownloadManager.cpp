@@ -2,6 +2,10 @@
 
 #include "PlatformManager.h"
 
+#include <QtConcurrent/QtConcurrentRun>
+#include <QFile>
+#include <QSaveFile>
+
 #include <QDir>
 #include <QFileInfo>
 #include <QNetworkReply>
@@ -338,4 +342,155 @@ bool LauncherDownloadManager::isValidHttpsUrl(const QString &value)
         && url.scheme() == QStringLiteral("https")
         && !url.host().isEmpty()
         && url.userInfo().isEmpty();
+}
+
+
+int LauncherDownloadManager::installDownloadedAsset(
+    const QString &projectId,
+    const QString &assetName,
+    const QString &packageFormat,
+    const QString &expectedExecutable
+)
+{
+    const int requestId = m_nextRequestId++;
+    auto reject = [this, requestId](const QString &message) {
+        QTimer::singleShot(0, this, [this, requestId, message]() {
+            emit installationFailed(requestId, message);
+        });
+    };
+
+    if (!m_platformManager || !isValidProjectId(projectId)
+        || !isValidAssetName(assetName)) {
+        reject(QStringLiteral("The project identifier or release asset filename is invalid."));
+        return requestId;
+    }
+    if (packageFormat != QStringLiteral("tar.gz")
+        && packageFormat != QStringLiteral("tar.xz")) {
+        reject(QStringLiteral("This package format is not supported by the automatic installer."));
+        return requestId;
+    }
+    if (!isSafeRelativePath(expectedExecutable)) {
+        reject(QStringLiteral("The expected launcher executable path is invalid."));
+        return requestId;
+    }
+    if (m_activeInstallProjects.contains(projectId)) {
+        reject(QStringLiteral("An installation for this project is already in progress."));
+        return requestId;
+    }
+
+    const QString dataRoot = QFileInfo(m_platformManager->dataDirectory()).canonicalFilePath();
+    const QString stagingRoot = QFileInfo(m_platformManager->stagingDirectory()).canonicalFilePath();
+    if (dataRoot.isEmpty() || stagingRoot != QDir(dataRoot).filePath("downloads/staging")) {
+        reject(QStringLiteral("The application or staging directory resolves through an unexpected filesystem path."));
+        return requestId;
+    }
+
+    const QString projectStaging = QDir(stagingRoot).filePath(projectId);
+    const QString canonicalProjectStaging = QFileInfo(projectStaging).canonicalFilePath();
+    if (canonicalProjectStaging != projectStaging) {
+        reject(QStringLiteral("The project staging directory is missing or resolves through a symlink."));
+        return requestId;
+    }
+
+    const QString archivePath = QDir(canonicalProjectStaging).filePath(assetName);
+    const QFileInfo archiveInfo(archivePath);
+    if (!archiveInfo.isFile() || archiveInfo.isSymLink() || !archiveInfo.isReadable()) {
+        reject(QStringLiteral("The downloaded archive is missing, unreadable, or is a symbolic link."));
+        return requestId;
+    }
+
+    const QString launcherRoot = QDir(dataRoot).filePath("launchers");
+    const QString canonicalLauncherRoot = QFileInfo(launcherRoot).canonicalFilePath();
+    if (canonicalLauncherRoot != launcherRoot) {
+        reject(QStringLiteral("The launcher installation directory resolves through an unexpected filesystem path."));
+        return requestId;
+    }
+
+    const QString destination = QDir(canonicalLauncherRoot).filePath(projectId);
+    if (QFileInfo::exists(destination)) {
+        reject(QStringLiteral("A launcher is already installed for this project. Existing installations will not be overwritten."));
+        return requestId;
+    }
+
+    const QString extractionPath = QDir(canonicalProjectStaging)
+        .filePath(assetName + ".extracting-" + QString::number(requestId));
+    if (QFileInfo::exists(extractionPath)) {
+        reject(QStringLiteral("A temporary extraction directory already exists; refusing to overwrite it."));
+        return requestId;
+    }
+
+    m_activeInstallProjects.insert(projectId);
+    auto *watcher = new QFutureWatcher<ArchiveExtractor::Result>(this);
+    m_installations.insert(requestId, watcher);
+    connect(watcher, &QFutureWatcher<ArchiveExtractor::Result>::finished,
+            this, [this, watcher, requestId, projectId, archivePath,
+                   extractionPath, destination, expectedExecutable]() {
+        const ArchiveExtractor::Result result = watcher->result();
+        m_installations.remove(requestId);
+        m_activeInstallProjects.remove(projectId);
+        watcher->deleteLater();
+
+        if (!result.success) {
+            emit installationFailed(requestId, result.error);
+            return;
+        }
+
+        const QString markerPath = QDir(extractionPath).filePath(".recompstation-managed");
+        const QString manifestPath = QDir(extractionPath).filePath(".recompstation-install");
+        QSaveFile marker(markerPath);
+        QSaveFile manifest(manifestPath);
+        const QByteArray markerContent("RecompStation managed launcher installation v1\n");
+        const QByteArray manifestContent = expectedExecutable.toUtf8() + "\n";
+        if (!marker.open(QIODevice::WriteOnly)
+            || marker.write(markerContent) != markerContent.size()
+            || !marker.commit()
+            || !manifest.open(QIODevice::WriteOnly)
+            || manifest.write(manifestContent) != manifestContent.size()
+            || !manifest.commit()) {
+            QDir(extractionPath).removeRecursively();
+            emit installationFailed(requestId, QStringLiteral("Could not write the launcher ownership marker and installation manifest."));
+            return;
+        }
+
+        if (QFileInfo::exists(destination)
+            || !QDir().rename(extractionPath, destination)) {
+            QDir(extractionPath).removeRecursively();
+            emit installationFailed(requestId, QStringLiteral("Could not safely move the extracted launcher into its permanent installation directory. Existing files were left untouched."));
+            return;
+        }
+
+        const QString executablePath = QDir(destination).filePath(expectedExecutable);
+        const QFileInfo installedExecutable(executablePath);
+        if (!installedExecutable.isFile() || installedExecutable.isSymLink()) {
+            QDir(destination).removeRecursively();
+            emit installationFailed(requestId, QStringLiteral("The installed launcher executable failed its final validation."));
+            return;
+        }
+
+        QFile::remove(archivePath);
+        emit installationCompleted(requestId, projectId, executablePath);
+    });
+
+    watcher->setFuture(QtConcurrent::run([archivePath, extractionPath, expectedExecutable]() {
+        return ArchiveExtractor::extractTarArchive(
+            archivePath, extractionPath, expectedExecutable);
+    }));
+    return requestId;
+}
+
+bool LauncherDownloadManager::isSafeRelativePath(const QString &path)
+{
+    if (path.trimmed().isEmpty() || path.startsWith('/')
+        || path.contains('\\') || path.contains(':'))
+        return false;
+
+    const QStringList parts = path.split('/', Qt::KeepEmptyParts);
+    if (parts.isEmpty())
+        return false;
+    for (const QString &part : parts) {
+        if (part.isEmpty() || part == QStringLiteral(".")
+            || part == QStringLiteral(".."))
+            return false;
+    }
+    return true;
 }
