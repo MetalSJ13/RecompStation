@@ -343,10 +343,18 @@ ApplicationWindow {
             ? (window.releaseStates[primaryProject.id]
                 || ({ loading: false, error: "", release: null, assets: [] }))
             : ({ loading: false, error: "", release: null, assets: [] })
-        property var downloadState: primaryProject
-            ? (window.downloadStates[primaryProject.id + "|"
-                + (releaseState.assets.length > 0 ? releaseState.assets[0].name : "")] || {})
-            : ({})
+        property var releaseInfo: releaseState && releaseState.release
+            ? releaseState.release : null
+        property var compatibleAssets: releaseState && releaseState.assets
+            ? releaseState.assets : []
+        property var selectedAsset: compatibleAssets.length > 0
+            ? compatibleAssets[0] : null
+        property var downloadState: primaryProject && selectedAsset
+            ? (window.downloadStates[primaryProject.id + "|" + selectedAsset.name]
+                || ({ loading: false, installing: false, error: "",
+                      bytesReceived: 0, bytesTotal: selectedAsset.size }))
+            : ({ loading: false, installing: false, error: "",
+                 bytesReceived: 0, bytesTotal: 0 })
 
         onOpened: {
             installPromptVisible = false
@@ -497,8 +505,8 @@ ApplicationWindow {
                     Label {
                         Layout.fillWidth: true
                         visible: gameDetailsPopup.primaryProject !== null
-                            && gameDetailsPopup.releaseState.release !== null
-                            && gameDetailsPopup.releaseState.assets.length === 0
+                            && !!gameDetailsPopup.releaseInfo
+                            && gameDetailsPopup.compatibleAssets.length === 0
                         text: "No compatible Linux launcher package is available for "
                             + projectCatalog.currentArchitecture + "."
                         color: theme.textMuted
@@ -507,35 +515,35 @@ ApplicationWindow {
                     Label {
                         Layout.fillWidth: true
                         visible: gameDetailsPopup.primaryProject !== null
-                            && gameDetailsPopup.releaseState.release !== null
-                            && gameDetailsPopup.releaseState.assets.length > 0
+                            && !!gameDetailsPopup.releaseInfo
+                            && gameDetailsPopup.selectedAsset !== null
                             && gameDetailsPopup.installedProject === null
                         text: "Available version: "
-                            + gameDetailsPopup.releaseState.release.tagName
+                            + gameDetailsPopup.releaseInfo ? gameDetailsPopup.releaseInfo.tagName : ""
                             + "  •  Linux (" + projectCatalog.currentArchitecture + ")"
-                            + "\\nPackage: " + gameDetailsPopup.releaseState.assets[0].name
+                            + "\\nPackage: " + gameDetailsPopup.selectedAsset ? gameDetailsPopup.selectedAsset.name : ""
                         color: theme.textSecondary
                         wrapMode: Text.Wrap
                     }
                     Label {
                         Layout.fillWidth: true
-                        visible: gameDetailsPopup.primaryProject !== null
-                            && gameDetailsPopup.downloadState.error
+                        visible: !!gameDetailsPopup.primaryProject
+                            && !!gameDetailsPopup.downloadState.error
                             && gameDetailsPopup.downloadState.error.length > 0
-                        text: gameDetailsPopup.downloadState.error
+                        text: gameDetailsPopup.downloadState.error || ""
                         color: theme.error
                         wrapMode: Text.Wrap
                     }
                     Label {
                         Layout.fillWidth: true
-                        visible: gameDetailsPopup.primaryProject !== null
-                            && (gameDetailsPopup.downloadState.loading
-                                || gameDetailsPopup.downloadState.installing)
+                        visible: !!gameDetailsPopup.primaryProject
+                            && (!!gameDetailsPopup.downloadState.loading
+                                || !!gameDetailsPopup.downloadState.installing)
                         text: gameDetailsPopup.downloadState.installing
                             ? "Extracting and installing launcher…"
                             : "Downloading launcher… "
                                 + (gameDetailsPopup.downloadState.bytesTotal > 0
-                                    ? Math.floor(gameDetailsPopup.downloadState.bytesReceived
+                                    ? Math.floor((gameDetailsPopup.downloadState.bytesReceived || 0)
                                         / gameDetailsPopup.downloadState.bytesTotal * 100) + "%"
                                     : "")
                         color: theme.accentHover
@@ -573,9 +581,11 @@ ApplicationWindow {
                             onClicked: gameDetailsPopup.installPromptVisible = true
                         }
                         Label {
-                            visible: gameDetailsPopup.installPromptVisible
+                            visible: !!gameDetailsPopup.installPromptVisible
+                                && !!gameDetailsPopup.primaryProject
                                 && gameDetailsPopup.installedProject === null
-                            text: "Install " + gameDetailsPopup.primaryProject.name + "?"
+                            text: gameDetailsPopup.primaryProject
+                                ? "Install " + gameDetailsPopup.primaryProject.name + "?" : ""
                             color: theme.textPrimary
                         }
                         Button {
@@ -585,7 +595,7 @@ ApplicationWindow {
                             text: "Yes"
                             onClicked: {
                                 gameDetailsPopup.installPromptVisible = false
-                                const asset = gameDetailsPopup.releaseState.assets[0]
+                                const asset = gameDetailsPopup.selectedAsset
                                 if (asset)
                                     window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
                             }
