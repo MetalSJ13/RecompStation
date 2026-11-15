@@ -260,7 +260,7 @@ QVariantList DatabaseManager::games(const QString &platform) const
         "FROM games "
         "JOIN platforms ON games.platform_id = platforms.id "
         "LEFT JOIN game_metadata ON game_metadata.game_id = games.id "
-        "WHERE games.is_available = 1 ");
+        "WHERE games.is_available = 1 ";
 
     if (platform.isEmpty()) {
         query.prepare(select + "ORDER BY platforms.name, games.title COLLATE NOCASE");
