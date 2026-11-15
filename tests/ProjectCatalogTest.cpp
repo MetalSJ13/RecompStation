@@ -57,6 +57,15 @@ void ProjectCatalogTest::rejectsMalformedCatalog()
     QVERIFY(error.contains(QStringLiteral("unsupported schema")));
     QVERIFY(!ProjectCatalog::parseCatalog(
         R"({"schemaVersion":1,"projects":[{"id":"../bad"}]})", &projects, &error));
+    QVERIFY(!ProjectCatalog::parseCatalog(
+        R"({"schemaVersion":1,"projects":[{
+            "id":"unsafe-project","name":"Unsafe","platform":"N64",
+            "gameTitles":["Unsafe"],"repositoryOwner":"Example","repositoryName":"Unsafe",
+            "architectures":{"x86_64":{
+                "assetNameRegex":"^unsafe$","packageFormat":"tar.gz",
+                "executablePath":"../../outside"
+            }}
+        }]})", &projects, &error));
 }
 
 void ProjectCatalogTest::matchesGameByTitleAndPlatform()
