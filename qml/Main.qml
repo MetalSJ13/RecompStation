@@ -258,8 +258,22 @@ ApplicationWindow {
             color: "#dddddf"
         }
         onAccepted: {
-            if (launcherDownloadManager.uninstallLauncher(window.pendingUninstallProjectId))
+            if (launcherDownloadManager.uninstallLauncher(window.pendingUninstallProjectId)) {
+                let states = Object.assign({}, window.downloadStates)
+                for (const key of Object.keys(states)) {
+                    if (key.startsWith(window.pendingUninstallProjectId + "|")) {
+                        states[key] = Object.assign({}, states[key], {
+                            completed: false,
+                            installing: false,
+                            installed: false,
+                            error: "",
+                            filePath: ""
+                        })
+                    }
+                }
+                window.downloadStates = states
                 window.launcherRevision++
+            }
         }
     }
 
@@ -943,7 +957,8 @@ ApplicationWindow {
                                                 Label {
                                                     property string downloadKey: modelData.projectId + "|" + modelData.name
                                                     property var downloadState: window.downloadStates[downloadKey]
-                                                        || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
+                                                        || ({ loading: false, completed: false, installing: false, installed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
+                                                    property var installedInfo: window.installedLauncher(modelData.projectId)
                                                     visible: downloadState.loading || downloadState.completed || downloadState.installing || downloadState.error.length > 0 || installedInfo !== null
                                                     Layout.maximumWidth: 190
                                                     text: installedInfo !== null ? "Installed: " + installedInfo.executablePath
