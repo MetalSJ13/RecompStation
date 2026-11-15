@@ -110,9 +110,10 @@ int LauncherDownloadManager::downloadAsset(
 
     const QString canonicalProjectStaging =
         QFileInfo(projectStagingPath).canonicalFilePath();
+    const QString expectedProjectStaging =
+        QDir(canonicalStagingRoot).filePath(projectId);
     if (canonicalProjectStaging.isEmpty()
-        || !canonicalProjectStaging.startsWith(
-            canonicalStagingRoot + QDir::separator())) {
+        || canonicalProjectStaging != expectedProjectStaging) {
         QTimer::singleShot(0, this, [this, requestId]() {
             emit downloadFailed(
                 requestId,
