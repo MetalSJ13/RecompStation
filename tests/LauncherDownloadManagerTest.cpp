@@ -243,7 +243,8 @@ void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
 
     QFile replacementArchive(archivePath);
     QVERIFY(replacementArchive.open(QIODevice::WriteOnly));
-    QCOMPARE(replacementArchive.write("do not replace the existing launcher"), qint64(36));
+    const QByteArray replacementContents("do not replace the existing launcher");
+    QCOMPARE(replacementArchive.write(replacementContents), qint64(replacementContents.size()));
     replacementArchive.close();
     QSignalSpy replacementFailureSpy(
         &restartedManager, &LauncherDownloadManager::installationFailed);
