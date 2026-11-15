@@ -109,7 +109,7 @@ if(BUILD_TESTING)
     )
 
     target_link_libraries(LauncherDownloadManagerTests PRIVATE
-        Qt6::Core Qt6::Network Qt6::Test
+        Qt6::Core Qt6::Network Qt6::Concurrent Qt6::Test
     )
 
     add_test(NAME LauncherDownloadManagerTests COMMAND LauncherDownloadManagerTests)
