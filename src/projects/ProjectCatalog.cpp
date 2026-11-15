@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QSet>
 #include <QSysInfo>
 
 namespace {
@@ -181,10 +182,12 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         const QString repository = object.value(QStringLiteral("repositoryName")).toString().trimmed();
         const QJsonArray titles = object.value(QStringLiteral("gameTitles")).toArray();
         const QJsonObject architectures = object.value(QStringLiteral("architectures")).toObject();
+        const QStringList supportedPlatforms = {QStringLiteral("N64"), QStringLiteral("PS1"),
+                                                 QStringLiteral("GameCube"), QStringLiteral("Wii")};
 
         static const QRegularExpression idPattern(QStringLiteral("^[a-z0-9][a-z0-9-]*$"));
         if (!idPattern.match(id).hasMatch() || projectIds.contains(id)
-            || name.isEmpty() || platform.isEmpty()
+            || name.isEmpty() || !supportedPlatforms.contains(platform)
             || !validRepositoryPart(owner) || !validRepositoryPart(repository)
             || titles.isEmpty() || architectures.isEmpty()) {
             return fail(QStringLiteral("A project catalog entry is missing valid required fields."));
@@ -205,9 +208,12 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
             const QString regexText = rule.value(QStringLiteral("assetNameRegex")).toString();
             const QString packageFormat = rule.value(QStringLiteral("packageFormat")).toString();
             const QString executablePath = rule.value(QStringLiteral("executablePath")).toString();
+            const QStringList executablePathParts = executablePath.split(QStringLiteral("/"), Qt::SkipEmptyParts);
+            const bool unsafeExecutablePath = executablePath.startsWith(QStringLiteral("/"))
+                || executablePathParts.contains(QStringLiteral(".."));
             const QRegularExpression regex(regexText, QRegularExpression::CaseInsensitiveOption);
             if (architecture.isEmpty() || regexText.isEmpty() || !regex.isValid()
-                || executablePath.trimmed().isEmpty()
+                || executablePath.trimmed().isEmpty() || unsafeExecutablePath
                 || (packageFormat != QStringLiteral("tar.gz")
                     && packageFormat != QStringLiteral("tar.xz")
                     && packageFormat != QStringLiteral("appimage")
