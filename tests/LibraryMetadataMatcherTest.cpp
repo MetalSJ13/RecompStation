@@ -52,6 +52,52 @@ private slots:
         QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(
                      QString::fromUtf8("Pokémon Stadium"), results), 0);
     }
+
+    void ranksDuplicateExactTitlesByArtworkResolution()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Donkey Kong 64"}, {"platformId", 3},
+                        {"artworkPixelCount", 0}},
+            QVariantMap{{"title", "Donkey Kong 64"}, {"platformId", 3},
+                        {"artworkPixelCount", 682000}},
+            QVariantMap{{"title", "Donkey Kong 64"}, {"platformId", 3},
+                        {"artworkPixelCount", 0}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
+                     QStringLiteral("Donkey Kong 64"), 3, results), 1);
+    }
+
+    void acceptsAColonSubtitleWhenPlatformAndArtworkAreClear()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Metroid Prime 3: Corruption"},
+                        {"platformId", 9}, {"artworkPixelCount", 2292884}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
+                     QStringLiteral("Metroid Prime 3"), 9, results), 0);
+    }
+
+    void leavesEqualRankedCandidatesAmbiguous()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Donkey Kong 64"}, {"platformId", 3},
+                        {"artworkPixelCount", 682000}},
+            QVariantMap{{"title", "Donkey Kong 64"}, {"platformId", 3},
+                        {"artworkPixelCount", 682000}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
+                     QStringLiteral("Donkey Kong 64"), 3, results), -2);
+    }
+
+    void rejectsCandidatesFromAnotherPlatform()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Donkey Kong 64"}, {"platformId", 9},
+                        {"artworkPixelCount", 2000000}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
+                     QStringLiteral("Donkey Kong 64"), 3, results), -1);
+    }
 };
 
 QTEST_GUILESS_MAIN(LibraryMetadataMatcherTest)
