@@ -49,7 +49,7 @@ private slots:
             "include": {
                 "boxart": {
                     "base_url": {"original": "https://cdn.example.test/original/"},
-                    "data": {"4": [{"side": "front", "filename": "banjo-front.jpg"}]}
+                    "data": {"4": [{"side": "front", "filename": "banjo-front.jpg", "resolution": "1000x1500"}]}
                 }
             },
             "data": {
@@ -83,6 +83,7 @@ private slots:
         QCOMPARE(game.overview, QStringLiteral("A space combat game."));
         QCOMPARE(game.artworkUrl,
                  QStringLiteral("https://cdn.example.test/original/banjo-front.jpg"));
+        QCOMPARE(game.artworkPixelCount, 1500000);
         QCOMPARE(game.developerIds, QList<int>{6037});
         QCOMPARE(game.publisherIds, QList<int>{3});
         QCOMPARE(game.genreIds, (QList<int>{1, 8}));
@@ -109,6 +110,7 @@ private slots:
         QCOMPARE(results.size(), 1);
         QCOMPARE(results.first().artworkUrl,
                  QStringLiteral("https://cdn.example.test/thumb/game-back.jpg"));
+        QCOMPARE(results.first().artworkPixelCount, 0);
     }
 
     void acceptsArrayGamePayloadsToo()
