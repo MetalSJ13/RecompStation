@@ -60,6 +60,22 @@ include(CTest)
 if(BUILD_TESTING)
     find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
 
+    qt_add_executable(ArchiveExtractorTests
+        tests/ArchiveExtractorTest.cpp
+        src/core/ArchiveExtractor.h
+        src/core/ArchiveExtractor.cpp
+    )
+
+    target_include_directories(ArchiveExtractorTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ArchiveExtractorTests PRIVATE
+        Qt6::Core Qt6::Test LibArchive::LibArchive
+    )
+
+    add_test(NAME ArchiveExtractorTests COMMAND ArchiveExtractorTests)
+
     qt_add_executable(PlatformManagerTests
         tests/PlatformManagerTest.cpp
         src/core/PlatformManager.h
