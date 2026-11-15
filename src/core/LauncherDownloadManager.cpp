@@ -12,8 +12,6 @@
 #include <QTimer>
 #include <QUrl>
 
-#include <limits>
-
 namespace {
 constexpr qint64 MaximumDownloadSize = 8LL * 1024LL * 1024LL * 1024LL;
 }
@@ -92,13 +90,17 @@ int LauncherDownloadManager::downloadAsset(
         return requestId;
     }
 
+    const QString stagingDirectory = m_platformManager->stagingDirectory();
     const QString canonicalStagingRoot =
-        QFileInfo(m_platformManager->stagingDirectory()).canonicalFilePath();
+        QFileInfo(stagingDirectory).canonicalFilePath();
+    const QString expectedStagingRoot = QDir(stagingDirectory).absolutePath();
     const QString canonicalProjectStaging =
         QFileInfo(projectStagingPath).canonicalFilePath();
-    if (canonicalStagingRoot.isEmpty() || canonicalProjectStaging.isEmpty()
+    if (canonicalStagingRoot.isEmpty()
+        || canonicalStagingRoot != expectedStagingRoot
+        || canonicalProjectStaging.isEmpty()
         || !canonicalProjectStaging.startsWith(
-            QDir(canonicalStagingRoot).absolutePath() + QDir::separator())) {
+            canonicalStagingRoot + QDir::separator())) {
         QTimer::singleShot(0, this, [this, requestId]() {
             emit downloadFailed(
                 requestId,
