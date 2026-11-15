@@ -125,6 +125,19 @@ QVariantList ProjectCatalog::projectsForGame(const QString &metadataTitle,
     return matches;
 }
 
+QVariantList ProjectCatalog::compatibleAssets(const QString &projectId,
+                                               const QVariantList &assets) const
+{
+    QVariantList compatible;
+    for (const QVariant &entry : assets) {
+        const QVariantMap asset = entry.toMap();
+        const QString name = asset.value(QStringLiteral("name")).toString();
+        if (isAssetCompatible(projectId, currentArchitecture(), name))
+            compatible.append(asset);
+    }
+    return compatible;
+}
+
 bool ProjectCatalog::isAssetCompatible(const QString &projectId,
                                        const QString &architecture,
                                        const QString &assetName) const
