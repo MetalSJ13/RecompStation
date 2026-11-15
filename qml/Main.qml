@@ -713,7 +713,7 @@ ApplicationWindow {
                         Label { text: "Launcher Discovery"; color: "white"; font.pixelSize: 30; font.bold: true }
                         Label {
                             Layout.fillWidth: true
-                            text: "Browse curated recompilation projects and check GitHub for compatible Linux releases. Downloads and installation are not available yet."
+                            text: "Browse supported projects, check compatible Linux releases, and download assets to staging. Archive extraction and installation are coming next."
                             color: "#9999aa"
                             wrapMode: Text.Wrap
                         }
