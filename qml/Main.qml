@@ -543,15 +543,6 @@ ApplicationWindow {
                                             font.pixelSize: 10
                                             wrapMode: Text.Wrap
                                         }
-                                        Label {
-                                            visible: installedProject !== null
-                                                && window.launchErrors[supportedProjects[0].id] !== undefined
-                                            text: installedProject !== null
-                                                ? (window.launchErrors[supportedProjects[0].id] || "") : ""
-                                            color: "#e5a0a0"
-                                            font.pixelSize: 10
-                                            wrapMode: Text.Wrap
-                                        }
                                     }
                                     Button {
                                         visible: installedProject !== null
