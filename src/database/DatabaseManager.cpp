@@ -95,6 +95,24 @@ bool DatabaseManager::createTables()
         }
     }
 
+    // Upgrade existing libraries with a scan-availability flag.
+    QSqlQuery gameColumns(m_database);
+    if (!gameColumns.exec("PRAGMA table_info(games)")) {
+        m_lastError = gameColumns.lastError().text();
+        return false;
+    }
+    bool hasAvailability = false;
+    while (gameColumns.next()) {
+        if (gameColumns.value(1).toString() == QStringLiteral("is_available"))
+            hasAvailability = true;
+    }
+    gameColumns.finish();
+    if (!hasAvailability && !query.exec(
+            "ALTER TABLE games ADD COLUMN is_available INTEGER NOT NULL DEFAULT 1")) {
+        m_lastError = query.lastError().text();
+        return false;
+    }
+
     // Upgrade databases created before artwork URLs were stored.
     QSqlQuery columns(m_database);
     if (!columns.exec("PRAGMA table_info(game_metadata)")) {
@@ -145,8 +163,11 @@ bool DatabaseManager::registerGame(const QString &title,
 
     QSqlQuery insertQuery(m_database);
     insertQuery.prepare(
-        "INSERT OR IGNORE INTO games (title, platform_id, game_path) "
-        "VALUES (:title, :platform_id, :game_path)"
+        "INSERT INTO games (title, platform_id, game_path, is_available) "
+        "VALUES (:title, :platform_id, :game_path, 1) "
+        "ON CONFLICT(game_path) DO UPDATE SET "
+        "title = excluded.title, platform_id = excluded.platform_id, "
+        "is_available = 1"
     );
     insertQuery.bindValue(":title", title);
     insertQuery.bindValue(":platform_id", platformQuery.value(0));
@@ -157,6 +178,63 @@ bool DatabaseManager::registerGame(const QString &title,
     }
     m_lastError.clear();
     return insertQuery.numRowsAffected() > 0;
+}
+
+bool DatabaseManager::reconcilePlatformGames(
+    const QString &platform, const QStringList &discoveredPaths)
+{
+    if (!m_database.isOpen()) {
+        m_lastError = QStringLiteral("Database is not open.");
+        return false;
+    }
+
+    QSqlQuery platformQuery(m_database);
+    platformQuery.prepare("SELECT id FROM platforms WHERE name = :name");
+    platformQuery.bindValue(":name", platform);
+    if (!platformQuery.exec() || !platformQuery.next()) {
+        m_lastError = platformQuery.lastError().text();
+        if (m_lastError.isEmpty())
+            m_lastError = QStringLiteral("Platform is not registered: ") + platform;
+        return false;
+    }
+    const int platformId = platformQuery.value(0).toInt();
+
+    if (!m_database.transaction()) {
+        m_lastError = m_database.lastError().text();
+        return false;
+    }
+
+    QSqlQuery markMissing(m_database);
+    markMissing.prepare(
+        "UPDATE games SET is_available = 0 "
+        "WHERE platform_id = :platform_id");
+    markMissing.bindValue(":platform_id", platformId);
+    if (!markMissing.exec()) {
+        m_lastError = markMissing.lastError().text();
+        m_database.rollback();
+        return false;
+    }
+
+    QSqlQuery markFound(m_database);
+    markFound.prepare(
+        "UPDATE games SET is_available = 1 "
+        "WHERE platform_id = :platform_id AND game_path = :game_path");
+    for (const QString &path : discoveredPaths) {
+        markFound.bindValue(":platform_id", platformId);
+        markFound.bindValue(":game_path", path);
+        if (!markFound.exec()) {
+            m_lastError = markFound.lastError().text();
+            m_database.rollback();
+            return false;
+        }
+    }
+
+    if (!m_database.commit()) {
+        m_lastError = m_database.lastError().text();
+        return false;
+    }
+    m_lastError.clear();
+    return true;
 }
 
 QVariantList DatabaseManager::games(const QString &platform) const
@@ -178,7 +256,8 @@ QVariantList DatabaseManager::games(const QString &platform) const
         "COALESCE(game_metadata.artwork_url, '') "
         "FROM games "
         "JOIN platforms ON games.platform_id = platforms.id "
-        "LEFT JOIN game_metadata ON game_metadata.game_id = games.id ";
+        "LEFT JOIN game_metadata ON game_metadata.game_id = games.id "
+        "WHERE games.is_available = 1 ");
 
     if (platform.isEmpty()) {
         query.prepare(select + "ORDER BY platforms.name, games.title COLLATE NOCASE");
@@ -341,7 +420,7 @@ QVariantList DatabaseManager::gamesNeedingMetadata(bool includePreviouslyChecked
         LEFT JOIN game_metadata ON game_metadata.game_id = games.id
         LEFT JOIN metadata_lookup_attempts
             ON metadata_lookup_attempts.game_id = games.id
-        WHERE
+        WHERE games.is_available = 1 AND (
             (game_metadata.game_id IS NULL
              AND (metadata_lookup_attempts.game_id IS NULL OR :retry = 1))
             OR
