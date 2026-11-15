@@ -16,6 +16,7 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt6 6.5 REQUIRED COMPONENTS
     Core Gui Quick QuickControls2 Sql Network
 )
+find_package(LibArchive REQUIRED)
 qt_standard_project_setup(REQUIRES 6.5)
 qt_policy(SET QTP0004 NEW)
 
@@ -30,6 +31,8 @@ qt_add_executable(RecompStationApp
     src/core/PlatformManager.cpp
     src/core/LauncherDownloadManager.h
     src/core/LauncherDownloadManager.cpp
+    src/core/ArchiveExtractor.h
+    src/core/ArchiveExtractor.cpp
     src/core/LibraryScanner.h
     src/core/LibraryScanner.cpp
     src/core/ArtworkManager.h
@@ -53,6 +56,7 @@ qt_add_qml_module(RecompStationApp
 
 target_link_libraries(RecompStationApp PRIVATE
     Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql Qt6::Network
+    LibArchive::LibArchive
 )
 
 include(CTest)
