@@ -10,7 +10,7 @@ ApplicationWindow {
     minimumHeight: 550
     visible: true
     title: "RecompStation"
-    color: "#15151d"
+    color: theme.windowBackground
 
     property string currentPage: "Library"
     property string selectedPlatform: "All Games"
@@ -29,6 +29,10 @@ ApplicationWindow {
     property var downloadStates: ({})
     property var launchErrors: ({})
     property var runningLaunchers: ({})
+
+    Theme {
+        id: theme
+    }
 
     function installedLauncher(projectId) {
         launcherRevision
@@ -128,12 +132,12 @@ ApplicationWindow {
         pendingReleaseRequests = pending
     }
 
-    palette.window: "#15151d"
-    palette.windowText: "#ffffff"
-    palette.button: "#292936"
-    palette.buttonText: "#ffffff"
-    palette.highlight: "#8060e8"
-    palette.highlightedText: "#ffffff"
+    palette.window: theme.windowBackground
+    palette.windowText: theme.textPrimary
+    palette.button: theme.controlBackground
+    palette.buttonText: theme.textPrimary
+    palette.highlight: theme.accent
+    palette.highlightedText: theme.textPrimary
 
     Connections {
         target: artworkManager
@@ -321,7 +325,7 @@ ApplicationWindow {
         Rectangle {
             Layout.preferredWidth: 225
             Layout.fillHeight: true
-            color: "#1d1d28"
+            color: theme.sidebarBackground
 
             ColumnLayout {
                 anchors.fill: parent
@@ -335,7 +339,7 @@ ApplicationWindow {
                         width: 38
                         height: 38
                         radius: 10
-                        color: "#8060e8"
+                        color: theme.accent
                         Label {
                             anchors.centerIn: parent
                             text: "R"
@@ -359,7 +363,7 @@ ApplicationWindow {
                     }
                 }
 
-                Rectangle { Layout.fillWidth: true; height: 1; color: "#343440" }
+                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                 Label { text: "LIBRARY"; color: "#888899"; font.pixelSize: 11; font.bold: true }
 
                 Button {
@@ -482,7 +486,7 @@ ApplicationWindow {
                                 width: gameList.width
                                 height: 108
                                 radius: 10
-                                color: "#252532"
+                                color: theme.surface
                                 RowLayout {
                                     anchors.fill: parent
                                     anchors.margins: 10
