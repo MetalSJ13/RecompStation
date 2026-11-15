@@ -77,12 +77,14 @@ Merged into main and validated locally on Arch Linux; all four regression test s
 - [x] Record repository identity, ROM revision notes, package format, and expected executable path
 - [x] Expose catalog lookup to the application/QML context
 - [x] Show supported recompilation project matches in the local game library
-- [ ] Connect catalog matches to GitHub release discovery and present compatible assets in the UI
+- [x] Connect curated projects to GitHub latest-release discovery and present architecture-compatible Linux assets in the Launcher Discovery page
 - [ ] Expand catalog entries after validating the initial end-to-end workflow
 
 The catalog currently matches the associated metadata title and platform. It does not yet inspect ROM hashes/revisions; the Banjo: Recompiled entry documents its North American 1.0 requirement so we do not imply that title matching proves ROM compatibility.
 
 #### Milestone 7: Launcher download, installation, and updates
+
+Release discovery is now connected to the curated project catalog. The Launcher Discovery page can query a project's latest GitHub release and display only assets matching the current CPU architecture and catalog filename rules. It does not download or install assets yet.
 - [ ] Download selected release assets into a temporary staging area
 - [ ] Safely extract supported archives while preventing path traversal and writes outside the staging directory
 - [ ] Preserve required directory structure and supporting files

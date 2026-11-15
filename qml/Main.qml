@@ -20,6 +20,19 @@ ApplicationWindow {
     property string metadataAssociationMessage: ""
     property string artworkMessage: ""
     property string scanMessage: "Scan your platform folders to discover games."
+    property var pendingReleaseRequests: ({})
+    property var releaseStates: ({})
+
+    function checkProjectRelease(project) {
+        let nextStates = Object.assign({}, releaseStates)
+        nextStates[project.id] = { loading: true, error: "", release: null, assets: [] }
+        releaseStates = nextStates
+        const requestId = githubManager.fetchLatestRelease(
+            project.repositoryOwner, project.repositoryName)
+        let pending = Object.assign({}, pendingReleaseRequests)
+        pending[requestId] = project.id
+        pendingReleaseRequests = pending
+    }
 
     palette.window: "#15151d"
     palette.windowText: "#ffffff"
@@ -36,6 +49,42 @@ ApplicationWindow {
         }
         function onArtworkFailed(gameId, message) {
             window.artworkMessage = message
+        }
+    }
+
+    Connections {
+        target: githubManager
+        function onReleaseDataLoaded(requestId, release) {
+            const projectId = window.pendingReleaseRequests[requestId]
+            if (!projectId)
+                return
+            let pending = Object.assign({}, window.pendingReleaseRequests)
+            delete pending[requestId]
+            window.pendingReleaseRequests = pending
+            let states = Object.assign({}, window.releaseStates)
+            states[projectId] = {
+                loading: false,
+                error: "",
+                release: release,
+                assets: projectCatalog.compatibleAssets(projectId, release.assets)
+            }
+            window.releaseStates = states
+        }
+        function onRequestFailed(requestId, message) {
+            const projectId = window.pendingReleaseRequests[requestId]
+            if (!projectId)
+                return
+            let pending = Object.assign({}, window.pendingReleaseRequests)
+            delete pending[requestId]
+            window.pendingReleaseRequests = pending
+            let states = Object.assign({}, window.releaseStates)
+            states[projectId] = {
+                loading: false,
+                error: message,
+                release: null,
+                assets: []
+            }
+            window.releaseStates = states
         }
     }
 
@@ -590,20 +639,130 @@ ApplicationWindow {
                 Item {
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 20
-                        Label { text: "Launcher Manager"; color: "white"; font.pixelSize: 30; font.bold: true }
-                        Label { text: "Manage your installed recompilation projects."; color: "#9999aa" }
-                        Rectangle {
+                        spacing: 16
+                        Label { text: "Launcher Discovery"; color: "white"; font.pixelSize: 30; font.bold: true }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Browse curated recompilation projects and check GitHub for compatible Linux releases. Downloads and installation are not available yet."
+                            color: "#9999aa"
+                            wrapMode: Text.Wrap
+                        }
+                        ListView {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            radius: 12
-                            color: "#20202c"
-                            Label {
-                                anchors.centerIn: parent
-                                text: "No launchers registered yet."
-                                color: "#9999aa"
-                                font.pixelSize: 16
+                            clip: true
+                            spacing: 12
+                            model: projectCatalog.projects()
+                            delegate: Rectangle {
+                                required property var modelData
+                                property var releaseState: window.releaseStates[modelData.id]
+                                    || ({ loading: false, error: "", release: null, assets: [] })
+                                width: ListView.view.width
+                                height: projectCard.implicitHeight + 28
+                                radius: 10
+                                color: "#252532"
+                                ColumnLayout {
+                                    id: projectCard
+                                    anchors.fill: parent
+                                    anchors.margins: 14
+                                    spacing: 7
+                                    Label {
+                                        text: modelData.name
+                                        color: "white"
+                                        font.pixelSize: 18
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        text: modelData.platform + "  •  " + modelData.repositoryOwner + "/" + modelData.repositoryName
+                                        color: "#9999aa"
+                                        font.pixelSize: 12
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: modelData.romRequirements
+                                        color: "#b7b7c5"
+                                        font.pixelSize: 11
+                                        wrapMode: Text.Wrap
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Button {
+                                            text: releaseState.loading ? "Checking GitHub..." : "Check for Linux Release"
+                                            highlighted: true
+                                            enabled: !releaseState.loading
+                                            onClicked: window.checkProjectRelease(modelData)
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            visible: releaseState.release !== null
+                                            text: releaseState.release
+                                                  ? "Latest: " + releaseState.release.tagName
+                                                  : ""
+                                            color: "#a98cff"
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        visible: releaseState.loading === true
+                                        text: "Contacting GitHub and checking release assets..."
+                                        color: "#a98cff"
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        visible: releaseState.error.length > 0
+                                        text: releaseState.error || ""
+                                        color: "#ff8b8b"
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Repeater {
+                                        model: releaseState.assets || []
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            Layout.fillWidth: true
+                                            implicitHeight: assetRow.implicitHeight + 16
+                                            radius: 6
+                                            color: "#1d1d28"
+                                            RowLayout {
+                                                id: assetRow
+                                                anchors.fill: parent
+                                                anchors.margins: 8
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: modelData.name
+                                                    color: "#91d6a5"
+                                                    font.pixelSize: 12
+                                                    wrapMode: Text.Wrap
+                                                }
+                                                Label {
+                                                    text: (modelData.size / 1048576).toFixed(1) + " MB"
+                                                    color: "#9999aa"
+                                                    font.pixelSize: 11
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        visible: releaseState.release !== null && (releaseState.assets || []).length === 0
+                                        text: "No compatible Linux package was found for this device (" + projectCatalog.currentArchitecture + ")."
+                                        color: "#e5bd79"
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        visible: !!releaseState.release
+                                        text: releaseState.release
+                                              ? "Release published: " + releaseState.release.publishedAt
+                                              : ""
+                                        color: "#9999aa"
+                                        font.pixelSize: 11
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
                             }
+                            ScrollBar.vertical: ScrollBar {}
                         }
                     }
                 }

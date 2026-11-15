@@ -69,6 +69,30 @@ void GitHubManagerTest::parsesLatestReleaseAndAssets()
         QStringLiteral("https://")));
 }
 
+void GitHubManagerTest::convertsReleaseToQmlData()
+{
+    GitHubRelease release;
+    release.tagName = QStringLiteral("v1.2.3");
+    release.name = QStringLiteral("Release 1.2.3");
+    release.htmlUrl = QStringLiteral("https://github.com/example/project/releases/tag/v1.2.3");
+    release.publishedAt = QStringLiteral("2026-11-01T12:00:00Z");
+    release.assets.append({
+        QStringLiteral("app-linux-x64.tar.gz"),
+        QStringLiteral("https://github.com/example/project/releases/download/v1.2.3/app-linux-x64.tar.gz"),
+        QStringLiteral("application/gzip"),
+        987654
+    });
+
+    const QVariantMap result = GitHubManager::releaseToVariantMap(release);
+    QCOMPARE(result.value(QStringLiteral("tagName")).toString(), QStringLiteral("v1.2.3"));
+    const QVariantList assets = result.value(QStringLiteral("assets")).toList();
+    QCOMPARE(assets.size(), 1);
+    const QVariantMap asset = assets.first().toMap();
+    QCOMPARE(asset.value(QStringLiteral("name")).toString(),
+             QStringLiteral("app-linux-x64.tar.gz"));
+    QCOMPARE(asset.value(QStringLiteral("size")).toLongLong(), qint64(987654));
+}
+
 void GitHubManagerTest::rejectsInvalidRepositoryAndReleaseResponses()
 {
     GitHubRepository repository;

@@ -9,6 +9,7 @@ class GitHubManagerTest : public QObject
 private slots:
     void parsesRepositoryResponse();
     void parsesLatestReleaseAndAssets();
+    void convertsReleaseToQmlData();
     void rejectsInvalidRepositoryAndReleaseResponses();
     void rejectsMissingOutputDestinations();
     void rejectsInvalidRepositoryIdentifiersBeforeRequesting();

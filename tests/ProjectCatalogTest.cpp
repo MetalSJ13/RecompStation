@@ -12,6 +12,7 @@ private slots:
     void matchesGameByTitleAndPlatform();
     void selectsOnlyCompatibleLinuxAssets();
     void normalizesArchitectures();
+    void filtersReleaseAssetsForCurrentArchitecture();
 };
 
 void ProjectCatalogTest::parsesValidCatalog()
@@ -102,6 +103,34 @@ void ProjectCatalogTest::selectsOnlyCompatibleLinuxAssets()
     QVERIFY(!catalog.isAssetCompatible(
         QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("riscv64"),
         QStringLiteral("BanjoRecompiled-v1.0.2-Linux-X64.tar.gz")));
+}
+
+void ProjectCatalogTest::filtersReleaseAssetsForCurrentArchitecture()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.isLoaded());
+
+    const QVariantList assets = {
+        QVariantMap{{"name", "BanjoRecompiled-v1.0.2-Linux-X64.tar.gz"},
+                    {"downloadUrl", "https://example.test/linux.tar.gz"}},
+        QVariantMap{{"name", "BanjoRecompiled-v1.0.2-Windows.zip"},
+                    {"downloadUrl", "https://example.test/windows.zip"}},
+        QVariantMap{{"name", "checksums.txt"},
+                    {"downloadUrl", "https://example.test/checksums.txt"}}
+    };
+
+    const QVariantList compatible = catalog.compatibleAssets(
+        QStringLiteral("banjo-kazooie-recompiled"), assets);
+    const QString architecture = catalog.currentArchitecture();
+    if (architecture == QStringLiteral("x86_64")) {
+        QCOMPARE(compatible.size(), 1);
+        QCOMPARE(compatible.first().toMap().value("name").toString(),
+                 QStringLiteral("BanjoRecompiled-v1.0.2-Linux-X64.tar.gz"));
+    } else if (architecture == QStringLiteral("aarch64")) {
+        QVERIFY(compatible.isEmpty());
+    } else {
+        QVERIFY(compatible.isEmpty());
+    }
 }
 
 void ProjectCatalogTest::normalizesArchitectures()

@@ -4,6 +4,7 @@
 #include <QNetworkAccessManager>
 #include <QObject>
 #include <QString>
+#include <QVariantMap>
 
 class QNetworkRequest;
 
@@ -47,6 +48,8 @@ public:
     Q_INVOKABLE int fetchLatestRelease(const QString &owner,
                                        const QString &repository);
 
+    static QVariantMap releaseToVariantMap(const GitHubRelease &release);
+
     static bool parseRepositoryResponse(const QByteArray &response,
                                         GitHubRepository *repository,
                                         QString *errorMessage = nullptr);
@@ -57,6 +60,7 @@ public:
 signals:
     void repositoryLoaded(int requestId, const GitHubRepository &repository);
     void releaseLoaded(int requestId, const GitHubRelease &release);
+    void releaseDataLoaded(int requestId, const QVariantMap &release);
     void requestFailed(int requestId, const QString &message);
 
 private:
