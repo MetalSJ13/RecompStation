@@ -109,6 +109,8 @@ int LibraryScanner::scanPlatform(const QString &platform)
     for (const QString &extension : extensions)
         acceptedExtensions.insert(extension);
 
+    QStringList discoveredPaths;
+
     QDirIterator iterator(
         directoryPath,
         QDir::Files | QDir::Readable | QDir::NoSymLinks,
@@ -130,12 +132,21 @@ int LibraryScanner::scanPlatform(const QString &platform)
         if (title.isEmpty())
             continue;
 
+        const QString absolutePath = info.absoluteFilePath();
+        discoveredPaths.append(absolutePath);
+
         if (m_databaseManager->registerGame(
-                title, platform, info.absoluteFilePath())) {
+                title, platform, absolutePath)) {
             ++m_lastScanCount;
         } else if (!m_databaseManager->lastError().isEmpty()) {
             m_lastError = m_databaseManager->lastError();
         }
+    }
+
+    // Reconcile only after a complete scan without database errors.
+    if (m_lastError.isEmpty()
+        && !m_databaseManager->reconcilePlatformGames(platform, discoveredPaths)) {
+        m_lastError = m_databaseManager->lastError();
     }
 
     if (!m_scanningAll)
