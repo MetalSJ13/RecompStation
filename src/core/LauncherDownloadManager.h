@@ -1,10 +1,13 @@
 #pragma once
 
+#include <QFutureWatcher>
 #include <QHash>
 #include <QNetworkAccessManager>
 #include <QObject>
 #include <QSet>
 #include <QString>
+
+#include "ArchiveExtractor.h"
 
 class PlatformManager;
 class QNetworkReply;
@@ -29,6 +32,13 @@ public:
 
     Q_INVOKABLE void cancelDownload(int requestId);
 
+    Q_INVOKABLE int installDownloadedAsset(
+        const QString &projectId,
+        const QString &assetName,
+        const QString &packageFormat,
+        const QString &expectedExecutable
+    );
+
 signals:
     void downloadProgress(
         int requestId,
@@ -42,6 +52,12 @@ signals:
         const QString &filePath
     );
     void downloadFailed(int requestId, const QString &message);
+    void installationCompleted(
+        int requestId,
+        const QString &projectId,
+        const QString &executablePath
+    );
+    void installationFailed(int requestId, const QString &message);
 
 private:
     struct Download;
@@ -49,7 +65,9 @@ private:
     PlatformManager *m_platformManager = nullptr;
     QNetworkAccessManager m_network;
     QHash<int, Download *> m_downloads;
+    QHash<int, QFutureWatcher<ArchiveExtractor::Result> *> m_installations;
     QSet<QString> m_activeTargets;
+    QSet<QString> m_activeInstallProjects;
     int m_nextRequestId = 1;
 
     void receiveDownloadData(int requestId);
@@ -59,4 +77,5 @@ private:
     static bool isValidProjectId(const QString &projectId);
     static bool isValidAssetName(const QString &assetName);
     static bool isValidHttpsUrl(const QString &url);
+    static bool isSafeRelativePath(const QString &path);
 };
