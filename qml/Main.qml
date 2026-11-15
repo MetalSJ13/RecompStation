@@ -777,13 +777,15 @@ ApplicationWindow {
                                         wrapMode: Text.Wrap
                                     }
                                     Repeater {
-                                        property string modelDataProjectId: modelData.id
-                                        property var projectModel: modelData
-                                        model: releaseState.assets || []
+                                        model: (releaseState.assets || []).map(asset => ({
+                                            name: asset.name,
+                                            downloadUrl: asset.downloadUrl,
+                                            size: asset.size,
+                                            projectId: modelData.id,
+                                            project: modelData
+                                        }))
                                         delegate: Rectangle {
                                             required property var modelData
-                                            required property string modelDataProjectId
-                                            required property var projectModel
                                             Layout.fillWidth: true
                                             implicitHeight: assetRow.implicitHeight + 16
                                             radius: 6
@@ -805,14 +807,13 @@ ApplicationWindow {
                                                     font.pixelSize: 11
                                                 }
                                                 Button {
-                                                    property string downloadKey: modelDataProjectId + "|" + modelData.name
+                                                    property string downloadKey: modelData.projectId + "|" + modelData.name
                                                     property var downloadState: window.downloadStates[downloadKey]
                                                         || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
-                                                    // The project ID is supplied by the enclosing project delegate.
                                                     text: downloadState.completed ? "Downloaded"
                                                         : downloadState.loading ? "Downloading..." : "Download"
                                                     enabled: !downloadState.loading && !downloadState.completed
-                                                    onClicked: window.startAssetDownload(projectModel, modelData)
+                                                    onClicked: window.startAssetDownload(modelData.project, modelData)
                                                 }
                                             }
                                         }
