@@ -146,7 +146,7 @@ Implemented:
 - Normalized game-title and platform matching against associated metadata.
 - Explicit x86_64 and aarch64 Linux .tar.gz asset rules; Windows and Flatpak assets are not selected for the initial native archive workflow.
 - Project-specific ROM revision notes and expected executable path metadata.
-- ProjectCatalog is exposed to QML; UI presentation and GitHub release/asset discovery integration remain outstanding.
+- ProjectCatalog is exposed to QML, and matching supported project names are displayed on local game-library entries. GitHub release/asset discovery integration remains outstanding.
 
 The catalog match uses metadata title and platform only. It does not verify the local ROM revision or hash. The Banjo: Recompiled entry therefore records its North American 1.0 requirement without claiming that metadata matching confirms the ROM is suitable.
 
