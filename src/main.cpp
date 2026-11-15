@@ -37,8 +37,6 @@ int main(int argc, char *argv[])
     }
 
     LibraryScanner libraryScanner(&platformManager, &databaseManager);
-    // Reconcile the persisted library with the current ROM folders at startup.
-    libraryScanner.scanAll();
     TheGamesDbClient metadataProvider;
     MetadataManager metadataManager(&metadataProvider);
     ArtworkManager artworkManager(&databaseManager,
@@ -67,5 +65,8 @@ int main(int argc, char *argv[])
                      &app, []() { QCoreApplication::exit(-1); },
                      Qt::QueuedConnection);
     engine.loadFromModule("RecompStation", "Main");
+    // Reconcile after QML is loaded so the library refresh and metadata-scrape
+    // connections receive the scan-completed signal.
+    libraryScanner.scanAll();
     return app.exec();
 }
