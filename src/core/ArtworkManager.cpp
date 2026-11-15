@@ -2,7 +2,7 @@
 
 #include "../database/DatabaseManager.h"
 
-#include <QDir>
+#include <QDir>\n#include <QBuffer>\n#include <QImageReader>
 #include <QFile>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -10,7 +10,7 @@
 #include <QUrl>
 
 namespace {
-QString imageExtension(const QByteArray &contentType)
+QString imageExtension(const QByteArray &contentType, const QByteArray &bytes)
 {
     const QByteArray mime = contentType.split(';').first().trimmed().toLower();
     if (mime == "image/jpeg" || mime == "image/jpg") return QStringLiteral("jpg");
@@ -54,7 +54,7 @@ void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
         }
 
         const QByteArray bytes = reply->readAll();
-        const QString extension = imageExtension(reply->header(QNetworkRequest::ContentTypeHeader).toByteArray());
+        const QString extension = imageExtension(reply->header(QNetworkRequest::ContentTypeHeader).toByteArray(), bytes);
         reply->deleteLater();
 
         if (bytes.isEmpty() || bytes.size() > 20 * 1024 * 1024 || extension.isEmpty()) {
