@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 
 ApplicationWindow {
     id: window
@@ -912,7 +913,31 @@ Package: " + gameDetailsPopup.selectedAssetName
                                             clip: true
 
                                             Image {
+                                                id: artworkBackdrop
                                                 anchors.fill: parent
+                                                source: gameTile.artworkPath
+                                                fillMode: Image.PreserveAspectCrop
+                                                asynchronous: true
+                                                cache: true
+                                                visible: gameTile.artworkPath.length > 0
+                                                opacity: 0.42
+                                            }
+                                            MultiEffect {
+                                                anchors.fill: parent
+                                                source: artworkBackdrop
+                                                blurEnabled: true
+                                                blur: 0.8
+                                                autoPaddingEnabled: false
+                                                visible: gameTile.artworkPath.length > 0
+                                            }
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                color: "#9911131b"
+                                                visible: gameTile.artworkPath.length > 0
+                                            }
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 5
                                                 source: gameTile.artworkPath
                                                 fillMode: Image.PreserveAspectFit
                                                 asynchronous: true
