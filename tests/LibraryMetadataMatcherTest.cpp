@@ -44,6 +44,31 @@ private slots:
                      QStringLiteral("Donkey Kong 64 (USA) [!]"), results), 0);
     }
 
+    void ignoresCommonRegionCodesInParenthesesAndBrackets()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Metroid Prime 3: Corruption"}}
+        };
+        for (const QString &localTitle : {
+                 QStringLiteral("Metroid Prime 3: Corruption (USA)"),
+                 QStringLiteral("Metroid Prime 3: Corruption [USA]"),
+                 QStringLiteral("Metroid Prime 3: Corruption (Europe)"),
+                 QStringLiteral("Metroid Prime 3: Corruption [J]"),
+                 QStringLiteral("Metroid Prime 3: Corruption (World)")}) {
+            QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(localTitle, results), 0);
+        }
+    }
+
+    void preservesRevisionInformation()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Game Title Rev 1"}},
+            QVariantMap{{"title", "Game Title"}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(
+                     QStringLiteral("Game Title (Rev 1)"), results), 0);
+    }
+
     void ignoresDiacriticDifferences()
     {
         const QVariantList results = {
