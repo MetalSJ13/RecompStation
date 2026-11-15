@@ -29,6 +29,7 @@ public:
     QString status() const;
 
     Q_INVOKABLE void scrapeLibrary(bool includePreviouslyChecked = false);
+    Q_INVOKABLE void scrapeGame(int gameId);
 
     static int exactMatchIndex(const QString &localTitle,
                                const QVariantList &results);
