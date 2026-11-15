@@ -53,7 +53,7 @@ Backend modules:
 - PlatformManager
 - LibraryScanner
 - LauncherManager (planned)
-- GitHubManager (planned)
+- GitHubManager (implemented: asynchronous public repository and latest-release requests, release asset parsing)
 - ProcessManager (planned)
 - MetadataProvider (implemented)
 - TheGamesDbClient (implements asynchronous game search and platform catalog retrieval)
@@ -126,7 +126,49 @@ Implemented on the current feature branch:
 - Expose cached artwork to the QML library and display cover thumbnails.
 - Add regression coverage for artwork URL parsing, artwork path persistence, and download input validation.
 
-This milestone is awaiting a local build, regression test run, and interactive validation.
+Validated locally on Arch Linux: the application built, all four regression test suites passed, and cover retrieval and persistence were confirmed.
+
+Milestone 5: GitHub API foundation (implemented on the current feature branch).
+
+- Asynchronous retrieval of public repository information.
+- Asynchronous retrieval of the latest published release.
+- Parsing of release assets, including names, HTTPS download URLs, content types, and sizes.
+- Request identifiers and clear API/network/JSON error reporting.
+- Regression tests for valid responses, malformed responses, missing fields, and invalid repository identifiers.
+
+The manager is exposed to the application context but is not yet connected to a project catalog or user interface. Authentication, private repositories, release asset downloads, and launcher installation are outside this initial slice.
+
+Milestone 6: Curated project catalog and Linux launcher compatibility (planned).
+
+- Maintain a curated catalog mapping supported games/platforms to known recompilation projects and their GitHub repositories.
+- Describe supported Linux architectures and select compatible release assets explicitly; do not assume the newest asset is suitable.
+- Initially support Linux-native AppImages, standalone Linux executables, and compressed Linux archives such as .tar.gz (with .tar.xz considered as needed).
+- Exclude Windows-only binaries from the supported installation flow; Wine/Proton configuration is outside the initial scope.
+- Record each project's executable path, required supporting files, and launch arguments in catalog metadata rather than hardcoding project-specific behavior into generic installation code.
+
+Milestone 7: Launcher download, installation, and updates (planned).
+
+- Download release assets into temporary staging directories.
+- Safely extract supported archives and reject path traversal or entries that would write outside the staging directory.
+- Preserve required directory structure and supporting files; do not assume an archive contains only one executable.
+- Apply executable permissions where appropriate and validate the staged installation before activation.
+- Organize installations in predictable per-project directories.
+- Delete compressed archives and temporary files only after successful extraction and installation.
+- Track installed versions and ensure failed updates do not destroy a previously working installation.
+
+Optional release integrity verification (planned).
+
+- Detect and verify SHA-256 checksum files or manifests when a project publishes them.
+- Detect detached signature files (for example, .sig) and verify them using a trusted project-specific public key or another explicitly documented trust mechanism. A signature file must not be assumed trustworthy merely because it was downloaded beside the release asset.
+- Verification is optional when publishers provide no checksum or signature: absence of verification metadata must not by itself prevent installation.
+- If verification metadata is present but verification fails, treat the asset as unsafe and stop installation by default; report the failure clearly. Any future override should require an informed user decision.
+- Show users whether an asset was verified, could not be verified because no metadata was published, or failed verification.
+
+Milestone 8: Native game launching (planned).
+
+- Associate games with installed compatible launchers.
+- Launch the configured executable with project-specific arguments.
+- Track process state and report launch/runtime errors.
 
 ## Development Guidelines
 
