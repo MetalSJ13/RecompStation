@@ -118,6 +118,28 @@ if(BUILD_TESTING)
 
     add_test(NAME LauncherDownloadManagerTests COMMAND LauncherDownloadManagerTests)
 
+    qt_add_executable(GameLaunchManagerTests
+        tests/GameLaunchManagerTest.cpp
+        src/core/GameLaunchManager.h
+        src/core/GameLaunchManager.cpp
+        src/core/LauncherDownloadManager.h
+        src/core/LauncherDownloadManager.cpp
+        src/core/ArchiveExtractor.h
+        src/core/ArchiveExtractor.cpp
+        src/core/PlatformManager.h
+        src/core/PlatformManager.cpp
+    )
+
+    target_include_directories(GameLaunchManagerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(GameLaunchManagerTests PRIVATE
+        Qt6::Core Qt6::Network Qt6::Concurrent Qt6::Test LibArchive::LibArchive
+    )
+
+    add_test(NAME GameLaunchManagerTests COMMAND GameLaunchManagerTests)
+
     qt_add_executable(LibraryScannerTests
         tests/LibraryScannerTest.cpp
         src/core/PlatformManager.h
