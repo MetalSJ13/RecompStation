@@ -43,6 +43,14 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
     if (!m_metadata)
         return;
 
+    connect(m_metadata, &MetadataManager::platformOptionsChanged,
+            this, [this]() {
+        if (!m_busy && !m_queue.isEmpty()) {
+            setBusy(true);
+            processNext();
+        }
+    });
+
     connect(m_metadata, &MetadataManager::searchCompleted,
             this, [this]() {
         if (!m_busy || m_currentGame.isEmpty())
