@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QSet>
+#include <QStringList>
 #include <QSysInfo>
 
 namespace {
