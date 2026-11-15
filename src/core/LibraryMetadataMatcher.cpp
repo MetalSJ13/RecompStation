@@ -46,7 +46,15 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
     if (!m_metadata)
         return;
 
-    if (m_artwork) {\n        connect(m_artwork, &ArtworkManager::artworkFailed, this,\n                [this](int gameId, const QString &message) {\n            setStatus(QStringLiteral("Artwork for game %1 could not be downloaded: %2")\n                          .arg(gameId).arg(message));\n        });\n    }\n\n    connect(m_metadata, &MetadataManager::platformOptionsChanged,
+    if (m_artwork) {
+        connect(m_artwork, &ArtworkManager::artworkFailed, this,
+                [this](int gameId, const QString &message) {
+            setStatus(QStringLiteral("Artwork for game %1 could not be downloaded: %2")
+                          .arg(gameId).arg(message));
+        });
+    }
+
+    connect(m_metadata, &MetadataManager::platformOptionsChanged,
             this, [this]() {
         if (!m_busy && !m_queue.isEmpty()) {
             setBusy(true);
