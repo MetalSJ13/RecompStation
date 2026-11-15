@@ -842,7 +842,7 @@ Package: " + gameDetailsPopup.selectedAssetName
                             clip: true
                             cellWidth: Math.max(184, Math.min(232,
                                 Math.floor(width / Math.max(1, Math.floor(width / 216)))))
-                            cellHeight: Math.round(cellWidth * 1.34)
+                            cellHeight: Math.round(cellWidth * 1.58)
                             keyNavigationEnabled: true
                             model: {
                                 window.libraryRevision
