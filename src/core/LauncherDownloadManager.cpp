@@ -14,6 +14,7 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QTimer>
+#include <QUuid>
 #include <QUrl>
 
 namespace {
@@ -413,7 +414,7 @@ int LauncherDownloadManager::installDownloadedAsset(
     }
 
     const QString extractionPath = QDir(canonicalProjectStaging)
-        .filePath(assetName + ".extracting-" + QString::number(requestId));
+        .filePath(assetName + ".extracting-" + QUuid::createUuid().toString(QUuid::WithoutBraces));
     if (QFileInfo::exists(extractionPath)) {
         reject(QStringLiteral("A temporary extraction directory already exists; refusing to overwrite it."));
         return requestId;
