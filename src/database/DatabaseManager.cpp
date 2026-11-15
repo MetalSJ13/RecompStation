@@ -167,7 +167,10 @@ bool DatabaseManager::registerGame(const QString &title,
         "VALUES (:title, :platform_id, :game_path, 1) "
         "ON CONFLICT(game_path) DO UPDATE SET "
         "title = excluded.title, platform_id = excluded.platform_id, "
-        "is_available = 1"
+        "is_available = 1 "
+        "WHERE games.is_available = 0 "
+        "OR games.title <> excluded.title "
+        "OR games.platform_id <> excluded.platform_id"
     );
     insertQuery.bindValue(":title", title);
     insertQuery.bindValue(":platform_id", platformQuery.value(0));
