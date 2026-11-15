@@ -427,6 +427,7 @@ QVariantList DatabaseManager::gamesNeedingMetadata(bool includePreviouslyChecked
             (:retry = 1 AND game_metadata.game_id IS NOT NULL
              AND (games.artwork_path IS NULL OR games.artwork_path = '')
              )
+        )
         ORDER BY platforms.name, games.title COLLATE NOCASE
     )");
     query.bindValue(QStringLiteral(":retry"), includePreviouslyChecked ? 1 : 0);
