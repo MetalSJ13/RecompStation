@@ -581,6 +581,40 @@ ApplicationWindow {
                                     font.bold: true
                                     wrapMode: Text.Wrap
                                 }
+                                Rectangle {
+                                    visible: gameDetailsPopup.primaryProject !== null
+                                        && gameDetailsPopup.primaryProject.developmentStatus !== "playable"
+                                    radius: 5
+                                    color: gameDetailsPopup.primaryProject
+                                        && gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                        ? "#5b4525" : "#3b3d4c"
+                                    implicitWidth: projectStatusLabel.implicitWidth + 16
+                                    implicitHeight: projectStatusLabel.implicitHeight + 8
+
+                                    Label {
+                                        id: projectStatusLabel
+                                        anchors.centerIn: parent
+                                        text: gameDetailsPopup.primaryProject
+                                            ? String(gameDetailsPopup.primaryProject.developmentStatus)
+                                                .replace("_", " ").toUpperCase() : ""
+                                        color: "#f3d59b"
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                    }
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.primaryProject !== null
+                                        && (gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                            || gameDetailsPopup.primaryProject.developmentStatus === "alpha")
+                                    text: gameDetailsPopup.primaryProject
+                                        && gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                        ? "This project is in beta. Features may be incomplete and you may encounter bugs."
+                                        : "This project is in alpha. Expect incomplete features and potential instability."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 11
+                                    wrapMode: Text.Wrap
+                                }
                                 Label {
                                     Layout.fillWidth: true
                                     visible: gameDetailsPopup.installedProject !== null
