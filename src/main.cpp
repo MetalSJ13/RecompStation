@@ -37,6 +37,8 @@ int main(int argc, char *argv[])
     }
 
     LibraryScanner libraryScanner(&platformManager, &databaseManager);
+    // Reconcile the persisted library with the current ROM folders at startup.
+    libraryScanner.scanAll();
     TheGamesDbClient metadataProvider;
     MetadataManager metadataManager(&metadataProvider);
     ArtworkManager artworkManager(&databaseManager,
