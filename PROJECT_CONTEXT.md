@@ -1,200 +1,133 @@
-# RecompStation - Project Context
+# RecompStation — Project Context
 
-## Project Objective
+## Project objective
 
-RecompStation is a native game library frontend for managing
-and launching recompilation projects.
+RecompStation is a native desktop game-library frontend for managing and launching native game recompilation projects. It is conceptually similar to EmulationStation, but instead of managing emulators, it manages supported recompilation launchers, their releases, installations, and launch configurations.
 
-It is conceptually similar to EmulationStation, but instead
-of managing emulators, it manages native game recompilation
-launchers downloaded from GitHub.
+Users can organize games by console platform, scan local game directories, associate metadata and artwork, discover compatible recompilation projects, install their launchers, and launch supported games from their library.
 
-Users can organize their games by console platform, install
-supported recompilation launchers, and launch games directly
-from their library.
-
-## Technology Stack
+## Technology stack
 
 - Language: C++20
 - Framework: Qt 6.5 or newer
 - UI: QML / Qt Quick
-- Build system: CMake
+- Build system: CMake (Ninja supported by build scripts)
 - Database: SQLite
 - Networking: Qt Network
-- Process management: QProcess (planned)
-- Primary development OS: Arch Linux
-- Desktop environment: KDE Plasma
+- Process management: QProcess
+- Primary development environment: Arch Linux / KDE Plasma
 
-## Initial Platform Support
+## Initial platform coverage
 
 - Nintendo 64 (N64)
 - PlayStation 1 (PS1)
 - Nintendo GameCube
 - Nintendo Wii
 
-## Core Features
+Platform support is not equivalent to universal recompilation support. A game is launchable only when a compatible project is represented in the curated project catalog and the user's game/ROM meets that project's requirements.
 
-1. Automatic platform directory creation.
-2. Game directory scanning.
-3. Game library management.
-4. Game artwork and metadata.
-5. GitHub API integration.
-6. Automatic recompilation launcher downloads.
-7. Launcher installation and updates.
-8. Native executable launching.
-9. Custom game and launcher directories.
+## Core capabilities
+
+1. Platform directory creation and game-directory scanning.
+2. Local game-library management backed by SQLite.
+3. Metadata search, platform mapping, and metadata-to-ROM association.
+4. Cover-art retrieval and local caching.
+5. Curated recompilation project catalog.
+6. GitHub repository and release discovery.
+7. Architecture-aware launcher asset selection.
+8. Safe launcher download, extraction, installation, discovery, and uninstall.
+9. Native launcher process execution.
+10. Project-specific launch configuration, launcher updates, and optional release integrity verification (planned).
 
 ## Architecture
 
 The application uses a modular C++ backend and QML frontend.
 
-Backend modules:
-- GameManager (planned)
-- PlatformManager
-- LibraryScanner
-- LauncherManager (planned)
-- GitHubManager (implemented: asynchronous public repository and latest-release requests, release asset parsing)
-- ProcessManager (planned)
-- MetadataProvider (implemented)
-- TheGamesDbClient (implements asynchronous game search and platform catalog retrieval)
-- MetadataPlatformMapping (parses the provider catalog and maps supported internal platforms)
-- MetadataManager (exposes search state, results, and mapped platform options to QML)
-- DatabaseManager
-- SettingsManager (planned)
+Implemented backend areas:
+- `PlatformManager`: supported platform directory setup and platform information.
+- `LibraryScanner`: recursive game-file discovery and registration.
+- `DatabaseManager`: SQLite persistence for games and metadata associations.
+- `MetadataProvider` / `TheGamesDbClient`: asynchronous metadata and platform catalog requests.
+- `MetadataPlatformMapping`: mapping from RecompStation platform identifiers to provider platform IDs.
+- `MetadataManager`: metadata search state, results, configuration, and QML-facing integration.
+- `ArtworkManager`: asynchronous artwork download and local caching.
+- `GitHubManager`: asynchronous public repository and latest-release retrieval.
+- `ProjectCatalog`: bundled, schema-validated catalog of supported recompilation projects and their platform/asset rules.
+- `ArchiveExtractor`: safe extraction of supported archive formats.
+- `LauncherDownloadManager`: staged downloads, installation validation, managed launcher discovery, and uninstall.
+- `GameLaunchManager`: launch of managed executables as separate processes and process-state/error reporting.
 
-The scanner currently supports these file extensions:
-- N64: .z64, .n64, .v64
-- PS1: .cue, .chd, .pbp, .iso, .bin, .img
-- GameCube: .iso, .gcm, .rvz, .ciso
-- Wii: .iso, .wbfs, .rvz, .wud, .wux
+The UI is implemented in QML. The current interface is functional but is now the focus of a dedicated refinement milestone. The intent is to establish shared design tokens, reusable components, clear navigation, and polished workflows without destabilizing the working backend.
 
-PS1 .bin and .img companion files are skipped when a .cue file is present in the same directory. Format detection is extension-based; file integrity and game metadata are not yet validated. The TheGamesDB client supports asynchronous title searches and platform catalog retrieval. MetadataManager maps the four supported internal platforms to provider IDs at runtime and exposes a platform selector to QML. The metadata search page displays provider results and supports filtering by the selected platform. Metadata search results can be associated with an individual local ROM record through a separate game_metadata table. The local scanner title and ROM path remain unchanged; the provider ID and descriptive metadata are stored independently. TheGamesDB search parsing now extracts front-cover artwork URLs. ArtworkManager downloads supported HTTPS image responses into the application artwork directory and stores the local file path on the game record. The library exposes cached artwork paths to QML for display.
+## Scanner formats
 
-## Current Development Status
+The scanner currently recognizes these extensions:
 
-Milestone 1: Application foundation.
+- N64: `.z64`, `.n64`, `.v64`
+- PS1: `.cue`, `.chd`, `.pbp`, `.iso`, `.bin`, `.img`
+- GameCube: `.iso`, `.gcm`, `.rvz`, `.ciso`
+- Wii: `.iso`, `.wbfs`, `.rvz`, `.wud`, `.wux`
 
-Completed:
-- Qt application initialization.
-- C++20 and CMake configuration.
-- QML main interface.
-- Automatic platform directory creation.
-- SQLite initialization.
-- Initial platform registration.
-- Successful application launch on Arch Linux.
+PS1 `.bin` and `.img` companion files are skipped when a `.cue` file is present in the same directory. Detection is extension-based; the scanner does not yet prove file integrity or ROM revision compatibility.
 
-Milestone 2: Initial game library scanning.
+## Current implementation status
 
-Implemented in code:
-- Recursive scanning of platform game folders.
-- Extension-based game-file discovery.
-- SQLite registration with unique game-path protection.
-- Basic game listing in QML and platform filtering.
+The following workflows are implemented in the current development baseline:
 
-Regression tests cover supported extensions, recursive discovery, duplicate scans, PS1 cue/bin/img companion handling, scan-completion signaling, and invalid platform handling. Metadata provider tests cover missing API-key handling, empty searches, game and platform catalog JSON parsing, all four supported platform mappings, and malformed responses. Both suites require local build and execution on Arch Linux.
+- Recursive scanning of configured platform folders, with duplicate-path protection.
+- Asynchronous TheGamesDB title search and runtime platform catalog retrieval/mapping for the four initial platforms.
+- Association of provider metadata with an individual local game record without overwriting the scanned title or path.
+- Front-cover URL parsing, HTTPS artwork download, local cache storage, and cover display in the library.
+- Asynchronous GitHub public repository/latest-release requests and release asset parsing.
+- A versioned bundled project catalog with an initial Banjo: Recompiled entry for N64 Banjo-Kazooie.
+- Normalized metadata-title/platform matching to catalog entries.
+- Linux x86_64 and ARM64 release-asset filtering using catalog filename rules.
+- Staged downloads, safe extraction of supported `tar.gz` and `tar.xz` packages, executable validation, managed installation, installed-launcher rediscovery, and confirmation-protected uninstall.
+- A Play Game action that launches a validated installed executable as a separate process and reports running/finished/failed states.
 
-Milestone 3A: TheGamesDB metadata provider and platform mapping.
+The initial Banjo: Recompiled catalog entry records its North American 1.0 ROM requirement. Current matching uses associated metadata title and platform; it does not hash or inspect ROM contents, so a title match must not be presented as proof of ROM compatibility.
 
-Implemented:
-- Asynchronous TheGamesDB game search using a locally supplied API key.
-- Runtime retrieval of the TheGamesDB platform catalog.
-- Mapping of N64, PS1, GameCube, and Wii to provider platform IDs.
-- Platform-filtered metadata search in the QML interface.
-- Regression tests for provider response parsing and platform mapping.
+Regression tests have been added for the scanner, database associations, metadata provider/mapping, artwork, GitHub parsing, project catalog, archive extraction, launcher installation/management, and process launching. The full suite should be run against the current branch before merge.
 
-Live platform-filtered search has been confirmed on Arch Linux. The full regression test suite should still be run against the final branch state before the milestone is considered fully validated.
+## Development direction and roadmap
 
-Milestone 3B: Associate provider metadata with local ROM records.
+The immediate priority is UI/UX refinement. The current launcher-download and native-launch implementation remains unmerged while this work proceeds on the dedicated `ui/interface-redesign` branch. Keep `main` stable until the feature set is reviewed and the merge is explicitly approved.
 
-Implemented and merged into main:
-- Separate SQLite game_metadata table with a one-to-one foreign-key relationship to games.
-- Metadata association keyed by the local game's database ID.
-- QML selector for choosing a scanned local ROM.
-- Association action on each metadata search result.
-- Safe replacement of an existing metadata match without changing the local game title or path.
-- Database regression tests for successful association, replacement, and unknown local game handling.
+Development order:
 
-Validated on Arch Linux with a successful build, all three regression test suites passing, and persistence confirmed after restarting the application.
+1. **UI/UX audit and design foundation:** inspect all current pages and interactions; agree on visual direction, theme tokens, component patterns, navigation, and window behavior.
+2. **Application shell and navigation:** establish a consistent main window, navigation model, page layout, and reusable QML patterns.
+3. **Game Library:** refine game cards/artwork, filtering, metadata/project status, and launch states.
+4. **Metadata and ROM management:** refine search, platform selection, association, scanning, and feedback states.
+5. **Launcher Discovery and installation:** refine project/release selection, architecture guidance, download/install progress, errors, and uninstall.
+6. **Settings and first-run experience:** add clear configuration and setup workflows and consistent confirmation/notification patterns.
+7. **Accessibility and regression:** verify keyboard/focus behavior, contrast, scaling, responsive layouts, full build, tests, and manual workflow checks.
+8. **Launcher lifecycle completion:** installed version tracking, update discovery, rollback-safe replacement, and staging recovery.
+9. **Project-specific launch configuration:** catalog-driven arguments, ROM path handling, and compatibility validation where reliable.
+10. **Optional integrity verification:** verify publisher-provided checksums/signatures against a documented trust mechanism. Missing verification metadata alone must not block installation; failed verification should stop installation by default.
+11. **Catalog and platform expansion:** add projects and package formats only after validating their release, architecture, package layout, executable, launch behavior, and ROM requirements.
 
-Milestone 4: Game artwork retrieval and local caching.
+The detailed checklist, build workflow, development principles, and definition of done are maintained in `DEVELOPMENT.md`.
 
-Implemented on the current feature branch:
-- Parse TheGamesDB front-cover image URLs from search responses.
-- Persist the provider artwork URL with the local game metadata association.
-- Download supported HTTPS image responses asynchronously with response-size and MIME-type checks.
-- Cache artwork under the application data directory and persist each local game's artwork path.
-- Expose cached artwork to the QML library and display cover thumbnails.
-- Add regression coverage for artwork URL parsing, artwork path persistence, and download input validation.
+## Development guidelines
 
-Validated locally on Arch Linux: the application built, all four regression test suites passed, and cover retrieval and persistence were confirmed.
+- Keep application/business logic in C++ and presentation/navigation in QML.
+- Prefer small, reusable QML components and focused pages; avoid a monolithic main view.
+- Keep project-specific behavior in catalog/configuration data where practical, not hardcoded into shared launcher code.
+- Preserve existing functionality when introducing UI or backend changes.
+- Keep each change focused and the application buildable throughout development.
+- Add regression tests when backend behavior changes.
+- Do not routinely delete or recreate the local build directory; incremental builds should remain the normal development path.
+- Never claim ROM compatibility solely from a metadata title match.
+- Do not treat the absence of a publisher checksum/signature as an installation failure.
 
-Milestone 5: GitHub API foundation (implemented on the current feature branch).
+## Build workflow
 
-- Asynchronous retrieval of public repository information.
-- Asynchronous retrieval of the latest published release.
-- Parsing of release assets, including names, HTTPS download URLs, content types, and sizes.
-- Request identifiers and clear API/network/JSON error reporting.
-- Regression tests for valid responses, malformed responses, missing fields, and invalid repository identifiers.
+From the repository root:
 
-The manager is exposed to the application context but is not yet connected to a project catalog or user interface. Authentication, private repositories, release asset downloads, and launcher installation are outside this initial slice.
+```bash
+./scripts/build.sh
+./scripts/build.sh --test
+```
 
-Milestone 6: Curated project catalog and Linux launcher compatibility (in progress).
-
-Implemented:
-- Versioned bundled JSON catalog with schema validation and regression tests.
-- Initial Banjo: Recompiled entry for N64 Banjo-Kazooie, linked to BanjoRecomp/BanjoRecomp.
-- Normalized game-title and platform matching against associated metadata.
-- Explicit x86_64 and aarch64 Linux .tar.gz asset rules; Windows and Flatpak assets are not selected for the initial native archive workflow.
-- Project-specific ROM revision notes and expected executable path metadata.
-- ProjectCatalog is exposed to QML, and matching supported project names are displayed on local game-library entries. GitHub latest-release discovery is connected to the Launcher Discovery page. It displays only release assets matching the catalog's current-architecture Linux filename rules; downloading and installing those assets remain outstanding.
-
-The catalog match uses metadata title and platform only. It does not verify the local ROM revision or hash. The Banjo: Recompiled entry therefore records its North American 1.0 requirement without claiming that metadata matching confirms the ROM is suitable.
-
-Remaining design scope: support additional package formats and per-project supporting files/launch arguments as real projects require, then connect catalog matches to compatible GitHub release assets.
-
-Milestone 7: Launcher download, installation, and updates (planned).
-
-- Download release assets into temporary staging directories.
-- Safely extract supported archives and reject path traversal or entries that would write outside the staging directory.
-- Preserve required directory structure and supporting files; do not assume an archive contains only one executable.
-- Apply executable permissions where appropriate and validate the staged installation before activation.
-- Organize installations in predictable per-project directories.
-- Delete compressed archives and temporary files only after successful extraction and installation.
-- Track installed versions and ensure failed updates do not destroy a previously working installation.
-
-Optional release integrity verification (planned).
-
-- Detect and verify SHA-256 checksum files or manifests when a project publishes them.
-- Detect detached signature files (for example, .sig) and verify them using a trusted project-specific public key or another explicitly documented trust mechanism. A signature file must not be assumed trustworthy merely because it was downloaded beside the release asset.
-- Verification is optional when publishers provide no checksum or signature: absence of verification metadata must not by itself prevent installation.
-- If verification metadata is present but verification fails, treat the asset as unsafe and stop installation by default; report the failure clearly. Any future override should require an informed user decision.
-- Show users whether an asset was verified, could not be verified because no metadata was published, or failed verification.
-
-Milestone 8: Native game launching (planned).
-
-- Associate games with installed compatible launchers.
-- Launch the configured executable with project-specific arguments.
-- Track process state and report launch/runtime errors.
-
-## Development Guidelines
-
-- Prefer modular C++ architecture.
-- Keep UI logic in QML.
-- Keep application logic in C++.
-- Use SQLite for persistent library data.
-- Use Qt APIs wherever practical.
-- Maintain Linux compatibility.
-- Avoid hardcoding launcher-specific behavior.
-- Preserve existing functionality when introducing new features.
-
-## Important Instructions
-
-Before modifying existing code:
-
-1. Inspect the current project structure.
-2. Review existing implementations.
-3. Identify dependencies and relationships.
-4. Avoid replacing working code unnecessarily.
-5. Provide complete files when significant modifications
-   are required.
-6. Explain build and testing instructions.
+The script reuses the configured build directory and generator. Release configurations can be selected with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`. See `DEVELOPMENT.md` for dependency details and the full development roadmap.
