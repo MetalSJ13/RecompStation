@@ -208,6 +208,7 @@ ApplicationWindow {
                 filePath: executablePath
             })
             window.downloadStates = states
+            window.launcherRevision++
             window.finishInstallRequest(requestId)
         }
         function onInstallationFailed(requestId, message) {
