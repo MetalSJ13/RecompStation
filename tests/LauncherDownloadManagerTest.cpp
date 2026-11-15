@@ -4,6 +4,7 @@
 #include "core/PlatformManager.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -17,6 +18,7 @@ private slots:
     void rejectsUnsafeAssetNames();
     void rejectsNonHttpsUrls();
     void rejectsOversizedAssets();
+    void rejectsSymlinkedStagingRoot();
     void acceptsValidRequestAndReportsMissingNetworkDestination();
 };
 
@@ -113,6 +115,36 @@ void LauncherDownloadManagerTest::rejectsOversizedAssets()
 
     QTRY_COMPARE(failureSpy.count(), 1);
     QCOMPARE(failureSpy.takeFirst().at(0).toInt(), requestId);
+}
+
+void LauncherDownloadManagerTest::rejectsSymlinkedStagingRoot()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString stagingPath = platformManager.stagingDirectory();
+    QVERIFY(QDir(stagingPath).removeRecursively());
+
+    const QString outsidePath = QDir(temporaryDirectory.path())
+                                    .filePath("outside-staging");
+    QVERIFY(QDir().mkpath(outsidePath));
+    QVERIFY(QFile::link(outsidePath, stagingPath));
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy failureSpy(&manager, &LauncherDownloadManager::downloadFailed);
+    const int requestId = manager.downloadAsset(
+        QStringLiteral("banjo-kazooie-recompiled"),
+        QStringLiteral("launcher.tar.gz"),
+        QStringLiteral("https://example.com/launcher.tar.gz")
+    );
+
+    QTRY_COMPARE(failureSpy.count(), 1);
+    QCOMPARE(failureSpy.takeFirst().at(0).toInt(), requestId);
+    QVERIFY(!QFileInfo::exists(
+        QDir(outsidePath).filePath("banjo-kazooie-recompiled")));
 }
 
 void LauncherDownloadManagerTest::acceptsValidRequestAndReportsMissingNetworkDestination()
