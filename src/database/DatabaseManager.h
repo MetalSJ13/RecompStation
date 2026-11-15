@@ -20,8 +20,6 @@ public:
 
     bool reconcilePlatformGames(const QString &platform,
                                 const QStringList &discoveredPaths);
-    bool reconcilePlatformGames(const QString &platform,
-                                const QStringList &discoveredPaths);
     Q_INVOKABLE bool registerGame(const QString &title,
                                   const QString &platform,
                                   const QString &gamePath);
