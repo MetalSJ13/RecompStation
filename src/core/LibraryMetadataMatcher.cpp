@@ -85,8 +85,8 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
                                       : QStringLiteral("no_match"));
             }
             finishCurrent(false, ambiguous
-                ? QStringLiteral("Multiple exact metadata matches; left unassociated.")
-                : QStringLiteral("No exact metadata match; left unassociated."));
+                ? QStringLiteral("Multiple equally strong metadata matches; left unassociated.")
+                : QStringLiteral("No confident metadata match; left unassociated."));
             return;
         }
 
