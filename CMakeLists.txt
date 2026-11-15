@@ -14,7 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS
-    Core Gui Quick QuickControls2 Sql Network
+    Core Gui Quick QuickControls2 Sql Network Concurrent
 )
 find_package(LibArchive REQUIRED)
 qt_standard_project_setup(REQUIRES 6.5)
@@ -55,7 +55,7 @@ qt_add_qml_module(RecompStationApp
 )
 
 target_link_libraries(RecompStationApp PRIVATE
-    Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql Qt6::Network
+    Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql Qt6::Network Qt6::Concurrent
     LibArchive::LibArchive
 )
 
