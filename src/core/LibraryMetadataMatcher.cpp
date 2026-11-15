@@ -251,6 +251,57 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked)
     processNext();
 }
 
+
+void LibraryMetadataMatcher::scrapeGame(int gameId)
+{
+    if (m_busy || !m_database || !m_metadata)
+        return;
+
+    if (gameId <= 0) {
+        setStatus(QStringLiteral("A valid library game is required."));
+        return;
+    }
+    if (!m_metadata->isConfigured()) {
+        setStatus(QStringLiteral("Metadata is unavailable. Configure a TheGamesDB API key to enable matching."));
+        return;
+    }
+
+    const QVariantList games = m_database->games();
+    QVariantMap selected;
+    for (const QVariant &entry : games) {
+        const QVariantMap game = entry.toMap();
+        if (game.value(QStringLiteral("id")).toInt() == gameId) {
+            selected = game;
+            break;
+        }
+    }
+
+    if (selected.isEmpty()) {
+        setStatus(QStringLiteral("The selected game is no longer in the library."));
+        return;
+    }
+
+    m_queue.clear();
+    m_queue.enqueue(QVariantMap{
+        {QStringLiteral("id"), gameId},
+        {QStringLiteral("title"), selected.value(QStringLiteral("title"))},
+        {QStringLiteral("platform"), selected.value(QStringLiteral("platform"))},
+        {QStringLiteral("hasMetadata"), !selected.value(QStringLiteral("metadataTitle")).toString().isEmpty()},
+        {QStringLiteral("artworkUrl"), selected.value(QStringLiteral("metadataArtworkUrl"))}
+    });
+
+    m_completedCount = 0;
+    m_matchedCount = 0;
+    m_unresolvedCount = 0;
+    m_totalCount = 1;
+    emit progressChanged();
+
+    setBusy(true);
+    setStatus(QStringLiteral("Retrying metadata for %1...")
+                  .arg(selected.value(QStringLiteral("title")).toString()));
+    processNext();
+}
+
 void LibraryMetadataMatcher::processNext()
 {
     if (!m_busy)
