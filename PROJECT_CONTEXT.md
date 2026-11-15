@@ -53,7 +53,7 @@ Backend modules:
 - PlatformManager
 - LibraryScanner
 - LauncherManager (planned)
-- GitHubManager (planned)
+- GitHubManager (implemented: asynchronous public repository and latest-release requests, release asset parsing)
 - ProcessManager (planned)
 - MetadataProvider (implemented)
 - TheGamesDbClient (implements asynchronous game search and platform catalog retrieval)
@@ -126,7 +126,17 @@ Implemented on the current feature branch:
 - Expose cached artwork to the QML library and display cover thumbnails.
 - Add regression coverage for artwork URL parsing, artwork path persistence, and download input validation.
 
-This milestone is awaiting a local build, regression test run, and interactive validation.
+Validated locally on Arch Linux: the application built, all four regression test suites passed, and cover retrieval and persistence were confirmed.
+
+Milestone 5: GitHub API foundation (implemented on the current feature branch).
+
+- Asynchronous retrieval of public repository information.
+- Asynchronous retrieval of the latest published release.
+- Parsing of release assets, including names, HTTPS download URLs, content types, and sizes.
+- Request identifiers and clear API/network/JSON error reporting.
+- Regression tests for valid responses, malformed responses, missing fields, and invalid repository identifiers.
+
+The manager is exposed to the application context but is not yet connected to a project catalog or user interface. Authentication, private repositories, release asset downloads, and launcher installation are outside this initial slice.
 
 ## Development Guidelines
 
