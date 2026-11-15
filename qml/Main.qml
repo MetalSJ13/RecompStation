@@ -14,6 +14,7 @@ ApplicationWindow {
 
     property string currentPage: "Library"
     property string selectedPlatform: "All Games"
+    property string librarySearchText: ""
     property int libraryRevision: 0
     property int launcherRevision: 0
     property string pendingUninstallProjectId: ""
@@ -364,39 +365,24 @@ ApplicationWindow {
                 }
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                Label { text: "LIBRARY"; color: "#888899"; font.pixelSize: 11; font.bold: true }
+                Label {
+                    text: "EXPLORE"
+                    color: theme.textMuted
+                    font.pixelSize: 11
+                    font.bold: true
+                }
 
                 Button {
                     Layout.fillWidth: true
                     text: "Game Library"
                     highlighted: currentPage === "Library"
-                    onClicked: {
-                        selectedPlatform = "All Games"
-                        currentPage = "Library"
-                    }
-                }
-                Button {
-                    Layout.fillWidth: true
-                    text: "Metadata Search"
-                    highlighted: currentPage === "Metadata Search"
-                    onClicked: currentPage = "Metadata Search"
-                }
-                Button {
-                    Layout.fillWidth: true
-                    text: "Platforms"
-                    highlighted: currentPage === "Platforms"
-                    onClicked: currentPage = "Platforms"
+                    onClicked: currentPage = "Library"
                 }
 
-                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                Label { text: "MANAGEMENT"; color: "#888899"; font.pixelSize: 11; font.bold: true }
-                Button {
-                    Layout.fillWidth: true
-                    text: "Launchers"
-                    highlighted: currentPage === "Launchers"
-                    onClicked: currentPage = "Launchers"
-                }
                 Item { Layout.fillHeight: true }
+
+                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+
                 Button {
                     Layout.fillWidth: true
                     text: "Settings"
@@ -447,6 +433,18 @@ ApplicationWindow {
                                     font.pixelSize: 14
                                 }
                             }
+                            TextField {
+                                Layout.preferredWidth: 230
+                                placeholderText: "Search your games..."
+                                selectByMouse: true
+                                onTextChanged: window.librarySearchText = text
+                            }
+                            ComboBox {
+                                Layout.preferredWidth: 190
+                                model: ["All Games"].concat(platformManager.platforms())
+                                currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
+                                onActivated: window.selectedPlatform = currentText
+                            }
                             Button {
                                 text: "Scan Library"
                                 highlighted: true
@@ -472,7 +470,12 @@ ApplicationWindow {
                             spacing: 10
                             model: {
                                 window.libraryRevision
-                                databaseManager.games(selectedPlatform === "All Games" ? "" : selectedPlatform)
+                                const games = databaseManager.games(
+                                    selectedPlatform === "All Games" ? "" : selectedPlatform)
+                                const query = window.librarySearchText.trim().toLowerCase()
+                                return query.length === 0
+                                    ? games
+                                    : games.filter(game => game.title.toLowerCase().includes(query))
                             }
                             delegate: Rectangle {
                                 required property string title
