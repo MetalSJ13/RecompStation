@@ -282,7 +282,22 @@ ApplicationWindow {
             window.libraryRevision++
             window.scanMessage = libraryScanner.lastError.length > 0
                 ? libraryScanner.lastError
-                : gamesFound + " new game(s) added to your library."
+                : gamesFound + " new game(s) found. Checking metadata..."
+            if (libraryScanner.lastError.length === 0)
+                metadataMatcher.scrapeLibrary()
+        }
+    }
+
+    Connections {
+        target: metadataMatcher
+        function onStatusChanged() {
+            window.scanMessage = metadataMatcher.status
+            window.libraryRevision++
+        }
+        function onScrapeFinished(matched, unresolved) {
+            window.libraryRevision++
+            window.scanMessage = "Metadata complete: " + matched
+                + " matched, " + unresolved + " left unresolved."
         }
     }
 
