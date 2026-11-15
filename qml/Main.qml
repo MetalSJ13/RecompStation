@@ -768,13 +768,13 @@ Package: " + gameDetailsPopup.selectedAssetName
                                 onActivated: window.selectedPlatform = currentText
                             }
                             Button {
-                            Button {
                                 text: "Refresh Metadata & Artwork"
                                 onClicked: {
                                     scanMessage = "Refreshing metadata and missing artwork..."
                                     metadataMatcher.scrapeLibrary(true)
                                 }
                             }
+                            Button {
                                 text: "Scan Library"
                                 highlighted: true
                                 onClicked: {
