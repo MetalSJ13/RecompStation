@@ -108,6 +108,37 @@ private slots:
                  QUrl::fromLocalFile(artworkPath).toString());
     }
 
+
+    void tracksMetadataLookupAttemptsWithoutRepeatingQueries()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY2(database.initialize(
+                     temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+        QVERIFY(database.registerGame(
+            QStringLiteral("Banjo-Kazooie"), QStringLiteral("N64"),
+            temporaryDirectory.path() + "/Banjo-Kazooie.z64"));
+
+        const QVariantList pending = database.gamesNeedingMetadata();
+        QCOMPARE(pending.size(), 1);
+        const int gameId = pending.first().toMap().value("id").toInt();
+
+        QVERIFY(database.markMetadataLookupAttempt(
+            gameId, QStringLiteral("no_match")));
+        QVERIFY(database.gamesNeedingMetadata().isEmpty());
+
+        QVERIFY(database.markMetadataLookupAttempt(
+            gameId, QStringLiteral("ambiguous")));
+        QVERIFY(database.gamesNeedingMetadata().isEmpty());
+
+        QVERIFY(database.markMetadataLookupAttempt(
+            gameId, QStringLiteral("matched")));
+        QVERIFY(database.gamesNeedingMetadata().isEmpty());
+    }
+
     void rejectsAssociationForUnknownLocalGame()
     {
         QTemporaryDir temporaryDirectory;
