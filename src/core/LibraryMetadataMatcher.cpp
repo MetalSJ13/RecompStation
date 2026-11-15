@@ -11,8 +11,10 @@
 namespace {
 QString normalizedTitle(QString title)
 {
+    // Strip recognized region identifiers, but preserve revision tags.
     static const QRegularExpression regionTag(
-        QStringLiteral(R"(\s*\((?:USA|US|Europe|EUR|Japan|JPN|World|Rev(?:ision)? ?[A-Z0-9]*)\)|\s*\[(?:!|b)\])"),
+        QStringLiteral(
+            R"(\s*[\(\[]\s*(?:USA|US|U|Europe|EUR|EU|E|Japan|JPN|JP|J|World|W)\s*[\)\]])"),
         QRegularExpression::CaseInsensitiveOption);
     title.remove(regionTag);
     title = title.normalized(QString::NormalizationForm_D);
