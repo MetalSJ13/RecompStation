@@ -197,6 +197,8 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         const QString id = object.value(QStringLiteral("id")).toString().trimmed();
         const QString name = object.value(QStringLiteral("name")).toString().trimmed();
         const QString platform = object.value(QStringLiteral("platform")).toString().trimmed();
+        const QString developmentStatus =
+            object.value(QStringLiteral("developmentStatus")).toString().trimmed();
         const QString owner = object.value(QStringLiteral("repositoryOwner")).toString().trimmed();
         const QString repository = object.value(QStringLiteral("repositoryName")).toString().trimmed();
         const QJsonArray titles = object.value(QStringLiteral("gameTitles")).toArray();
@@ -208,7 +210,10 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         if (!idPattern.match(id).hasMatch() || projectIds.contains(id)
             || name.isEmpty() || !supportedPlatforms.contains(platform)
             || !validRepositoryPart(owner) || !validRepositoryPart(repository)
-            || titles.isEmpty() || architectures.isEmpty()) {
+            || titles.isEmpty() || architectures.isEmpty()
+            || !QStringList{QStringLiteral("playable"), QStringLiteral("beta"),
+                            QStringLiteral("alpha"), QStringLiteral("in_progress"),
+                            QStringLiteral("abandoned")}.contains(developmentStatus)) {
             return fail(QStringLiteral("A project catalog entry is missing valid required fields."));
         }
 
@@ -252,6 +257,7 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         project.insert(QStringLiteral("id"), id);
         project.insert(QStringLiteral("name"), name);
         project.insert(QStringLiteral("platform"), platform);
+        project.insert(QStringLiteral("developmentStatus"), developmentStatus);
         project.insert(QStringLiteral("gameTitles"), gameTitles);
         project.insert(QStringLiteral("repositoryOwner"), owner);
         project.insert(QStringLiteral("repositoryName"), repository);
