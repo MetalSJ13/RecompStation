@@ -49,7 +49,7 @@ The API key is read from the process environment and is never written into sourc
 
 The association feature is merged into main and validated locally. Metadata is stored separately from the scanner's local game title and path, so provider titles do not overwrite local ROM records.
 
-### Artwork retrieval and local caching (in progress)
+### Artwork retrieval and local caching
 - [x] Parse TheGamesDB front-cover artwork URLs from search results
 - [x] Persist artwork URLs with the metadata association
 - [x] Download supported HTTPS artwork asynchronously
@@ -58,7 +58,7 @@ The association feature is merged into main and validated locally. Metadata is s
 - [x] Display cached cover thumbnails in the game library
 - [x] Add artwork parser, database, and input-validation tests
 
-This feature branch awaits a local build, regression test run, and interactive validation.
+Merged into main and validated locally on Arch Linux; all four regression test suites passed and artwork association, download, and library display were confirmed.
 
 ### Upcoming
 - [ ] GitHub integration
