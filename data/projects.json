@@ -23,6 +23,49 @@
           "packageFormat": "tar.gz",
           "executablePath": "BanjoRecompiled"
         }
+      },
+      "developmentStatus": "playable"
+    },
+    {
+      "id": "conkers-bad-fur-day-recompiled",
+      "name": "Conker's Bad Fur Day: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Conker's Bad Fur Day",
+        "Conker Bad Fur Day",
+        "Conker's Bad Fur Day: Recompiled"
+      ],
+      "repositoryOwner": "sciaschi",
+      "repositoryName": "CBFD-Recompiled",
+      "romRequirements": "Requires a legally obtained US version of Conker's Bad Fur Day. The project does not include game data; you supply your own ROM.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^.*Linux.*\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "ConkerRecomp"
+        }
+      }
+    },
+    {
+      "id": "diddy-kong-racing-recompiled",
+      "name": "DKR-R (Diddy Kong Racing Recompiled)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Diddy Kong Racing",
+        "Diddy Kong Racing: Recompiled",
+        "DKR-R"
+      ],
+      "repositoryOwner": "ThatGuyMcd",
+      "repositoryName": "DKR-R",
+      "romRequirements": "Requires a legally obtained US v1.0 or US Rev A/v1.1 Diddy Kong Racing ROM. Linux AppImage builds require a compatible Vulkan driver and glibc 2.38 or newer.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^DKR-R-.*-Linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "DKR-R-Linux-x86_64.AppImage"
+        }
       }
     }
   ]
