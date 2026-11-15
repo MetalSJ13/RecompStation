@@ -516,6 +516,16 @@ ApplicationWindow {
                             }
                             Label {
                                 Layout.fillWidth: true
+                                visible: !!window.selectedGame
+                                    && (!window.selectedGame.metadataTitle
+                                        || window.selectedGame.metadataTitle.length === 0)
+                                text: "METADATA NOT FOUND"
+                                color: theme.textMuted
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                            Label {
+                                Layout.fillWidth: true
                                 text: window.selectedGame && window.selectedGame.metadataOverview.length > 0
                                     ? window.selectedGame.metadataOverview
                                     : "No description is available yet. RecompStation will add game information when matching metadata is found."
@@ -660,6 +670,17 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
+
+                    Button {
+                        visible: !!window.selectedGame
+                            && (!window.selectedGame.metadataTitle
+                                || window.selectedGame.metadataTitle.length === 0
+                                || !window.selectedGame.artworkPath
+                                || window.selectedGame.artworkPath.length === 0)
+                        enabled: metadataManager.configured && !metadataMatcher.busy
+                        text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
+                        onClicked: metadataMatcher.scrapeGame(window.selectedGame.id)
+                    }
 
                     Button {
                         visible: gameDetailsPopup.installedProject !== null
