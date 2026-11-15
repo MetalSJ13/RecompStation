@@ -60,10 +60,44 @@ The association feature is merged into main and validated locally. Metadata is s
 
 Merged into main and validated locally on Arch Linux; all four regression test suites passed and artwork association, download, and library display were confirmed.
 
-### Upcoming
-- [ ] GitHub integration
-- [ ] Launcher installation
-- [ ] Game launching
+### Upcoming development goals
+
+#### Milestone 5: GitHub API foundation
+- [x] Retrieve public repository information asynchronously
+- [x] Retrieve latest published release information asynchronously
+- [x] Parse release assets, including HTTPS download URLs, content types, and sizes
+- [x] Report API, network, and response-parsing errors
+- [x] Add regression tests for repository and release response parsing
+
+#### Milestone 6: Supported project catalog and Linux launcher discovery
+- [ ] Maintain a curated catalog of supported recompilation projects and their GitHub repositories
+- [ ] Map supported games/platforms to the appropriate recompilation project
+- [ ] Define supported Linux architectures and compatible release assets per project
+- [ ] Support Linux-native AppImage, standalone executable, and supported archive releases (initially .tar.gz; consider .tar.xz as needed)
+- [ ] Exclude Windows-only binaries; do not require Wine or Proton for the initial supported workflow
+- [ ] Record each project's expected executable path, required supporting files, and launch arguments
+
+#### Milestone 7: Launcher download, installation, and updates
+- [ ] Download selected release assets into a temporary staging area
+- [ ] Safely extract supported archives while preventing path traversal and writes outside the staging directory
+- [ ] Preserve required directory structure and supporting files
+- [ ] Apply executable permissions where appropriate and validate the installed launcher
+- [ ] Install each project into a predictable, project-specific directory
+- [ ] Remove downloaded archives and temporary files only after successful installation
+- [ ] Track installed versions and support updates/rollback-safe replacement
+- [ ] Clean up failed or incomplete installations without damaging an existing working installation
+
+#### Optional release integrity verification
+- [ ] Detect published SHA-256 checksum files/manifests and verify downloaded assets when available
+- [ ] Detect detached signatures (for example, .sig files) and verify them using a trusted project-specific public key or documented trust mechanism
+- [ ] Store verification status and communicate whether an asset was verified, unavailable for verification, or failed verification
+- [ ] Do not block installation solely because a project publishes no checksum or signature
+- [ ] Treat a published checksum/signature that fails verification as an integrity error and stop installation unless the user explicitly chooses an informed override
+
+#### Milestone 8: Native game launching
+- [ ] Associate installed launchers with supported games
+- [ ] Launch the configured executable with project-specific arguments
+- [ ] Track process state and report launch/runtime errors
 
 
 ### Build script
