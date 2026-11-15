@@ -76,7 +76,8 @@ Merged into main and validated locally on Arch Linux; all four regression test s
 - [x] Define x86-64 and ARM64 Linux release asset rules; explicitly exclude Windows and Flatpak archives from the initial native archive workflow
 - [x] Record repository identity, ROM revision notes, package format, and expected executable path
 - [x] Expose catalog lookup to the application/QML context
-- [x] Show supported recompilation project matches in the local game library\n- [ ] Connect catalog matches to GitHub release discovery and present compatible assets in the UI
+- [x] Show supported recompilation project matches in the local game library
+- [ ] Connect catalog matches to GitHub release discovery and present compatible assets in the UI
 - [ ] Expand catalog entries after validating the initial end-to-end workflow
 
 The catalog currently matches the associated metadata title and platform. It does not yet inspect ROM hashes/revisions; the Banjo: Recompiled entry documents its North American 1.0 requirement so we do not imply that title matching proves ROM compatibility.
