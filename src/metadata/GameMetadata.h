@@ -16,6 +16,7 @@ struct GameMetadata
     int platformId = 0;
     QString rating;
     QString artworkUrl;
+    int artworkPixelCount = 0;
     QList<int> developerIds;
     QList<int> publisherIds;
     QList<int> genreIds;
