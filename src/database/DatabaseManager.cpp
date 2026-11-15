@@ -263,7 +263,7 @@ QVariantList DatabaseManager::games(const QString &platform) const
         query.prepare(select + "ORDER BY platforms.name, games.title COLLATE NOCASE");
     } else {
         query.prepare(select
-            + "WHERE platforms.name = :platform "
+            + "AND platforms.name = :platform "
               "ORDER BY games.title COLLATE NOCASE");
         query.bindValue(":platform", platform);
     }
