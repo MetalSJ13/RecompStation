@@ -22,6 +22,8 @@ public:
     Q_INVOKABLE QVariantMap project(const QString &projectId) const;
     Q_INVOKABLE QVariantList projectsForGame(const QString &metadataTitle,
                                               const QString &platform) const;
+    Q_INVOKABLE QVariantList compatibleAssets(const QString &projectId,
+                                               const QVariantList &assets) const;
     Q_INVOKABLE bool isAssetCompatible(const QString &projectId,
                                        const QString &architecture,
                                        const QString &assetName) const;
