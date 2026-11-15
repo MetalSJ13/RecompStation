@@ -834,7 +834,7 @@ ApplicationWindow {
                                                     visible: downloadState.loading || downloadState.completed || downloadState.error.length > 0
                                                     Layout.maximumWidth: 190
                                                     text: downloadState.error.length > 0 ? downloadState.error
-                                                        : downloadState.completed ? "Saved to staging"
+                                                        : downloadState.completed ? "Saved: " + downloadState.filePath
                                                         : downloadState.bytesTotal > 0
                                                             ? Math.floor(downloadState.bytesReceived / downloadState.bytesTotal * 100) + "%"
                                                             : (downloadState.bytesReceived / 1048576).toFixed(1) + " MB"
