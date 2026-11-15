@@ -5,6 +5,8 @@
 #include <QObject>
 #include <QString>
 
+class QNetworkRequest;
+
 struct GitHubRepository
 {
     QString name;
