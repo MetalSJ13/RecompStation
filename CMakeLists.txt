@@ -10,6 +10,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Compile Qt .qrc files into every target that lists them as a source.
+set(CMAKE_AUTORCC ON)
+
 find_package(Qt6 6.5 REQUIRED COMPONENTS
     Core Gui Quick QuickControls2 Sql Network
 )
