@@ -18,6 +18,9 @@ qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(RecompStationApp
     src/main.cpp
+    data/projects.qrc
+    src/projects/ProjectCatalog.h
+    src/projects/ProjectCatalog.cpp
     src/github/GitHubManager.h
     src/github/GitHubManager.cpp
     src/core/PlatformManager.h
@@ -126,6 +129,23 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME MetadataProviderTests COMMAND MetadataProviderTests)
+
+    qt_add_executable(ProjectCatalogTests
+        tests/ProjectCatalogTest.cpp
+        data/projects.qrc
+        src/projects/ProjectCatalog.h
+        src/projects/ProjectCatalog.cpp
+    )
+
+    target_include_directories(ProjectCatalogTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ProjectCatalogTests PRIVATE
+        Qt6::Core Qt6::Test
+    )
+
+    add_test(NAME ProjectCatalogTests COMMAND ProjectCatalogTests)
 
     qt_add_executable(GitHubManagerTests
         tests/GitHubManagerTest.cpp
