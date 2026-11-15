@@ -38,6 +38,16 @@ ApplicationWindow {
         pendingDownloadRequests = pending
     }
 
+    function cancelAssetDownload(projectId, assetName) {
+        const key = projectId + "|" + assetName
+        for (const requestId in pendingDownloadRequests) {
+            if (pendingDownloadRequests[requestId] === key) {
+                launcherDownloadManager.cancelDownload(Number(requestId))
+                return
+            }
+        }
+    }
+
     function updateDownloadState(requestId, values) {
         const key = pendingDownloadRequests[requestId]
         if (!key)
@@ -811,9 +821,11 @@ ApplicationWindow {
                                                     property var downloadState: window.downloadStates[downloadKey]
                                                         || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
                                                     text: downloadState.completed ? "Downloaded"
-                                                        : downloadState.loading ? "Downloading..." : "Download"
-                                                    enabled: !downloadState.loading && !downloadState.completed
-                                                    onClicked: window.startAssetDownload(modelData.project, modelData)
+                                                        : downloadState.loading ? "Cancel" : "Download"
+                                                    enabled: !downloadState.completed
+                                                    onClicked: downloadState.loading
+                                                        ? window.cancelAssetDownload(modelData.projectId, modelData.name)
+                                                        : window.startAssetDownload(modelData.project, modelData)
                                                 }
                                                 Label {
                                                     property string downloadKey: modelData.projectId + "|" + modelData.name
