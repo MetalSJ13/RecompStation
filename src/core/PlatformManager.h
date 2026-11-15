@@ -24,6 +24,7 @@ public:
     bool initialize();
 
     QString dataDirectory() const;
+    QString stagingDirectory() const;
 
     Q_INVOKABLE QStringList platforms() const;
 
@@ -31,9 +32,18 @@ public:
         const QString &platform
     ) const;
 
+    Q_INVOKABLE QString launcherDirectory(
+        const QString &projectId
+    ) const;
+
+    Q_INVOKABLE bool createLauncherDirectory(
+        const QString &projectId
+    );
+
 private:
     QString m_dataDirectory;
     QStringList m_platforms;
 
     bool createDirectory(const QString &path);
+    static bool isValidProjectId(const QString &projectId);
 };
