@@ -325,14 +325,14 @@ bool DatabaseManager::setArtworkPath(int gameId, const QString &artworkPath)
 }
 
 
-QVariantList DatabaseManager::gamesNeedingMetadata() const
+QVariantList DatabaseManager::gamesNeedingMetadata(bool includePreviouslyChecked) const
 {
     QVariantList result;
     if (!m_database.isOpen())
         return result;
 
     QSqlQuery query(m_database);
-    if (!query.exec(R"(
+    query.prepare(R"(
         SELECT games.id, games.title, platforms.name
         FROM games
         JOIN platforms ON games.platform_id = platforms.id
