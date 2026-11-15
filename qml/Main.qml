@@ -210,6 +210,8 @@ ApplicationWindow {
                                 required property string platform
                                 required property string path
                                 required property string artworkPath
+                                required property string metadataTitle
+                                property var supportedProjects: projectCatalog.projectsForGame(metadataTitle, platform)
                                 width: gameList.width
                                 height: 92
                                 radius: 10
@@ -255,6 +257,15 @@ ApplicationWindow {
                                             font.pixelSize: 11
                                             elide: Text.ElideMiddle
                                             Layout.fillWidth: true
+                                        }
+                                        Label {
+                                            visible: supportedProjects.length > 0
+                                            text: supportedProjects.length > 0
+                                                  ? "Supported recompilation: " + supportedProjects[0].name
+                                                  : ""
+                                            color: "#91d6a5"
+                                            font.pixelSize: 11
+                                            wrapMode: Text.Wrap
                                         }
                                     }
                                 }

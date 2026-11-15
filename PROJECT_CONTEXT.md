@@ -138,13 +138,19 @@ Milestone 5: GitHub API foundation (implemented on the current feature branch).
 
 The manager is exposed to the application context but is not yet connected to a project catalog or user interface. Authentication, private repositories, release asset downloads, and launcher installation are outside this initial slice.
 
-Milestone 6: Curated project catalog and Linux launcher compatibility (planned).
+Milestone 6: Curated project catalog and Linux launcher compatibility (in progress).
 
-- Maintain a curated catalog mapping supported games/platforms to known recompilation projects and their GitHub repositories.
-- Describe supported Linux architectures and select compatible release assets explicitly; do not assume the newest asset is suitable.
-- Initially support Linux-native AppImages, standalone Linux executables, and compressed Linux archives such as .tar.gz (with .tar.xz considered as needed).
-- Exclude Windows-only binaries from the supported installation flow; Wine/Proton configuration is outside the initial scope.
-- Record each project's executable path, required supporting files, and launch arguments in catalog metadata rather than hardcoding project-specific behavior into generic installation code.
+Implemented:
+- Versioned bundled JSON catalog with schema validation and regression tests.
+- Initial Banjo: Recompiled entry for N64 Banjo-Kazooie, linked to BanjoRecomp/BanjoRecomp.
+- Normalized game-title and platform matching against associated metadata.
+- Explicit x86_64 and aarch64 Linux .tar.gz asset rules; Windows and Flatpak assets are not selected for the initial native archive workflow.
+- Project-specific ROM revision notes and expected executable path metadata.
+- ProjectCatalog is exposed to QML, and matching supported project names are displayed on local game-library entries. GitHub release/asset discovery integration remains outstanding.
+
+The catalog match uses metadata title and platform only. It does not verify the local ROM revision or hash. The Banjo: Recompiled entry therefore records its North American 1.0 requirement without claiming that metadata matching confirms the ROM is suitable.
+
+Remaining design scope: support additional package formats and per-project supporting files/launch arguments as real projects require, then connect catalog matches to compatible GitHub release assets.
 
 Milestone 7: Launcher download, installation, and updates (planned).
 

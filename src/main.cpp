@@ -10,6 +10,7 @@
 #include "metadata/TheGamesDbClient.h"
 #include "metadata/MetadataManager.h"
 #include "github/GitHubManager.h"
+#include "projects/ProjectCatalog.h"
 
 int main(int argc, char *argv[])
 {
@@ -38,6 +39,9 @@ int main(int argc, char *argv[])
     ArtworkManager artworkManager(&databaseManager,
                                   platformManager.dataDirectory() + "/artwork");
     GitHubManager githubManager;
+    ProjectCatalog projectCatalog;
+    if (!projectCatalog.isLoaded())
+        qWarning() << "Project catalog unavailable:" << projectCatalog.errorString();
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("platformManager", &platformManager);
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);
@@ -45,6 +49,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("metadataManager", &metadataManager);
     engine.rootContext()->setContextProperty("artworkManager", &artworkManager);
     engine.rootContext()->setContextProperty("githubManager", &githubManager);
+    engine.rootContext()->setContextProperty("projectCatalog", &projectCatalog);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, []() { QCoreApplication::exit(-1); },

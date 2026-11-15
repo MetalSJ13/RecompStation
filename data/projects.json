@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "projects": [
+    {
+      "id": "banjo-kazooie-recompiled",
+      "name": "Banjo: Recompiled",
+      "platform": "N64",
+      "gameTitles": [
+        "Banjo-Kazooie",
+        "Banjo Kazooie"
+      ],
+      "repositoryOwner": "BanjoRecomp",
+      "repositoryName": "BanjoRecomp",
+      "romRequirements": "Requires a North American 1.0 copy of Banjo-Kazooie. RecompStation currently matches the associated game metadata; it does not yet verify the ROM revision.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^BanjoRecompiled-.*-Linux-X64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "BanjoRecompiled"
+        },
+        "aarch64": {
+          "assetNameRegex": "^BanjoRecompiled-.*-Linux-ARM64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "BanjoRecompiled"
+        }
+      }
+    }
+  ]
+}
