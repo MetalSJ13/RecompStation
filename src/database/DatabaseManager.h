@@ -31,6 +31,8 @@ public:
                                        const QString &rating,
                                        const QString &artworkUrl);
     Q_INVOKABLE bool setArtworkPath(int gameId, const QString &artworkPath);
+    Q_INVOKABLE QVariantList gamesNeedingMetadata() const;
+    Q_INVOKABLE bool markMetadataLookupAttempt(int gameId, const QString &status);
 
 signals:
     void errorChanged();
