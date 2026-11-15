@@ -238,6 +238,33 @@ void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
     QVERIFY(QFileInfo(executablePath).isFile());
     QVERIFY(QFileInfo(executablePath).isExecutable());
 
+    LauncherDownloadManager restartedManager(&platformManager);
+    QCOMPARE(restartedManager.installedLaunchers().size(), 1);
+
+    QFile replacementArchive(archivePath);
+    QVERIFY(replacementArchive.open(QIODevice::WriteOnly));
+    QCOMPARE(replacementArchive.write("do not replace the existing launcher"), qint64(36));
+    replacementArchive.close();
+    QSignalSpy replacementFailureSpy(
+        &restartedManager, &LauncherDownloadManager::installationFailed);
+    const int replacementRequest = restartedManager.installDownloadedAsset(
+        projectId, assetName, QStringLiteral("tar.gz"), QStringLiteral("SampleLauncher"));
+    QTRY_COMPARE(replacementFailureSpy.count(), 1);
+    QCOMPARE(replacementFailureSpy.takeFirst().at(0).toInt(), replacementRequest);
+    QVERIFY(QFileInfo(executablePath).isFile());
+    QVERIFY(QFileInfo::exists(archivePath));
+
+    const QString unmanagedDirectory = QDir(platformManager.dataDirectory())
+                                           .filePath("launchers/unmanaged-project");
+    QVERIFY(QDir().mkpath(unmanagedDirectory));
+    const QString unmanagedFile = QDir(unmanagedDirectory).filePath("keep.txt");
+    QFile unmanaged(unmanagedFile);
+    QVERIFY(unmanaged.open(QIODevice::WriteOnly));
+    QCOMPARE(unmanaged.write("not managed"), qint64(11));
+    unmanaged.close();
+    QVERIFY(!restartedManager.uninstallLauncher(QStringLiteral("unmanaged-project")));
+    QVERIFY(QFileInfo::exists(unmanagedFile));
+
     const QString unrelatedFile = QDir(temporaryDirectory.path()).filePath("keep-this-file.txt");
     QFile unrelated(unrelatedFile);
     QVERIFY(unrelated.open(QIODevice::WriteOnly));
@@ -245,8 +272,8 @@ void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
     unrelated.close();
 
     QVERIFY(!manager.uninstallLauncher(QStringLiteral("../outside")));
-    QVERIFY(manager.uninstallLauncher(projectId));
-    QVERIFY(manager.installedLaunchers().isEmpty());
+    QVERIFY(restartedManager.uninstallLauncher(projectId));
+    QVERIFY(restartedManager.installedLaunchers().isEmpty());
     QVERIFY(QFileInfo::exists(unrelatedFile));
 }
 
