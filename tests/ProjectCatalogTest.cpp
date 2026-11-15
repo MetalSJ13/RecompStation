@@ -9,6 +9,8 @@ class ProjectCatalogTest : public QObject
 private slots:
     void parsesValidCatalog();
     void acceptsZipPackageFormat();
+    void parsesDevelopmentStatus();
+    void rejectsUnknownDevelopmentStatus();
     void rejectsMalformedCatalog();
     void matchesGameByTitleAndPlatform();
     void selectsOnlyCompatibleLinuxAssets();
@@ -23,6 +25,7 @@ void ProjectCatalogTest::parsesValidCatalog()
         "projects": [{
             "id": "sample-project",
             "name": "Sample Recompiled",
+            "developmentStatus": "playable",
             "platform": "N64",
             "gameTitles": ["Sample Game"],
             "repositoryOwner": "ExampleOrg",
@@ -56,6 +59,7 @@ void ProjectCatalogTest::acceptsZipPackageFormat()
         "projects": [{
             "id": "zip-project",
             "name": "ZIP Recompiled",
+            "developmentStatus": "beta",
             "platform": "N64",
             "gameTitles": ["ZIP Game"],
             "repositoryOwner": "ExampleOrg",
@@ -79,6 +83,40 @@ void ProjectCatalogTest::acceptsZipPackageFormat()
         .value(QStringLiteral("x86_64")).toMap();
     QCOMPARE(rule.value(QStringLiteral("packageFormat")).toString(),
              QStringLiteral("zip"));
+}
+
+
+void ProjectCatalogTest::parsesDevelopmentStatus()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.isLoaded());
+    const QVariantList matches = catalog.projectsForGame(
+        QStringLiteral("Conker's Bad Fur Day"), QStringLiteral("N64"));
+    QCOMPARE(matches.size(), 1);
+    QCOMPARE(matches.first().toMap().value(QStringLiteral("developmentStatus")).toString(),
+             QStringLiteral("beta"));
+}
+
+void ProjectCatalogTest::rejectsUnknownDevelopmentStatus()
+{
+    const QByteArray json = R"({
+        "schemaVersion": 1,
+        "projects": [{
+            "id": "bad-status", "name": "Bad Status", "platform": "N64",
+            "developmentStatus": "experimental-ish",
+            "gameTitles": ["Bad Status Game"],
+            "repositoryOwner": "Example", "repositoryName": "BadStatus",
+            "architectures": {"x86_64": {
+                "assetNameRegex": "^bad$",
+                "packageFormat": "tar.gz",
+                "executablePath": "bad"
+            }}
+        }]
+    })";
+    QVariantList projects;
+    QString error;
+    QVERIFY(!ProjectCatalog::parseCatalog(json, &projects, &error));
+    QVERIFY(error.contains(QStringLiteral("valid required fields")));
 }
 
 void ProjectCatalogTest::rejectsMalformedCatalog()
