@@ -751,7 +751,14 @@ ApplicationWindow {
                             && !!gameDetailsPopup.primaryProject
                             && gameDetailsPopup.installedProject === null
                         text: gameDetailsPopup.primaryProject
-                            ? "Install " + gameDetailsPopup.primaryProject.name + "?" : ""
+                            ? (gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                ? "This is a BETA project. It may contain bugs or incomplete features. Install "
+                                    + gameDetailsPopup.primaryProject.name + "?"
+                                : gameDetailsPopup.primaryProject.developmentStatus === "alpha"
+                                    ? "This is an ALPHA project and may be unstable. Install "
+                                        + gameDetailsPopup.primaryProject.name + "?"
+                                    : "Install " + gameDetailsPopup.primaryProject.name + "?")
+                            : ""
                         color: theme.textPrimary
                         wrapMode: Text.Wrap
                     }
