@@ -54,13 +54,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         });
     }
 
-    if (m_artwork) {
-        connect(m_artwork, &ArtworkManager::artworkFailed, this,
-                [this](int gameId, const QString &message) {
-            setStatus(QStringLiteral("Artwork for game %1 could not be downloaded: %2")
-                          .arg(gameId).arg(message));
-        });
-    }
+
 
     connect(m_metadata, &MetadataManager::platformOptionsChanged,
             this, [this]() {
