@@ -23,6 +23,8 @@ private slots:
     void rejectsSymlinkedStagingRoot();
     void acceptsValidRequestAndReportsMissingNetworkDestination();
     void installsAndUninstallsManagedLauncher();
+    void installsZipLauncherWithCompanionFiles();
+    void installsStandaloneAppImage();
 };
 
 void LauncherDownloadManagerTest::rejectsInvalidProjectIdentifiers()
@@ -276,6 +278,98 @@ void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
     QVERIFY(restartedManager.uninstallLauncher(projectId));
     QVERIFY(restartedManager.installedLaunchers().isEmpty());
     QVERIFY(QFileInfo::exists(unrelatedFile));
+}
+
+
+void LauncherDownloadManagerTest::installsZipLauncherWithCompanionFiles()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("zip-sample-project");
+    const QString assetName = QStringLiteral("SampleProject-Linux-X64.zip");
+    const QString stagingDirectory = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(stagingDirectory));
+    const QString archivePath = QDir(stagingDirectory).filePath(assetName);
+
+    struct archive *writer = archive_write_new();
+    QVERIFY(writer != nullptr);
+    QCOMPARE(archive_write_set_format_zip(writer), ARCHIVE_OK);
+    const QByteArray archivePathBytes = QFile::encodeName(archivePath);
+    QCOMPARE(archive_write_open_filename(writer, archivePathBytes.constData()), ARCHIVE_OK);
+
+    const QList<QPair<QByteArray, QByteArray>> files = {
+        {QByteArray("SampleProject.AppImage"), QByteArray("appimage-binary")},
+        {QByteArray("resources/data.bin"), QByteArray("companion-data")}
+    };
+    for (const auto &file : files) {
+        struct archive_entry *entry = archive_entry_new();
+        QVERIFY(entry != nullptr);
+        archive_entry_set_pathname(entry, file.first.constData());
+        archive_entry_set_filetype(entry, AE_IFREG);
+        archive_entry_set_perm(entry, 0755);
+        archive_entry_set_size(entry, file.second.size());
+        QCOMPARE(archive_write_header(writer, entry), ARCHIVE_OK);
+        QCOMPARE(archive_write_data(writer, file.second.constData(), file.second.size()),
+                 static_cast<la_ssize_t>(file.second.size()));
+        archive_entry_free(entry);
+    }
+    QCOMPARE(archive_write_close(writer), ARCHIVE_OK);
+    QCOMPARE(archive_write_free(writer), ARCHIVE_OK);
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completedSpy(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failedSpy(&manager, &LauncherDownloadManager::installationFailed);
+    const int requestId = manager.installDownloadedAsset(
+        projectId, assetName, QStringLiteral("zip"),
+        QStringLiteral("SampleProject.AppImage"));
+    QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 10000);
+    QCOMPARE(completedSpy.takeFirst().at(0).toInt(), requestId);
+    QCOMPARE(failedSpy.count(), 0);
+
+    const QString installRoot = QDir(platformManager.dataDirectory())
+                                    .filePath("launchers/" + projectId);
+    QVERIFY(QFileInfo(QDir(installRoot).filePath("SampleProject.AppImage")).isExecutable());
+    QFile companion(QDir(installRoot).filePath("resources/data.bin"));
+    QVERIFY(companion.open(QIODevice::ReadOnly));
+    QCOMPARE(companion.readAll(), QByteArray("companion-data"));
+}
+
+void LauncherDownloadManagerTest::installsStandaloneAppImage()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("standalone-appimage-project");
+    const QString assetName = QStringLiteral("StandaloneLauncher-x86_64.AppImage");
+    const QString stagingDirectory = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(stagingDirectory));
+    const QString appImagePath = QDir(stagingDirectory).filePath(assetName);
+    QFile appImage(appImagePath);
+    QVERIFY(appImage.open(QIODevice::WriteOnly));
+    const QByteArray content("standalone-appimage-content");
+    QCOMPARE(appImage.write(content), qint64(content.size()));
+    appImage.close();
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completedSpy(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failedSpy(&manager, &LauncherDownloadManager::installationFailed);
+    const int requestId = manager.installDownloadedAsset(
+        projectId, assetName, QStringLiteral("appimage"), assetName);
+    QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 10000);
+    QCOMPARE(completedSpy.takeFirst().at(0).toInt(), requestId);
+    QCOMPARE(failedSpy.count(), 0);
+
+    const QString installedPath = QDir(platformManager.dataDirectory())
+        .filePath("launchers/" + projectId + "/" + assetName);
+    QVERIFY(QFileInfo(installedPath).isExecutable());
+    QFile installed(installedPath);
+    QVERIFY(installed.open(QIODevice::ReadOnly));
+    QCOMPARE(installed.readAll(), content);
 }
 
 QTEST_GUILESS_MAIN(LauncherDownloadManagerTest)
