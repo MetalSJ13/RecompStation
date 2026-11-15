@@ -129,6 +129,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(GitHubManagerTests
         tests/GitHubManagerTest.cpp
+        tests/GitHubManagerTest.h
         src/github/GitHubManager.h
         src/github/GitHubManager.cpp
     )
