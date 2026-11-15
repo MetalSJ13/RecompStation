@@ -23,6 +23,7 @@ ApplicationWindow {
     property var pendingReleaseRequests: ({})
     property var releaseStates: ({})
     property var pendingDownloadRequests: ({})
+    property var pendingInstallRequests: ({})
     property var downloadStates: ({})
 
     function startAssetDownload(project, asset) {
@@ -36,6 +37,42 @@ ApplicationWindow {
         let pending = Object.assign({}, pendingDownloadRequests)
         pending[requestId] = key
         pendingDownloadRequests = pending
+    }
+
+    function startAssetInstall(projectId, assetName) {
+        const key = projectId + "|" + assetName
+        const project = projectCatalog.project(projectId)
+        const rules = project.architectures
+            ? project.architectures[projectCatalog.currentArchitecture] : null
+        if (!rules) {
+            let states = Object.assign({}, downloadStates)
+            states[key] = Object.assign({}, states[key] || {}, {
+                installing: false,
+                error: "No installation rules exist for this project and device architecture."
+            })
+            downloadStates = states
+            return
+        }
+
+        let states = Object.assign({}, downloadStates)
+        states[key] = Object.assign({}, states[key] || {}, {
+            installing: true,
+            installed: false,
+            error: ""
+        })
+        downloadStates = states
+
+        const requestId = launcherDownloadManager.installDownloadedAsset(
+            projectId, assetName, rules.packageFormat, rules.executablePath)
+        let pending = Object.assign({}, pendingInstallRequests)
+        pending[requestId] = key
+        pendingInstallRequests = pending
+    }
+
+    function finishInstallRequest(requestId) {
+        let pending = Object.assign({}, pendingInstallRequests)
+        delete pending[requestId]
+        pendingInstallRequests = pending
     }
 
     function cancelAssetDownload(projectId, assetName) {
@@ -141,12 +178,42 @@ ApplicationWindow {
             window.updateDownloadState(requestId, {
                 loading: false,
                 completed: true,
+                installing: true,
+                installed: false,
                 error: "",
                 filePath: filePath,
                 bytesReceived: window.downloadStates[projectId + "|" + assetName]
                     ? window.downloadStates[projectId + "|" + assetName].bytesTotal : 0
             })
             window.finishDownloadRequest(requestId)
+            window.startAssetInstall(projectId, assetName)
+        }
+        function onInstallationCompleted(requestId, projectId, executablePath) {
+            const key = window.pendingInstallRequests[requestId]
+            if (!key)
+                return
+            let states = Object.assign({}, window.downloadStates)
+            states[key] = Object.assign({}, states[key] || {}, {
+                installing: false,
+                installed: true,
+                error: "",
+                filePath: executablePath
+            })
+            window.downloadStates = states
+            window.finishInstallRequest(requestId)
+        }
+        function onInstallationFailed(requestId, message) {
+            const key = window.pendingInstallRequests[requestId]
+            if (!key)
+                return
+            let states = Object.assign({}, window.downloadStates)
+            states[key] = Object.assign({}, states[key] || {}, {
+                installing: false,
+                installed: false,
+                error: message
+            })
+            window.downloadStates = states
+            window.finishInstallRequest(requestId)
         }
         function onDownloadFailed(requestId, message) {
             window.updateDownloadState(requestId, {
@@ -820,12 +887,20 @@ ApplicationWindow {
                                                     property string downloadKey: modelData.projectId + "|" + modelData.name
                                                     property var downloadState: window.downloadStates[downloadKey]
                                                         || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
-                                                    text: downloadState.completed ? "Downloaded"
+                                                    text: downloadState.installed ? "Installed"
+                                                        : downloadState.installing ? "Installing…"
+                                                        : downloadState.completed && downloadState.error.length > 0 ? "Retry Install"
+                                                        : downloadState.completed ? "Downloaded" 
                                                         : downloadState.loading ? "Cancel" : "Download"
-                                                    enabled: !downloadState.completed
-                                                    onClicked: downloadState.loading
-                                                        ? window.cancelAssetDownload(modelData.projectId, modelData.name)
-                                                        : window.startAssetDownload(modelData.project, modelData)
+                                                    enabled: !downloadState.installed && !downloadState.installing
+                                                    onClicked: {
+                                                        if (downloadState.loading)
+                                                            window.cancelAssetDownload(modelData.projectId, modelData.name)
+                                                        else if (downloadState.completed)
+                                                            window.startAssetInstall(modelData.projectId, modelData.name)
+                                                        else
+                                                            window.startAssetDownload(modelData.project, modelData)
+                                                    }
                                                 }
                                                 Label {
                                                     property string downloadKey: modelData.projectId + "|" + modelData.name
