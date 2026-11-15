@@ -37,6 +37,8 @@ qt_add_executable(RecompStationApp
     src/core/ArchiveExtractor.cpp
     src/core/LibraryScanner.h
     src/core/LibraryScanner.cpp
+    src/core/LibraryMetadataMatcher.h
+    src/core/LibraryMetadataMatcher.cpp
     src/core/ArtworkManager.h
     src/core/ArtworkManager.cpp
     src/database/DatabaseManager.h
@@ -216,6 +218,31 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME MetadataProviderTests COMMAND MetadataProviderTests)
+
+    qt_add_executable(LibraryMetadataMatcherTests
+        tests/LibraryMetadataMatcherTest.cpp
+        src/core/LibraryMetadataMatcher.h
+        src/core/LibraryMetadataMatcher.cpp
+        src/core/ArtworkManager.h
+        src/core/ArtworkManager.cpp
+        src/database/DatabaseManager.h
+        src/database/DatabaseManager.cpp
+        src/metadata/GameMetadata.h
+        src/metadata/MetadataPlatformMapping.h
+        src/metadata/MetadataProvider.h
+        src/metadata/MetadataManager.h
+        src/metadata/MetadataManager.cpp
+    )
+
+    target_include_directories(LibraryMetadataMatcherTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(LibraryMetadataMatcherTests PRIVATE
+        Qt6::Core Qt6::Sql Qt6::Network Qt6::Test
+    )
+
+    add_test(NAME LibraryMetadataMatcherTests COMMAND LibraryMetadataMatcherTests)
 
     qt_add_executable(ProjectCatalogTests
         tests/ProjectCatalogTest.cpp
