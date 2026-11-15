@@ -40,7 +40,7 @@ Implemented capabilities include:
 - Native process launch with running/finished/error state
 - Regression tests for scanner, database, metadata, artwork, GitHub, catalog, archive, launcher management, and process launching
 
-Current scanning is a user-invoked scan; continuous filesystem monitoring and automatic metadata matching are planned, not yet implemented. Current metadata functionality includes search and manual association; the redesign will make metadata maintenance automatic and contextual.
+Current scanning is user-invoked. The active UI branch now connects the Scan Library action to a sequential automatic metadata matcher. Its initial policy accepts only a unique exact normalized-title match within the mapped platform; ambiguous and missing results remain unassociated. Lookup attempts are persisted to avoid repeating completed searches, and accepted metadata triggers the existing artwork cache. This initial implementation is awaiting local build and regression-test verification. Continuous filesystem monitoring remains planned.
 
 ## Product and UI direction
 
