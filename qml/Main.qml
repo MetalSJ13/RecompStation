@@ -53,6 +53,42 @@ ApplicationWindow {
     }
 
     Connections {
+        target: githubManager
+        function onReleaseDataLoaded(requestId, release) {
+            const projectId = window.pendingReleaseRequests[requestId]
+            if (!projectId)
+                return
+            let pending = Object.assign({}, window.pendingReleaseRequests)
+            delete pending[requestId]
+            window.pendingReleaseRequests = pending
+            let states = Object.assign({}, window.releaseStates)
+            states[projectId] = {
+                loading: false,
+                error: "",
+                release: release,
+                assets: projectCatalog.compatibleAssets(projectId, release.assets)
+            }
+            window.releaseStates = states
+        }
+        function onRequestFailed(requestId, message) {
+            const projectId = window.pendingReleaseRequests[requestId]
+            if (!projectId)
+                return
+            let pending = Object.assign({}, window.pendingReleaseRequests)
+            delete pending[requestId]
+            window.pendingReleaseRequests = pending
+            let states = Object.assign({}, window.releaseStates)
+            states[projectId] = {
+                loading: false,
+                error: message,
+                release: null,
+                assets: []
+            }
+            window.releaseStates = states
+        }
+    }
+
+    Connections {
         target: libraryScanner
         function onScanCompleted(gamesFound) {
             window.libraryRevision++
@@ -667,6 +703,13 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
+                                        visible: state.loading
+                                        text: "Contacting GitHub and checking release assets..."
+                                        color: "#a98cff"
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
                                         visible: !!state.error
                                         text: state.error || ""
                                         color: "#ff8b8b"
@@ -707,10 +750,14 @@ ApplicationWindow {
                                         wrapMode: Text.Wrap
                                     }
                                     Label {
+                                        Layout.fillWidth: true
                                         visible: !!state.release
-                                        text: state.release ? "View release on GitHub" : ""
-                                        color: "#a98cff"
+                                        text: state.release
+                                              ? "Release published: " + state.release.publishedAt
+                                              : ""
+                                        color: "#9999aa"
                                         font.pixelSize: 11
+                                        wrapMode: Text.Wrap
                                     }
                                 }
                             }
