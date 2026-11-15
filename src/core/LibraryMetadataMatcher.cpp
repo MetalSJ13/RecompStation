@@ -11,7 +11,26 @@
 namespace {
 QString normalizedTitle(QString title)
 {
-    title = title.normalized(QString::NormalizationForm_D);
+    // Region/revision tags commonly included in ROM filenames are not part
+    // of the canonical game title.
+    static const QRegularExpression releaseTag(
+        QStringLiteral(R"((\\([^)]*\\)|\\[[^]]*\\]))"));
+    static const QRegularExpression knownTag(
+        QStringLiteral(R"(^\\s*(usa|us|europe|eur|e|japan|jpn|jp|world|rev(?:ision)?\\s*[a-z0-9]*|v?\\d+(?:\\.\\d+)*|en|fr|de|es|it|u|e|j)\\s*$)"),
+        QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatchIterator tags = releaseTag.globalMatch(title);
+    QString cleaned;
+    int last = 0;
+    while (tags.hasNext()) {
+        const auto match = tags.next();
+        cleaned += title.mid(last, match.capturedStart() - last);
+        const QString tag = match.captured().mid(1, match.capturedLength() - 2);
+        if (!knownTag.match(tag).hasMatch())
+            cleaned += match.captured();
+        last = match.capturedEnd();
+    }
+    cleaned += title.mid(last);
+    title = cleaned.normalized(QString::NormalizationForm_D);
     QString result;
     result.reserve(title.size());
 
