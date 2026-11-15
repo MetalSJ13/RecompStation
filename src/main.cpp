@@ -9,6 +9,7 @@
 #include "database/DatabaseManager.h"
 #include "metadata/TheGamesDbClient.h"
 #include "metadata/MetadataManager.h"
+#include "github/GitHubManager.h"
 
 int main(int argc, char *argv[])
 {
@@ -36,12 +37,14 @@ int main(int argc, char *argv[])
     MetadataManager metadataManager(&metadataProvider);
     ArtworkManager artworkManager(&databaseManager,
                                   platformManager.dataDirectory() + "/artwork");
+    GitHubManager githubManager;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("platformManager", &platformManager);
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);
     engine.rootContext()->setContextProperty("libraryScanner", &libraryScanner);
     engine.rootContext()->setContextProperty("metadataManager", &metadataManager);
     engine.rootContext()->setContextProperty("artworkManager", &artworkManager);
+    engine.rootContext()->setContextProperty("githubManager", &githubManager);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, []() { QCoreApplication::exit(-1); },
