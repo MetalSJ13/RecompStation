@@ -338,6 +338,22 @@ ApplicationWindow {
         property var primaryProject: supportedProjects.length > 0 ? supportedProjects[0] : null
         property var installedProject: primaryProject
             ? window.installedLauncher(primaryProject.id) : null
+        property bool installPromptVisible: false
+        property var releaseState: primaryProject
+            ? (window.releaseStates[primaryProject.id]
+                || ({ loading: false, error: "", release: null, assets: [] }))
+            : ({ loading: false, error: "", release: null, assets: [] })
+        property var downloadState: primaryProject
+            ? (window.downloadStates[primaryProject.id + "|"
+                + (releaseState.assets.length > 0 ? releaseState.assets[0].name : "")] || {})
+            : ({})
+
+        onOpened: {
+            installPromptVisible = false
+            if (primaryProject && !releaseState.loading
+                    && !releaseState.release && releaseState.error.length === 0)
+                window.checkProjectRelease(primaryProject)
+        }
 
         background: Rectangle {
             radius: theme.radiusLarge
@@ -462,6 +478,69 @@ ApplicationWindow {
                         wrapMode: Text.Wrap
                     }
                     Item { Layout.fillHeight: true }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.primaryProject !== null
+                            && gameDetailsPopup.releaseState.loading
+                        text: "Checking for the latest compatible Linux release…"
+                        color: theme.accentHover
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.primaryProject !== null
+                            && gameDetailsPopup.releaseState.error.length > 0
+                        text: gameDetailsPopup.releaseState.error
+                        color: theme.error
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.primaryProject !== null
+                            && gameDetailsPopup.releaseState.release !== null
+                            && gameDetailsPopup.releaseState.assets.length === 0
+                        text: "No compatible Linux launcher package is available for "
+                            + projectCatalog.currentArchitecture + "."
+                        color: theme.textMuted
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.primaryProject !== null
+                            && gameDetailsPopup.releaseState.release !== null
+                            && gameDetailsPopup.releaseState.assets.length > 0
+                            && gameDetailsPopup.installedProject === null
+                        text: "Available version: "
+                            + gameDetailsPopup.releaseState.release.tagName
+                            + "  •  Linux (" + projectCatalog.currentArchitecture + ")"
+                            + "\\nPackage: " + gameDetailsPopup.releaseState.assets[0].name
+                        color: theme.textSecondary
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.primaryProject !== null
+                            && gameDetailsPopup.downloadState.error
+                            && gameDetailsPopup.downloadState.error.length > 0
+                        text: gameDetailsPopup.downloadState.error
+                        color: theme.error
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.primaryProject !== null
+                            && (gameDetailsPopup.downloadState.loading
+                                || gameDetailsPopup.downloadState.installing)
+                        text: gameDetailsPopup.downloadState.installing
+                            ? "Extracting and installing launcher…"
+                            : "Downloading launcher… "
+                                + (gameDetailsPopup.downloadState.bytesTotal > 0
+                                    ? Math.floor(gameDetailsPopup.downloadState.bytesReceived
+                                        / gameDetailsPopup.downloadState.bytesTotal * 100) + "%"
+                                    : "")
+                        color: theme.accentHover
+                    }
+                    Item { Layout.fillHeight: true }
                     RowLayout {
                         Layout.fillWidth: true
                         Button {
@@ -476,13 +555,52 @@ ApplicationWindow {
                             onClicked: window.launchSupportedGame(gameDetailsPopup.primaryProject.id)
                         }
                         Button {
+                            visible: gameDetailsPopup.installedProject !== null
+                            text: "Uninstall Launcher"
+                            onClicked: {
+                                window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
+                                uninstallDialog.open()
+                            }
+                        }
+                        Button {
                             visible: gameDetailsPopup.primaryProject !== null
                                 && gameDetailsPopup.installedProject === null
-                            text: "Find Launcher"
+                                && !gameDetailsPopup.installPromptVisible
+                                && !gameDetailsPopup.releaseState.loading
+                                && gameDetailsPopup.releaseState.assets.length > 0
+                            highlighted: true
+                            text: "Install Compatible Launcher?"
+                            onClicked: gameDetailsPopup.installPromptVisible = true
+                        }
+                        Label {
+                            visible: gameDetailsPopup.installPromptVisible
+                                && gameDetailsPopup.installedProject === null
+                            text: "Install " + gameDetailsPopup.primaryProject.name + "?"
+                            color: theme.textPrimary
+                        }
+                        Button {
+                            visible: gameDetailsPopup.installPromptVisible
+                                && gameDetailsPopup.installedProject === null
+                            highlighted: true
+                            text: "Yes"
                             onClicked: {
-                                currentPage = "Launchers"
-                                gameDetailsPopup.close()
+                                gameDetailsPopup.installPromptVisible = false
+                                const asset = gameDetailsPopup.releaseState.assets[0]
+                                if (asset)
+                                    window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
                             }
+                        }
+                        Button {
+                            visible: gameDetailsPopup.installPromptVisible
+                                && gameDetailsPopup.installedProject === null
+                            text: "No"
+                            onClicked: gameDetailsPopup.installPromptVisible = false
+                        }
+                        Button {
+                            visible: gameDetailsPopup.primaryProject !== null
+                                && gameDetailsPopup.releaseState.error.length > 0
+                            text: "Retry"
+                            onClicked: window.checkProjectRelease(gameDetailsPopup.primaryProject)
                         }
                     }
                 }
