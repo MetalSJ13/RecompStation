@@ -291,6 +291,7 @@ ApplicationWindow {
         title: "Uninstall launcher?"
         modal: true
         anchors.centerIn: parent
+        width: 420
         standardButtons: Dialog.Ok | Dialog.Cancel
         Label {
             width: 340
