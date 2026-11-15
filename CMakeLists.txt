@@ -207,9 +207,6 @@ if(BUILD_TESTING)
         src/metadata/TheGamesDbClient.cpp
         src/metadata/MetadataManager.h
         src/metadata/MetadataManager.cpp
-        src/metadata/MetadataProvider.h
-        src/metadata/MetadataPlatformMapping.h
-        src/metadata/GameMetadata.h
     )
 
     target_include_directories(MetadataProviderTests PRIVATE
