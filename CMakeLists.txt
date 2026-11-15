@@ -18,6 +18,8 @@ qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(RecompStationApp
     src/main.cpp
+    src/github/GitHubManager.h
+    src/github/GitHubManager.cpp
     src/core/PlatformManager.h
     src/core/PlatformManager.cpp
     src/core/LibraryScanner.h
@@ -124,6 +126,22 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME MetadataProviderTests COMMAND MetadataProviderTests)
+
+    qt_add_executable(GitHubManagerTests
+        tests/GitHubManagerTest.cpp
+        src/github/GitHubManager.h
+        src/github/GitHubManager.cpp
+    )
+
+    target_include_directories(GitHubManagerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(GitHubManagerTests PRIVATE
+        Qt6::Core Qt6::Network Qt6::Test
+    )
+
+    add_test(NAME GitHubManagerTests COMMAND GitHubManagerTests)
 endif()
 
 install(TARGETS RecompStationApp RUNTIME DESTINATION bin)
