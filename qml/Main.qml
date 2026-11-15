@@ -657,7 +657,7 @@ ApplicationWindow {
                                         }
                                         Label {
                                             Layout.fillWidth: true
-                                            visible: state.release !== null
+                                            visible: !!state.release
                                             text: state.release
                                                   ? "Latest: " + state.release.tagName
                                                   : ""
