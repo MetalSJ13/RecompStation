@@ -79,10 +79,13 @@ int LauncherDownloadManager::downloadAsset(
     }
 
     const QString stagingDirectory = m_platformManager->stagingDirectory();
+    const QString canonicalDataRoot =
+        QFileInfo(m_platformManager->dataDirectory()).canonicalFilePath();
     const QString canonicalStagingRoot =
         QFileInfo(stagingDirectory).canonicalFilePath();
-    const QString expectedStagingRoot = QDir(stagingDirectory).absolutePath();
-    if (canonicalStagingRoot.isEmpty()
+    const QString expectedStagingRoot =
+        QDir(canonicalDataRoot).filePath("downloads/staging");
+    if (canonicalDataRoot.isEmpty() || canonicalStagingRoot.isEmpty()
         || canonicalStagingRoot != expectedStagingRoot) {
         QTimer::singleShot(0, this, [this, requestId]() {
             emit downloadFailed(
