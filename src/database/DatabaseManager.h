@@ -17,6 +17,8 @@ public:
     bool initialize(const QString &path);
     QString lastError() const;
 
+    bool reconcilePlatformGames(const QString &platform,
+                                const QStringList &discoveredPaths);
     Q_INVOKABLE bool registerGame(const QString &title,
                                   const QString &platform,
                                   const QString &gamePath);
