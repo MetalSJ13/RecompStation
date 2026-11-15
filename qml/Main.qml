@@ -27,11 +27,19 @@ ApplicationWindow {
     property var pendingDownloadRequests: ({})
     property var pendingInstallRequests: ({})
     property var downloadStates: ({})
+    property var launchErrors: ({})
 
     function installedLauncher(projectId) {
         launcherRevision
         const entries = launcherDownloadManager.installedLaunchers()
         return entries.find(entry => entry.projectId === projectId) || null
+    }
+
+    function launchSupportedGame(projectId) {
+        let errors = Object.assign({}, launchErrors)
+        delete errors[projectId]
+        launchErrors = errors
+        gameLaunchManager.launchProject(projectId)
     }
 
     function startAssetDownload(project, asset) {
@@ -496,6 +504,23 @@ ApplicationWindow {
                                             font.pixelSize: 11
                                             wrapMode: Text.Wrap
                                         }
+                                        Label {
+                                            visible: installedProject !== null
+                                                && window.launchErrors[supportedProjects[0].id] !== undefined
+                                            text: installedProject !== null
+                                                ? (window.launchErrors[supportedProjects[0].id] || "") : ""
+                                            color: "#e5a0a0"
+                                            font.pixelSize: 10
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
+                                    Button {
+                                        visible: installedProject !== null
+                                        text: "Play Game"
+                                        highlighted: true
+                                        enabled: installedProject !== null
+                                            && !gameLaunchManager.isRunning(supportedProjects[0].id)
+                                        onClicked: window.launchSupportedGame(supportedProjects[0].id)
                                     }
                                 }
                             }
