@@ -161,6 +161,16 @@ ArchiveExtractor::Result ArchiveExtractor::extractTarArchive(
         }
 
         const QString normalizedPath = QDir::cleanPath(relativePath);
+        // Tar archives commonly prefix entries with "./" and include a
+        // trailing slash on directory entries. Both normalize safely.
+        if (normalizedPath == QStringLiteral(".")) {
+            if (archive_entry_filetype(entry) != AE_IFDIR) {
+                failure = QStringLiteral("The archive contains an invalid root entry.");
+                break;
+            }
+            archive_read_data_skip(reader);
+            continue;
+        }
         const mode_t fileType = archive_entry_filetype(entry);
         if (fileType != AE_IFREG && fileType != AE_IFDIR) {
             failure = QStringLiteral("The archive contains a link or unsupported filesystem entry: %1")
@@ -279,9 +289,7 @@ bool ArchiveExtractor::isSafeRelativePath(const QString &path)
 
     const QStringList components = path.split(QLatin1Char('/'), Qt::KeepEmptyParts);
     for (const QString &component : components) {
-        if (component == QStringLiteral("..")
-            || component == QStringLiteral(".")
-            || component.isEmpty())
+        if (component == QStringLiteral(".."))
             return false;
     }
 
