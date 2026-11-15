@@ -4,6 +4,7 @@
 
 #include <QFileInfo>
 #include <QProcess>
+#include <QVariantMap>
 
 GameLaunchManager::GameLaunchManager(
     LauncherDownloadManager *launcherDownloadManager,
