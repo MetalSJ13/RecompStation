@@ -70,12 +70,16 @@ Merged into main and validated locally on Arch Linux; all four regression test s
 - [x] Add regression tests for repository and release response parsing
 
 #### Milestone 6: Supported project catalog and Linux launcher discovery
-- [ ] Maintain a curated catalog of supported recompilation projects and their GitHub repositories
-- [ ] Map supported games/platforms to the appropriate recompilation project
-- [ ] Define supported Linux architectures and compatible release assets per project
-- [ ] Support Linux-native AppImage, standalone executable, and supported archive releases (initially .tar.gz; consider .tar.xz as needed)
-- [ ] Exclude Windows-only binaries; do not require Wine or Proton for the initial supported workflow
-- [ ] Record each project's expected executable path, required supporting files, and launch arguments
+- [x] Add a versioned, bundled JSON catalog with schema validation
+- [x] Add the first curated project entry: Banjo: Recompiled for N64 Banjo-Kazooie
+- [x] Match associated metadata titles to catalog aliases using normalized title and platform matching
+- [x] Define x86-64 and ARM64 Linux release asset rules; explicitly exclude Windows and Flatpak archives from the initial native archive workflow
+- [x] Record repository identity, ROM revision notes, package format, and expected executable path
+- [x] Expose catalog lookup to the application/QML context
+- [ ] Connect catalog matches to GitHub release discovery and present compatible assets in the UI
+- [ ] Expand catalog entries after validating the initial end-to-end workflow
+
+The catalog currently matches the associated metadata title and platform. It does not yet inspect ROM hashes/revisions; the Banjo: Recompiled entry documents its North American 1.0 requirement so we do not imply that title matching proves ROM compatibility.
 
 #### Milestone 7: Launcher download, installation, and updates
 - [ ] Download selected release assets into a temporary staging area
