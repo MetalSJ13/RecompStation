@@ -53,7 +53,9 @@ qt_add_executable(RecompStationApp
 qt_add_qml_module(RecompStationApp
     URI RecompStation
     VERSION 1.0
-    QML_FILES qml/Main.qml
+    QML_FILES
+        qml/Main.qml
+        qml/Theme.qml
 )
 
 target_link_libraries(RecompStationApp PRIVATE
