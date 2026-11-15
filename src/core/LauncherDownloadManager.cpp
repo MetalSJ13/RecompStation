@@ -366,8 +366,15 @@ int LauncherDownloadManager::installDownloadedAsset(
         return requestId;
     }
     if (packageFormat != QStringLiteral("tar.gz")
-        && packageFormat != QStringLiteral("tar.xz")) {
+        && packageFormat != QStringLiteral("tar.xz")
+        && packageFormat != QStringLiteral("zip")
+        && packageFormat != QStringLiteral("appimage")) {
         reject(QStringLiteral("This package format is not supported by the automatic installer."));
+        return requestId;
+    }
+    if (packageFormat == QStringLiteral("appimage")
+        && QFileInfo(expectedExecutable).fileName() != expectedExecutable) {
+        reject(QStringLiteral("A standalone AppImage must use its filename as the executable path."));
         return requestId;
     }
     if (!isSafeRelativePath(expectedExecutable)) {
@@ -477,10 +484,15 @@ int LauncherDownloadManager::installDownloadedAsset(
         emit installationCompleted(requestId, projectId, executablePath);
     });
 
-    watcher->setFuture(QtConcurrent::run([archivePath, extractionPath, expectedExecutable]() {
-        return ArchiveExtractor::extractTarArchive(
-            archivePath, extractionPath, expectedExecutable);
-    }));
+    watcher->setFuture(QtConcurrent::run(
+        [archivePath, extractionPath, expectedExecutable, packageFormat]() {
+            if (packageFormat == QStringLiteral("appimage")) {
+                return ArchiveExtractor::stageAppImage(
+                    archivePath, extractionPath, expectedExecutable);
+            }
+            return ArchiveExtractor::extractArchive(
+                archivePath, extractionPath, expectedExecutable);
+        }));
     return requestId;
 }
 
