@@ -265,6 +265,22 @@ void LibraryMetadataMatcher::processNext()
     }
 
     m_currentGame = m_queue.dequeue();
+
+    // A game with saved metadata but missing local artwork should reuse its
+    // persisted provider URL instead of repeating title matching.
+    const bool hasMetadata =
+        m_currentGame.value(QStringLiteral("hasMetadata")).toBool();
+    const QString savedArtworkUrl =
+        m_currentGame.value(QStringLiteral("artworkUrl")).toString().trimmed();
+    const int localGameId =
+        m_currentGame.value(QStringLiteral("id")).toInt();
+    if (hasMetadata && !savedArtworkUrl.isEmpty() && m_artwork) {
+        m_artwork->downloadArtwork(localGameId, savedArtworkUrl);
+        finishCurrent(true,
+            QStringLiteral("Saved metadata found; retrying its artwork download."));
+        return;
+    }
+
     const QString platform =
         m_currentGame.value(QStringLiteral("platform")).toString();
     const int platformId = m_metadata->metadataPlatformId(platform);
