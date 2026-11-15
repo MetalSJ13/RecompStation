@@ -341,12 +341,13 @@ ApplicationWindow {
         id: gameDetailsPopup
         parent: Overlay.overlay
         anchors.centerIn: parent
-        width: Math.min(window.width - 64, 900)
-        height: Math.min(window.height - 64, 620)
+        width: Math.min(window.width - 48, 960)
+        height: Math.min(window.height - 48, 650)
         modal: true
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        padding: 22
+        padding: 24
+
         property var supportedProjects: window.selectedGame
             ? projectCatalog.projectsForGame(
                   window.selectedGame.metadataTitle || window.selectedGame.title,
@@ -362,8 +363,6 @@ ApplicationWindow {
             : ({ loading: false, error: "", release: null, assets: [] })
         property var releaseInfo: releaseState && releaseState.release
             ? releaseState.release : null
-        // Keep nullable API objects out of text bindings. Release lookups are
-        // asynchronous, so these strings remain safe while the popup opens.
         property string releaseTag: releaseState && releaseState.release
             && releaseState.release.tagName
             ? String(releaseState.release.tagName) : "Not available"
@@ -394,248 +393,333 @@ ApplicationWindow {
             border.width: 1
         }
 
-        contentItem: ColumnLayout {
-            spacing: 16
-            RowLayout {
-                Layout.fillWidth: true
-                Label {
-                    Layout.fillWidth: true
-                    text: window.selectedGame ? window.selectedGame.title : ""
-                    color: theme.textPrimary
-                    font.pixelSize: 25
-                    font.bold: true
-                    elide: Text.ElideRight
+        contentItem: RowLayout {
+            spacing: 24
+
+            Rectangle {
+                Layout.preferredWidth: 260
+                Layout.fillHeight: true
+                radius: theme.radiusCard
+                color: theme.sidebarBackground
+                border.color: theme.divider
+                border.width: 1
+                clip: true
+
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    source: window.selectedGame ? window.selectedGame.artworkPath : ""
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    smooth: true
                 }
-                Button {
-                    text: "Close"
-                    onClicked: gameDetailsPopup.close()
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    visible: !window.selectedGame || window.selectedGame.artworkPath.length === 0
+                    spacing: 8
+                    Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "▧"
+                        color: theme.textMuted
+                        font.pixelSize: 38
+                    }
+                    Label {
+                        text: "Artwork unavailable"
+                        color: theme.textMuted
+                        font.pixelSize: 12
+                    }
+                }
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 54
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 1.0; color: "#cc11131b" }
+                    }
+                }
+                Label {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 16
+                    text: window.selectedGame ? window.selectedGame.platform : ""
+                    color: theme.textPrimary
+                    font.pixelSize: 12
+                    font.bold: true
                 }
             }
 
-            RowLayout {
+            ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 22
+                spacing: 14
 
-                Rectangle {
-                    Layout.preferredWidth: 250
-                    Layout.fillHeight: true
-                    radius: theme.radiusCard
-                    color: theme.sidebarBackground
-                    clip: true
-                    Image {
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        source: window.selectedGame ? window.selectedGame.artworkPath : ""
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 4
+                        Label {
+                            Layout.fillWidth: true
+                            text: window.selectedGame ? window.selectedGame.title : ""
+                            color: theme.textPrimary
+                            font.pixelSize: 25
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+                        Label {
+                            text: window.selectedGame
+                                && window.selectedGame.metadataTitle.length > 0
+                                ? "GAME INFORMATION"
+                                : "LOCAL LIBRARY ENTRY"
+                            color: theme.accentHover
+                            font.pixelSize: 10
+                            font.bold: true
+                        }
                     }
-                    Label {
-                        anchors.centerIn: parent
-                        visible: !window.selectedGame || window.selectedGame.artworkPath.length === 0
-                        text: "Artwork unavailable"
-                        color: theme.textMuted
+                    Button {
+                        text: "Close"
+                        onClicked: gameDetailsPopup.close()
                     }
                 }
 
-                ColumnLayout {
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: theme.divider
+                }
+
+                ScrollView {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    spacing: 10
+                    clip: true
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                    Label {
-                        text: window.selectedGame ? window.selectedGame.platform : ""
-                        color: theme.accentHover
-                        font.pixelSize: 13
-                        font.bold: true
+                    ColumnLayout {
+                        width: parent.width
+                        spacing: 14
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 7
+                            Label {
+                                text: "ABOUT THIS GAME"
+                                color: theme.textMuted
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: window.selectedGame && window.selectedGame.metadataOverview.length > 0
+                                    ? window.selectedGame.metadataOverview
+                                    : "No description is available yet. RecompStation will add game information when matching metadata is found."
+                                color: theme.textSecondary
+                                font.pixelSize: 13
+                                wrapMode: Text.Wrap
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: !!window.selectedGame
+                                    && (window.selectedGame.metadataReleaseDate.length > 0
+                                        || window.selectedGame.metadataRating.length > 0)
+                                text: window.selectedGame
+                                    ? [window.selectedGame.metadataReleaseDate,
+                                       window.selectedGame.metadataRating.length > 0
+                                           ? "Rating " + window.selectedGame.metadataRating : ""]
+                                          .filter(value => value.length > 0).join("    •    ")
+                                    : ""
+                                color: theme.textMuted
+                                font.pixelSize: 11
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            radius: theme.radiusCard
+                            color: theme.surface
+                            border.color: theme.divider
+                            border.width: 1
+                            implicitHeight: supportContent.implicitHeight + 28
+
+                            ColumnLayout {
+                                id: supportContent
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.margins: 14
+                                spacing: 8
+
+                                Label {
+                                    text: "RECOMPILATION SUPPORT"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: gameDetailsPopup.primaryProject
+                                        ? gameDetailsPopup.primaryProject.name
+                                        : "No supported recompilation project is currently listed for this game."
+                                    color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.installedProject !== null
+                                    text: gameDetailsPopup.installedProject !== null
+                                        ? "Installed at  " + gameDetailsPopup.installedProject.executablePath
+                                        : ""
+                                    color: theme.textMuted
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WrapAnywhere
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.primaryProject !== null
+                                        && window.launchErrors[gameDetailsPopup.primaryProject.id] !== undefined
+                                    text: gameDetailsPopup.primaryProject
+                                        ? (window.launchErrors[gameDetailsPopup.primaryProject.id] || "") : ""
+                                    color: theme.error
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.primaryProject !== null
+                                        && gameDetailsPopup.releaseState.loading
+                                    text: "Checking for the latest compatible Linux release…"
+                                    color: theme.accentHover
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.primaryProject !== null
+                                        && gameDetailsPopup.releaseState.error.length > 0
+                                    text: gameDetailsPopup.releaseState.error
+                                    color: theme.error
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.primaryProject !== null
+                                        && !!gameDetailsPopup.releaseInfo
+                                        && gameDetailsPopup.compatibleAssets.length === 0
+                                    text: "No compatible Linux launcher package is available for "
+                                        + projectCatalog.currentArchitecture + "."
+                                    color: theme.textMuted
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.primaryProject !== null
+                                        && !!gameDetailsPopup.releaseInfo
+                                        && gameDetailsPopup.selectedAsset !== null
+                                        && gameDetailsPopup.installedProject === null
+                                    text: "Available " + gameDetailsPopup.releaseTag
+                                        + "    •    Linux / " + projectCatalog.currentArchitecture
+                                        + "\n" + gameDetailsPopup.selectedAssetName
+                                    color: theme.textSecondary
+                                    font.pixelSize: 11
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: !!gameDetailsPopup.primaryProject
+                                        && !!gameDetailsPopup.downloadState.error
+                                        && gameDetailsPopup.downloadState.error.length > 0
+                                    text: gameDetailsPopup.downloadState.error || ""
+                                    color: theme.error
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: !!gameDetailsPopup.primaryProject
+                                        && (!!gameDetailsPopup.downloadState.loading
+                                            || !!gameDetailsPopup.downloadState.installing)
+                                    text: gameDetailsPopup.downloadState.installing
+                                        ? "Extracting and installing launcher…"
+                                        : "Downloading launcher… "
+                                            + (gameDetailsPopup.downloadState.bytesTotal > 0
+                                                ? Math.floor((gameDetailsPopup.downloadState.bytesReceived || 0)
+                                                    / gameDetailsPopup.downloadState.bytesTotal * 100) + "%"
+                                                : "")
+                                    color: theme.accentHover
+                                }
+                            }
+                        }
                     }
-                    Label {
-                        Layout.fillWidth: true
-                        text: window.selectedGame && window.selectedGame.metadataOverview.length > 0
-                            ? window.selectedGame.metadataOverview
-                            : "Game information has not been retrieved yet. RecompStation will populate details when matching metadata is available."
-                        color: theme.textSecondary
-                        wrapMode: Text.Wrap
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        visible: !!window.selectedGame
-                            && (window.selectedGame.metadataReleaseDate.length > 0
-                                || window.selectedGame.metadataRating.length > 0)
-                        text: window.selectedGame
-                            ? [window.selectedGame.metadataReleaseDate,
-                               window.selectedGame.metadataRating.length > 0
-                                   ? "Rating " + window.selectedGame.metadataRating : ""]
-                                  .filter(value => value.length > 0).join("  •  ")
-                            : ""
-                        color: theme.textMuted
-                        font.pixelSize: 11
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 1
-                        color: theme.divider
-                    }
-                    Label {
-                        text: "RECOMPILATION SUPPORT"
-                        color: theme.textMuted
-                        font.pixelSize: 10
-                        font.bold: true
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        text: gameDetailsPopup.primaryProject
-                            ? gameDetailsPopup.primaryProject.name
-                            : "No supported recompilation project is currently listed for this game."
-                        color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
-                        wrapMode: Text.Wrap
-                    }
-                    Label {
-                        Layout.fillWidth: true
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    Button {
                         visible: gameDetailsPopup.installedProject !== null
-                        text: gameDetailsPopup.installedProject !== null
-                            ? "Installed launcher: " + gameDetailsPopup.installedProject.executablePath
-                            : ""
-                        color: theme.textMuted
-                        font.pixelSize: 10
-                        wrapMode: Text.WrapAnywhere
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        visible: gameDetailsPopup.primaryProject !== null
-                            && window.launchErrors[gameDetailsPopup.primaryProject.id] !== undefined
+                        highlighted: true
                         text: gameDetailsPopup.primaryProject
-                            ? (window.launchErrors[gameDetailsPopup.primaryProject.id] || "") : ""
-                        color: theme.error
-                        wrapMode: Text.Wrap
+                            && window.runningLaunchers[gameDetailsPopup.primaryProject.id]
+                            ? "Running…" : "Play Game"
+                        enabled: gameDetailsPopup.primaryProject !== null
+                            && gameDetailsPopup.installedProject !== null
+                            && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
+                        onClicked: window.launchSupportedGame(gameDetailsPopup.primaryProject.id)
                     }
-                    Item { Layout.fillHeight: true }
-                    Label {
-                        Layout.fillWidth: true
+                    Button {
+                        visible: gameDetailsPopup.installedProject !== null
+                        text: "Uninstall"
+                        onClicked: {
+                            window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
+                            uninstallDialog.open()
+                        }
+                    }
+                    Button {
                         visible: gameDetailsPopup.primaryProject !== null
-                            && gameDetailsPopup.releaseState.loading
-                        text: "Checking for the latest compatible Linux release…"
-                        color: theme.accentHover
-                        wrapMode: Text.Wrap
+                            && gameDetailsPopup.installedProject === null
+                            && !gameDetailsPopup.installPromptVisible
+                            && !gameDetailsPopup.releaseState.loading
+                            && gameDetailsPopup.releaseState.assets.length > 0
+                        highlighted: true
+                        text: "Install Launcher"
+                        onClicked: gameDetailsPopup.installPromptVisible = true
                     }
                     Label {
                         Layout.fillWidth: true
+                        visible: !!gameDetailsPopup.installPromptVisible
+                            && !!gameDetailsPopup.primaryProject
+                            && gameDetailsPopup.installedProject === null
+                        text: gameDetailsPopup.primaryProject
+                            ? "Install " + gameDetailsPopup.primaryProject.name + "?" : ""
+                        color: theme.textPrimary
+                        wrapMode: Text.Wrap
+                    }
+                    Button {
+                        visible: gameDetailsPopup.installPromptVisible
+                            && gameDetailsPopup.installedProject === null
+                        highlighted: true
+                        text: "Yes"
+                        onClicked: {
+                            gameDetailsPopup.installPromptVisible = false
+                            const asset = gameDetailsPopup.selectedAsset
+                            if (asset)
+                                window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
+                        }
+                    }
+                    Button {
+                        visible: gameDetailsPopup.installPromptVisible
+                            && gameDetailsPopup.installedProject === null
+                        text: "No"
+                        onClicked: gameDetailsPopup.installPromptVisible = false
+                    }
+                    Button {
                         visible: gameDetailsPopup.primaryProject !== null
                             && gameDetailsPopup.releaseState.error.length > 0
-                        text: gameDetailsPopup.releaseState.error
-                        color: theme.error
-                        wrapMode: Text.Wrap
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        visible: gameDetailsPopup.primaryProject !== null
-                            && !!gameDetailsPopup.releaseInfo
-                            && gameDetailsPopup.compatibleAssets.length === 0
-                        text: "No compatible Linux launcher package is available for "
-                            + projectCatalog.currentArchitecture + "."
-                        color: theme.textMuted
-                        wrapMode: Text.Wrap
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        visible: gameDetailsPopup.primaryProject !== null
-                            && !!gameDetailsPopup.releaseInfo
-                            && gameDetailsPopup.selectedAsset !== null
-                            && gameDetailsPopup.installedProject === null
-                        text: "Available version: " + gameDetailsPopup.releaseTag
-                            + "  •  Linux (" + projectCatalog.currentArchitecture + ")"
-                            + "\
-Package: " + gameDetailsPopup.selectedAssetName
-                        color: theme.textSecondary
-                        wrapMode: Text.Wrap
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        visible: !!gameDetailsPopup.primaryProject
-                            && !!gameDetailsPopup.downloadState.error
-                            && gameDetailsPopup.downloadState.error.length > 0
-                        text: gameDetailsPopup.downloadState.error || ""
-                        color: theme.error
-                        wrapMode: Text.Wrap
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        visible: !!gameDetailsPopup.primaryProject
-                            && (!!gameDetailsPopup.downloadState.loading
-                                || !!gameDetailsPopup.downloadState.installing)
-                        text: gameDetailsPopup.downloadState.installing
-                            ? "Extracting and installing launcher…"
-                            : "Downloading launcher… "
-                                + (gameDetailsPopup.downloadState.bytesTotal > 0
-                                    ? Math.floor((gameDetailsPopup.downloadState.bytesReceived || 0)
-                                        / gameDetailsPopup.downloadState.bytesTotal * 100) + "%"
-                                    : "")
-                        color: theme.accentHover
-                    }
-                    Item { Layout.fillHeight: true }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Button {
-                            visible: gameDetailsPopup.installedProject !== null
-                            highlighted: true
-                            text: gameDetailsPopup.primaryProject
-                                && window.runningLaunchers[gameDetailsPopup.primaryProject.id]
-                                ? "Running…" : "Play Game"
-                            enabled: gameDetailsPopup.primaryProject !== null
-                                && gameDetailsPopup.installedProject !== null
-                                && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
-                            onClicked: window.launchSupportedGame(gameDetailsPopup.primaryProject.id)
-                        }
-                        Button {
-                            visible: gameDetailsPopup.installedProject !== null
-                            text: "Uninstall Launcher"
-                            onClicked: {
-                                window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
-                                uninstallDialog.open()
-                            }
-                        }
-                        Button {
-                            visible: gameDetailsPopup.primaryProject !== null
-                                && gameDetailsPopup.installedProject === null
-                                && !gameDetailsPopup.installPromptVisible
-                                && !gameDetailsPopup.releaseState.loading
-                                && gameDetailsPopup.releaseState.assets.length > 0
-                            highlighted: true
-                            text: "Install Compatible Launcher?"
-                            onClicked: gameDetailsPopup.installPromptVisible = true
-                        }
-                        Label {
-                            visible: !!gameDetailsPopup.installPromptVisible
-                                && !!gameDetailsPopup.primaryProject
-                                && gameDetailsPopup.installedProject === null
-                            text: gameDetailsPopup.primaryProject
-                                ? "Install " + gameDetailsPopup.primaryProject.name + "?" : ""
-                            color: theme.textPrimary
-                        }
-                        Button {
-                            visible: gameDetailsPopup.installPromptVisible
-                                && gameDetailsPopup.installedProject === null
-                            highlighted: true
-                            text: "Yes"
-                            onClicked: {
-                                gameDetailsPopup.installPromptVisible = false
-                                const asset = gameDetailsPopup.selectedAsset
-                                if (asset)
-                                    window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
-                            }
-                        }
-                        Button {
-                            visible: gameDetailsPopup.installPromptVisible
-                                && gameDetailsPopup.installedProject === null
-                            text: "No"
-                            onClicked: gameDetailsPopup.installPromptVisible = false
-                        }
-                        Button {
-                            visible: gameDetailsPopup.primaryProject !== null
-                                && gameDetailsPopup.releaseState.error.length > 0
-                            text: "Retry"
-                            onClicked: window.checkProjectRelease(gameDetailsPopup.primaryProject)
-                        }
+                        text: "Retry"
+                        onClicked: window.checkProjectRelease(gameDetailsPopup.primaryProject)
                     }
                 }
             }
