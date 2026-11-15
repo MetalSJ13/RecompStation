@@ -109,6 +109,25 @@ private slots:
         QCOMPARE(m_databaseManager->games("N64").size(), 1);
     }
 
+    void removesGamesThatAreNoLongerInTheScannedFolder()
+    {
+        QVERIFY(writeGameFile("N64", "Mario.z64"));
+        QCOMPARE(m_scanner->scanPlatform("N64"), 1);
+        QCOMPARE(m_databaseManager->games("N64").size(), 1);
+
+        const QString gamePath =
+            m_platformManager->platformDirectory("N64") + "/Mario.z64";
+        QVERIFY(QFile::remove(gamePath));
+
+        QCOMPARE(m_scanner->scanPlatform("N64"), 0);
+        QVERIFY(m_databaseManager->games("N64").isEmpty());
+
+        // A game that returns to the folder should become visible again.
+        QVERIFY(writeGameFile("N64", "Mario.z64"));
+        QCOMPARE(m_scanner->scanPlatform("N64"), 1);
+        QCOMPARE(m_databaseManager->games("N64").size(), 1);
+    }
+
     void skipsBinAndImgWhenCueSheetExistsRegardlessOfCueCase()
     {
         QVERIFY(writeGameFile("PS1", "Disc.Cue"));
