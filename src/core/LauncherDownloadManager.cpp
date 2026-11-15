@@ -494,3 +494,100 @@ bool LauncherDownloadManager::isSafeRelativePath(const QString &path)
     }
     return true;
 }
+
+
+QVariantList LauncherDownloadManager::installedLaunchers() const
+{
+    QVariantList installed;
+    if (!m_platformManager)
+        return installed;
+
+    const QString dataRoot = QFileInfo(m_platformManager->dataDirectory()).canonicalFilePath();
+    if (dataRoot.isEmpty())
+        return installed;
+
+    const QString launcherRoot = QDir(dataRoot).filePath("launchers");
+    if (QFileInfo(launcherRoot).canonicalFilePath() != launcherRoot)
+        return installed;
+
+    const QStringList directories = QDir(launcherRoot).entryList(
+        QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    const QByteArray expectedMarker("RecompStation managed launcher installation v1\n");
+
+    for (const QString &projectId : directories) {
+        if (!isValidProjectId(projectId))
+            continue;
+
+        const QString directory = QDir(launcherRoot).filePath(projectId);
+        const QFileInfo directoryInfo(directory);
+        if (directoryInfo.isSymLink()
+            || directoryInfo.canonicalFilePath() != directory)
+            continue;
+
+        const QString markerPath = QDir(directory).filePath(".recompstation-managed");
+        const QString manifestPath = QDir(directory).filePath(".recompstation-install");
+        const QFileInfo markerInfo(markerPath);
+        const QFileInfo manifestInfo(manifestPath);
+        if (!markerInfo.isFile() || markerInfo.isSymLink()
+            || !manifestInfo.isFile() || manifestInfo.isSymLink())
+            continue;
+
+        QFile marker(markerPath);
+        QFile manifest(manifestPath);
+        if (!marker.open(QIODevice::ReadOnly)
+            || marker.readAll() != expectedMarker
+            || !manifest.open(QIODevice::ReadOnly))
+            continue;
+
+        const QString executableRelativePath =
+            QString::fromUtf8(manifest.readAll()).trimmed();
+        if (!isSafeRelativePath(executableRelativePath))
+            continue;
+
+        const QString executablePath = QDir(directory).filePath(executableRelativePath);
+        const QFileInfo executableInfo(executablePath);
+        if (!executableInfo.isFile() || executableInfo.isSymLink())
+            continue;
+
+        installed.append(QVariantMap{
+            {QStringLiteral("projectId"), projectId},
+            {QStringLiteral("directory"), directory},
+            {QStringLiteral("executablePath"), executablePath}
+        });
+    }
+
+    return installed;
+}
+
+bool LauncherDownloadManager::uninstallLauncher(const QString &projectId)
+{
+    if (!m_platformManager || !isValidProjectId(projectId)
+        || m_activeInstallProjects.contains(projectId))
+        return false;
+
+    const QString dataRoot = QFileInfo(m_platformManager->dataDirectory()).canonicalFilePath();
+    if (dataRoot.isEmpty())
+        return false;
+
+    const QString launcherRoot = QDir(dataRoot).filePath("launchers");
+    if (QFileInfo(launcherRoot).canonicalFilePath() != launcherRoot)
+        return false;
+
+    const QString target = QDir(launcherRoot).filePath(projectId);
+    const QFileInfo targetInfo(target);
+    if (!targetInfo.isDir() || targetInfo.isSymLink()
+        || targetInfo.canonicalFilePath() != target)
+        return false;
+
+    bool isManagedInstallation = false;
+    for (const QVariant &entry : installedLaunchers()) {
+        if (entry.toMap().value(QStringLiteral("projectId")).toString() == projectId) {
+            isManagedInstallation = true;
+            break;
+        }
+    }
+    if (!isManagedInstallation)
+        return false;
+
+    return QDir(target).removeRecursively();
+}
