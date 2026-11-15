@@ -22,6 +22,36 @@ ApplicationWindow {
     property string scanMessage: "Scan your platform folders to discover games."
     property var pendingReleaseRequests: ({})
     property var releaseStates: ({})
+    property var pendingDownloadRequests: ({})
+    property var downloadStates: ({})
+
+    function startAssetDownload(project, asset) {
+        const key = project.id + "|" + asset.name
+        let states = Object.assign({}, downloadStates)
+        states[key] = { loading: true, completed: false, error: "", bytesReceived: 0, bytesTotal: asset.size, filePath: "" }
+        downloadStates = states
+
+        const requestId = launcherDownloadManager.downloadAsset(
+            project.id, asset.name, asset.downloadUrl, asset.size)
+        let pending = Object.assign({}, pendingDownloadRequests)
+        pending[requestId] = key
+        pendingDownloadRequests = pending
+    }
+
+    function updateDownloadState(requestId, values) {
+        const key = pendingDownloadRequests[requestId]
+        if (!key)
+            return
+        let states = Object.assign({}, downloadStates)
+        states[key] = Object.assign({}, states[key] || {}, values)
+        downloadStates = states
+    }
+
+    function finishDownloadRequest(requestId) {
+        let pending = Object.assign({}, pendingDownloadRequests)
+        delete pending[requestId]
+        pendingDownloadRequests = pending
+    }
 
     function checkProjectRelease(project) {
         let nextStates = Object.assign({}, releaseStates)
@@ -85,6 +115,36 @@ ApplicationWindow {
                 assets: []
             }
             window.releaseStates = states
+        }
+    }
+
+    Connections {
+        target: launcherDownloadManager
+        function onDownloadProgress(requestId, bytesReceived, bytesTotal) {
+            window.updateDownloadState(requestId, {
+                loading: true,
+                bytesReceived: bytesReceived,
+                bytesTotal: bytesTotal
+            })
+        }
+        function onDownloadCompleted(requestId, projectId, assetName, filePath) {
+            window.updateDownloadState(requestId, {
+                loading: false,
+                completed: true,
+                error: "",
+                filePath: filePath,
+                bytesReceived: window.downloadStates[projectId + "|" + assetName]
+                    ? window.downloadStates[projectId + "|" + assetName].bytesTotal : 0
+            })
+            window.finishDownloadRequest(requestId)
+        }
+        function onDownloadFailed(requestId, message) {
+            window.updateDownloadState(requestId, {
+                loading: false,
+                completed: false,
+                error: message
+            })
+            window.finishDownloadRequest(requestId)
         }
     }
 
@@ -717,9 +777,13 @@ ApplicationWindow {
                                         wrapMode: Text.Wrap
                                     }
                                     Repeater {
+                                        property string modelDataProjectId: modelData.id
+                                        property var projectModel: modelData
                                         model: releaseState.assets || []
                                         delegate: Rectangle {
                                             required property var modelData
+                                            required property string modelDataProjectId
+                                            required property var projectModel
                                             Layout.fillWidth: true
                                             implicitHeight: assetRow.implicitHeight + 16
                                             radius: 6
@@ -739,6 +803,16 @@ ApplicationWindow {
                                                     text: (modelData.size / 1048576).toFixed(1) + " MB"
                                                     color: "#9999aa"
                                                     font.pixelSize: 11
+                                                }
+                                                Button {
+                                                    property string downloadKey: modelDataProjectId + "|" + modelData.name
+                                                    property var downloadState: window.downloadStates[downloadKey]
+                                                        || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
+                                                    // The project ID is supplied by the enclosing project delegate.
+                                                    text: downloadState.completed ? "Downloaded"
+                                                        : downloadState.loading ? "Downloading..." : "Download"
+                                                    enabled: !downloadState.loading && !downloadState.completed
+                                                    onClicked: window.startAssetDownload(projectModel, modelData)
                                                 }
                                             }
                                         }
