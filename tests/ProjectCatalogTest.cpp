@@ -8,6 +8,7 @@ class ProjectCatalogTest : public QObject
 
 private slots:
     void parsesValidCatalog();
+    void acceptsZipPackageFormat();
     void rejectsMalformedCatalog();
     void matchesGameByTitleAndPlatform();
     void selectsOnlyCompatibleLinuxAssets();
@@ -45,6 +46,39 @@ void ProjectCatalogTest::parsesValidCatalog()
     QCOMPARE(project.value("id").toString(), QStringLiteral("sample-project"));
     QCOMPARE(project.value("repositoryOwner").toString(), QStringLiteral("ExampleOrg"));
     QCOMPARE(project.value("repositoryName").toString(), QStringLiteral("SampleProject"));
+}
+
+
+void ProjectCatalogTest::acceptsZipPackageFormat()
+{
+    const QByteArray json = R"({
+        "schemaVersion": 1,
+        "projects": [{
+            "id": "zip-project",
+            "name": "ZIP Recompiled",
+            "platform": "N64",
+            "gameTitles": ["ZIP Game"],
+            "repositoryOwner": "ExampleOrg",
+            "repositoryName": "ZipProject",
+            "architectures": {
+                "x86_64": {
+                    "assetNameRegex": "^ZipProject-Linux-X64\\.zip$",
+                    "packageFormat": "zip",
+                    "executablePath": "ZipProject/ZipProject.AppImage"
+                }
+            }
+        }]
+    })";
+
+    QVariantList projects;
+    QString error;
+    QVERIFY2(ProjectCatalog::parseCatalog(json, &projects, &error), qPrintable(error));
+    QCOMPARE(projects.size(), 1);
+    const QVariantMap rule = projects.first().toMap()
+        .value(QStringLiteral("architectures")).toMap()
+        .value(QStringLiteral("x86_64")).toMap();
+    QCOMPARE(rule.value(QStringLiteral("packageFormat")).toString(),
+             QStringLiteral("zip"));
 }
 
 void ProjectCatalogTest::rejectsMalformedCatalog()
