@@ -10,6 +10,14 @@
 #include <QUrl>
 
 namespace {
+bool isHttpsUrl(const QString &value)
+{
+    const QUrl url(value);
+    return url.isValid()
+        && url.scheme() == QStringLiteral("https")
+        && !url.host().isEmpty();
+}
+
 bool parseJsonObject(const QByteArray &response,
                      QJsonObject *object,
                      QString *errorMessage)
@@ -194,7 +202,7 @@ bool GitHubManager::parseRepositoryResponse(
     parsed.isPrivate = root.value(QStringLiteral("private")).toBool();
 
     if (parsed.name.isEmpty() || parsed.fullName.isEmpty()
-        || parsed.owner.isEmpty() || !QUrl(parsed.htmlUrl).isValid()
+        || parsed.owner.isEmpty() || !isHttpsUrl(parsed.htmlUrl)
         || parsed.defaultBranch.isEmpty()) {
         if (errorMessage) {
             *errorMessage = QStringLiteral(
@@ -230,7 +238,7 @@ bool GitHubManager::parseLatestReleaseResponse(
     parsed.htmlUrl = root.value(QStringLiteral("html_url")).toString().trimmed();
     parsed.publishedAt = root.value(QStringLiteral("published_at")).toString();
 
-    if (parsed.tagName.isEmpty() || !QUrl(parsed.htmlUrl).isValid()) {
+    if (parsed.tagName.isEmpty() || !isHttpsUrl(parsed.htmlUrl)) {
         if (errorMessage) {
             *errorMessage = QStringLiteral(
                 "GitHub release response is missing a tag or valid release URL.");
@@ -253,7 +261,7 @@ bool GitHubManager::parseLatestReleaseResponse(
         asset.size = static_cast<qint64>(
             assetObject.value(QStringLiteral("size")).toDouble());
 
-        if (asset.name.isEmpty() || !QUrl(asset.downloadUrl).isValid())
+        if (asset.name.isEmpty() || !isHttpsUrl(asset.downloadUrl))
             continue;
         parsed.assets.append(asset);
     }
