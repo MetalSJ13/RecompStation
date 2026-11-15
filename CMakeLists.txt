@@ -100,6 +100,8 @@ if(BUILD_TESTING)
         tests/LauncherDownloadManagerTest.cpp
         src/core/LauncherDownloadManager.h
         src/core/LauncherDownloadManager.cpp
+        src/core/ArchiveExtractor.h
+        src/core/ArchiveExtractor.cpp
         src/core/PlatformManager.h
         src/core/PlatformManager.cpp
     )
@@ -109,7 +111,7 @@ if(BUILD_TESTING)
     )
 
     target_link_libraries(LauncherDownloadManagerTests PRIVATE
-        Qt6::Core Qt6::Network Qt6::Concurrent Qt6::Test
+        Qt6::Core Qt6::Network Qt6::Concurrent Qt6::Test LibArchive::LibArchive
     )
 
     add_test(NAME LauncherDownloadManagerTests COMMAND LauncherDownloadManagerTests)
