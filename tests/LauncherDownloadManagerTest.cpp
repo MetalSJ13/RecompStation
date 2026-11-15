@@ -177,5 +177,78 @@ void LauncherDownloadManagerTest::acceptsValidRequestAndReportsMissingNetworkDes
         QDir(projectStaging).filePath("launcher.tar.gz")));
 }
 
+
+void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("sample-recomp-project");
+    const QString assetName = QStringLiteral("SampleLauncher-Linux-X64.tar.gz");
+    const QString stagingDirectory = QDir(platformManager.stagingDirectory())
+                                         .filePath(projectId);
+    QVERIFY(QDir().mkpath(stagingDirectory));
+    const QString archivePath = QDir(stagingDirectory).filePath(assetName);
+
+    struct archive *writer = archive_write_new();
+    QVERIFY(writer != nullptr);
+    QCOMPARE(archive_write_add_filter_gzip(writer), ARCHIVE_OK);
+    QCOMPARE(archive_write_set_format_pax_restricted(writer), ARCHIVE_OK);
+    const QByteArray archivePathBytes = QFile::encodeName(archivePath);
+    QCOMPARE(archive_write_open_filename(writer, archivePathBytes.constData()), ARCHIVE_OK);
+
+    const QByteArray executableContents("#!/bin/sh\necho RecompStation test launcher\n");
+    struct archive_entry *entry = archive_entry_new();
+    QVERIFY(entry != nullptr);
+    archive_entry_set_pathname(entry, "SampleLauncher");
+    archive_entry_set_filetype(entry, AE_IFREG);
+    archive_entry_set_perm(entry, 0755);
+    archive_entry_set_size(entry, executableContents.size());
+    QCOMPARE(archive_write_header(writer, entry), ARCHIVE_OK);
+    QCOMPARE(archive_write_data(writer, executableContents.constData(),
+                               executableContents.size()),
+             static_cast<la_ssize_t>(executableContents.size()));
+    archive_entry_free(entry);
+    QCOMPARE(archive_write_close(writer), ARCHIVE_OK);
+    QCOMPARE(archive_write_free(writer), ARCHIVE_OK);
+    QVERIFY(QFileInfo(archivePath).isFile());
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completedSpy(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failedSpy(&manager, &LauncherDownloadManager::installationFailed);
+    QVERIFY(completedSpy.isValid());
+    QVERIFY(failedSpy.isValid());
+
+    const int requestId = manager.installDownloadedAsset(
+        projectId, assetName, QStringLiteral("tar.gz"), QStringLiteral("SampleLauncher"));
+    QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 10000);
+    QCOMPARE(completedSpy.takeFirst().at(0).toInt(), requestId);
+    QCOMPARE(failedSpy.count(), 0);
+    QVERIFY(!QFileInfo::exists(archivePath));
+
+    const QVariantList installed = manager.installedLaunchers();
+    QCOMPARE(installed.size(), 1);
+    const QVariantMap installation = installed.first().toMap();
+    QCOMPARE(installation.value(QStringLiteral("projectId")).toString(), projectId);
+    const QString executablePath =
+        installation.value(QStringLiteral("executablePath")).toString();
+    QVERIFY(QFileInfo(executablePath).isFile());
+    QVERIFY(QFileInfo(executablePath).isExecutable());
+
+    const QString unrelatedFile = QDir(temporaryDirectory.path()).filePath("keep-this-file.txt");
+    QFile unrelated(unrelatedFile);
+    QVERIFY(unrelated.open(QIODevice::WriteOnly));
+    QCOMPARE(unrelated.write("keep"), qint64(4));
+    unrelated.close();
+
+    QVERIFY(!manager.uninstallLauncher(QStringLiteral("../outside")));
+    QVERIFY(manager.uninstallLauncher(projectId));
+    QVERIFY(manager.installedLaunchers().isEmpty());
+    QVERIFY(QFileInfo::exists(unrelatedFile));
+}
+
 QTEST_GUILESS_MAIN(LauncherDownloadManagerTest)
 #include "LauncherDownloadManagerTest.moc"
