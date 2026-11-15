@@ -837,7 +837,8 @@ Package: " + gameDetailsPopup.selectedAssetName
                         GridView {
                             id: gameGrid
                             Layout.fillWidth: true
-                            Layout.fillHeight: true
+                            Layout.fillHeight: gameGrid.count > 0
+                            Layout.preferredHeight: gameGrid.count > 0 ? 520 : 0
                             clip: true
                             cellWidth: Math.max(184, Math.min(232,
                                 Math.floor(width / Math.max(1, Math.floor(width / 216)))))
