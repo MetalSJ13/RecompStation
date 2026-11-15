@@ -27,7 +27,7 @@
 - Single completion notification for scan-all
 - Unknown-platform error reporting
 
-The tests are available through CTest when BUILD_TESTING is enabled.
+The tests are available through CTest when BUILD_TESTING is enabled. The launcher archive extractor requires libarchive (the `libarchive` package on Arch Linux).
 
 ### Metadata provider foundation added
 - Provider-independent GameMetadata data structure
