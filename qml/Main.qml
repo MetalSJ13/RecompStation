@@ -655,7 +655,8 @@ ApplicationWindow {
                             model: projectCatalog.projects()
                             delegate: Rectangle {
                                 required property var modelData
-                                property var state: window.releaseStates[modelData.id] || ({})
+                                property var releaseState: window.releaseStates[modelData.id]
+                                    || ({ loading: false, error: "", release: null, assets: [] })
                                 width: ListView.view.width
                                 height: projectCard.implicitHeight + 28
                                 radius: 10
@@ -686,16 +687,16 @@ ApplicationWindow {
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Button {
-                                            text: state.loading ? "Checking GitHub..." : "Check for Linux Release"
+                                            text: releaseState.loading ? "Checking GitHub..." : "Check for Linux Release"
                                             highlighted: true
-                                            enabled: !state.loading
+                                            enabled: !releaseState.loading
                                             onClicked: window.checkProjectRelease(modelData)
                                         }
                                         Label {
                                             Layout.fillWidth: true
-                                            visible: !!state.release
-                                            text: state.release
-                                                  ? "Latest: " + state.release.tagName
+                                            visible: releaseState.release !== null
+                                            text: releaseState.release
+                                                  ? "Latest: " + releaseState.release.tagName
                                                   : ""
                                             color: "#a98cff"
                                             wrapMode: Text.Wrap
@@ -703,20 +704,20 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        visible: state.loading
+                                        visible: releaseState.loading === true
                                         text: "Contacting GitHub and checking release assets..."
                                         color: "#a98cff"
                                         wrapMode: Text.Wrap
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        visible: !!state.error
-                                        text: state.error || ""
+                                        visible: releaseState.error.length > 0
+                                        text: releaseState.error || ""
                                         color: "#ff8b8b"
                                         wrapMode: Text.Wrap
                                     }
                                     Repeater {
-                                        model: state.assets || []
+                                        model: releaseState.assets || []
                                         delegate: Rectangle {
                                             required property var modelData
                                             Layout.fillWidth: true
@@ -744,16 +745,16 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        visible: !!state.release && (state.assets || []).length === 0
+                                        visible: releaseState.release !== null && (releaseState.assets || []).length === 0
                                         text: "No compatible Linux package was found for this device (" + projectCatalog.currentArchitecture + ")."
                                         color: "#e5bd79"
                                         wrapMode: Text.Wrap
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        visible: !!state.release
-                                        text: state.release
-                                              ? "Release published: " + state.release.publishedAt
+                                        visible: !!releaseState.release
+                                        text: releaseState.release
+                                              ? "Release published: " + releaseState.release.publishedAt
                                               : ""
                                         color: "#9999aa"
                                         font.pixelSize: 11
