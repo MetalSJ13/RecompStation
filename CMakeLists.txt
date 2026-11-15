@@ -58,6 +58,22 @@ include(CTest)
 if(BUILD_TESTING)
     find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
 
+    qt_add_executable(PlatformManagerTests
+        tests/PlatformManagerTest.cpp
+        src/core/PlatformManager.h
+        src/core/PlatformManager.cpp
+    )
+
+    target_include_directories(PlatformManagerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(PlatformManagerTests PRIVATE
+        Qt6::Core Qt6::Test
+    )
+
+    add_test(NAME PlatformManagerTests COMMAND PlatformManagerTests)
+
     qt_add_executable(LibraryScannerTests
         tests/LibraryScannerTest.cpp
         src/core/PlatformManager.h
