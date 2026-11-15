@@ -54,6 +54,14 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         });
     }
 
+    if (m_artwork) {
+        connect(m_artwork, &ArtworkManager::artworkFailed, this,
+                [this](int gameId, const QString &message) {
+            setStatus(QStringLiteral("Artwork for game %1 could not be downloaded: %2")
+                          .arg(gameId).arg(message));
+        });
+    }
+
     connect(m_metadata, &MetadataManager::platformOptionsChanged,
             this, [this]() {
         if (!m_busy && !m_queue.isEmpty()) {
@@ -113,10 +121,12 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
 
         const QString artworkUrl =
             match.value(QStringLiteral("artworkUrl")).toString();
-        if (m_artwork && !artworkUrl.isEmpty())
+        if (m_artwork && !artworkUrl.isEmpty()) {
             m_artwork->downloadArtwork(gameId, artworkUrl);
-
-        finishCurrent(true, QStringLiteral("Metadata matched."));
+            finishCurrent(true, QStringLiteral("Metadata matched; artwork download started."));
+        } else {
+            finishCurrent(true, QStringLiteral("Metadata matched, but the provider returned no cover artwork."));
+        }
     });
 
     connect(m_metadata, &MetadataManager::searchFailed,
