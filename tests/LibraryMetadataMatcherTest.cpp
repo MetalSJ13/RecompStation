@@ -35,7 +35,16 @@ private slots:
                      QStringLiteral("The Legend of Zelda"), results), -2);
     }
 
-    void ignoresCommonRomRegionTags()\n    {\n        const QVariantList results = {\n            QVariantMap{{"title", "Donkey Kong 64"}}\n        };\n        QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(\n                     QStringLiteral("Donkey Kong 64 (USA) [! ]"), results), 0);\n    }\n\n    void ignoresDiacriticDifferences()
+    void ignoresCommonRomRegionTags()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Donkey Kong 64"}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(
+                     QStringLiteral("Donkey Kong 64 (USA) [!]"), results), 0);
+    }
+
+    void ignoresDiacriticDifferences()
     {
         const QVariantList results = {
             QVariantMap{{"title", "Pokemon Stadium"}}
