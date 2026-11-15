@@ -70,8 +70,11 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             return;
 
         const QVariantList results = m_metadata->results();
-        const int matchIndex = exactMatchIndex(
-            m_currentGame.value(QStringLiteral("title")).toString(), results);
+        const QString localTitle =
+            m_currentGame.value(QStringLiteral("title")).toString();
+        const int expectedPlatformId = m_metadata->metadataPlatformId(
+            m_currentGame.value(QStringLiteral("platform")).toString());
+        const int matchIndex = bestMatchIndex(localTitle, expectedPlatformId, results);
 
         if (matchIndex < 0) {
             const bool ambiguous = matchIndex == -2;
@@ -158,6 +161,62 @@ int LibraryMetadataMatcher::exactMatchIndex(const QString &localTitle,
         match = i;
     }
     return match;
+}
+
+int LibraryMetadataMatcher::bestMatchIndex(const QString &localTitle,
+                                           int platformId,
+                                           const QVariantList &results)
+{
+    const QString wanted = normalizedTitle(localTitle);
+    const QString trimmedTitle = localTitle.trimmed();
+    if (wanted.isEmpty() || platformId <= 0)
+        return -1;
+
+    int bestIndex = -1;
+    int bestTitleRank = 0;
+    int bestArtworkPixels = -1;
+    bool tied = false;
+
+    for (int i = 0; i < results.size(); ++i) {
+        const QVariantMap candidate = results.at(i).toMap();
+        if (candidate.value(QStringLiteral("platformId")).toInt() != platformId)
+            continue;
+
+        const QString candidateTitle =
+            candidate.value(QStringLiteral("title")).toString().trimmed();
+        const QString normalizedCandidate = normalizedTitle(candidateTitle);
+        int titleRank = 0;
+        if (normalizedCandidate == wanted) {
+            titleRank = 2;
+        } else {
+            const QString prefix = trimmedTitle;
+            if (candidateTitle.size() > prefix.size()
+                && candidateTitle.startsWith(prefix, Qt::CaseInsensitive)) {
+                const QChar delimiter = candidateTitle.at(prefix.size());
+                if (delimiter == QLatin1Char(':') || delimiter == QLatin1Char('-')
+                    || delimiter == QChar(0x2013) || delimiter == QChar(0x2014)) {
+                    titleRank = 1;
+                }
+            }
+        }
+        if (titleRank == 0)
+            continue;
+
+        const int artworkPixels =
+            candidate.value(QStringLiteral("artworkPixelCount")).toInt();
+        if (titleRank > bestTitleRank
+            || (titleRank == bestTitleRank && artworkPixels > bestArtworkPixels)) {
+            bestIndex = i;
+            bestTitleRank = titleRank;
+            bestArtworkPixels = artworkPixels;
+            tied = false;
+        } else if (titleRank == bestTitleRank
+                   && artworkPixels == bestArtworkPixels) {
+            tied = true;
+        }
+    }
+
+    return bestIndex < 0 ? -1 : (tied ? -2 : bestIndex);
 }
 
 void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked)
