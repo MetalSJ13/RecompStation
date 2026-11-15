@@ -235,6 +235,7 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
                 || executablePath.trimmed().isEmpty() || unsafeExecutablePath
                 || (packageFormat != QStringLiteral("tar.gz")
                     && packageFormat != QStringLiteral("tar.xz")
+                    && packageFormat != QStringLiteral("zip")
                     && packageFormat != QStringLiteral("appimage")
                     && packageFormat != QStringLiteral("executable"))) {
                 return fail(QStringLiteral("A project contains an invalid Linux asset rule."));
