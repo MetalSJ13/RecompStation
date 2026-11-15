@@ -32,6 +32,8 @@ public:
 
     static int exactMatchIndex(const QString &localTitle,
                                const QVariantList &results);
+    static int bestMatchIndex(const QString &localTitle, int platformId,
+                              const QVariantList &results);
 
 signals:
     void busyChanged();
