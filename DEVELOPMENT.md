@@ -84,18 +84,23 @@ The catalog currently matches the associated metadata title and platform. It doe
 
 #### Milestone 7: Launcher download, installation, and updates
 
-Release discovery is connected to the curated project catalog. The Launcher Discovery page can query a project's latest GitHub release, display assets matching the current CPU architecture and catalog filename rules, and download selected assets to staging. The standalone archive extraction backend is implemented and tested; it is not yet connected to the QML download workflow or final installation process.
-The application data directory prepares `downloads/staging` for temporary downloads and exposes validated project-specific paths under `launchers/<project-id>`. Existing per-platform directories are retained for compatibility. Directory creation and project-ID path validation have regression tests.
+Release discovery is connected to the curated project catalog. The Launcher Discovery page queries a project's latest GitHub release, displays assets matching the current CPU architecture and catalog filename rules, and downloads selected assets to staging. A successful download now triggers background extraction and installation without a separate user action.
 
-The asynchronous download manager now streams selected HTTPS release assets into per-project staging folders using atomic temporary files. It reports progress and completion/failure to the Launcher Discovery page, supports cancellation, rejects unsafe project IDs and asset filenames, blocks insecure redirects, limits downloads to 8 GiB, checks the received size against GitHub's reported asset size, and guards against staging-directory symlinks. Downloads are staged only; extraction is currently a separate backend step.
+The application data directory prepares `downloads/staging` for temporary downloads and installs projects under `launchers/<project-id>`. Existing per-platform directories are retained for compatibility. Directory creation and project-ID path validation have regression tests.
+
+The asynchronous download manager streams selected HTTPS release assets into per-project staging folders using atomic temporary files. It reports progress and completion/failure to the Launcher Discovery page, supports cancellation, rejects unsafe project IDs and asset filenames, blocks insecure redirects, limits downloads to 8 GiB, checks the received size against GitHub's reported asset size, and guards against staging-directory symlinks.
+
+Installation runs on a background thread and currently supports catalog-declared `tar.gz` and `tar.xz` packages. It validates the expected executable, writes a RecompStation ownership marker and manifest, refuses to overwrite an existing project installation, and promotes the completed directory into its permanent location. The source archive is deleted only after successful installation; failed installs retain it for retry. Installed launchers are rediscovered from their ownership marker and manifest after application restarts. The Launcher Discovery page offers a confirmation-protected uninstall that targets only validated RecompStation-managed launcher directories.
 - [x] Download selected release assets into a temporary staging area
 - [x] Safely extract supported tar.gz and tar.xz archives while rejecting path traversal, links, and special files
 - [x] Preserve required directory structure and supporting files during extraction
 - [x] Apply executable permissions and validate the expected launcher executable
-- [ ] Install each project into a predictable, project-specific directory
-- [ ] Remove downloaded archives and temporary files only after successful installation
+- [x] Install each project into a predictable, project-specific directory
+- [x] Remove downloaded archives only after successful installation
+- [x] Detect installed launchers across application restarts
+- [x] Uninstall managed launcher files after user confirmation
 - [ ] Track installed versions and support updates/rollback-safe replacement
-- [ ] Clean up failed or incomplete installations without damaging an existing working installation
+- [ ] Add recovery and cleanup for abandoned temporary extraction directories
 
 #### Optional release integrity verification
 - [ ] Detect published SHA-256 checksum files/manifests and verify downloaded assets when available
