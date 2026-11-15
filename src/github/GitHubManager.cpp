@@ -170,9 +170,32 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
             return;
         }
         emit releaseLoaded(requestId, release);
+        emit releaseDataLoaded(requestId, releaseToVariantMap(release));
     });
 
     return requestId;
+}
+
+QVariantMap GitHubManager::releaseToVariantMap(const GitHubRelease &release)
+{
+    QVariantList assets;
+    assets.reserve(release.assets.size());
+    for (const GitHubReleaseAsset &asset : release.assets) {
+        assets.append(QVariantMap{
+            {QStringLiteral("name"), asset.name},
+            {QStringLiteral("downloadUrl"), asset.downloadUrl},
+            {QStringLiteral("contentType"), asset.contentType},
+            {QStringLiteral("size"), asset.size}
+        });
+    }
+
+    return {
+        {QStringLiteral("tagName"), release.tagName},
+        {QStringLiteral("name"), release.name},
+        {QStringLiteral("htmlUrl"), release.htmlUrl},
+        {QStringLiteral("publishedAt"), release.publishedAt},
+        {QStringLiteral("assets"), assets}
+    };
 }
 
 bool GitHubManager::parseRepositoryResponse(
