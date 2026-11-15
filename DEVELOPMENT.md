@@ -84,7 +84,7 @@ The catalog currently matches the associated metadata title and platform. It doe
 
 #### Milestone 7: Launcher download, installation, and updates
 
-Release discovery is now connected to the curated project catalog. The Launcher Discovery page can query a project's latest GitHub release and display only assets matching the current CPU architecture and catalog filename rules. It does not download or install assets yet.
+Release discovery is connected to the curated project catalog. The Launcher Discovery page can query a project's latest GitHub release, display assets matching the current CPU architecture and catalog filename rules, and download selected assets to staging. Archive extraction and installation are not implemented yet.
 The application data directory prepares `downloads/staging` for temporary downloads and exposes validated project-specific paths under `launchers/<project-id>`. Existing per-platform directories are retained for compatibility. Directory creation and project-ID path validation have regression tests.
 
 The asynchronous download manager now streams selected HTTPS release assets into per-project staging folders using atomic temporary files. It reports progress and completion/failure to the Launcher Discovery page, supports cancellation, rejects unsafe project IDs and asset filenames, blocks insecure redirects, limits downloads to 8 GiB, checks the received size against GitHub's reported asset size, and guards against staging-directory symlinks. Downloads are staged only; archive extraction and installation are not implemented yet.
