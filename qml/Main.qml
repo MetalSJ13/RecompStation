@@ -15,6 +15,8 @@ ApplicationWindow {
     property string currentPage: "Library"
     property string selectedPlatform: "All Games"
     property int libraryRevision: 0
+    property int launcherRevision: 0
+    property string pendingUninstallProjectId: ""
     property int selectedMetadataPlatformId: 0
     property int selectedLocalGameId: 0
     property string metadataAssociationMessage: ""
@@ -25,6 +27,12 @@ ApplicationWindow {
     property var pendingDownloadRequests: ({})
     property var pendingInstallRequests: ({})
     property var downloadStates: ({})
+
+    function installedLauncher(projectId) {
+        launcherRevision
+        const entries = launcherDownloadManager.installedLaunchers()
+        return entries.find(entry => entry.projectId === projectId) || null
+    }
 
     function startAssetDownload(project, asset) {
         const key = project.id + "|" + asset.name
@@ -232,6 +240,26 @@ ApplicationWindow {
             window.scanMessage = libraryScanner.lastError.length > 0
                 ? libraryScanner.lastError
                 : gamesFound + " new game(s) added to your library."
+        }
+    }
+
+    Dialog {
+        id: uninstallDialog
+        title: "Uninstall launcher?"
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        Label {
+            width: 340
+            wrapMode: Text.Wrap
+            text: "This removes only the RecompStation-managed launcher files for "
+                  + window.pendingUninstallProjectId
+                  + ". Your ROMs, saves, and other files are not targeted."
+            color: "#dddddf"
+        }
+        onAccepted: {
+            if (launcherDownloadManager.uninstallLauncher(window.pendingUninstallProjectId))
+                window.launcherRevision++
         }
     }
 
@@ -780,7 +808,7 @@ ApplicationWindow {
                         Label { text: "Launcher Discovery"; color: "white"; font.pixelSize: 30; font.bold: true }
                         Label {
                             Layout.fillWidth: true
-                            text: "Browse supported projects, check compatible Linux releases, and download assets to staging. Archive extraction and installation are coming next."
+                            text: "Browse supported projects, check compatible Linux releases, and install compatible launchers automatically."
                             color: "#9999aa"
                             wrapMode: Text.Wrap
                         }
@@ -794,6 +822,7 @@ ApplicationWindow {
                                 required property var modelData
                                 property var releaseState: window.releaseStates[modelData.id]
                                     || ({ loading: false, error: "", release: null, assets: [] })
+                                property var installedState: window.installedLauncher(modelData.id)
                                 width: ListView.view.width
                                 height: projectCard.implicitHeight + 28
                                 radius: 10
@@ -828,6 +857,14 @@ ApplicationWindow {
                                             highlighted: true
                                             enabled: !releaseState.loading
                                             onClicked: window.checkProjectRelease(modelData)
+                                        }
+                                        Button {
+                                            visible: installedState !== null
+                                            text: "Uninstall"
+                                            onClicked: {
+                                                window.pendingUninstallProjectId = modelData.id
+                                                uninstallDialog.open()
+                                            }
                                         }
                                         Label {
                                             Layout.fillWidth: true
@@ -886,13 +923,14 @@ ApplicationWindow {
                                                 Button {
                                                     property string downloadKey: modelData.projectId + "|" + modelData.name
                                                     property var downloadState: window.downloadStates[downloadKey]
-                                                        || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
-                                                    text: downloadState.installed ? "Installed"
+                                                        || ({ loading: false, completed: false, installing: false, installed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
+                                                    property var installedInfo: window.installedLauncher(modelData.projectId)
+                                                    text: installedInfo !== null || downloadState.installed ? "Installed"
                                                         : downloadState.installing ? "Installing…"
                                                         : downloadState.completed && downloadState.error.length > 0 ? "Retry Install"
                                                         : downloadState.completed ? "Downloaded" 
                                                         : downloadState.loading ? "Cancel" : "Download"
-                                                    enabled: !downloadState.installed && !downloadState.installing
+                                                    enabled: installedInfo === null && !downloadState.installed && !downloadState.installing
                                                     onClicked: {
                                                         if (downloadState.loading)
                                                             window.cancelAssetDownload(modelData.projectId, modelData.name)
@@ -906,10 +944,12 @@ ApplicationWindow {
                                                     property string downloadKey: modelData.projectId + "|" + modelData.name
                                                     property var downloadState: window.downloadStates[downloadKey]
                                                         || ({ loading: false, completed: false, error: "", bytesReceived: 0, bytesTotal: modelData.size, filePath: "" })
-                                                    visible: downloadState.loading || downloadState.completed || downloadState.error.length > 0
+                                                    visible: downloadState.loading || downloadState.completed || downloadState.installing || downloadState.error.length > 0 || installedInfo !== null
                                                     Layout.maximumWidth: 190
-                                                    text: downloadState.error.length > 0 ? downloadState.error
-                                                        : downloadState.completed ? "Saved: " + downloadState.filePath
+                                                    text: installedInfo !== null ? "Installed: " + installedInfo.executablePath
+                                                        : downloadState.error.length > 0 ? downloadState.error
+                                                        : downloadState.installing ? "Extracting and installing…"
+                                                        : downloadState.completed ? "Installed: " + downloadState.filePath
                                                         : downloadState.bytesTotal > 0
                                                             ? Math.floor(downloadState.bytesReceived / downloadState.bytesTotal * 100) + "%"
                                                             : (downloadState.bytesReceived / 1048576).toFixed(1) + " MB"
