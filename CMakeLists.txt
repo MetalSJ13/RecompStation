@@ -28,6 +28,8 @@ qt_add_executable(RecompStationApp
     src/github/GitHubManager.cpp
     src/core/PlatformManager.h
     src/core/PlatformManager.cpp
+    src/core/LauncherDownloadManager.h
+    src/core/LauncherDownloadManager.cpp
     src/core/LibraryScanner.h
     src/core/LibraryScanner.cpp
     src/core/ArtworkManager.h
