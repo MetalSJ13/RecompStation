@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QSet>
 #include <QString>
+#include <QVariantList>
 
 #include "ArchiveExtractor.h"
 
@@ -38,6 +39,9 @@ public:
         const QString &packageFormat,
         const QString &expectedExecutable
     );
+
+    Q_INVOKABLE QVariantList installedLaunchers() const;
+    Q_INVOKABLE bool uninstallLauncher(const QString &projectId);
 
 signals:
     void downloadProgress(
