@@ -8,7 +8,7 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSaveFile>
-#include <QSet>
+#include <QSet>\n\n#include <sys/stat.h>
 
 namespace {
 constexpr qint64 MaximumExtractedBytes = 16LL * 1024LL * 1024LL * 1024LL;
@@ -172,7 +172,8 @@ ArchiveExtractor::Result ArchiveExtractor::extractTarArchive(
             continue;
         }
         const mode_t fileType = archive_entry_filetype(entry);
-        if (fileType != AE_IFREG && fileType != AE_IFDIR) {
+        if (archive_entry_symlink(entry) || archive_entry_hardlink(entry)
+            || (fileType != AE_IFREG && fileType != AE_IFDIR)) {
             failure = QStringLiteral("The archive contains a link or unsupported filesystem entry: %1")
                           .arg(relativePath);
             break;
