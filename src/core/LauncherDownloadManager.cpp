@@ -4,7 +4,6 @@
 
 #include <QtConcurrent/QtConcurrentRun>
 #include <QFile>
-#include <QSaveFile>
 
 #include <QDir>
 #include <QFileInfo>
