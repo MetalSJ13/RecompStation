@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QResource>
 #include <QSet>
 #include <QStringList>
 #include <QSysInfo>
@@ -36,6 +37,10 @@ bool validRepositoryPart(const QString &value)
 ProjectCatalog::ProjectCatalog(QObject *parent)
     : QObject(parent)
 {
+    // Explicit registration also ensures the resource object is retained by
+    // linkers when this class is used from a separate test executable.
+    Q_INIT_RESOURCE(projects);
+
     QFile file(QStringLiteral(":/data/projects.json"));
     if (!file.open(QIODevice::ReadOnly)) {
         m_errorString = QStringLiteral("The bundled project catalog could not be opened.");
