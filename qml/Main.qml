@@ -28,6 +28,7 @@ ApplicationWindow {
     property var pendingInstallRequests: ({})
     property var downloadStates: ({})
     property var launchErrors: ({})
+    property var runningLaunchers: ({})
 
     function installedLauncher(projectId) {
         launcherRevision
@@ -516,10 +517,12 @@ ApplicationWindow {
                                     }
                                     Button {
                                         visible: installedProject !== null
-                                        text: "Play Game"
+                                        text: installedProject !== null
+                                            && window.runningLaunchers[supportedProjects[0].id]
+                                            ? "Running…" : "Play Game"
                                         highlighted: true
                                         enabled: installedProject !== null
-                                            && !gameLaunchManager.isRunning(supportedProjects[0].id)
+                                            && !window.runningLaunchers[supportedProjects[0].id]
                                         onClicked: window.launchSupportedGame(supportedProjects[0].id)
                                     }
                                 }
