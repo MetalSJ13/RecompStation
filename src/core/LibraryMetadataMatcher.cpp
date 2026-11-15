@@ -12,7 +12,7 @@ namespace {
 QString normalizedTitle(QString title)
 {
     static const QRegularExpression regionTag(
-        QStringLiteral(R"(\\s*\\((?:USA|US|Europe|EUR|Japan|JPN|World|Rev(?:ision)? ?[A-Z0-9]*)\\)|\\s*\\[(?:!|b)\\])"),
+        QStringLiteral(R"(\s*\((?:USA|US|Europe|EUR|Japan|JPN|World|Rev(?:ision)? ?[A-Z0-9]*)\)|\s*\[(?:!|b)\])"),
         QRegularExpression::CaseInsensitiveOption);
     title.remove(regionTag);
     title = title.normalized(QString::NormalizationForm_D);
