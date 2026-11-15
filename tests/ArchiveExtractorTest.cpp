@@ -16,10 +16,13 @@ class ArchiveExtractorTest : public QObject
 
 private:
     bool createArchive(const QString &path, const QList<QVariantMap> &entries,
-                       bool gzip = true);
+                       bool gzip = true, bool zip = false);
 
 private slots:
     void extractsTarGzAndPreservesStructure();
+    void extractsZipAndPreservesStructure();
+    void stagesStandaloneAppImage();
+    void rejectsAppImageWithUnsafeFilename();
     void rejectsPathTraversalAndCleansOutput();
     void rejectsAbsolutePaths();
     void rejectsSymbolicLinks();
@@ -30,18 +33,23 @@ private slots:
 bool ArchiveExtractorTest::createArchive(
     const QString &path,
     const QList<QVariantMap> &entries,
-    bool gzip
+    bool gzip,
+    bool zip
 )
 {
     struct archive *writer = archive_write_new();
     if (!writer)
         return false;
 
-    archive_write_set_format_pax_restricted(writer);
-    if (gzip)
-        archive_write_add_filter_gzip(writer);
-    else
-        archive_write_add_filter_xz(writer);
+    if (zip) {
+        archive_write_set_format_zip(writer);
+    } else {
+        archive_write_set_format_pax_restricted(writer);
+        if (gzip)
+            archive_write_add_filter_gzip(writer);
+        else
+            archive_write_add_filter_xz(writer);
+    }
 
     const QByteArray encodedPath = QFile::encodeName(path);
     if (archive_write_open_filename(writer, encodedPath.constData()) != ARCHIVE_OK) {
@@ -122,6 +130,72 @@ void ArchiveExtractorTest::extractsTarGzAndPreservesStructure()
     QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
         QStringLiteral("BanjoRecompiled/libsupport.so"))).isFile());
     QVERIFY(QFile::permissions(result.executablePath) & QFile::ExeOwner);
+}
+
+
+void ArchiveExtractorTest::extractsZipAndPreservesStructure()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString archivePath = QDir(temp.path()).filePath("launcher.zip");
+    const QString destination = QDir(temp.path()).filePath("extracted");
+
+    QVERIFY(createArchive(archivePath, {
+        {{QStringLiteral("name"), QStringLiteral("SpaghettiKart/")}, {QStringLiteral("type"), QStringLiteral("directory")}},
+        {{QStringLiteral("name"), QStringLiteral("SpaghettiKart/SpaghettiKart.AppImage")},
+         {QStringLiteral("data"), QByteArray("appimage-binary")},
+         {QStringLiteral("mode"), 0755}},
+        {{QStringLiteral("name"), QStringLiteral("SpaghettiKart/resources/data.bin")},
+         {QStringLiteral("data"), QByteArray("companion-data")}}
+    }, true, true));
+
+    const auto result = ArchiveExtractor::extractArchive(
+        archivePath, destination,
+        QStringLiteral("SpaghettiKart/SpaghettiKart.AppImage"));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QFile companion(QDir(result.extractedDirectory).filePath(
+        QStringLiteral("SpaghettiKart/resources/data.bin")));
+    QVERIFY(companion.open(QIODevice::ReadOnly));
+    QCOMPARE(companion.readAll(), QByteArray("companion-data"));
+}
+
+void ArchiveExtractorTest::stagesStandaloneAppImage()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString sourcePath = QDir(temp.path()).filePath("Standalone.AppImage");
+    QFile source(sourcePath);
+    QVERIFY(source.open(QIODevice::WriteOnly));
+    QCOMPARE(source.write("appimage-content"), qint64(16));
+    source.close();
+
+    const QString destination = QDir(temp.path()).filePath("installed");
+    const auto result = ArchiveExtractor::stageAppImage(
+        sourcePath, destination, QStringLiteral("Standalone.AppImage"));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QVERIFY(QFileInfo(result.executablePath).isFile());
+    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QFile installed(result.executablePath);
+    QVERIFY(installed.open(QIODevice::ReadOnly));
+    QCOMPARE(installed.readAll(), QByteArray("appimage-content"));
+}
+
+void ArchiveExtractorTest::rejectsAppImageWithUnsafeFilename()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString sourcePath = QDir(temp.path()).filePath("Standalone.AppImage");
+    QFile source(sourcePath);
+    QVERIFY(source.open(QIODevice::WriteOnly));
+    source.write("content");
+    source.close();
+
+    const auto result = ArchiveExtractor::stageAppImage(
+        sourcePath, QDir(temp.path()).filePath("installed"),
+        QStringLiteral("../escape.AppImage"));
+    QVERIFY(!result.success);
+    QVERIFY(!QFileInfo::exists(QDir(temp.path()).filePath("installed")));
 }
 
 void ArchiveExtractorTest::rejectsPathTraversalAndCleansOutput()
