@@ -92,7 +92,23 @@ int LauncherDownloadManager::downloadAsset(
         return requestId;
     }
 
-    const QString targetPath = QDir(projectStagingPath).filePath(assetName);
+    const QString canonicalStagingRoot =
+        QFileInfo(m_platformManager->stagingDirectory()).canonicalFilePath();
+    const QString canonicalProjectStaging =
+        QFileInfo(projectStagingPath).canonicalFilePath();
+    if (canonicalStagingRoot.isEmpty() || canonicalProjectStaging.isEmpty()
+        || !canonicalProjectStaging.startsWith(
+            QDir(canonicalStagingRoot).absolutePath() + QDir::separator())) {
+        QTimer::singleShot(0, this, [this, requestId]() {
+            emit downloadFailed(
+                requestId,
+                QStringLiteral("The project staging directory resolves outside the download staging area.")
+            );
+        });
+        return requestId;
+    }
+
+    const QString targetPath = QDir(canonicalProjectStaging).filePath(assetName);
     if (m_activeTargets.contains(targetPath)) {
         QTimer::singleShot(0, this, [this, requestId]() {
             emit downloadFailed(
