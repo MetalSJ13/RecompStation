@@ -2,7 +2,8 @@
 
 #include "../database/DatabaseManager.h"
 
-#include <QDir>\n#include <QByteArray>
+#include <QDir>
+#include <QByteArray>
 #include <QFile>
 #include <QNetworkReply>
 #include <QNetworkRequest>
