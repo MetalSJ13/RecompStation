@@ -2,7 +2,7 @@
 
 #include "../database/DatabaseManager.h"
 
-#include <QDir>\n#include <QBuffer>\n#include <QImageReader>
+#include <QDir>\n#include <QByteArray>
 #include <QFile>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -17,6 +17,12 @@ QString imageExtension(const QByteArray &contentType, const QByteArray &bytes)
     if (mime == "image/png") return QStringLiteral("png");
     if (mime == "image/webp") return QStringLiteral("webp");
     if (mime == "image/gif") return QStringLiteral("gif");
+
+    if (bytes.startsWith(QByteArray::fromHex("ffd8ff"))) return QStringLiteral("jpg");
+    if (bytes.startsWith(QByteArray::fromHex("89504e470d0a1a0a"))) return QStringLiteral("png");
+    if (bytes.startsWith("GIF87a") || bytes.startsWith("GIF89a")) return QStringLiteral("gif");
+    if (bytes.size() >= 12 && bytes.startsWith("RIFF")
+        && bytes.mid(8, 4) == "WEBP") return QStringLiteral("webp");
     return {};
 }
 }
