@@ -65,6 +65,11 @@
           "assetNameRegex": "^DKR-R-.*-Linux-x86_64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "DKR-R-Linux-x86_64.AppImage"
+        },
+        "aarch64": {
+          "assetNameRegex": "^DKR-R-.*-Linux-aarch64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "DKR-R-Linux-aarch64.AppImage"
         }
       }
     }
