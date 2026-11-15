@@ -5,6 +5,7 @@
 
 #include "core/PlatformManager.h"
 #include "core/LauncherDownloadManager.h"
+#include "core/GameLaunchManager.h"
 #include "core/LibraryScanner.h"
 #include "core/ArtworkManager.h"
 #include "database/DatabaseManager.h"
@@ -41,6 +42,7 @@ int main(int argc, char *argv[])
                                   platformManager.dataDirectory() + "/artwork");
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
+    GameLaunchManager gameLaunchManager(&launcherDownloadManager);
     ProjectCatalog projectCatalog;
     if (!projectCatalog.isLoaded())
         qWarning() << "Project catalog unavailable:" << projectCatalog.errorString();
@@ -52,6 +54,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("artworkManager", &artworkManager);
     engine.rootContext()->setContextProperty("githubManager", &githubManager);
     engine.rootContext()->setContextProperty("launcherDownloadManager", &launcherDownloadManager);
+    engine.rootContext()->setContextProperty("gameLaunchManager", &gameLaunchManager);
     engine.rootContext()->setContextProperty("projectCatalog", &projectCatalog);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
