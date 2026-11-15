@@ -64,7 +64,7 @@ bool writeEntryData(struct archive *reader, QSaveFile &output,
 }
 }
 
-ArchiveExtractor::Result ArchiveExtractor::extractTarArchive(
+ArchiveExtractor::Result ArchiveExtractor::extractArchive(
     const QString &archivePath,
     const QString &destinationDirectory,
     const QString &expectedExecutable
@@ -126,6 +126,7 @@ ArchiveExtractor::Result ArchiveExtractor::extractTarArchive(
 
     archive_read_support_filter_all(reader);
     archive_read_support_format_tar(reader);
+    archive_read_support_format_zip(reader);
 
     const QByteArray archivePathBytes = QFile::encodeName(archivePath);
     if (archive_read_open_filename(reader, archivePathBytes.constData(), 64 * 1024) != ARCHIVE_OK) {
@@ -277,6 +278,86 @@ ArchiveExtractor::Result ArchiveExtractor::extractTarArchive(
         result.error = failure;
     }
 
+    return result;
+}
+
+
+ArchiveExtractor::Result ArchiveExtractor::extractTarArchive(
+    const QString &archivePath,
+    const QString &destinationDirectory,
+    const QString &expectedExecutable
+)
+{
+    return extractArchive(archivePath, destinationDirectory, expectedExecutable);
+}
+
+ArchiveExtractor::Result ArchiveExtractor::stageAppImage(
+    const QString &appImagePath,
+    const QString &destinationDirectory,
+    const QString &expectedExecutable
+)
+{
+    Result result;
+    const QFileInfo sourceInfo(appImagePath);
+    if (!sourceInfo.isFile() || !sourceInfo.isReadable()
+        || sourceInfo.suffix().compare(QStringLiteral("AppImage"), Qt::CaseInsensitive) != 0) {
+        result.error = QStringLiteral("The staged AppImage is missing, unreadable, or does not have an .AppImage extension.");
+        return result;
+    }
+
+    if (!isSafeRelativePath(expectedExecutable)
+        || QFileInfo(expectedExecutable).fileName() != expectedExecutable) {
+        result.error = QStringLiteral("A standalone AppImage must use a safe filename without directory components.");
+        return result;
+    }
+
+    const QFileInfo destinationInfo(destinationDirectory);
+    if (destinationInfo.exists()) {
+        result.error = QStringLiteral("The installation staging destination already exists; refusing to overwrite it.");
+        return result;
+    }
+
+    const QString parentPath = QFileInfo(destinationDirectory).absolutePath();
+    if (!QDir().mkpath(parentPath)) {
+        result.error = QStringLiteral("Could not create the AppImage staging parent directory.");
+        return result;
+    }
+    const QString canonicalParent = QFileInfo(parentPath).canonicalFilePath();
+    if (canonicalParent.isEmpty()) {
+        result.error = QStringLiteral("Could not resolve the AppImage staging parent directory.");
+        return result;
+    }
+
+    const QString stagingRoot = QDir(canonicalParent).filePath(QFileInfo(destinationDirectory).fileName());
+    if (!QDir().mkdir(stagingRoot)) {
+        result.error = QStringLiteral("Could not create a new AppImage staging directory.");
+        return result;
+    }
+    const QString canonicalRoot = QFileInfo(stagingRoot).canonicalFilePath();
+    if (canonicalRoot.isEmpty() || canonicalRoot != stagingRoot) {
+        QDir(stagingRoot).removeRecursively();
+        result.error = QStringLiteral("The AppImage staging directory resolves through an unexpected filesystem path.");
+        return result;
+    }
+
+    const QString executablePath = QDir(canonicalRoot).filePath(expectedExecutable);
+    if (!QFile::copy(appImagePath, executablePath)) {
+        QDir(canonicalRoot).removeRecursively();
+        result.error = QStringLiteral("Could not copy the standalone AppImage into its staging directory.");
+        return result;
+    }
+
+    QFile::Permissions permissions = QFile::permissions(executablePath);
+    permissions |= QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner;
+    if (!QFile::setPermissions(executablePath, permissions)) {
+        QDir(canonicalRoot).removeRecursively();
+        result.error = QStringLiteral("Could not mark the AppImage as executable.");
+        return result;
+    }
+
+    result.success = true;
+    result.extractedDirectory = canonicalRoot;
+    result.executablePath = executablePath;
     return result;
 }
 
