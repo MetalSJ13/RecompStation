@@ -76,6 +76,24 @@ if(BUILD_TESTING)
 
     add_test(NAME PlatformManagerTests COMMAND PlatformManagerTests)
 
+    qt_add_executable(LauncherDownloadManagerTests
+        tests/LauncherDownloadManagerTest.cpp
+        src/core/LauncherDownloadManager.h
+        src/core/LauncherDownloadManager.cpp
+        src/core/PlatformManager.h
+        src/core/PlatformManager.cpp
+    )
+
+    target_include_directories(LauncherDownloadManagerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(LauncherDownloadManagerTests PRIVATE
+        Qt6::Core Qt6::Network Qt6::Test
+    )
+
+    add_test(NAME LauncherDownloadManagerTests COMMAND LauncherDownloadManagerTests)
+
     qt_add_executable(LibraryScannerTests
         tests/LibraryScannerTest.cpp
         src/core/PlatformManager.h
