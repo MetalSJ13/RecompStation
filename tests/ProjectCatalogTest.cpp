@@ -175,6 +175,18 @@ void ProjectCatalogTest::selectsOnlyCompatibleLinuxAssets()
     QVERIFY(!catalog.isAssetCompatible(
         QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("riscv64"),
         QStringLiteral("BanjoRecompiled-v1.0.2-Linux-X64.tar.gz")));
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("ConkerRecomp-Linux-X64.tar.gz")));
+    QVERIFY(!catalog.isAssetCompatible(
+        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("ConkerRecomp-Windows-X64.zip")));
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("diddy-kong-racing-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("DKR-R-1.0.15-Linux-x86_64.AppImage")));
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("diddy-kong-racing-recompiled"), QStringLiteral("aarch64"),
+        QStringLiteral("DKR-R-1.0.15-Linux-aarch64.AppImage")));
 }
 
 void ProjectCatalogTest::filtersReleaseAssetsForCurrentArchitecture()
