@@ -462,7 +462,9 @@ int LauncherDownloadManager::installDownloadedAsset(
 
         const QString executablePath = QDir(destination).filePath(expectedExecutable);
         const QFileInfo installedExecutable(executablePath);
-        if (!installedExecutable.isFile() || installedExecutable.isSymLink()) {
+        const QString canonicalExecutable = installedExecutable.canonicalFilePath();
+        if (!installedExecutable.isFile() || installedExecutable.isSymLink()
+            || !canonicalExecutable.startsWith(destination + QDir::separator())) {
             QDir(destination).removeRecursively();
             emit installationFailed(requestId, QStringLiteral("The installed launcher executable failed its final validation."));
             return;
@@ -547,7 +549,9 @@ QVariantList LauncherDownloadManager::installedLaunchers() const
 
         const QString executablePath = QDir(directory).filePath(executableRelativePath);
         const QFileInfo executableInfo(executablePath);
-        if (!executableInfo.isFile() || executableInfo.isSymLink())
+        const QString canonicalExecutable = executableInfo.canonicalFilePath();
+        if (!executableInfo.isFile() || executableInfo.isSymLink()
+            || !canonicalExecutable.startsWith(directory + QDir::separator()))
             continue;
 
         installed.append(QVariantMap{
