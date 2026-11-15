@@ -15,6 +15,7 @@ ApplicationWindow {
     property string currentPage: "Library"
     property string selectedPlatform: "All Games"
     property string librarySearchText: ""
+    property var selectedGame: null
     property int libraryRevision: 0
     property int launcherRevision: 0
     property string pendingUninstallProjectId: ""
@@ -319,6 +320,176 @@ ApplicationWindow {
         }
     }
 
+    Popup {
+        id: gameDetailsPopup
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: Math.min(window.width - 64, 900)
+        height: Math.min(window.height - 64, 620)
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        padding: 22
+        property var supportedProjects: window.selectedGame
+            ? projectCatalog.projectsForGame(
+                  window.selectedGame.metadataTitle || window.selectedGame.title,
+                  window.selectedGame.platform)
+            : []
+        property var primaryProject: supportedProjects.length > 0 ? supportedProjects[0] : null
+        property var installedProject: primaryProject
+            ? window.installedLauncher(primaryProject.id) : null
+
+        background: Rectangle {
+            radius: theme.radiusLarge
+            color: theme.elevatedSurface
+            border.color: theme.divider
+            border.width: 1
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 16
+            RowLayout {
+                Layout.fillWidth: true
+                Label {
+                    Layout.fillWidth: true
+                    text: window.selectedGame ? window.selectedGame.title : ""
+                    color: theme.textPrimary
+                    font.pixelSize: 25
+                    font.bold: true
+                    elide: Text.ElideRight
+                }
+                Button {
+                    text: "Close"
+                    onClicked: gameDetailsPopup.close()
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 22
+
+                Rectangle {
+                    Layout.preferredWidth: 250
+                    Layout.fillHeight: true
+                    radius: theme.radiusCard
+                    color: theme.sidebarBackground
+                    clip: true
+                    Image {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        source: window.selectedGame ? window.selectedGame.artworkPath : ""
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                    }
+                    Label {
+                        anchors.centerIn: parent
+                        visible: !window.selectedGame || window.selectedGame.artworkPath.length === 0
+                        text: "Artwork unavailable"
+                        color: theme.textMuted
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 10
+
+                    Label {
+                        text: window.selectedGame ? window.selectedGame.platform : ""
+                        color: theme.accentHover
+                        font.pixelSize: 13
+                        font.bold: true
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: window.selectedGame && window.selectedGame.metadataOverview.length > 0
+                            ? window.selectedGame.metadataOverview
+                            : "Game information has not been retrieved yet. RecompStation will populate details when matching metadata is available."
+                        color: theme.textSecondary
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: !!window.selectedGame
+                            && (window.selectedGame.metadataReleaseDate.length > 0
+                                || window.selectedGame.metadataRating.length > 0)
+                        text: window.selectedGame
+                            ? [window.selectedGame.metadataReleaseDate,
+                               window.selectedGame.metadataRating.length > 0
+                                   ? "Rating " + window.selectedGame.metadataRating : ""]
+                                  .filter(value => value.length > 0).join("  •  ")
+                            : ""
+                        color: theme.textMuted
+                        font.pixelSize: 11
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: theme.divider
+                    }
+                    Label {
+                        text: "RECOMPILATION SUPPORT"
+                        color: theme.textMuted
+                        font.pixelSize: 10
+                        font.bold: true
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: gameDetailsPopup.primaryProject
+                            ? gameDetailsPopup.primaryProject.name
+                            : "No supported recompilation project is currently listed for this game."
+                        color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.installedProject !== null
+                        text: gameDetailsPopup.installedProject !== null
+                            ? "Installed launcher: " + gameDetailsPopup.installedProject.executablePath
+                            : ""
+                        color: theme.textMuted
+                        font.pixelSize: 10
+                        wrapMode: Text.WrapAnywhere
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: gameDetailsPopup.primaryProject !== null
+                            && window.launchErrors[gameDetailsPopup.primaryProject.id] !== undefined
+                        text: gameDetailsPopup.primaryProject
+                            ? (window.launchErrors[gameDetailsPopup.primaryProject.id] || "") : ""
+                        color: theme.error
+                        wrapMode: Text.Wrap
+                    }
+                    Item { Layout.fillHeight: true }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Button {
+                            visible: gameDetailsPopup.installedProject !== null
+                            highlighted: true
+                            text: gameDetailsPopup.primaryProject
+                                && window.runningLaunchers[gameDetailsPopup.primaryProject.id]
+                                ? "Running…" : "Play Game"
+                            enabled: gameDetailsPopup.primaryProject !== null
+                                && gameDetailsPopup.installedProject !== null
+                                && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
+                            onClicked: window.launchSupportedGame(gameDetailsPopup.primaryProject.id)
+                        }
+                        Button {
+                            visible: gameDetailsPopup.primaryProject !== null
+                                && gameDetailsPopup.installedProject === null
+                            text: "Find Launcher"
+                            onClicked: {
+                                currentPage = "Launchers"
+                                gameDetailsPopup.close()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     RowLayout {
         anchors.fill: parent
         spacing: 0
@@ -462,12 +633,14 @@ ApplicationWindow {
                             wrapMode: Text.Wrap
                         }
 
-                        ListView {
-                            id: gameList
+                        GridView {
+                            id: gameGrid
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            spacing: 10
+                            cellWidth: 194
+                            cellHeight: 270
+                            keyNavigationEnabled: true
                             model: {
                                 window.libraryRevision
                                 const games = databaseManager.games(
@@ -477,100 +650,130 @@ ApplicationWindow {
                                     ? games
                                     : games.filter(game => game.title.toLowerCase().includes(query))
                             }
-                            delegate: Rectangle {
+                            delegate: Item {
+                                id: gameTile
                                 required property string title
                                 required property string platform
                                 required property string path
                                 required property string artworkPath
                                 required property string metadataTitle
-                                property var supportedProjects: projectCatalog.projectsForGame(metadataTitle, platform)
-                                property var installedProject: supportedProjects.length > 0
-                                    ? window.installedLauncher(supportedProjects[0].id) : null
-                                width: gameList.width
-                                height: 108
-                                radius: 10
-                                color: theme.surface
-                                RowLayout {
+                                required property string metadataOverview
+                                required property string metadataReleaseDate
+                                required property string metadataRating
+                                property int gameId: model.id
+                                width: gameGrid.cellWidth - 14
+                                height: gameGrid.cellHeight - 14
+                                focus: GridView.isCurrentItem
+
+                                Rectangle {
                                     anchors.fill: parent
-                                    anchors.margins: 10
-                                    spacing: 12
-                                    Rectangle {
-                                        Layout.preferredWidth: 54
-                                        Layout.preferredHeight: 70
-                                        radius: 5
-                                        color: "#171720"
-                                        clip: true
-                                        Image {
-                                            anchors.fill: parent
-                                            source: artworkPath
-                                            fillMode: Image.PreserveAspectFit
-                                            asynchronous: true
-                                            visible: artworkPath.length > 0
-                                        }
-                                        Label {
-                                            anchors.centerIn: parent
-                                            text: "No\nArtwork"
-                                            color: "#777788"
-                                            font.pixelSize: 9
-                                            horizontalAlignment: Text.AlignHCenter
-                                            visible: artworkPath.length === 0
-                                        }
-                                    }
+                                    radius: theme.radiusCard
+                                    color: theme.surface
+                                    border.width: tileMouse.containsMouse || gameTile.GridView.isCurrentItem ? 2 : 1
+                                    border.color: tileMouse.containsMouse || gameTile.GridView.isCurrentItem
+                                        ? theme.accent : theme.divider
+
                                     ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 3
-                                        Label {
-                                            text: title
-                                            color: "white"
-                                            font.pixelSize: 16
-                                            font.bold: true
-                                        }
-                                        Label {
-                                            text: platform + "  •  " + path
-                                            color: "#9999aa"
-                                            font.pixelSize: 11
-                                            elide: Text.ElideMiddle
+                                        anchors.fill: parent
+                                        anchors.margins: 8
+                                        spacing: 7
+
+                                        Rectangle {
                                             Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            Layout.minimumHeight: 150
+                                            radius: theme.radiusSmall
+                                            color: theme.sidebarBackground
+                                            clip: true
+
+                                            Image {
+                                                anchors.fill: parent
+                                                source: gameTile.artworkPath
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                                cache: true
+                                                visible: gameTile.artworkPath.length > 0
+                                            }
+                                            Column {
+                                                anchors.centerIn: parent
+                                                spacing: 5
+                                                visible: gameTile.artworkPath.length === 0
+                                                Label {
+                                                    anchors.horizontalCenter: parent.horizontalCenter
+                                                    text: "▧"
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 34
+                                                }
+                                                Label {
+                                                    anchors.horizontalCenter: parent.horizontalCenter
+                                                    text: "Artwork unavailable"
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 10
+                                                }
+                                            }
                                         }
+
                                         Label {
-                                            visible: supportedProjects.length > 0
-                                            text: supportedProjects.length > 0
-                                                  ? "Supported recompilation: " + supportedProjects[0].name
-                                                  : ""
-                                            color: "#91d6a5"
-                                            font.pixelSize: 11
-                                            wrapMode: Text.Wrap
+                                            Layout.fillWidth: true
+                                            text: gameTile.title
+                                            color: theme.textPrimary
+                                            font.pixelSize: 14
+                                            font.bold: true
+                                            elide: Text.ElideRight
                                         }
-                                        Label {
-                                            visible: installedProject !== null
-                                                && window.launchErrors[supportedProjects[0].id] !== undefined
-                                            text: installedProject !== null
-                                                ? (window.launchErrors[supportedProjects[0].id] || "") : ""
-                                            color: "#e5a0a0"
-                                            font.pixelSize: 10
-                                            wrapMode: Text.Wrap
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: gameTile.platform
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: gameTile.metadataTitle.length > 0 ? "METADATA" : ""
+                                                color: theme.success
+                                                font.pixelSize: 9
+                                                font.bold: true
+                                            }
                                         }
-                                    }
-                                    Button {
-                                        visible: installedProject !== null
-                                        text: installedProject !== null
-                                            && window.runningLaunchers[supportedProjects[0].id]
-                                            ? "Running…" : "Play Game"
-                                        highlighted: true
-                                        enabled: installedProject !== null
-                                            && !window.runningLaunchers[supportedProjects[0].id]
-                                        onClicked: window.launchSupportedGame(supportedProjects[0].id)
                                     }
                                 }
+
+                                MouseArea {
+                                    id: tileMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        gameGrid.currentIndex = index
+                                        window.selectedGame = {
+                                            id: gameTile.gameId,
+                                            title: gameTile.title,
+                                            platform: gameTile.platform,
+                                            path: gameTile.path,
+                                            artworkPath: gameTile.artworkPath,
+                                            metadataTitle: gameTile.metadataTitle,
+                                            metadataOverview: gameTile.metadataOverview,
+                                            metadataReleaseDate: gameTile.metadataReleaseDate,
+                                            metadataRating: gameTile.metadataRating
+                                        }
+                                        gameDetailsPopup.open()
+                                    }
+                                }
+
+                                Keys.onReturnPressed: tileMouse.clicked(Qt.LeftButton)
+                                Keys.onEnterPressed: tileMouse.clicked(Qt.LeftButton)
                             }
                             ScrollBar.vertical: ScrollBar {}
                         }
 
                         Label {
                             Layout.alignment: Qt.AlignHCenter
-                            visible: gameList.count === 0
-                            text: "No games found. Add supported game files to a platform folder, then scan."
-                            color: "#9999aa"
+                            visible: gameGrid.count === 0
+                            text: window.librarySearchText.trim().length > 0
+                                ? "No games match your search."
+                                : "Your library is empty. Add game files to a platform folder, then scan."
+                            color: theme.textMuted
                             wrapMode: Text.Wrap
                         }
                     }
