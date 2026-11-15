@@ -31,6 +31,8 @@ qt_add_executable(RecompStationApp
     src/core/PlatformManager.cpp
     src/core/LauncherDownloadManager.h
     src/core/LauncherDownloadManager.cpp
+    src/core/GameLaunchManager.h
+    src/core/GameLaunchManager.cpp
     src/core/ArchiveExtractor.h
     src/core/ArchiveExtractor.cpp
     src/core/LibraryScanner.h
