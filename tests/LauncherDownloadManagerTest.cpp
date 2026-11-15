@@ -8,6 +8,8 @@
 #include <QFileInfo>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <archive.h>
+#include <archive_entry.h>
 
 class LauncherDownloadManagerTest : public QObject
 {
@@ -20,6 +22,7 @@ private slots:
     void rejectsOversizedAssets();
     void rejectsSymlinkedStagingRoot();
     void acceptsValidRequestAndReportsMissingNetworkDestination();
+    void installsAndUninstallsManagedLauncher();
 };
 
 void LauncherDownloadManagerTest::rejectsInvalidProjectIdentifiers()
