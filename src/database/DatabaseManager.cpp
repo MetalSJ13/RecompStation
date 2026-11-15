@@ -68,6 +68,12 @@ bool DatabaseManager::createTables()
         ))",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_games_game_path "
         "ON games(game_path) WHERE game_path IS NOT NULL",
+        R"(CREATE TABLE IF NOT EXISTS metadata_lookup_attempts (
+            game_id INTEGER PRIMARY KEY,
+            status TEXT NOT NULL,
+            attempted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE
+        ))",
         R"(CREATE TABLE IF NOT EXISTS game_metadata (
             game_id INTEGER PRIMARY KEY,
             provider TEXT NOT NULL,
@@ -310,6 +316,70 @@ bool DatabaseManager::setArtworkPath(int gameId, const QString &artworkPath)
         m_lastError = query.lastError().text();
         if (m_lastError.isEmpty())
             m_lastError = QStringLiteral("The selected local game no longer exists.");
+        emit errorChanged();
+        return false;
+    }
+    m_lastError.clear();
+    emit errorChanged();
+    return true;
+}
+
+
+QVariantList DatabaseManager::gamesNeedingMetadata() const
+{
+    QVariantList result;
+    if (!m_database.isOpen())
+        return result;
+
+    QSqlQuery query(m_database);
+    if (!query.exec(R"(
+        SELECT games.id, games.title, platforms.name
+        FROM games
+        JOIN platforms ON games.platform_id = platforms.id
+        LEFT JOIN game_metadata ON game_metadata.game_id = games.id
+        LEFT JOIN metadata_lookup_attempts
+            ON metadata_lookup_attempts.game_id = games.id
+        WHERE game_metadata.game_id IS NULL
+          AND metadata_lookup_attempts.game_id IS NULL
+        ORDER BY platforms.name, games.title COLLATE NOCASE
+    )"))
+        return result;
+
+    while (query.next()) {
+        result.append(QVariantMap{
+            {QStringLiteral("id"), query.value(0).toInt()},
+            {QStringLiteral("title"), query.value(1).toString()},
+            {QStringLiteral("platform"), query.value(2).toString()}
+        });
+    }
+    return result;
+}
+
+bool DatabaseManager::markMetadataLookupAttempt(int gameId, const QString &status)
+{
+    const QStringList allowedStatuses{
+        QStringLiteral("matched"),
+        QStringLiteral("no_match"),
+        QStringLiteral("ambiguous")
+    };
+    if (!m_database.isOpen() || gameId <= 0 || !allowedStatuses.contains(status)) {
+        m_lastError = QStringLiteral("A valid game and metadata lookup status are required.");
+        emit errorChanged();
+        return false;
+    }
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        INSERT INTO metadata_lookup_attempts (game_id, status, attempted_at)
+        VALUES (:game_id, :status, CURRENT_TIMESTAMP)
+        ON CONFLICT(game_id) DO UPDATE SET
+            status = excluded.status,
+            attempted_at = excluded.attempted_at
+    )");
+    query.bindValue(QStringLiteral(":game_id"), gameId);
+    query.bindValue(QStringLiteral(":status"), status);
+    if (!query.exec()) {
+        m_lastError = query.lastError().text();
         emit errorChanged();
         return false;
     }
