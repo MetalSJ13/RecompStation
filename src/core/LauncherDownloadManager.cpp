@@ -14,6 +14,7 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QTimer>
+#include <QVariantMap>
 #include <QUuid>
 #include <QUrl>
 
