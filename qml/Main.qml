@@ -543,7 +543,8 @@ ApplicationWindow {
                             && gameDetailsPopup.installedProject === null
                         text: "Available version: " + gameDetailsPopup.releaseTag
                             + "  •  Linux (" + projectCatalog.currentArchitecture + ")"
-                            + "\\nPackage: " + gameDetailsPopup.selectedAssetName
+                            + "\
+Package: " + gameDetailsPopup.selectedAssetName
                         color: theme.textSecondary
                         wrapMode: Text.Wrap
                     }
@@ -767,6 +768,13 @@ ApplicationWindow {
                                 onActivated: window.selectedPlatform = currentText
                             }
                             Button {
+                            Button {
+                                text: "Refresh Metadata & Artwork"
+                                onClicked: {
+                                    scanMessage = "Refreshing metadata and missing artwork..."
+                                    metadataMatcher.scrapeLibrary(true)
+                                }
+                            }
                                 text: "Scan Library"
                                 highlighted: true
                                 onClicked: {
