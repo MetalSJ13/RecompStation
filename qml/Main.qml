@@ -388,7 +388,7 @@ ApplicationWindow {
                     onClicked: currentPage = "Platforms"
                 }
 
-                Rectangle { Layout.fillWidth: true; height: 1; color: "#343440" }
+                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                 Label { text: "MANAGEMENT"; color: "#888899"; font.pixelSize: 11; font.bold: true }
                 Button {
                     Layout.fillWidth: true
@@ -409,7 +409,7 @@ ApplicationWindow {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#15151d"
+            color: theme.windowBackground
 
             StackLayout {
                 anchors.fill: parent
@@ -594,7 +594,7 @@ ApplicationWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             radius: 10
-                            color: "#252532"
+                            color: theme.surface
                             visible: !metadataManager.configured
                             implicitHeight: keyNotice.implicitHeight + 28
                             Label {
@@ -737,7 +737,7 @@ ApplicationWindow {
                                 width: metadataResultsList.width
                                 height: resultContent.implicitHeight + 28
                                 radius: 10
-                                color: "#252532"
+                                color: theme.surface
                                 ColumnLayout {
                                     id: resultContent
                                     anchors.fill: parent
@@ -847,7 +847,7 @@ ApplicationWindow {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 115
                                     radius: 12
-                                    color: "#252532"
+                                    color: theme.surface
                                     ColumnLayout {
                                         anchors.fill: parent
                                         anchors.margins: 18
@@ -902,7 +902,7 @@ ApplicationWindow {
                                 width: ListView.view.width
                                 height: projectCard.implicitHeight + 28
                                 radius: 10
-                                color: "#252532"
+                                color: theme.surface
                                 ColumnLayout {
                                     id: projectCard
                                     anchors.fill: parent
@@ -979,7 +979,7 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             implicitHeight: assetRow.implicitHeight + 16
                                             radius: 6
-                                            color: "#1d1d28"
+                                            color: theme.sidebarBackground
                                             RowLayout {
                                                 id: assetRow
                                                 anchors.fill: parent
@@ -1071,7 +1071,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             height: 100
                             radius: 12
-                            color: "#252532"
+                            color: theme.surface
                             ColumnLayout {
                                 anchors.fill: parent
                                 anchors.margins: 15
