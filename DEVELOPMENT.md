@@ -4,6 +4,8 @@ This document is the authoritative development status and implementation order f
 
 ## Project status
 
+**Current implementation focus:** Automatic metadata matching is being connected to the existing library scan flow. The first pass uses conservative exact-title matching within the mapped platform, records completed lookups to avoid repeated provider requests, and downloads artwork for accepted matches. This work still requires a local build and regression-test verification.
+
 **Current development branch:** `ui/interface-redesign`  
 **Base:** The existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.  
 **Merge policy:** This work remains unmerged into `main` until reviewed and explicitly approved.
@@ -72,9 +74,9 @@ Keep the application buildable after each focused change. Preserve working backe
 - [ ] Use one shared discovery/matching pipeline for manual and automatic scans
 - [ ] Add filesystem monitoring for configured game folders, with debouncing and safe handling of bursts of changes
 - [ ] Detect additions, removals, and relevant changes without repeatedly registering duplicates
-- [ ] Automatically identify metadata using title and platform context
+- [ ] Automatically identify metadata using title and platform context (initial exact-title matcher implemented; validation pending)
 - [ ] Define and test conservative match-confidence rules; keep ambiguous matches unresolved
-- [ ] Cache metadata and artwork, avoid redundant API requests, and respect provider limits
+- [ ] Cache metadata and artwork, avoid redundant API requests, and respect provider limits (persistent lookup-attempt tracking implemented; validation pending)
 - [ ] Surface scan status and exceptional review in the affected game/library context, not a separate Metadata Search page
 - [ ] Add regression tests for matching, monitoring, duplicate events, API failures, and cache behavior
 
