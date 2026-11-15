@@ -244,6 +244,33 @@ ApplicationWindow {
     }
 
     Connections {
+        target: gameLaunchManager
+        function onLaunchStarted(projectId, processId) {
+            let running = Object.assign({}, window.runningLaunchers)
+            running[projectId] = true
+            window.runningLaunchers = running
+        }
+        function onLaunchFailed(projectId, message) {
+            let running = Object.assign({}, window.runningLaunchers)
+            delete running[projectId]
+            window.runningLaunchers = running
+            let errors = Object.assign({}, window.launchErrors)
+            errors[projectId] = message
+            window.launchErrors = errors
+        }
+        function onProcessFinished(projectId, exitCode, crashed) {
+            let running = Object.assign({}, window.runningLaunchers)
+            delete running[projectId]
+            window.runningLaunchers = running
+            if (crashed) {
+                let errors = Object.assign({}, window.launchErrors)
+                errors[projectId] = "The game launcher exited unexpectedly."
+                window.launchErrors = errors
+            }
+        }
+    }
+
+    Connections {
         target: libraryScanner
         function onScanCompleted(gamesFound) {
             window.libraryRevision++
@@ -450,8 +477,10 @@ ApplicationWindow {
                                 required property string artworkPath
                                 required property string metadataTitle
                                 property var supportedProjects: projectCatalog.projectsForGame(metadataTitle, platform)
+                                property var installedProject: supportedProjects.length > 0
+                                    ? window.installedLauncher(supportedProjects[0].id) : null
                                 width: gameList.width
-                                height: 92
+                                height: 108
                                 radius: 10
                                 color: "#252532"
                                 RowLayout {
@@ -514,6 +543,25 @@ ApplicationWindow {
                                             font.pixelSize: 10
                                             wrapMode: Text.Wrap
                                         }
+                                        Label {
+                                            visible: installedProject !== null
+                                                && window.launchErrors[supportedProjects[0].id] !== undefined
+                                            text: installedProject !== null
+                                                ? (window.launchErrors[supportedProjects[0].id] || "") : ""
+                                            color: "#e5a0a0"
+                                            font.pixelSize: 10
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
+                                    Button {
+                                        visible: installedProject !== null
+                                        text: installedProject !== null
+                                            && window.runningLaunchers[supportedProjects[0].id]
+                                            ? "Running…" : "Play Game"
+                                        highlighted: true
+                                        enabled: installedProject !== null
+                                            && !window.runningLaunchers[supportedProjects[0].id]
+                                        onClicked: window.launchSupportedGame(supportedProjects[0].id)
                                     }
                                     Button {
                                         visible: installedProject !== null
