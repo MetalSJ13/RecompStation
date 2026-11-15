@@ -8,7 +8,9 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSaveFile>
-#include <QSet>\n\n#include <sys/stat.h>
+#include <QSet>
+
+#include <sys/stat.h>
 
 namespace {
 constexpr qint64 MaximumExtractedBytes = 16LL * 1024LL * 1024LL * 1024LL;
