@@ -110,9 +110,12 @@ Installation runs on a background thread and currently supports catalog-declared
 - [ ] Treat a published checksum/signature that fails verification as an integrity error and stop installation unless the user explicitly chooses an informed override
 
 #### Milestone 8: Native game launching
-- [ ] Associate installed launchers with supported games
-- [ ] Launch the configured executable with project-specific arguments
-- [ ] Track process state and report launch/runtime errors
+- [x] Associate installed launchers with supported games in the Game Library
+- [x] Add a Play Game action for supported games with a validated installed launcher
+- [x] Launch the configured executable as a separate desktop process using its installation directory as the working directory
+- [x] Track running process state and report launch failures and unexpected exits
+- [x] Add regression coverage for launching a managed executable and tracking its process lifetime
+- [ ] Add project-specific launch arguments and ROM/revision compatibility checks
 
 
 ### Build dependencies
