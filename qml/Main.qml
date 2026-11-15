@@ -493,13 +493,16 @@ ApplicationWindow {
                 }
 
                 ScrollView {
+                    id: gameInfoScroll
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
+                    contentWidth: availableWidth
                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                     ColumnLayout {
-                        width: parent.width
+                        width: gameInfoScroll.availableWidth
                         spacing: 14
 
                         ColumnLayout {
