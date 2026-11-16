@@ -9,6 +9,8 @@
 #include <QFileInfo>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <QSettings>
+#include <QUrl>
 
 #include <memory>
 
@@ -42,12 +44,19 @@ private:
 private slots:
     void init()
     {
+        QCoreApplication::setOrganizationName(QStringLiteral("RecompStationLibraryScannerTests"));
+        QCoreApplication::setApplicationName(QStringLiteral("LibraryScannerTests"));
+        QSettings().clear();
+
         m_tempDirectory = std::make_unique<QTemporaryDir>();
         QVERIFY(m_tempDirectory->isValid());
 
         m_platformManager =
             std::make_unique<PlatformManager>(m_tempDirectory->path());
         QVERIFY(m_platformManager->initialize());
+        const QString libraryRoot = m_tempDirectory->path() + "/library";
+        QVERIFY(QDir().mkpath(libraryRoot));
+        QVERIFY(m_platformManager->setLibraryDirectory(QUrl::fromLocalFile(libraryRoot)));
 
         m_databaseManager = std::make_unique<DatabaseManager>();
         const QString databasePath =
