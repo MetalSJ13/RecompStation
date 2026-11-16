@@ -86,7 +86,7 @@
       ],
       "repositoryOwner": "JackandBeans",
       "repositoryName": "Snap64Recomp",
-      "romRequirements": "Requires the US Pokémon Snap ROM (SHA-1 edc7c49cc568c045fe48be0d18011c30f393cbaf). The Linux builds are marked experimental by the project; SDL2, GTK 3 and a Vulkan 1.2 driver are required. The project does not include game data.",
+      "romRequirements": "Requires the US Pokémon Snap ROM (SHA-1 edc7c49cc568c045fe48be0d18011c30f393cbaf); other regional ROMs are not supported. The Linux port is explicitly experimental and requires SDL2 2.26+, GTK 3, and a Vulkan 1.2 driver. The project does not include game data.",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Snap64Recomp-.*-linux-x86_64\\.tar\\.gz$",
