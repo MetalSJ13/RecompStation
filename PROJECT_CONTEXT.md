@@ -55,9 +55,9 @@ Metadata Search is removed as a standalone destination. Platform selection becom
 
 The visual direction is a polished, dark, immersive personal collection experience. It must not resemble a storefront or directly copy Steam Big Picture or another launcher. Use restrained blue-violet/electric-blue accents, strong artwork presentation, consistent typography and spacing, smooth purposeful transitions, and visible selection/focus states.
 
-Fullscreen is the default launch mode. Supported windowed/borderless alternatives and actual system-reported display modes belong in Settings. Appearance should offer a small curated set of coordinated built-in themes and backgrounds before considering extensive customization.
+Display behavior must remain under the desktop compositor; the initial compatibility target is KDE Plasma on Wayland, with X11/Xlibre and other desktop environments investigated later. Resolution choices represent preferred application presentation sizes, not monitor-wide mode changes. Appearance will offer curated static, optional animated, and user-selected custom-image backgrounds, plus scalable font sizes and reduced-motion support.
 
-Mouse and keyboard remain supported. The interface should be structured for future full controller navigation; controller support is planned, not yet complete.
+Mouse and keyboard remain supported. Controller support will include Xbox and PlayStation defaults with user remapping. RecompStation must relinquish controller input while a launched game session is active and resume only after the actual game process/session exits.
 
 ## Metadata automation direction
 
