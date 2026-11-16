@@ -82,12 +82,13 @@ Keep the application buildable after each focused change. Preserve working backe
 
 ### Milestone 5: Settings and first-run experience
 
+- [ ] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
 - [ ] Add curated appearance presets and coordinated background/accent/surface palettes
-- [ ] Add fullscreen default plus safely supported windowed and borderless modes
+- [ ] Add compositor-respecting preferred presentation sizes and safe fullscreen/window behavior (never force monitor-wide resolution changes)
 - [ ] Enumerate actual display devices and supported resolutions before offering choices
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
 - [ ] Add automatic filesystem monitoring for configured folders
-- [ ] Add metadata provider status and cache/refresh controls
+- [ ] Add metadata provider status, provider enablement, field selection, and cache/refresh controls
 - [ ] Add launcher installation/update preferences as supported
 - [ ] Add application preferences and useful first-run guidance
 - [ ] Expose only settings backed by real functionality
@@ -103,8 +104,10 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 7: Input, accessibility, and regression pass
 
 - [ ] Ensure keyboard navigation and visible focus across all screens
-- [ ] Establish controller-friendly navigation and add gamepad support
-- [ ] Review contrast, accessible labels, tab order, and scaling
+- [ ] Establish controller-friendly navigation, Xbox/PlayStation defaults, remapping, and launcher/game-session input ownership
+- [ ] Review contrast, accessible labels, tab order, scaling, reduced motion, and font-size options
+- [ ] Add lightweight navigation sounds with volume controls
+- [ ] Add optional animated backgrounds that pause while minimized or inactive, static/custom background choices, and smooth page/library transitions
 - [ ] Check fullscreen, windowed, and multi-display behavior
 - [ ] Run the full build and regression suite; manually exercise existing workflows
 - [ ] Fix regressions before considering the UI milestone complete
