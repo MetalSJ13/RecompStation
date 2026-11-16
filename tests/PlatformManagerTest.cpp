@@ -20,6 +20,8 @@ private slots:
     void rejectsUnsafeProjectIds();
     void configuresOneLibraryRootAndCreatesOnlySupportedFolders();
     void persistsLibraryRootAcrossRestarts();
+    void migratesLegacySettingsIntoApplicationConfig();
+    void missingConfigRequiresFirstRunSetup();
     void rejectsInvalidLibraryLocations();
 };
 
@@ -144,7 +146,58 @@ void PlatformManagerTest::persistsLibraryRootAcrossRestarts()
     QCOMPARE(reloaded.libraryDirectory(), QDir(libraryRoot).absolutePath());
     QVERIFY(QFileInfo(QDir(libraryRoot).filePath("N64")).isDir());
     QVERIFY(QFileInfo(QDir(libraryRoot).filePath("Wii")).isDir());
-    QVERIFY(QSettings().contains(QStringLiteral("library/root")));
+    QSettings settings(reloaded.settingsFilePath(), QSettings::IniFormat);
+    QVERIFY(settings.contains(QStringLiteral("library/root")));
+    QVERIFY(QFileInfo(reloaded.settingsFilePath()).isFile());
+}
+
+
+void PlatformManagerTest::migratesLegacySettingsIntoApplicationConfig()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString libraryRoot = QDir(temporaryDirectory.path()).filePath("LegacyROMs");
+    QVERIFY(QDir().mkpath(libraryRoot));
+    QSettings legacySettings;
+    legacySettings.setValue(QStringLiteral("library/root"), libraryRoot);
+    legacySettings.setValue(QStringLiteral("appearance/theme"),
+                            QStringLiteral("electric-blue"));
+    legacySettings.sync();
+
+    PlatformManager manager(QDir(temporaryDirectory.path()).filePath("app-data"));
+    QVERIFY(manager.initialize(QStringList{QStringLiteral("N64")}));
+    QCOMPARE(manager.libraryDirectory(), QDir(libraryRoot).absolutePath());
+
+    QSettings migrated(manager.settingsFilePath(), QSettings::IniFormat);
+    QCOMPARE(migrated.value(QStringLiteral("appearance/theme")).toString(),
+             QStringLiteral("electric-blue"));
+    QCOMPARE(migrated.value(QStringLiteral("library/root")).toString(),
+             QDir(libraryRoot).absolutePath());
+    QVERIFY(legacySettings.allKeys().isEmpty());
+}
+
+void PlatformManagerTest::missingConfigRequiresFirstRunSetup()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString appData = QDir(temporaryDirectory.path()).filePath("app-data");
+    const QString libraryRoot = QDir(temporaryDirectory.path()).filePath("ROMs");
+    QVERIFY(QDir().mkpath(libraryRoot));
+
+    QString settingsPath;
+    {
+        PlatformManager manager(appData);
+        QVERIFY(manager.initialize(QStringList{QStringLiteral("N64")}));
+        settingsPath = manager.settingsFilePath();
+        QVERIFY(manager.setLibraryDirectory(QUrl::fromLocalFile(libraryRoot)));
+    }
+
+    QVERIFY(QFile::remove(settingsPath));
+    PlatformManager freshManager(appData);
+    QVERIFY(freshManager.initialize(QStringList{QStringLiteral("N64")}));
+    QVERIFY(!freshManager.libraryConfigured());
 }
 
 void PlatformManagerTest::rejectsInvalidLibraryLocations()
