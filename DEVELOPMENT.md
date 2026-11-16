@@ -83,7 +83,8 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 5: Settings and first-run experience
 
 - [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
-- [ ] Add curated appearance presets and coordinated background/accent/surface palettes
+- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, and theme-aware background/artwork treatments (local validation pending)
+- [ ] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
 - [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
@@ -107,7 +108,7 @@ Keep the application buildable after each focused change. Preserve working backe
 - [ ] Establish controller-friendly navigation, Xbox/PlayStation defaults, remapping, and launcher/game-session input ownership
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
 - [ ] Add lightweight navigation sounds with volume controls
-- [ ] Add optional animated backgrounds that pause while minimized or inactive, static/custom background choices, and smooth page/library transitions
+- [ ] Add optional animated backgrounds that pause while minimized or inactive, custom still-image background selection/preview, and smooth page/library transitions
 - [ ] Check fullscreen, windowed, and multi-display behavior
 - [ ] Run the full build and regression suite; manually exercise existing workflows
 - [ ] Fix regressions before considering the UI milestone complete
