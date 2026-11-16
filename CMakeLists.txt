@@ -22,6 +22,8 @@ qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(RecompStationApp
     src/main.cpp
+    src/core/Logging.h
+    src/core/Logging.cpp
     data/projects.qrc
     src/projects/ProjectCatalog.h
     src/projects/ProjectCatalog.cpp
