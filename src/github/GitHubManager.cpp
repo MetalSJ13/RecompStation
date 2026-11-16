@@ -1,4 +1,5 @@
 #include "GitHubManager.h"
+#include "../core/Logging.h"
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -84,6 +85,7 @@ int GitHubManager::fetchRepository(const QString &owner,
     const int requestId = m_nextRequestId++;
     const QString cleanOwner = owner.trimmed();
     const QString cleanRepository = repository.trimmed();
+    qCInfo(lcGitHub) << "Repository request:" << cleanOwner << "/" << cleanRepository;
 
     if (!isValidRepositoryIdentifier(cleanOwner, cleanRepository)) {
         emit requestFailed(requestId,
@@ -108,6 +110,7 @@ int GitHubManager::fetchRepository(const QString &owner,
                 statusCode, reply->errorString(),
                 QStringLiteral("repository %1/%2").arg(cleanOwner, cleanRepository));
             reply->deleteLater();
+            qCWarning(lcGitHub) << "Repository request failed:" << message;
             emit requestFailed(requestId, message);
             return;
         }
@@ -120,6 +123,7 @@ int GitHubManager::fetchRepository(const QString &owner,
             emit requestFailed(requestId, error);
             return;
         }
+        qCInfo(lcGitHub) << "Repository data loaded:" << cleanOwner << "/" << cleanRepository;
         emit repositoryLoaded(requestId, repositoryInfo);
     });
 
@@ -132,6 +136,7 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
     const int requestId = m_nextRequestId++;
     const QString cleanOwner = owner.trimmed();
     const QString cleanRepository = repository.trimmed();
+    qCInfo(lcGitHub) << "Latest release request:" << cleanOwner << "/" << cleanRepository;
 
     if (!isValidRepositoryIdentifier(cleanOwner, cleanRepository)) {
         emit requestFailed(requestId,
@@ -157,6 +162,7 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
                 QStringLiteral("latest release for %1/%2")
                     .arg(cleanOwner, cleanRepository));
             reply->deleteLater();
+            qCWarning(lcGitHub) << "Release request failed:" << message;
             emit requestFailed(requestId, message);
             return;
         }
@@ -169,6 +175,8 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
             emit requestFailed(requestId, error);
             return;
         }
+        qCInfo(lcGitHub) << "Latest release loaded for" << cleanOwner << "/" << cleanRepository
+                         << "tag:" << release.tagName;
         emit releaseLoaded(requestId, release);
         emit releaseDataLoaded(requestId, releaseToVariantMap(release));
     });
