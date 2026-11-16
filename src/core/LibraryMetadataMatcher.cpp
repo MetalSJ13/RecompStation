@@ -3,6 +3,7 @@
 #include "ArtworkManager.h"
 #include "../database/DatabaseManager.h"
 #include "../metadata/MetadataManager.h"
+#include "Logging.h"
 
 #include <QRegularExpression>
 #include <QString>
@@ -79,6 +80,9 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         const int matchIndex = bestMatchIndex(localTitle, expectedPlatformId, results);
 
         if (matchIndex < 0) {
+            qCWarning(lcMetadata) << "No confident match for" << localTitle
+                                  << "platform ID:" << expectedPlatformId
+                                  << "candidate count:" << results.size();
             const bool ambiguous = matchIndex == -2;
             const int gameId = m_currentGame.value(QStringLiteral("id")).toInt();
             if (m_database) {
@@ -106,6 +110,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             match.value(QStringLiteral("artworkUrl")).toString());
 
         if (!saved) {
+            qCCritical(lcMetadata) << "Failed to save metadata association for game" << gameId;
             setStatus(QStringLiteral("Metadata could not be saved: %1")
                           .arg(m_database ? m_database->lastError()
                                           : QStringLiteral("Database unavailable.")));
@@ -118,6 +123,9 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         if (m_database)
             m_database->markMetadataLookupAttempt(gameId, QStringLiteral("matched"));
 
+        qCInfo(lcMetadata) << "Matched library game" << localTitle
+                           << "to provider title:"
+                           << match.value(QStringLiteral("title")).toString();
         const QString artworkUrl =
             match.value(QStringLiteral("artworkUrl")).toString();
         if (m_artwork && !artworkUrl.isEmpty()) {
@@ -256,6 +264,7 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked)
 
 void LibraryMetadataMatcher::scrapeGame(int gameId)
 {
+    qCInfo(lcMetadata) << "Manual metadata retry requested for game ID:" << gameId;
     if (m_busy || !m_database || !m_metadata)
         return;
 
@@ -318,6 +327,9 @@ void LibraryMetadataMatcher::processNext()
     }
 
     m_currentGame = m_queue.dequeue();
+    qCInfo(lcMetadata) << "Processing metadata for:"
+                       << m_currentGame.value(QStringLiteral("title")).toString()
+                       << "platform:" << m_currentGame.value(QStringLiteral("platform")).toString();
 
     // A game with saved metadata but missing local artwork should reuse its
     // persisted provider URL instead of repeating title matching.
