@@ -434,7 +434,7 @@ int LauncherDownloadManager::installDownloadedAsset(
     m_installations.insert(requestId, watcher);
     connect(watcher, &QFutureWatcher<ArchiveExtractor::Result>::finished,
             this, [this, watcher, requestId, projectId, archivePath,
-                   extractionPath, destination, expectedExecutable]() {
+                   extractionPath, destination]() {
         const ArchiveExtractor::Result result = watcher->result();
         m_installations.remove(requestId);
         m_activeInstallProjects.remove(projectId);
@@ -445,12 +445,20 @@ int LauncherDownloadManager::installDownloadedAsset(
             return;
         }
 
+        const QString executableRelativePath =
+            QDir(extractionPath).relativeFilePath(result.executablePath);
+        if (!isSafeRelativePath(executableRelativePath)) {
+            QDir(extractionPath).removeRecursively();
+            emit installationFailed(requestId, QStringLiteral("The extracted launcher path failed final validation."));
+            return;
+        }
+
         const QString markerPath = QDir(extractionPath).filePath(".recompstation-managed");
         const QString manifestPath = QDir(extractionPath).filePath(".recompstation-install");
         QSaveFile marker(markerPath);
         QSaveFile manifest(manifestPath);
         const QByteArray markerContent("RecompStation managed launcher installation v1\n");
-        const QByteArray manifestContent = expectedExecutable.toUtf8() + "\n";
+        const QByteArray manifestContent = executableRelativePath.toUtf8() + "\n";
         if (!marker.open(QIODevice::WriteOnly)
             || marker.write(markerContent) != markerContent.size()
             || !marker.commit()
@@ -470,7 +478,7 @@ int LauncherDownloadManager::installDownloadedAsset(
             return;
         }
 
-        const QString executablePath = QDir(destination).filePath(expectedExecutable);
+        const QString executablePath = QDir(destination).filePath(executableRelativePath);
         const QFileInfo installedExecutable(executablePath);
         const QString canonicalExecutable = installedExecutable.canonicalFilePath();
         if (!installedExecutable.isFile() || installedExecutable.isSymLink()
