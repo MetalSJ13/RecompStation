@@ -10,6 +10,7 @@ private slots:
     void parsesValidCatalog();
     void acceptsZipPackageFormat();
     void parsesDevelopmentStatus();
+    void derivesSupportedPlatformsFromProjects();
     void rejectsUnknownDevelopmentStatus();
     void rejectsMalformedCatalog();
     void matchesGameByTitleAndPlatform();
@@ -103,6 +104,13 @@ void ProjectCatalogTest::parsesDevelopmentStatus()
              QStringLiteral("pokemon-snap-recompiled"));
     QCOMPARE(snapMatches.first().toMap().value(QStringLiteral("developmentStatus")).toString(),
              QStringLiteral("beta"));
+}
+
+void ProjectCatalogTest::derivesSupportedPlatformsFromProjects()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.isLoaded());
+    QCOMPARE(catalog.supportedPlatforms(), QStringList{QStringLiteral("N64")});
 }
 
 void ProjectCatalogTest::rejectsUnknownDevelopmentStatus()
