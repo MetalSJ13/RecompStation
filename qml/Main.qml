@@ -439,13 +439,33 @@ ApplicationWindow {
     Popup {
         id: gameDetailsPopup
         parent: Overlay.overlay
-        anchors.centerIn: parent
-        width: Math.min(window.width - 48, 960)
-        height: Math.min(window.height - 48, 650)
+        x: 0
+        y: 0
+        width: window.width
+        height: window.height
         modal: true
         focus: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        padding: 24
+        closePolicy: Popup.CloseOnEscape
+        padding: 0
+
+        enter: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: settingsManager.reducedMotion ? 0 : 380
+                easing.type: Easing.OutCubic
+            }
+        }
+        exit: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: settingsManager.reducedMotion ? 0 : 260
+                easing.type: Easing.InCubic
+            }
+        }
 
         property var supportedProjects: window.selectedGame
             ? projectCatalog.projectsForGame(
@@ -486,19 +506,71 @@ ApplicationWindow {
         }
 
         background: Rectangle {
-            radius: theme.radiusLarge
-            color: theme.elevatedSurface
-            border.color: theme.divider
-            border.width: 1
+            color: "transparent"
         }
 
-        contentItem: RowLayout {
-            spacing: 24
+        contentItem: Item {
+            clip: true
+
+            Image {
+                id: detailsBackdropImage
+                anchors.fill: parent
+                source: window.selectedGame ? window.selectedGame.artworkPath : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                smooth: true
+                opacity: status === Image.Ready ? 0.46 : 0
+                Behavior on opacity {
+                    enabled: !settingsManager.reducedMotion
+                    NumberAnimation { duration: 700; easing.type: Easing.OutCubic }
+                }
+            }
+
+            MultiEffect {
+                anchors.fill: detailsBackdropImage
+                source: detailsBackdropImage
+                blurEnabled: true
+                blur: 0.86
+                autoPaddingEnabled: false
+            }
 
             Rectangle {
-                Layout.preferredWidth: 260
+                anchors.fill: parent
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop {
+                        position: 0.0
+                        color: Qt.rgba(theme.windowBackground.r,
+                                       theme.windowBackground.g,
+                                       theme.windowBackground.b, 0.68)
+                    }
+                    GradientStop {
+                        position: 0.55
+                        color: Qt.rgba(theme.windowBackground.r,
+                                       theme.windowBackground.g,
+                                       theme.windowBackground.b, 0.78)
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: Qt.rgba(theme.backgroundBottom.r,
+                                       theme.backgroundBottom.g,
+                                       theme.backgroundBottom.b, 0.88)
+                    }
+                }
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: Math.max(32, Math.min(88, width * 0.045))
+                spacing: 48
+
+            Rectangle {
+                Layout.preferredWidth: Math.min(420, Math.max(300, height * 0.48))
                 Layout.fillHeight: true
-                radius: theme.radiusCard
+                Layout.maximumHeight: 760
+                Layout.alignment: Qt.AlignVCenter
+                radius: theme.radiusLarge
                 color: theme.sidebarBackground
                 border.color: theme.divider
                 border.width: 1
@@ -553,7 +625,7 @@ ApplicationWindow {
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 14
+                spacing: 20
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -565,7 +637,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             text: window.selectedGame ? window.selectedGame.title : ""
                             color: theme.textPrimary
-                            font.pixelSize: 25 * theme.fontScale
+                            font.pixelSize: 38 * theme.fontScale
                             font.bold: true
                             elide: Text.ElideRight
                         }
@@ -580,7 +652,7 @@ ApplicationWindow {
                         }
                     }
                     Button {
-                        text: "Close"
+                        text: "Back to Library"
                         onClicked: gameDetailsPopup.close()
                     }
                 }
@@ -890,6 +962,7 @@ ApplicationWindow {
                     }
                 }
             }
+            }
         }
     }
 
@@ -983,54 +1056,35 @@ ApplicationWindow {
             Component.onCompleted: console.info("[Settings Geometry] main content panel:", width, "x", height)
             onWidthChanged: console.info("[Settings Geometry] main content panel width:", width)
 
-            // The selected game's cached cover art becomes a quiet, full-panel
-            // atmosphere layer. The overlay keeps library text and controls legible.
-            Image {
-                id: libraryAtmosphereImage
+            // A stable, understated theme backdrop keeps the library visually
+            // consistent while games are browsed. Selected artwork belongs to
+            // the dedicated details experience, not the collection background.
+            Rectangle {
                 anchors.fill: parent
-                source: currentPage === "Library" && gameGrid.currentItem
-                    ? gameGrid.currentItem.artworkPath : ""
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
-                opacity: status === Image.Ready ? 0.34 : 0
-                visible: currentPage === "Library"
-                Behavior on opacity {
-                    enabled: !settingsManager.reducedMotion
-                    NumberAnimation { duration: 420; easing.type: Easing.OutCubic }
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: theme.backgroundTop }
+                    GradientStop {
+                        position: 0.52
+                        color: Qt.lighter(theme.windowBackground, 1.12)
+                    }
+                    GradientStop { position: 1.0; color: theme.backgroundBottom }
                 }
-            }
-
-            MultiEffect {
-                anchors.fill: libraryAtmosphereImage
-                source: libraryAtmosphereImage
-                blurEnabled: true
-                blur: 0.82
-                autoPaddingEnabled: false
-                visible: currentPage === "Library"
             }
 
             Rectangle {
                 anchors.fill: parent
-                visible: currentPage === "Library"
                 gradient: Gradient {
+                    orientation: Gradient.Horizontal
                     GradientStop {
                         position: 0.0
-                        color: Qt.rgba(theme.windowBackground.r,
-                                       theme.windowBackground.g,
-                                       theme.windowBackground.b, 0.52)
+                        color: Qt.rgba(theme.accent.r, theme.accent.g,
+                                       theme.accent.b, 0.055)
                     }
-                    GradientStop {
-                        position: 0.58
-                        color: Qt.rgba(theme.windowBackground.r,
-                                       theme.windowBackground.g,
-                                       theme.windowBackground.b, 0.68)
-                    }
+                    GradientStop { position: 0.42; color: "transparent" }
                     GradientStop {
                         position: 1.0
-                        color: Qt.rgba(theme.backgroundBottom.r,
-                                       theme.backgroundBottom.g,
-                                       theme.backgroundBottom.b, 0.82)
+                        color: Qt.rgba(theme.accent.r, theme.accent.g,
+                                       theme.accent.b, 0.035)
                     }
                 }
             }
