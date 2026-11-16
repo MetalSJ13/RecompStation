@@ -1,4 +1,5 @@
 #include "MetadataManager.h"
+#include "../core/Logging.h"
 
 #include "MetadataProvider.h"
 
@@ -126,7 +127,10 @@ int MetadataManager::metadataPlatformId(const QString &internalPlatform) const
 
 void MetadataManager::searchGames(const QString &searchTerm, int platformId)
 {
+    qCInfo(lcMetadata) << "Metadata search requested. Term:" << searchTerm
+                       << "platform ID:" << platformId;
     if (!m_provider) {
+        qCCritical(lcMetadata) << "Search aborted: no metadata provider is available.";
         setErrorString(QStringLiteral("No metadata provider is available."));
         emit searchFailed(m_errorString);
         return;
