@@ -22,7 +22,31 @@ SettingsManager::SettingsManager(QObject *parent)
     m_themeName = isSupportedTheme(storedTheme)
         ? storedTheme
         : kDefaultTheme;
+    m_scanOnStartup = settings.value(QStringLiteral("library/scanOnStartup"), true).toBool();
+
     qCInfo(lcSettings) << "Loaded theme:" << m_themeName;
+}
+
+bool SettingsManager::scanOnStartup() const
+{
+    return m_scanOnStartup;
+}
+
+void SettingsManager::setScanOnStartup(bool enabled)
+{
+    if (m_scanOnStartup == enabled)
+        return;
+
+    QSettings settings;
+    settings.setValue(QStringLiteral("library/scanOnStartup"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist scan-on-startup preference.";
+        return;
+    }
+
+    m_scanOnStartup = enabled;
+    emit scanOnStartupChanged();
 }
 
 QString SettingsManager::themeName() const
