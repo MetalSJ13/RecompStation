@@ -21,7 +21,7 @@ RecompStation is a native desktop environment for browsing and launching the use
 - Nintendo GameCube
 - Nintendo Wii
 
-Platform directory/scanner support does not imply every game has a compatible recompilation project. Launchability depends on the curated project catalog and project-specific ROM requirements.
+Platform folders are derived from the platforms represented in the curated recompilation project catalog. Scanner support does not imply every game has a compatible recompilation project. Launchability depends on the catalog and project-specific ROM requirements.
 
 ## Current development state
 
@@ -29,7 +29,7 @@ Platform directory/scanner support does not imply every game has a compatible re
 **Merge policy:** Keep this branch separate from `main` until the user explicitly approves a merge. The preceding `feature/launcher-download-staging` branch is retained as a backup.
 
 Implemented capabilities include:
-- Platform directory setup, configurable per-platform game folders, and recursive game scanning
+- One configurable library root, catalog-derived platform subfolders, first-run setup, and recursive game scanning
 - Persistent startup library scan preference; live filesystem monitoring remains planned
 - SQLite game-library records
 - TheGamesDB asynchronous search and runtime platform mapping
@@ -41,7 +41,7 @@ Implemented capabilities include:
 - Native process launch with running/finished/error state
 - Regression tests for scanner, database, metadata, artwork, GitHub, catalog, archive, launcher management, and process launching
 
-The library Settings page supports changing the local folder for each platform and persisting whether a scan runs at startup. Folder changes trigger a full library scan. Current scanning otherwise remains user-invoked; The active UI branch now connects the Scan Library action to a sequential automatic metadata matcher. Its initial policy accepts only a unique exact normalized-title match within the mapped platform; ambiguous and missing results remain unassociated. Lookup attempts are persisted to avoid repeating completed searches, and accepted metadata triggers the existing artwork cache. This initial implementation is awaiting local build and regression-test verification. Continuous filesystem monitoring remains planned.
+The library Settings page uses one local root folder. RecompStation creates one subfolder per platform represented in the supported project catalog, and the scanner searches those subfolders. First-run setup asks the user to choose the root before scanning; changing it triggers a full library scan. The startup scan preference remains persistent. Current scanning otherwise remains user-invoked; The active UI branch now connects the Scan Library action to a sequential automatic metadata matcher. Its initial policy accepts only a unique exact normalized-title match within the mapped platform; ambiguous and missing results remain unassociated. Lookup attempts are persisted to avoid repeating completed searches, and accepted metadata triggers the existing artwork cache. This initial implementation is awaiting local build and regression-test verification. Continuous filesystem monitoring remains planned.
 
 ## Product and UI direction
 
