@@ -15,6 +15,7 @@ class PlatformManager : public QObject
         READ dataDirectory
         CONSTANT
     )
+    Q_PROPERTY(QString settingsFilePath READ settingsFilePath CONSTANT)
     Q_PROPERTY(QString libraryDirectory READ libraryDirectory NOTIFY libraryDirectoryChanged)
     Q_PROPERTY(bool libraryConfigured READ libraryConfigured NOTIFY libraryDirectoryChanged)
 
@@ -29,6 +30,7 @@ public:
     bool initialize(const QStringList &supportedPlatforms);
 
     QString dataDirectory() const;
+    QString settingsFilePath() const;
     QString stagingDirectory() const;
     QString libraryDirectory() const;
     bool libraryConfigured() const;
@@ -54,6 +56,7 @@ signals:
 
 private:
     QString m_dataDirectory;
+    QString m_settingsFilePath;
     QString m_libraryDirectory;
     QStringList m_platforms;
 
