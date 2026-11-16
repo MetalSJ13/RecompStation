@@ -85,7 +85,7 @@ Keep the application buildable after each focused change. Preserve working backe
 - [ ] Add curated appearance presets and coordinated background/accent/surface palettes
 - [ ] Add fullscreen default plus safely supported windowed and borderless modes
 - [ ] Enumerate actual display devices and supported resolutions before offering choices
-- [x] Add configurable per-platform game folders and startup scan preference
+- [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
 - [ ] Add automatic filesystem monitoring for configured folders
 - [ ] Add metadata provider status and cache/refresh controls
 - [ ] Add launcher installation/update preferences as supported
