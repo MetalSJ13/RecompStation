@@ -520,7 +520,7 @@ ApplicationWindow {
                 asynchronous: true
                 cache: true
                 smooth: true
-                opacity: status === Image.Ready ? 0.46 : 0
+                opacity: status === Image.Ready ? 0.62 : 0
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 700; easing.type: Easing.OutCubic }
@@ -543,19 +543,19 @@ ApplicationWindow {
                         position: 0.0
                         color: Qt.rgba(theme.windowBackground.r,
                                        theme.windowBackground.g,
-                                       theme.windowBackground.b, 0.68)
+                                       theme.windowBackground.b, 0.48)
                     }
                     GradientStop {
                         position: 0.55
                         color: Qt.rgba(theme.windowBackground.r,
                                        theme.windowBackground.g,
-                                       theme.windowBackground.b, 0.78)
+                                       theme.windowBackground.b, 0.62)
                     }
                     GradientStop {
                         position: 1.0
                         color: Qt.rgba(theme.backgroundBottom.r,
                                        theme.backgroundBottom.g,
-                                       theme.backgroundBottom.b, 0.88)
+                                       theme.backgroundBottom.b, 0.78)
                     }
                 }
             }
@@ -1061,6 +1061,7 @@ ApplicationWindow {
             // the dedicated details experience, not the collection background.
             Rectangle {
                 anchors.fill: parent
+                visible: currentPage === "Library"
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: theme.backgroundTop }
                     GradientStop {
@@ -1073,6 +1074,7 @@ ApplicationWindow {
 
             Rectangle {
                 anchors.fill: parent
+                visible: currentPage === "Library"
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
