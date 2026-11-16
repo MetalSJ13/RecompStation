@@ -99,6 +99,68 @@
           "executablePath": "Snap64Recomp"
         }
       }
+    },
+    {
+      "id": "donkey-kong-64-recompiled",
+      "name": "Donkey Kong 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Donkey Kong 64",
+        "Donkey Kong 64: Recompiled",
+        "DK64"
+      ],
+      "repositoryOwner": "Rainchus",
+      "repositoryName": "Donkey-Kong-64-Recompiled",
+      "romRequirements": "Requires the US version of Donkey Kong 64 (US 1.0). The project does not include game assets. The official Linux release is a ZIP containing a nested DK64Recompiled.tar.gz archive; RecompStation must unpack both layers before this project can be installed.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^DK64Recompiled-Linux-X64-Release-1-0-[0-9]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DK64Recompiled"
+        }
+      }
+    },
+    {
+      "id": "super-mario-64-recompiled",
+      "name": "Super Mario 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Super Mario 64",
+        "Super Mario 64: Recompiled",
+        "Super Mario 64 Recompiled"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "super-mario-64-recomp",
+      "romRequirements": "Requires the US Super Mario 64 ROM (big-endian .z64, SHA-1 9bef1128717f958171a4afac3ed78ee2bb4e86ce). The project is explicitly AI-written; it is a playable desktop build but remains an experimental community project. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3 and FreeType.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^SuperMario64Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "SuperMario64Recompiled"
+        }
+      }
+    },
+    {
+      "id": "perfect-dark-recompiled",
+      "name": "Perfect Dark: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Perfect Dark",
+        "Perfect Dark: Recompiled"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "perfect-dark-recomp",
+      "romRequirements": "Requires the USA second revision of Perfect Dark (Perfect Dark (U) (V1.1)), a big-endian 32 MiB .z64 ROM with MD5 e03b088b6ac9e0080440efed07c1e40f. The project does not include game data. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3 and FreeType.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^PerfectDarkRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "PerfectDarkRecompiled"
+        }
+      }
     }
   ]
 }
