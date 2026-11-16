@@ -17,6 +17,31 @@ ApplicationWindow {
     onWidthChanged: console.info("[Settings Geometry] window width:", width)
     onHeightChanged: console.info("[Settings Geometry] window height:", height)
 
+    function applyPreferredPresentationSize() {
+        if (window.visibility !== Window.Windowed)
+            return
+
+        const size = settingsManager.preferredPresentationSize
+        if (size === "system")
+            return
+
+        const dimensions = size.split("x")
+        if (dimensions.length !== 2)
+            return
+
+        const requestedWidth = Number(dimensions[0])
+        const requestedHeight = Number(dimensions[1])
+        if (!Number.isFinite(requestedWidth) || !Number.isFinite(requestedHeight))
+            return
+
+        // Stay within the current screen's logical dimensions. The compositor
+        // remains responsible for placement and all monitor-wide mode changes.
+        const safeWidth = Math.max(640, Math.floor(Screen.width * 0.9))
+        const safeHeight = Math.max(480, Math.floor(Screen.height * 0.9))
+        window.width = Math.min(requestedWidth, safeWidth)
+        window.height = Math.min(requestedHeight, safeHeight)
+    }
+
     property string currentPage: "Library"
     property string pendingThemeName: settingsManager.themeName
     property string selectedPlatform: "All Games"
@@ -2003,74 +2028,120 @@ ApplicationWindow {
                                 }
                             }
 
-                            ColumnLayout {
+                            ScrollView {
                                 anchors.fill: parent
                                 anchors.margins: 26
-                                spacing: 16
+                                clip: true
                                 visible: settingsPage.section === "Display"
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-                                Label {
-                                    text: "Display"
-                                    color: theme.textPrimary
-                                    font.pixelSize: 27
-                                    font.bold: true
-                                }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "Display configuration is being reworked to ensure reliable behavior across desktop environments."
-                                    color: theme.textSecondary
-                                    font.pixelSize: 13
-                                    wrapMode: Text.Wrap
-                                }
-                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                Label {
-                                    text: "CURRENT DISPLAY"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    implicitHeight: displayInfo.implicitHeight + 28
-                                    radius: theme.radiusCard
-                                    color: theme.sidebarBackground
-                                    border.color: theme.divider
-                                    ColumnLayout {
-                                        id: displayInfo
-                                        anchors.left: parent.left
-                                        anchors.right: parent.right
-                                        anchors.top: parent.top
-                                        anchors.margins: 14
-                                        spacing: 7
-                                        Label {
-                                            text: "Detected display"
-                                            color: theme.textPrimary
-                                            font.pixelSize: 13
-                                            font.bold: true
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: Screen.name.length > 0 ? Screen.name : "Primary display"
-                                            color: theme.textSecondary
-                                            font.pixelSize: 12
-                                            wrapMode: Text.Wrap
-                                        }
-                                        Label {
-                                            text: "Desktop resolution: " + Screen.width + " × " + Screen.height
-                                            color: theme.textSecondary
-                                            font.pixelSize: 12
+                                ColumnLayout {
+                                    width: parent.width
+                                    spacing: 16
+
+                                    Label {
+                                        text: "Display"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 27
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Choose the preferred size of the RecompStation window. Your desktop compositor remains in control of the monitor resolution and window placement."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "CURRENT DISPLAY"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: displayInfo.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: theme.divider
+                                        ColumnLayout {
+                                            id: displayInfo
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 7
+                                            Label {
+                                                text: Screen.name.length > 0 ? Screen.name : "Current display"
+                                                color: theme.textPrimary
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                            }
+                                            Label {
+                                                text: "Desktop resolution: " + Screen.width + " × " + Screen.height
+                                                color: theme.textSecondary
+                                                font.pixelSize: 12
+                                            }
+                                            Label {
+                                                text: "Available screen area: " + Screen.desktopAvailableWidth + " × " + Screen.desktopAvailableHeight
+                                                color: theme.textMuted
+                                                font.pixelSize: 11
+                                            }
                                         }
                                     }
+                                    Label {
+                                        text: "PREFERRED WINDOW SIZE"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    ComboBox {
+                                        id: presentationSizeSelector
+                                        Layout.fillWidth: true
+                                        textRole: "label"
+                                        valueRole: "value"
+                                        model: [
+                                            { label: "Follow desktop / keep current size", value: "system" },
+                                            { label: "1280 × 720  •  16:9", value: "1280x720" },
+                                            { label: "1920 × 1080  •  16:9", value: "1920x1080" },
+                                            { label: "1920 × 1440  •  4:3", value: "1920x1440" },
+                                            { label: "3440 × 1440  •  21:9", value: "3440x1440" },
+                                            { label: "3840 × 2160  •  16:9", value: "3840x2160" },
+                                            { label: "5120 × 2160  •  21:9", value: "5120x2160" }
+                                        ]
+                                        Component.onCompleted: {
+                                            const savedIndex = indexOfValue(settingsManager.preferredPresentationSize)
+                                            currentIndex = savedIndex >= 0 ? savedIndex : 0
+                                        }
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Item { Layout.fillWidth: true }
+                                        Button {
+                                            text: "Apply Window Size"
+                                            highlighted: true
+                                            enabled: presentationSizeSelector.currentValue
+                                                !== settingsManager.preferredPresentationSize
+                                                || presentationSizeSelector.currentValue !== "system"
+                                            onClicked: {
+                                                settingsManager.setPreferredPresentationSize(
+                                                    presentationSizeSelector.currentValue)
+                                                window.applyPreferredPresentationSize()
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Large presets are automatically scaled down to fit within 90% of the current screen's logical size. On Wayland, the compositor may also apply its own window-size constraints. Selecting Follow desktop leaves the current window size unchanged."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Item { Layout.fillHeight: true }
                                 }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "For now, RecompStation follows your desktop's display configuration. Window mode controls will return after a safer, compositor-aware implementation is ready."
-                                    color: theme.textMuted
-                                    font.pixelSize: 11
-                                    wrapMode: Text.Wrap
-                                }
-                                Item { Layout.fillHeight: true }
                             }
 
                             ScrollView {
