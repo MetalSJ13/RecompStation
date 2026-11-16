@@ -71,7 +71,7 @@ Do not begin with an overwhelming theme editor or dozens of arbitrary color cont
 
 - Fullscreen is the default launch mode.
 - Provide supported alternatives such as windowed and borderless fullscreen.
-- The initial Settings implementation now exposes persisted fullscreen, windowed, and borderless modes; monitor identification is informational, while monitor selection and mode-specific resolution selection remain future work.
+- Display configuration must respect the desktop compositor and expose only modes that can be applied reliably; fullscreen remains the intended default.
 - Display selection and resolution options must be based on actual modes reported by the system; do not offer arbitrary unsupported resolutions.
 - Retain sensible minimum window dimensions when windowed.
 - Display changes must be recoverable if a selected mode cannot be applied.
