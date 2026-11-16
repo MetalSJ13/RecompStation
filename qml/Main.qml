@@ -676,7 +676,7 @@ ApplicationWindow {
                                         ? gameDetailsPopup.primaryProject.name
                                         : "No supported recompilation project is currently listed for this game."
                                     color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
-                                    font.pixelSize: 14 * theme.fontScale
+                                    font.pixelSize: 16 * theme.fontScale
                                     font.bold: true
                                     wrapMode: Text.Wrap
                                 }
@@ -1018,19 +1018,19 @@ ApplicationWindow {
                         position: 0.0
                         color: Qt.rgba(theme.windowBackground.r,
                                        theme.windowBackground.g,
-                                       theme.windowBackground.b, 0.60)
+                                       theme.windowBackground.b, 0.52)
                     }
                     GradientStop {
                         position: 0.58
                         color: Qt.rgba(theme.windowBackground.r,
                                        theme.windowBackground.g,
-                                       theme.windowBackground.b, 0.76)
+                                       theme.windowBackground.b, 0.68)
                     }
                     GradientStop {
                         position: 1.0
                         color: Qt.rgba(theme.backgroundBottom.r,
                                        theme.backgroundBottom.g,
-                                       theme.backgroundBottom.b, 0.88)
+                                       theme.backgroundBottom.b, 0.82)
                     }
                 }
             }
@@ -1158,11 +1158,11 @@ ApplicationWindow {
                             id: gameGrid
                             Layout.fillWidth: true
                             Layout.fillHeight: gameGrid.count > 0
-                            Layout.preferredHeight: gameGrid.count > 0 ? 520 : 0
+                            Layout.preferredHeight: gameGrid.count > 0 ? 760 : 0
                             clip: true
-                            cellWidth: Math.max(184, Math.min(232,
-                                Math.floor(width / Math.max(1, Math.floor(width / 216)))))
-                            cellHeight: Math.round(cellWidth * 1.58)
+                            cellWidth: Math.max(260, Math.min(320,
+                                Math.floor(width / Math.max(1, Math.floor(width / 300)))))
+                            cellHeight: Math.round(cellWidth * 1.35)
                             keyNavigationEnabled: true
                             model: {
                                 window.libraryRevision
@@ -1204,7 +1204,7 @@ ApplicationWindow {
                                 height: gameGrid.cellHeight - 14
                                 focus: GridView.isCurrentItem
                                 z: GridView.isCurrentItem ? 2 : 1
-                                scale: GridView.isCurrentItem ? 1.025 : 1.0
+                                scale: GridView.isCurrentItem ? 1.035 : 1.0
                                 Behavior on scale {
                                     enabled: !settingsManager.reducedMotion
                                     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
@@ -1228,13 +1228,13 @@ ApplicationWindow {
 
                                     ColumnLayout {
                                         anchors.fill: parent
-                                        anchors.margins: 8
-                                        spacing: 7
+                                        anchors.margins: 10
+                                        spacing: 9
 
                                         Rectangle {
                                             Layout.fillWidth: true
                                             Layout.fillHeight: true
-                                            Layout.minimumHeight: 165
+                                            Layout.minimumHeight: 210
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
                                             clip: true
@@ -1304,7 +1304,7 @@ ApplicationWindow {
                                                 Layout.fillWidth: true
                                                 text: gameTile.platform
                                                 color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
+                                                font.pixelSize: 12 * theme.fontScale
                                                 elide: Text.ElideRight
                                             }
                                             Label {
