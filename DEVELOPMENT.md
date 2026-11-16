@@ -66,6 +66,8 @@ Keep the application buildable after each focused change. Preserve working backe
 - [x] Expand game tiles into a responsive multi-row grid with larger artwork, clearer title/platform typography, and stronger selected-game emphasis (local validation pending)
 - [x] Add a theme-aware, selected-game artwork atmosphere layer behind the library content, with contrast overlays and reduced-motion-aware fading (first visual pass; local validation pending)
 - [x] Add subtle focus depth to the current game tile, respecting reduced motion (local validation pending)
+- [x] Replace the compact game-details popup with a full-window immersive details experience, using the selected cover as a softly blurred, gradually fading background (local validation pending)
+- [x] Keep the library backdrop stable and theme-driven instead of changing it with game selection (local validation pending)
 - [ ] Add a dedicated game-details experience
 - [ ] Present metadata, supported project, installation state, and launch action in the game context
 - [ ] Add useful empty, loading, scanning, missing-artwork, unsupported, and error states
