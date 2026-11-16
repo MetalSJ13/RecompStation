@@ -83,7 +83,7 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 5: Settings and first-run experience
 
 - [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
-- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, and theme-aware background/artwork treatments (local validation pending)
+- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying (local validation pending)
 - [ ] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
 - [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
