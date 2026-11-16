@@ -19,6 +19,9 @@ private slots:
     void persistsScanOnStartupPreference();
     void persistsPreferencesInExplicitConfigFile();
     void rejectsUnsupportedPresentationSize();
+    void defaultsToMediumFontAndFullMotion();
+    void persistsAccessibilityPreferences();
+    void rejectsUnsupportedFontSize();
 };
 
 void SettingsManagerTest::init()
@@ -84,6 +87,59 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
     QVERIFY(!reloaded.scanOnStartup());
     QCOMPARE(reloaded.preferredPresentationSize(), QStringLiteral("3440x1440"));
     QVERIFY(QFileInfo(settingsPath).isFile());
+}
+
+void SettingsManagerTest::defaultsToMediumFontAndFullMotion()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.fontSize(), QStringLiteral("medium"));
+    QVERIFY(!manager.reducedMotion());
+}
+
+void SettingsManagerTest::persistsAccessibilityPreferences()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy fontChanged(&manager, &SettingsManager::fontSizeChanged);
+        QSignalSpy motionChanged(&manager, &SettingsManager::reducedMotionChanged);
+
+        manager.setFontSize(QStringLiteral("large"));
+        manager.setReducedMotion(true);
+
+        QCOMPARE(manager.fontSize(), QStringLiteral("large"));
+        QVERIFY(manager.reducedMotion());
+        QCOMPARE(fontChanged.count(), 1);
+        QCOMPARE(motionChanged.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.fontSize(), QStringLiteral("large"));
+    QVERIFY(reloaded.reducedMotion());
+}
+
+void SettingsManagerTest::rejectsUnsupportedFontSize()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QSignalSpy changed(&manager, &SettingsManager::fontSizeChanged);
+    manager.setFontSize(QStringLiteral("extra-large"));
+
+    QCOMPARE(manager.fontSize(), QStringLiteral("medium"));
+    QCOMPARE(changed.count(), 0);
 }
 
 void SettingsManagerTest::rejectsUnsupportedPresentationSize()
