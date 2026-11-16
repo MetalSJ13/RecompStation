@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QLoggingCategory>
 #include <QtLogging>
 
 Q_DECLARE_LOGGING_CATEGORY(lcApplication)
