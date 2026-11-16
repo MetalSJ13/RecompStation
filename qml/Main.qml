@@ -12,6 +12,7 @@ ApplicationWindow {
     minimumHeight: 550
     visible: true
     title: "RecompStation"
+    property bool sidebarExpanded: true
     color: theme.windowBackground
     background: Rectangle {
         gradient: Gradient {
@@ -974,18 +975,28 @@ ApplicationWindow {
         onWidthChanged: console.info("[Settings Geometry] main navigation row width:", width)
 
         Rectangle {
-            Layout.preferredWidth: 225
+            id: navigationSidebar
+            Layout.preferredWidth: window.sidebarExpanded ? 225 : 72
             Layout.fillHeight: true
             color: theme.sidebarBackground
+            Behavior on Layout.preferredWidth {
+                enabled: !settingsManager.reducedMotion
+                NumberAnimation { duration: 260; easing.type: Easing.InOutCubic }
+            }
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 20
+                anchors.margins: window.sidebarExpanded ? 20 : 12
                 spacing: 15
+
+                Behavior on anchors.margins {
+                    enabled: !settingsManager.reducedMotion
+                    NumberAnimation { duration: 220; easing.type: Easing.InOutCubic }
+                }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 10
+                    spacing: 8
                     Rectangle {
                         width: 38
                         height: 38
@@ -999,6 +1010,12 @@ ApplicationWindow {
                         }
                     }
                     ColumnLayout {
+                        visible: window.sidebarExpanded
+                        opacity: window.sidebarExpanded ? 1 : 0
+                        Behavior on opacity {
+                            enabled: !settingsManager.reducedMotion
+                            NumberAnimation { duration: 160 }
+                        }
                         spacing: 0
                         Label {
                             text: "RecompStation"
@@ -1012,10 +1029,26 @@ ApplicationWindow {
                             color: theme.textMuted
                         }
                     }
+                    Item { Layout.fillWidth: true }
+                    Button {
+                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30
+                        text: window.sidebarExpanded ? "‹" : "›"
+                        font.pixelSize: 20
+                        onClicked: window.sidebarExpanded = !window.sidebarExpanded
+                        ToolTip.visible: hovered
+                        ToolTip.text: window.sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"
+                    }
                 }
 
                 Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                 Label {
+                    visible: window.sidebarExpanded
+                    opacity: window.sidebarExpanded ? 1 : 0
+                    Behavior on opacity {
+                        enabled: !settingsManager.reducedMotion
+                        NumberAnimation { duration: 160 }
+                    }
                     text: "EXPLORE"
                     color: theme.textMuted
                     font.pixelSize: 11 * theme.fontScale
@@ -1024,8 +1057,10 @@ ApplicationWindow {
 
                 Button {
                     Layout.fillWidth: true
-                    text: "Game Library"
+                    text: window.sidebarExpanded ? "Game Library" : "▦"
                     highlighted: currentPage === "Library"
+                    ToolTip.visible: hovered && !window.sidebarExpanded
+                    ToolTip.text: "Game Library"
                     onClicked: {
                         console.info("[UI] Navigation: Game Library")
                         currentPage = "Library"
@@ -1038,8 +1073,10 @@ ApplicationWindow {
 
                 Button {
                     Layout.fillWidth: true
-                    text: "Settings"
+                    text: window.sidebarExpanded ? "Settings" : "⚙"
                     highlighted: currentPage === "Settings"
+                    ToolTip.visible: hovered && !window.sidebarExpanded
+                    ToolTip.text: "Settings"
                     onClicked: {
                         console.info("[UI] Navigation: Settings")
                         currentPage = "Settings"
