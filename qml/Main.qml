@@ -1791,25 +1791,35 @@ ApplicationWindow {
                                         { id: "electric-blue", title: "Electric Blue", description: "A cool, vivid blue palette", accent: "#55a8f5", background: "#101722", surface: "#202e40" },
                                         { id: "ember", title: "Ember", description: "Warm copper and amber highlights", accent: "#d58b59", background: "#191411", surface: "#30231c" }
                                     ]
-                                    delegate: Rectangle {
+                                    delegate: Button {
+                                        id: themePresetButton
                                         required property var modelData
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 76
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.width: settingsManager.themeName === modelData.id ? 2 : 1
-                                        border.color: settingsManager.themeName === modelData.id ? theme.accent : theme.divider
+                                        padding: 0
+                                        onClicked: settingsManager.themeName = modelData.id
 
-                                        RowLayout {
+                                        background: Rectangle {
+                                            radius: theme.radiusCard
+                                            color: themePresetButton.hovered
+                                                ? theme.elevatedSurface : theme.sidebarBackground
+                                            border.width: settingsManager.themeName === modelData.id ? 2 : 1
+                                            border.color: settingsManager.themeName === modelData.id
+                                                ? theme.accent : theme.divider
+                                        }
+
+                                        contentItem: RowLayout {
                                             anchors.fill: parent
                                             anchors.margins: 13
                                             spacing: 14
+
                                             Rectangle {
                                                 width: 48
                                                 height: 48
                                                 radius: 9
                                                 color: modelData.background
                                                 border.color: theme.divider
+
                                                 RowLayout {
                                                     anchors.fill: parent
                                                     anchors.margins: 6
@@ -1818,6 +1828,7 @@ ApplicationWindow {
                                                     Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.accent }
                                                 }
                                             }
+
                                             ColumnLayout {
                                                 Layout.fillWidth: true
                                                 spacing: 3
@@ -1833,17 +1844,13 @@ ApplicationWindow {
                                                     font.pixelSize: 11
                                                 }
                                             }
+
                                             Label {
                                                 text: settingsManager.themeName === modelData.id ? "✓  Selected" : "Select"
                                                 color: settingsManager.themeName === modelData.id ? theme.accent : theme.textSecondary
                                                 font.pixelSize: 12
                                                 font.bold: settingsManager.themeName === modelData.id
                                             }
-                                        }
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: settingsManager.setThemeName(modelData.id)
                                         }
                                     }
                                 }
