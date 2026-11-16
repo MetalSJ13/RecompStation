@@ -12,7 +12,7 @@ public:
     explicit SettingsManager(QObject *parent = nullptr);
 
     QString themeName() const;
-    void setThemeName(const QString &themeName);
+    Q_INVOKABLE void setThemeName(const QString &themeName);
 
 signals:
     void themeNameChanged();
