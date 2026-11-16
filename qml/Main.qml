@@ -1718,6 +1718,13 @@ ApplicationWindow {
                     id: settingsPage
                     property string section: "Appearance"
 
+                    Component.onCompleted: console.info(
+                        "[Settings QML] Settings page created; section:", section,
+                        "currentPage:", window.currentPage, "size:", width, "x", height)
+                    onSectionChanged: console.info(
+                        "[Settings QML] Section changed:", section,
+                        "currentPage:", window.currentPage)
+
                     RowLayout {
                         anchors.fill: parent
                         spacing: 22
@@ -1747,7 +1754,10 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 text: "✦   Appearance"
                                 highlighted: settingsPage.section === "Appearance"
-                                onClicked: settingsPage.section = "Appearance"
+                                onClicked: {
+                                    console.info("[Settings QML] Appearance navigation clicked")
+                                    settingsPage.section = "Appearance"
+                                }
                             }
                             Button {
                                 Layout.fillWidth: true
@@ -1779,6 +1789,14 @@ ApplicationWindow {
                                 anchors.margins: 26
                                 spacing: 16
                                 visible: settingsPage.section === "Appearance"
+                                Component.onCompleted: console.info(
+                                    "[Settings QML] Appearance content created; visible:", visible,
+                                    "size:", width, "x", height)
+                                onVisibleChanged: console.info(
+                                    "[Settings QML] Appearance content visibility:", visible,
+                                    "section:", settingsPage.section,
+                                    "currentPage:", window.currentPage,
+                                    "size:", width, "x", height)
 
                                 Label {
                                     text: "Appearance"
@@ -1814,6 +1832,18 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 76
                                         padding: 0
+                                        Component.onCompleted: console.info(
+                                            "[Settings QML] Theme preset created:", modelData.id,
+                                            "visible:", visible, "enabled:", enabled,
+                                            "geometry:", x, y, width, height)
+                                        onHoveredChanged: {
+                                            if (hovered)
+                                                console.info("[Settings QML] Theme preset hovered:", modelData.id)
+                                        }
+                                        onPressedChanged: {
+                                            if (pressed)
+                                                console.info("[Settings QML] Theme preset pressed:", modelData.id)
+                                        }
                                         onClicked: {
                                             console.info("[Settings QML] Preset clicked:", modelData.id)
                                             settingsManager.themeName = modelData.id
