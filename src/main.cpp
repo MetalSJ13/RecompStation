@@ -95,6 +95,9 @@ int main(int argc, char *argv[])
     qCInfo(lcUI) << "Main QML interface loaded.";
     // Reconcile after QML is loaded so the library refresh and metadata-scrape
     // connections receive the scan-completed signal.
-    libraryScanner.scanAll();
+    if (settingsManager.scanOnStartup())
+        libraryScanner.scanAll();
+    else
+        qCInfo(lcApplication) << "Startup library scan disabled in Settings.";
     return app.exec();
 }
