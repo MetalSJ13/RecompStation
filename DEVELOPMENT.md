@@ -54,7 +54,8 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 2: Application shell and navigation
 
 - [ ] Refine the main window, navigation, content area, and page transitions
-- [x] Replace the width-reserving sidebar with floating Library and Settings navigation buttons; main content now occupies the full window (local validation pending)
+- [x] Replace the width-reserving sidebar with an integrated horizontal Library and Settings navigation bar; main content uses the available window area (local validation pending)
+- [x] Add a dedicated Back to Library control to immersive game details; Escape also closes the details view (local validation pending)
 - [ ] Remove Metadata Search and Platforms as top-level navigation destinations
 - [ ] Move platform selection/filtering into the Game Library
 - [ ] Rehome launcher discovery and management contextually without removing existing capabilities
