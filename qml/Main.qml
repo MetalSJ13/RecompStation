@@ -1810,11 +1810,13 @@ ApplicationWindow {
                                 anchors.margins: 26
                                 spacing: 16
                                 visible: settingsPage.section === "Appearance"
-                                Component.onCompleted: console.info("[Settings Geometry] appearance layout:", width, "x", height)
+                                Component.onCompleted: {
+                                    console.info("[Settings Geometry] appearance layout:", width, "x", height)
+                                    console.info(
+                                        "[Settings QML] Appearance content created; visible:", visible,
+                                        "size:", width, "x", height)
+                                }
                                 onWidthChanged: console.info("[Settings Geometry] appearance layout width:", width)
-                                Component.onCompleted: console.info(
-                                    "[Settings QML] Appearance content created; visible:", visible,
-                                    "size:", width, "x", height)
                                 onVisibleChanged: console.info(
                                     "[Settings QML] Appearance content visibility:", visible,
                                     "section:", settingsPage.section,
