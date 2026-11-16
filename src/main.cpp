@@ -23,8 +23,12 @@ int main(int argc, char *argv[])
     QGuiApplication::setApplicationName("RecompStation");
     QGuiApplication::setApplicationVersion("0.1.0");
 
+    ProjectCatalog projectCatalog;
+    if (!projectCatalog.isLoaded())
+        qWarning() << "Project catalog unavailable:" << projectCatalog.errorString();
+
     PlatformManager platformManager;
-    if (!platformManager.initialize()) {
+    if (!platformManager.initialize(projectCatalog.supportedPlatforms())) {
         qCritical() << "Failed to initialize application directories.";
         return 1;
     }
@@ -57,12 +61,9 @@ int main(int argc, char *argv[])
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
-    ProjectCatalog projectCatalog;
-    if (!projectCatalog.isLoaded())
-        qCWarning(lcApplication) << "Project catalog unavailable:"
-                                 << projectCatalog.errorString();
-    else
-        qCInfo(lcApplication) << "Project catalog loaded.";
+    if (projectCatalog.isLoaded())
+        qCInfo(lcApplication) << "Project catalog loaded with supported platforms:"
+                              << projectCatalog.supportedPlatforms();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
@@ -95,8 +96,10 @@ int main(int argc, char *argv[])
     qCInfo(lcUI) << "Main QML interface loaded.";
     // Reconcile after QML is loaded so the library refresh and metadata-scrape
     // connections receive the scan-completed signal.
-    if (settingsManager.scanOnStartup())
+    if (settingsManager.scanOnStartup() && platformManager.libraryConfigured())
         libraryScanner.scanAll();
+    else if (!platformManager.libraryConfigured())
+        qCInfo(lcApplication) << "Library setup is required before the first scan.";
     else
         qCInfo(lcApplication) << "Startup library scan disabled in Settings.";
     return app.exec();
