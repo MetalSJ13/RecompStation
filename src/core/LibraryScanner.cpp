@@ -2,6 +2,7 @@
 
 #include "PlatformManager.h"
 #include "../database/DatabaseManager.h"
+#include "Logging.h"
 
 #include <QDir>
 #include <QDirIterator>
@@ -62,6 +63,7 @@ bool LibraryScanner::isDiscCompanionFile(const QString &filePath) const
 
 int LibraryScanner::scanAll()
 {
+    qCInfo(lcLibrary) << "Starting full library scan.";
     m_scanningAll = true;
 
     int totalFound = 0;
@@ -78,12 +80,16 @@ int LibraryScanner::scanAll()
     m_lastScanCount = totalFound;
     m_lastError = errors.join("\n");
 
+    qCInfo(lcLibrary) << "Full library scan finished. Registered games:" << m_lastScanCount;
+    if (!m_lastError.isEmpty())
+        qCWarning(lcLibrary) << "Full library scan reported errors:" << m_lastError;
     emit scanCompleted(m_lastScanCount);
     return m_lastScanCount;
 }
 
 int LibraryScanner::scanPlatform(const QString &platform)
 {
+    qCDebug(lcLibrary) << "Scanning platform:" << platform;
     m_lastScanCount = 0;
     m_lastError.clear();
 
@@ -93,6 +99,7 @@ int LibraryScanner::scanPlatform(const QString &platform)
 
     if (directoryPath.isEmpty() || extensions.isEmpty()) {
         m_lastError = "Unknown platform: " + platform;
+        qCWarning(lcLibrary) << m_lastError;
         if (!m_scanningAll)
             emit scanCompleted(m_lastScanCount);
         return m_lastScanCount;
@@ -100,6 +107,7 @@ int LibraryScanner::scanPlatform(const QString &platform)
 
     if (!QDir(directoryPath).exists()) {
         m_lastError = "Game directory does not exist: " + directoryPath;
+        qCWarning(lcLibrary) << m_lastError;
         if (!m_scanningAll)
             emit scanCompleted(m_lastScanCount);
         return m_lastScanCount;
@@ -149,6 +157,11 @@ int LibraryScanner::scanPlatform(const QString &platform)
         m_lastError = m_databaseManager->lastError();
     }
 
+    qCInfo(lcLibrary) << "Platform scan finished:" << platform
+                      << "registered:" << m_lastScanCount
+                      << "discovered:" << discoveredPaths.size();
+    if (!m_lastError.isEmpty())
+        qCWarning(lcLibrary) << "Platform scan error:" << platform << m_lastError;
     if (!m_scanningAll)
         emit scanCompleted(m_lastScanCount);
 
