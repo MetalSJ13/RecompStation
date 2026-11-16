@@ -1,4 +1,5 @@
 #include "DatabaseManager.h"
+#include "../core/Logging.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -16,8 +17,10 @@ DatabaseManager::~DatabaseManager()
 
 bool DatabaseManager::initialize(const QString &path)
 {
+    qCInfo(lcDatabase) << "Initializing library database.";
     if (!QDir().mkpath(QFileInfo(path).absolutePath())) {
         m_lastError = "Unable to create database directory.";
+        qCCritical(lcDatabase) << m_lastError;
         return false;
     }
 
@@ -29,6 +32,7 @@ bool DatabaseManager::initialize(const QString &path)
     m_database.setDatabaseName(path);
     if (!m_database.open()) {
         m_lastError = m_database.lastError().text();
+        qCCritical(lcDatabase) << "Could not open database:" << m_lastError;
         return false;
     }
 
@@ -37,7 +41,12 @@ bool DatabaseManager::initialize(const QString &path)
         m_lastError = pragma.lastError().text();
         return false;
     }
-    return createTables();
+    const bool initialized = createTables();
+    if (initialized)
+        qCInfo(lcDatabase) << "Database schema is ready.";
+    else
+        qCCritical(lcDatabase) << "Database schema initialization failed:" << m_lastError;
+    return initialized;
 }
 
 bool DatabaseManager::createTables()
