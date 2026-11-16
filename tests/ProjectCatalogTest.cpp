@@ -163,6 +163,18 @@ void ProjectCatalogTest::matchesGameByTitleAndPlatform()
         QStringLiteral("Banjo-Kazooie"), QStringLiteral("PS1")).isEmpty());
     QVERIFY(catalog.projectsForGame(
         QStringLiteral("Donkey Kong 64"), QStringLiteral("N64")).isEmpty());
+
+    const QVariantList marioMatches = catalog.projectsForGame(
+        QStringLiteral("Super Mario 64"), QStringLiteral("N64"));
+    QCOMPARE(marioMatches.size(), 1);
+    QCOMPARE(marioMatches.first().toMap().value("id").toString(),
+             QStringLiteral("super-mario-64-recompiled"));
+
+    const QVariantList perfectDarkMatches = catalog.projectsForGame(
+        QStringLiteral("Perfect Dark"), QStringLiteral("N64"));
+    QCOMPARE(perfectDarkMatches.size(), 1);
+    QCOMPARE(perfectDarkMatches.first().toMap().value("id").toString(),
+             QStringLiteral("perfect-dark-recompiled"));
 }
 
 void ProjectCatalogTest::selectsOnlyCompatibleLinuxAssets()
@@ -216,6 +228,19 @@ void ProjectCatalogTest::selectsOnlyCompatibleLinuxAssets()
     QVERIFY(!catalog.isAssetCompatible(
         QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("x86_64"),
         QStringLiteral("Snap64Recomp-1.1.7-linux-x86_64.flatpak")));
+
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("super-mario-64-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("SuperMario64Recompiled-v0.1.13-linux-x64.tar.gz")));
+    QVERIFY(!catalog.isAssetCompatible(
+        QStringLiteral("super-mario-64-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("SuperMario64Recompiled-v0.1.13-windows-x64.zip")));
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("perfect-dark-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("PerfectDarkRecompiled-v0.1.14-linux-x64.tar.gz")));
+    QVERIFY(!catalog.isAssetCompatible(
+        QStringLiteral("perfect-dark-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("PerfectDarkRecompiled-v0.1.14-windows-x64.zip")));
 }
 
 void ProjectCatalogTest::filtersReleaseAssetsForCurrentArchitecture()
