@@ -1,6 +1,7 @@
 #include "GameLaunchManager.h"
 
 #include "LauncherDownloadManager.h"
+#include "Logging.h"
 
 #include <QFileInfo>
 #include <QProcess>
@@ -30,6 +31,7 @@ GameLaunchManager::~GameLaunchManager()
 
 bool GameLaunchManager::launchProject(const QString &projectId)
 {
+    qCInfo(lcGameLaunch) << "Launch requested for project:" << projectId;
     if (!m_launcherDownloadManager || projectId.trimmed().isEmpty())
         return false;
 
@@ -53,6 +55,7 @@ bool GameLaunchManager::launchProject(const QString &projectId)
     const QFileInfo executableInfo(executablePath);
     if (executablePath.isEmpty() || !executableInfo.isFile()
         || executableInfo.isSymLink() || !executableInfo.isExecutable()) {
+        qCWarning(lcGameLaunch) << "Launcher executable validation failed for:" << projectId;
         emit launchFailed(projectId,
                           QStringLiteral("The installed launcher is missing or is not executable."));
         return false;
@@ -65,6 +68,8 @@ bool GameLaunchManager::launchProject(const QString &projectId)
     m_processes.insert(projectId, process);
 
     connect(process, &QProcess::started, this, [this, projectId, process]() {
+        qCInfo(lcGameLaunch) << "Process started for" << projectId
+                             << "PID:" << process->processId();
         emit launchStarted(projectId, process->processId());
     });
 
@@ -74,6 +79,7 @@ bool GameLaunchManager::launchProject(const QString &projectId)
             return;
 
         const QString message = process->errorString();
+        qCCritical(lcGameLaunch) << "Could not start" << projectId << ":" << message;
         m_processes.remove(projectId);
         emit launchFailed(projectId, message);
         process->deleteLater();
@@ -85,6 +91,9 @@ bool GameLaunchManager::launchProject(const QString &projectId)
             [this, projectId, process](int exitCode, QProcess::ExitStatus exitStatus) {
         if (m_processes.value(projectId) == process)
             m_processes.remove(projectId);
+        qCInfo(lcGameLaunch) << "Process finished for" << projectId
+                             << "exit code:" << exitCode
+                             << "crashed:" << (exitStatus == QProcess::CrashExit);
         emit processFinished(projectId, exitCode,
                              exitStatus == QProcess::CrashExit);
         process->deleteLater();
