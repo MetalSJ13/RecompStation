@@ -21,6 +21,7 @@ private:
 private slots:
     void extractsTarGzAndPreservesStructure();
     void extractsZipAndPreservesStructure();
+    void findsExecutableInsideSingleTopLevelDirectory();
     void stagesStandaloneAppImage();
     void rejectsAppImageWithUnsafeFilename();
     void rejectsPathTraversalAndCleansOutput();
@@ -158,6 +159,32 @@ void ArchiveExtractorTest::extractsZipAndPreservesStructure()
         QStringLiteral("SpaghettiKart/resources/data.bin")));
     QVERIFY(companion.open(QIODevice::ReadOnly));
     QCOMPARE(companion.readAll(), QByteArray("companion-data"));
+}
+
+void ArchiveExtractorTest::findsExecutableInsideSingleTopLevelDirectory()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString archivePath = QDir(temp.path()).filePath("conker.tar.gz");
+    const QString destination = QDir(temp.path()).filePath("extracted");
+
+    QVERIFY(createArchive(archivePath, {
+        {{QStringLiteral("name"), QStringLiteral("ConkerRecompiled/")}, {QStringLiteral("type"), QStringLiteral("directory")}},
+        {{QStringLiteral("name"), QStringLiteral("ConkerRecompiled/ConkerRecomp")},
+         {QStringLiteral("data"), QByteArray("#!/bin/sh\\necho ok\\n")},
+         {QStringLiteral("mode"), 0644}},
+        {{QStringLiteral("name"), QStringLiteral("ConkerRecompiled/assets/thumbnail.png")},
+         {QStringLiteral("data"), QByteArray("artwork")}}
+    }));
+
+    const auto result = ArchiveExtractor::extractArchive(
+        archivePath, destination, QStringLiteral("ConkerRecomp"));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QCOMPARE(QDir(result.extractedDirectory).relativeFilePath(result.executablePath),
+             QStringLiteral("ConkerRecompiled/ConkerRecomp"));
+    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
+        QStringLiteral("ConkerRecompiled/assets/thumbnail.png"))).isFile());
 }
 
 void ArchiveExtractorTest::stagesStandaloneAppImage()
