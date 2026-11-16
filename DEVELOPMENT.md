@@ -63,6 +63,8 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 3: Game Library experience
 
 - [ ] Create a cover-art-forward library with platform filtering, optional search, and sorting
+- [x] Add a theme-aware, selected-game artwork atmosphere layer behind the library content, with contrast overlays and reduced-motion-aware fading (first visual pass; local validation pending)
+- [x] Add subtle focus depth to the current game tile, respecting reduced motion (local validation pending)
 - [ ] Add a dedicated game-details experience
 - [ ] Present metadata, supported project, installation state, and launch action in the game context
 - [ ] Add useful empty, loading, scanning, missing-artwork, unsupported, and error states
