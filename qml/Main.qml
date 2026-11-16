@@ -13,6 +13,9 @@ ApplicationWindow {
     title: "RecompStation"
     color: theme.windowBackground
 
+    onWidthChanged: console.info("[Settings Geometry] window width:", width)
+    onHeightChanged: console.info("[Settings Geometry] window height:", height)
+
     property string currentPage: "Library"
     property string selectedPlatform: "All Games"
     property string librarySearchText: ""
@@ -802,8 +805,11 @@ ApplicationWindow {
     }
 
     RowLayout {
+        id: mainNavigationRow
         anchors.fill: parent
         spacing: 0
+        Component.onCompleted: console.info("[Settings Geometry] main navigation row:", width, "x", height)
+        onWidthChanged: console.info("[Settings Geometry] main navigation row width:", width)
 
         Rectangle {
             Layout.preferredWidth: 225
@@ -881,12 +887,18 @@ ApplicationWindow {
         }
 
         Rectangle {
+            id: mainContentPanel
             Layout.fillWidth: true
             Layout.fillHeight: true
             color: theme.windowBackground
+            Component.onCompleted: console.info("[Settings Geometry] main content panel:", width, "x", height)
+            onWidthChanged: console.info("[Settings Geometry] main content panel width:", width)
 
             StackLayout {
+                id: mainPageStack
                 anchors.fill: parent
+                Component.onCompleted: console.info("[Settings Geometry] main page stack:", width, "x", height)
+                onWidthChanged: console.info("[Settings Geometry] main page stack width:", width)
                 anchors.margins: 30
                 currentIndex: {
                     switch (currentPage) {
@@ -1717,6 +1729,8 @@ ApplicationWindow {
                 Item {
                     id: settingsPage
                     property string section: "Appearance"
+                    onWidthChanged: console.info("[Settings Geometry] settings page width:", width)
+                    onHeightChanged: console.info("[Settings Geometry] settings page height:", height)
 
                     Component.onCompleted: console.info(
                         "[Settings QML] Settings page created; section:", section,
@@ -1726,8 +1740,11 @@ ApplicationWindow {
                         "currentPage:", window.currentPage)
 
                     RowLayout {
+                        id: settingsLayoutRow
                         anchors.fill: parent
                         spacing: 22
+                        Component.onCompleted: console.info("[Settings Geometry] settings row:", width, "x", height)
+                        onWidthChanged: console.info("[Settings Geometry] settings row width:", width)
 
                         ColumnLayout {
                             Layout.preferredWidth: 205
@@ -1777,18 +1794,24 @@ ApplicationWindow {
                         }
 
                         Rectangle {
+                            id: settingsContentCard
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             radius: theme.radiusLarge
+                            Component.onCompleted: console.info("[Settings Geometry] settings content card:", width, "x", height)
+                            onWidthChanged: console.info("[Settings Geometry] settings content card width:", width)
                             color: theme.surface
                             border.color: theme.divider
                             clip: true
 
                             ColumnLayout {
+                                id: appearanceContent
                                 anchors.fill: parent
                                 anchors.margins: 26
                                 spacing: 16
                                 visible: settingsPage.section === "Appearance"
+                                Component.onCompleted: console.info("[Settings Geometry] appearance layout:", width, "x", height)
+                                onWidthChanged: console.info("[Settings Geometry] appearance layout width:", width)
                                 Component.onCompleted: console.info(
                                     "[Settings QML] Appearance content created; visible:", visible,
                                     "size:", width, "x", height)
