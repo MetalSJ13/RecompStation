@@ -988,13 +988,14 @@ ApplicationWindow {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: window.sidebarExpanded ? 20 : 12
+                anchors.margins: window.sidebarExpanded ? 20 : 8
                 spacing: 15
 
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
                     Rectangle {
+                        visible: window.sidebarExpanded
                         width: 38
                         height: 38
                         radius: 10
@@ -1028,9 +1029,10 @@ ApplicationWindow {
                     }
                     Item { Layout.fillWidth: true }
                     Button {
-                        Layout.preferredWidth: 30
-                        Layout.preferredHeight: 30
-                        text: window.sidebarExpanded ? "‹" : "›"
+                        Layout.preferredWidth: window.sidebarExpanded ? 30 : 44
+                        Layout.preferredHeight: 32
+                        Layout.alignment: window.sidebarExpanded ? Qt.AlignRight : Qt.AlignHCenter
+                        text: window.sidebarExpanded ? "‹" : ">"
                         font.pixelSize: 20
                         onClicked: {
                             window.sidebarAnimationEnabled = true
