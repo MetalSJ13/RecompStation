@@ -95,6 +95,14 @@ void ProjectCatalogTest::parsesDevelopmentStatus()
     QCOMPARE(matches.size(), 1);
     QCOMPARE(matches.first().toMap().value(QStringLiteral("developmentStatus")).toString(),
              QStringLiteral("beta"));
+
+    const QVariantList snapMatches = catalog.projectsForGame(
+        QStringLiteral("Pokemon Snap"), QStringLiteral("N64"));
+    QCOMPARE(snapMatches.size(), 1);
+    QCOMPARE(snapMatches.first().toMap().value(QStringLiteral("id")).toString(),
+             QStringLiteral("pokemon-snap-recompiled"));
+    QCOMPARE(snapMatches.first().toMap().value(QStringLiteral("developmentStatus")).toString(),
+             QStringLiteral("beta"));
 }
 
 void ProjectCatalogTest::rejectsUnknownDevelopmentStatus()
@@ -187,6 +195,27 @@ void ProjectCatalogTest::selectsOnlyCompatibleLinuxAssets()
     QVERIFY(catalog.isAssetCompatible(
         QStringLiteral("diddy-kong-racing-recompiled"), QStringLiteral("aarch64"),
         QStringLiteral("DKR-R-1.0.15-Linux-aarch64.AppImage")));
+
+    // Conker's published archive has a versioned filename and a top-level
+    // directory containing ConkerRecomp.
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("ConkerRecompiled-V0.1.6-Linux.tar.gz")));
+    QVERIFY(!catalog.isAssetCompatible(
+        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("ConkerRecompiled-V0.1.6-Linux-Flatpak.tar.gz")));
+
+    // Snap64 publishes separate x86_64 and ARM64 Linux archives, alongside
+    // Flatpak assets that must never be offered by RecompStation.
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("Snap64Recomp-1.1.7-linux-x86_64.tar.gz")));
+    QVERIFY(catalog.isAssetCompatible(
+        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("aarch64"),
+        QStringLiteral("Snap64Recomp-1.1.7-linux-arm64.tar.gz")));
+    QVERIFY(!catalog.isAssetCompatible(
+        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("Snap64Recomp-1.1.7-linux-x86_64.flatpak")));
 }
 
 void ProjectCatalogTest::filtersReleaseAssetsForCurrentArchitecture()
