@@ -139,7 +139,8 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
     QSet<QString> seenPaths;
     qint64 totalWritten = 0;
     int entryCount = 0;
-    bool executableFound = false;
+    QString exactExecutablePath;
+    QStringList executableNameMatches;
     QString failure;
 
     struct archive_entry *entry = nullptr;
@@ -235,7 +236,9 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
         }
 
         if (normalizedPath == expectedExecutable)
-            executableFound = true;
+            exactExecutablePath = normalizedPath;
+        if (QFileInfo(normalizedPath).fileName() == QFileInfo(expectedExecutable).fileName())
+            executableNameMatches.append(normalizedPath);
 
         // Do not preserve setuid/setgid/sticky bits or world-writable mode.
         QFile::Permissions permissions = QFile::ReadOwner | QFile::WriteOwner
@@ -256,12 +259,21 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
     archive_read_close(reader);
     archive_read_free(reader);
 
-    if (failure.isEmpty() && !executableFound)
-        failure = QStringLiteral("The archive does not contain the expected launcher executable: %1")
-                      .arg(expectedExecutable);
+    QString selectedExecutablePath = exactExecutablePath;
+    if (failure.isEmpty() && selectedExecutablePath.isEmpty()) {
+        if (executableNameMatches.size() == 1) {
+            selectedExecutablePath = executableNameMatches.constFirst();
+        } else if (executableNameMatches.size() > 1) {
+            failure = QStringLiteral("The archive contains multiple files named %1; refusing to guess which one is the launcher.")
+                          .arg(QFileInfo(expectedExecutable).fileName());
+        } else {
+            failure = QStringLiteral("The archive does not contain the expected launcher executable: %1")
+                          .arg(expectedExecutable);
+        }
+    }
 
     if (failure.isEmpty()) {
-        const QString executablePath = QDir(extractionRoot).filePath(expectedExecutable);
+        const QString executablePath = QDir(extractionRoot).filePath(selectedExecutablePath);
         QFile::Permissions permissions = QFile::permissions(executablePath);
         permissions |= QFile::ExeOwner;
         if (!QFile::setPermissions(executablePath, permissions))
