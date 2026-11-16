@@ -40,8 +40,16 @@ ApplicationWindow {
         // remains responsible for placement and all monitor-wide mode changes.
         const safeWidth = Math.max(640, Math.floor(Screen.desktopAvailableWidth * 0.9))
         const safeHeight = Math.max(480, Math.floor(Screen.desktopAvailableHeight * 0.9))
-        window.width = Math.min(requestedWidth, safeWidth)
-        window.height = Math.min(requestedHeight, safeHeight)
+
+        // Use one scale factor for both dimensions so every preset keeps its
+        // intended aspect ratio when it must be reduced to fit the desktop.
+        const scale = Math.min(
+            1,
+            safeWidth / requestedWidth,
+            safeHeight / requestedHeight
+        )
+        window.width = Math.round(requestedWidth * scale)
+        window.height = Math.round(requestedHeight * scale)
     }
 
     property string currentPage: "Library"
@@ -2137,7 +2145,7 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Large presets are automatically scaled down to fit within 90% of the current screen's logical size. On Wayland, the compositor may also apply its own window-size constraints. Selecting Follow desktop leaves the current window size unchanged."
+                                        text: "Presets are scaled down proportionally, when needed, to fit within 90% of the current screen's logical size. Their aspect ratios are preserved. On Wayland, the compositor may also apply its own window-size constraints. Selecting Follow desktop leaves the current window size unchanged."
                                         color: theme.textMuted
                                         font.pixelSize: 11
                                         wrapMode: Text.Wrap
