@@ -512,6 +512,16 @@ ApplicationWindow {
         contentItem: Item {
             clip: true
 
+            Button {
+                z: 10
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.leftMargin: 28
+                anchors.topMargin: 24
+                text: "←   Back to Library"
+                onClicked: gameDetailsPopup.close()
+            }
+
             Image {
                 id: detailsBackdropImage
                 anchors.fill: parent
@@ -650,10 +660,6 @@ ApplicationWindow {
                             font.pixelSize: 10 * theme.fontScale
                             font.bold: true
                         }
-                    }
-                    Button {
-                        text: "Back to Library"
-                        onClicked: gameDetailsPopup.close()
                     }
                 }
 
@@ -1017,7 +1023,10 @@ ApplicationWindow {
                 anchors.fill: parent
                 Component.onCompleted: console.info("[Settings Geometry] main page stack:", width, "x", height)
                 onWidthChanged: console.info("[Settings Geometry] main page stack width:", width)
-                anchors.margins: 30
+                anchors.leftMargin: 30
+                anchors.rightMargin: 30
+                anchors.bottomMargin: 30
+                anchors.topMargin: 82
                 currentIndex: {
                     switch (currentPage) {
                     case "Library": return 0
@@ -2421,51 +2430,55 @@ ApplicationWindow {
             }
         }
     
-        RowLayout {
-            id: quickNavigation
+        Rectangle {
+            id: topNavigationBar
             anchors.top: parent.top
+            anchors.left: parent.left
             anchors.right: parent.right
-            anchors.topMargin: 18
-            anchors.rightMargin: 24
-            spacing: 8
+            height: 66
+            color: Qt.rgba(theme.sidebarBackground.r,
+                           theme.sidebarBackground.g,
+                           theme.sidebarBackground.b, 0.72)
+            border.color: theme.divider
+            border.width: 1
             z: 20
 
-            Rectangle {
-                radius: theme.radiusCard
-                color: Qt.rgba(theme.sidebarBackground.r,
-                               theme.sidebarBackground.g,
-                               theme.sidebarBackground.b, 0.94)
-                border.color: theme.divider
-                Layout.preferredWidth: quickNavigationButtons.implicitWidth + 12
-                Layout.preferredHeight: 48
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 30
+                anchors.rightMargin: 30
+                spacing: 24
 
                 RowLayout {
-                    id: quickNavigationButtons
-                    anchors.centerIn: parent
-                    spacing: 6
+                    spacing: 10
+                    Label {
+                        text: "◈"
+                        color: theme.accent
+                        font.pixelSize: 25
+                    }
+                    Label {
+                        text: "RecompStation"
+                        color: theme.textPrimary
+                        font.pixelSize: 17 * theme.fontScale
+                        font.bold: true
+                    }
+                }
 
+                Item { Layout.fillWidth: true }
+
+                RowLayout {
+                    spacing: 8
                     Button {
-                        Layout.preferredWidth: 42
-                        Layout.preferredHeight: 40
-                        text: "▦"
-                        font.pixelSize: 21
+                        text: "▦   Library"
                         highlighted: currentPage === "Library"
-                        ToolTip.visible: hovered
-                        ToolTip.text: "Game Library"
                         onClicked: {
                             console.info("[UI] Navigation: Game Library")
                             currentPage = "Library"
                         }
                     }
-
                     Button {
-                        Layout.preferredWidth: 42
-                        Layout.preferredHeight: 40
-                        text: "⚙"
-                        font.pixelSize: 21
+                        text: "⚙   Settings"
                         highlighted: currentPage === "Settings"
-                        ToolTip.visible: hovered
-                        ToolTip.text: "Settings"
                         onClicked: {
                             console.info("[UI] Navigation: Settings")
                             currentPage = "Settings"
