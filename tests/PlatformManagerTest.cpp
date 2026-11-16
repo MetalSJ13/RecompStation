@@ -174,6 +174,7 @@ void PlatformManagerTest::migratesLegacySettingsIntoApplicationConfig()
              QStringLiteral("electric-blue"));
     QCOMPARE(migrated.value(QStringLiteral("library/root")).toString(),
              QDir(libraryRoot).absolutePath());
+    legacySettings.sync();
     QVERIFY(legacySettings.allKeys().isEmpty());
 }
 
