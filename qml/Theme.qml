@@ -2,6 +2,8 @@ import QtQuick
 
 QtObject {
     readonly property string selectedTheme: settingsManager.themeName
+    readonly property real fontScale: settingsManager.fontSize === "small" ? 0.9
+        : settingsManager.fontSize === "large" ? 1.2 : 1.0
 
     readonly property color windowBackground: selectedTheme === "electric-blue" ? "#101722"
         : selectedTheme === "ember" ? "#191411" : "#11131b"
