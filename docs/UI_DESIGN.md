@@ -69,12 +69,11 @@ Do not begin with an overwhelming theme editor or dozens of arbitrary color cont
 
 ## Display and window behavior
 
-- Fullscreen is the default launch mode.
-- Provide supported alternatives such as windowed and borderless fullscreen.
-- Display configuration must respect the desktop compositor and expose only modes that can be applied reliably; fullscreen remains the intended default.
-- Display selection and resolution options must be based on actual modes reported by the system; do not offer arbitrary unsupported resolutions.
-- Retain sensible minimum window dimensions when windowed.
-- Display changes must be recoverable if a selected mode cannot be applied.
+- Display behavior must respect the desktop compositor; RecompStation must never change the monitor-wide display mode.
+- The current foundation detects the screen attached to the application window and offers preferred application window sizes, including common 16:9, 4:3, and ultrawide presets.
+- Preferred sizes are constrained to the available logical desktop area; the compositor remains responsible for window placement and may impose additional constraints, particularly on Wayland.
+- The default “Follow desktop” option leaves the current window size unchanged.
+- Fullscreen/windowed/borderless mode controls and explicit multi-monitor selection will be added only when they can be implemented reliably across supported compositors.
 
 ## Settings organization
 
