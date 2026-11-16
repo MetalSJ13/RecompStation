@@ -44,6 +44,7 @@ void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
     const QUrl url(artworkUrl);
     if (!m_database || gameId <= 0 || !url.isValid()
         || url.scheme() != QStringLiteral("https") || url.host().isEmpty()) {
+        qCWarning(lcArtwork) << "Rejected invalid artwork request for game" << gameId;
         emit artworkFailed(gameId, QStringLiteral("A valid HTTPS artwork URL and local game are required."));
         return;
     }
@@ -68,11 +69,14 @@ void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
         reply->deleteLater();
 
         if (bytes.isEmpty() || bytes.size() > 20 * 1024 * 1024 || extension.isEmpty()) {
+            qCWarning(lcArtwork) << "Artwork response rejected for game" << gameId
+                                 << "bytes:" << bytes.size();
             emit artworkFailed(gameId, QStringLiteral("The artwork response was empty, too large, or not a supported image."));
             return;
         }
 
         if (!QDir().mkpath(m_artworkDirectory)) {
+            qCCritical(lcArtwork) << "Could not create artwork cache directory:" << m_artworkDirectory;
             emit artworkFailed(gameId, QStringLiteral("Unable to create the local artwork cache directory."));
             return;
         }
@@ -83,12 +87,15 @@ void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
         if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size()
             || !file.commit()) {
             const QString error = file.errorString();
+            qCCritical(lcArtwork) << "Could not save artwork for game" << gameId << ":" << error;
             emit artworkFailed(gameId, QStringLiteral("Unable to save artwork: %1").arg(error));
             return;
         }
 
         if (!m_database->setArtworkPath(gameId, path)) {
             QFile::remove(path);
+            qCCritical(lcArtwork) << "Could not update artwork path for game" << gameId
+                                  << ":" << m_database->lastError();
             emit artworkFailed(gameId, m_database->lastError());
             return;
         }
