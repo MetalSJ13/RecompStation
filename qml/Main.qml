@@ -48,6 +48,10 @@ ApplicationWindow {
             pendingThemeName = settingsManager.themeName
             console.info("[Settings QML] Applied theme changed:", settingsManager.themeName)
         }
+        function onDisplayModeChanged() {
+            pendingDisplayMode = settingsManager.displayMode
+            window.applyDisplayMode(settingsManager.displayMode)
+        }
     }
 
     function applyDisplayMode(mode) {
@@ -171,6 +175,8 @@ ApplicationWindow {
     palette.buttonText: theme.textPrimary
     palette.highlight: theme.accent
     palette.highlightedText: theme.textPrimary
+
+    Component.onCompleted: applyDisplayMode(settingsManager.displayMode)
 
     Connections {
         target: artworkManager
@@ -1791,6 +1797,12 @@ ApplicationWindow {
                             }
                             Button {
                                 Layout.fillWidth: true
+                                text: "▣   Display"
+                                highlighted: settingsPage.section === "Display"
+                                onClicked: settingsPage.section = "Display"
+                            }
+                            Button {
+                                Layout.fillWidth: true
                                 text: "⌘   Application"
                                 highlighted: settingsPage.section === "Application"
                                 onClicked: settingsPage.section = "Application"
@@ -1947,6 +1959,118 @@ ApplicationWindow {
                                     font.pixelSize: 11
                                     wrapMode: Text.Wrap
                                 }
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 26
+                                spacing: 16
+                                visible: settingsPage.section === "Display"
+
+                                Label {
+                                    text: "Display"
+                                    color: theme.textPrimary
+                                    font.pixelSize: 27
+                                    font.bold: true
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Choose how RecompStation occupies your screen. Changes are applied only after confirmation."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 13
+                                    wrapMode: Text.Wrap
+                                }
+                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                Label {
+                                    text: "WINDOW MODE"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                    font.letterSpacing: 1
+                                }
+                                Repeater {
+                                    model: [
+                                        { id: "fullscreen", title: "Fullscreen", description: "Fills the display and hides desktop panels." },
+                                        { id: "borderless", title: "Borderless Fullscreen", description: "Fills the display without a window frame." },
+                                        { id: "windowed", title: "Windowed", description: "Runs in a resizable desktop window." }
+                                    ]
+                                    delegate: Button {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 68
+                                        padding: 0
+                                        onClicked: pendingDisplayMode = modelData.id
+                                        background: Rectangle {
+                                            radius: theme.radiusCard
+                                            color: parent.hovered ? theme.elevatedSurface : theme.sidebarBackground
+                                            border.width: pendingDisplayMode === modelData.id ? 2 : 1
+                                            border.color: pendingDisplayMode === modelData.id ? theme.accent : theme.divider
+                                        }
+                                        contentItem: RowLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+                                            spacing: 12
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 3
+                                                Label { text: modelData.title; color: theme.textPrimary; font.pixelSize: 14; font.bold: true }
+                                                Label { text: modelData.description; color: theme.textMuted; font.pixelSize: 11 }
+                                            }
+                                            Label {
+                                                text: pendingDisplayMode === modelData.id
+                                                    ? (settingsManager.displayMode === modelData.id ? "✓  Active" : "✓  Selected")
+                                                    : "Select"
+                                                color: pendingDisplayMode === modelData.id ? theme.accent : theme.textSecondary
+                                                font.pixelSize: 12
+                                                font.bold: pendingDisplayMode === modelData.id
+                                            }
+                                        }
+                                    }
+                                }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Item { Layout.fillWidth: true }
+                                    Label {
+                                        visible: pendingDisplayMode !== settingsManager.displayMode
+                                        text: "You have an unapplied display selection."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11
+                                    }
+                                    Button {
+                                        text: "Apply Display"
+                                        enabled: pendingDisplayMode !== settingsManager.displayMode
+                                        highlighted: enabled
+                                        onClicked: settingsManager.displayMode = pendingDisplayMode
+                                    }
+                                }
+                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                Label { text: "CURRENT DISPLAY"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight: displayInfo.implicitHeight + 28
+                                    radius: theme.radiusCard
+                                    color: theme.sidebarBackground
+                                    border.color: theme.divider
+                                    ColumnLayout {
+                                        id: displayInfo
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: 14
+                                        spacing: 7
+                                        Label { text: "Display"; color: theme.textPrimary; font.pixelSize: 13; font.bold: true }
+                                        Label { text: Screen.name.length > 0 ? Screen.name : "Primary display"; color: theme.textSecondary; font.pixelSize: 12 }
+                                        Label { text: "Active resolution: " + Screen.width + " × " + Screen.height; color: theme.textSecondary; font.pixelSize: 12 }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Monitor selection and resolution choices will be added when RecompStation can query and safely validate the available display modes on this system."
+                                            color: theme.textMuted
+                                            font.pixelSize: 11
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
+                                }
+                                Item { Layout.fillHeight: true }
                             }
 
                             ColumnLayout {
