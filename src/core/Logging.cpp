@@ -45,13 +45,19 @@ void rotateLogs(const QString &path)
 void messageHandler(QtMsgType type, const QMessageLogContext &context,
                     const QString &message)
 {
-    static const char *levels[] = {"DEBUG", "INFO", "WARNING", "CRITICAL", "FATAL"};
-    const int level = qBound(0, static_cast<int>(type), 4);
+    const char *level = "UNKNOWN";
+    switch (type) {
+    case QtDebugMsg:    level = "DEBUG"; break;
+    case QtInfoMsg:     level = "INFO"; break;
+    case QtWarningMsg:  level = "WARNING"; break;
+    case QtCriticalMsg: level = "CRITICAL"; break;
+    case QtFatalMsg:    level = "FATAL"; break;
+    }
     const QString timestamp = QDateTime::currentDateTime().toString(Qt::ISODateWithMs);
     const QString category = context.category
         ? QString::fromUtf8(context.category) : QStringLiteral("default");
     const QString line = QStringLiteral("%1 [%2] [%3] %4")
-        .arg(timestamp, QString::fromLatin1(levels[level]), category, message);
+        .arg(timestamp, QString::fromLatin1(level), category, message);
 
     QMutexLocker locker(&g_logMutex);
     const QByteArray encoded = line.toUtf8();
