@@ -317,14 +317,45 @@ ApplicationWindow {
 
     FolderDialog {
         id: libraryFolderDialog
-        title: "Choose game folder"
-        property string targetPlatform: ""
+        title: "Choose your RecompStation game library"
         onAccepted: {
-            if (platformManager.setPlatformDirectory(targetPlatform, selectedFolder)) {
-                window.scanMessage = targetPlatform + " folder updated. Scanning library..."
+            if (platformManager.setLibraryDirectory(selectedFolder)) {
+                window.scanMessage = "Library folder saved. Scanning platform folders..."
+                librarySetupDialog.close()
                 libraryScanner.scanAll()
             } else {
-                window.scanMessage = "Could not use the selected folder. Choose an existing, readable local directory."
+                window.scanMessage = "Could not use that folder. Choose an existing, readable local directory."
+            }
+        }
+    }
+
+    Dialog {
+        id: librarySetupDialog
+        title: "Set up your game library"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 40, 520)
+        closePolicy: platformManager.libraryConfigured ? Popup.CloseOnEscape : Popup.NoAutoClose
+        visible: !platformManager.libraryConfigured
+        standardButtons: Dialog.NoButton
+        ColumnLayout {
+            width: parent.width
+            spacing: 12
+            Label {
+                Layout.fillWidth: true
+                text: "First, choose the main folder where you keep your game files. RecompStation will create the supported platform folders inside it."
+                color: theme.textSecondary; wrapMode: Text.Wrap
+            }
+            Label {
+                Layout.fillWidth: true
+                text: "Your games will stay where they are; this only creates folders and sets the locations RecompStation scans."
+                color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+            }
+            Button {
+                Layout.alignment: Qt.AlignRight
+                text: "Choose Library Folder"
+                highlighted: true
+                onClicked: libraryFolderDialog.open()
             }
         }
     }
@@ -2054,34 +2085,49 @@ ApplicationWindow {
                                     Label { text: "Library"; color: theme.textPrimary; font.pixelSize: 27; font.bold: true }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Choose where RecompStation looks for your game files. Each platform can use its own folder."
+                                        text: "Choose one home for your game collection. RecompStation organizes it into platform folders automatically."
                                         color: theme.textSecondary; font.pixelSize: 13; wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label { text: "GAME FOLDERS"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
-                                    Repeater {
-                                        model: platformManager.platforms()
-                                        delegate: Rectangle {
-                                            required property string modelData
-                                            Layout.fillWidth: true
-                                            implicitHeight: folderRow.implicitHeight + 24
-                                            radius: theme.radiusCard; color: theme.sidebarBackground; border.color: theme.divider
-                                            RowLayout {
-                                                id: folderRow
-                                                anchors.fill: parent; anchors.margins: 12; spacing: 12
-                                                ColumnLayout {
-                                                    Layout.fillWidth: true; Layout.minimumWidth: 0; spacing: 5
-                                                    Label { text: modelData; color: theme.textPrimary; font.pixelSize: 14; font.bold: true }
-                                                    Label {
-                                                        Layout.fillWidth: true
-                                                        text: platformManager.platformDirectory(modelData)
-                                                        color: theme.textSecondary; font.pixelSize: 11; wrapMode: Text.WrapAnywhere
-                                                    }
+                                    Label { text: "LIBRARY LOCATION"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: libraryRootRow.implicitHeight + 24
+                                        radius: theme.radiusCard; color: theme.sidebarBackground; border.color: theme.divider
+                                        RowLayout {
+                                            id: libraryRootRow
+                                            anchors.fill: parent; anchors.margins: 12; spacing: 12
+                                            ColumnLayout {
+                                                Layout.fillWidth: true; Layout.minimumWidth: 0; spacing: 5
+                                                Label { text: "Game library root"; color: theme.textPrimary; font.pixelSize: 14; font.bold: true }
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: platformManager.libraryConfigured ? platformManager.libraryDirectory : "No library folder selected yet"
+                                                    color: theme.textSecondary; font.pixelSize: 11; wrapMode: Text.WrapAnywhere
                                                 }
-                                                Button {
-                                                    text: "Choose Folder"
-                                                    onClicked: { libraryFolderDialog.targetPlatform = modelData; libraryFolderDialog.open() }
-                                                }
+                                            }
+                                            Button {
+                                                text: platformManager.libraryConfigured ? "Change Folder" : "Choose Folder"
+                                                highlighted: true
+                                                onClicked: libraryFolderDialog.open()
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "RecompStation creates a subfolder for each platform represented in its supported recompiled-game catalog. For example: N64, PS1, GameCube, and Wii when those platforms have catalog entries."
+                                        color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+                                    }
+                                    Flow {
+                                        Layout.fillWidth: true
+                                        spacing: 8
+                                        Repeater {
+                                            model: platformManager.platforms()
+                                            delegate: Rectangle {
+                                                required property string modelData
+                                                radius: 12; color: theme.surface; border.color: theme.divider
+                                                width: platformChip.implicitWidth + 22; height: 30
+                                                Label { id: platformChip; anchors.centerIn: parent; text: modelData; color: theme.textSecondary; font.pixelSize: 11 }
                                             }
                                         }
                                     }
@@ -2099,7 +2145,7 @@ ApplicationWindow {
                                                 Label { text: "Scan library on startup"; color: theme.textPrimary; font.pixelSize: 13; font.bold: true }
                                                 Label {
                                                     Layout.fillWidth: true
-                                                    text: "Automatically check configured game folders when RecompStation launches."
+                                                    text: "Automatically check the configured platform folders when RecompStation launches."
                                                     color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
                                                 }
                                             }
@@ -2111,11 +2157,12 @@ ApplicationWindow {
                                     }
                                     Button {
                                         text: "Scan Library Now"; highlighted: true
+                                        enabled: platformManager.libraryConfigured
                                         onClicked: { window.scanMessage = "Scanning configured game folders..."; libraryScanner.scanAll() }
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Changing a folder does not move or delete your game files. Scan the library after changing locations so the library can reconcile the new folder contents. Automatic live folder monitoring will be added separately."
+                                        text: "Changing the root does not move or delete existing game files. RecompStation scans the new platform folders; put your ROMs inside the matching subfolder. Automatic live folder monitoring will be added separately."
                                         color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
                                     }
                                 }
