@@ -1,4 +1,5 @@
 #include "ArtworkManager.h"
+#include "Logging.h"
 
 #include "../database/DatabaseManager.h"
 
@@ -39,6 +40,7 @@ ArtworkManager::ArtworkManager(DatabaseManager *database,
 
 void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
 {
+    qCInfo(lcArtwork) << "Artwork download requested for library game:" << gameId;
     const QUrl url(artworkUrl);
     if (!m_database || gameId <= 0 || !url.isValid()
         || url.scheme() != QStringLiteral("https") || url.host().isEmpty()) {
@@ -56,6 +58,7 @@ void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
             const QString message = QStringLiteral("Artwork download failed (HTTP %1): %2")
                                         .arg(status).arg(reply->errorString());
             reply->deleteLater();
+            qCWarning(lcArtwork) << "Artwork request failed for game" << gameId << ":" << message;
             emit artworkFailed(gameId, message);
             return;
         }
@@ -90,6 +93,7 @@ void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
             return;
         }
 
+        qCInfo(lcArtwork) << "Artwork saved for game" << gameId;
         emit artworkSaved(gameId, path);
     });
 }
