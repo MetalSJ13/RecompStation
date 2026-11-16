@@ -28,6 +28,18 @@ PlatformManager::PlatformManager(const QString &dataDirectory, QObject *parent)
 
 bool PlatformManager::initialize()
 {
+    const QStringList defaultPlatforms = m_platforms;
+    return initialize(defaultPlatforms);
+}
+
+bool PlatformManager::initialize(const QStringList &supportedPlatforms)
+{
+    m_platforms.clear();
+    for (const QString &platform : supportedPlatforms) {
+        const QString normalized = platform.trimmed();
+        if (!normalized.isEmpty() && !m_platforms.contains(normalized))
+            m_platforms.append(normalized);
+    }
     if (m_dataDirectory.isEmpty())
         return false;
 
@@ -35,7 +47,6 @@ bool PlatformManager::initialize()
         return false;
 
     const QStringList directories = {
-        "games",
         "launchers",
         "downloads/staging",
         "artwork",
@@ -48,19 +59,23 @@ bool PlatformManager::initialize()
     }
 
     QSettings settings;
+    m_libraryDirectory = QDir::cleanPath(settings.value(
+        QStringLiteral("library/root")).toString());
+    if (!m_libraryDirectory.isEmpty()) {
+        const QFileInfo rootInfo(m_libraryDirectory);
+        if (!rootInfo.exists() || !rootInfo.isDir() || !rootInfo.isReadable())
+            m_libraryDirectory.clear();
+        else
+            m_libraryDirectory = rootInfo.absoluteFilePath();
+    }
+
     for (const QString &platform : m_platforms) {
-        const QString defaultGamePath =
-            QDir(m_dataDirectory).filePath("games/" + platform);
-        const QString configuredPath = settings.value(
-            QStringLiteral("library/folders/") + platform,
-            defaultGamePath
-        ).toString();
-        m_platformDirectories.insert(platform, QDir(configuredPath).absolutePath());
-        const QString gamePath = defaultGamePath;
         const QString launcherPath =
             QDir(m_dataDirectory).filePath("launchers/" + platform);
 
-        if (!createDirectory(gamePath) || !createDirectory(launcherPath))
+        if ((!m_libraryDirectory.isEmpty()
+             && !createDirectory(QDir(m_libraryDirectory).filePath(platform)))
+            || !createDirectory(launcherPath))
             return false;
     }
 
@@ -70,6 +85,16 @@ bool PlatformManager::initialize()
 QString PlatformManager::dataDirectory() const
 {
     return m_dataDirectory;
+}
+
+QString PlatformManager::libraryDirectory() const
+{
+    return m_libraryDirectory;
+}
+
+bool PlatformManager::libraryConfigured() const
+{
+    return !m_libraryDirectory.isEmpty();
 }
 
 QString PlatformManager::stagingDirectory() const
@@ -85,37 +110,38 @@ QStringList PlatformManager::platforms() const
     return m_platforms;
 }
 
-bool PlatformManager::setPlatformDirectory(const QString &platform,
-                                            const QUrl &directoryUrl)
+bool PlatformManager::setLibraryDirectory(const QUrl &directoryUrl)
 {
-    if (!m_platforms.contains(platform) || !directoryUrl.isLocalFile())
+    if (!directoryUrl.isLocalFile())
         return false;
 
     const QFileInfo selectedInfo(QDir::cleanPath(directoryUrl.toLocalFile()));
     if (!selectedInfo.exists() || !selectedInfo.isDir() || !selectedInfo.isReadable())
         return false;
 
-    const QString absolutePath = selectedInfo.absoluteFilePath();
-    if (m_platformDirectories.value(platform) == absolutePath)
-        return true;
+    const QString selectedPath = selectedInfo.absoluteFilePath();
+    for (const QString &platform : m_platforms) {
+        if (!createDirectory(QDir(selectedPath).filePath(platform)))
+            return false;
+    }
 
     QSettings settings;
-    settings.setValue(QStringLiteral("library/folders/") + platform, absolutePath);
+    settings.setValue(QStringLiteral("library/root"), selectedPath);
     settings.sync();
     if (settings.status() != QSettings::NoError)
         return false;
 
-    m_platformDirectories.insert(platform, absolutePath);
-    emit platformDirectoryChanged(platform, absolutePath);
+    m_libraryDirectory = selectedPath;
+    emit libraryDirectoryChanged();
     return true;
 }
 
 QString PlatformManager::platformDirectory(const QString &platform) const
 {
-    if (!m_platforms.contains(platform))
+    if (!m_platforms.contains(platform) || m_libraryDirectory.isEmpty())
         return {};
 
-    return m_platformDirectories.value(platform);
+    return QDir(m_libraryDirectory).filePath(platform);
 }
 
 QString PlatformManager::launcherDirectory(const QString &projectId) const
