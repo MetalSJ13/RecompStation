@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     qCInfo(lcApplication) << "Starting RecompStation" << QCoreApplication::applicationVersion();
     qCInfo(lcApplication) << "Application data directory:" << platformManager.dataDirectory();
 
-    SettingsManager settingsManager;
+    SettingsManager settingsManager(platformManager.settingsFilePath());
     DatabaseManager databaseManager;
     const QString databasePath =
         platformManager.dataDirectory() + "/database/library.sqlite";
