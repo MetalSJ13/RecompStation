@@ -1748,10 +1748,10 @@ ApplicationWindow {
 
                         ColumnLayout {
                             id: settingsNavigationColumn
+                            Layout.minimumWidth: 205
+                            Layout.maximumWidth: 205
                             Layout.preferredWidth: 205
                             Layout.fillHeight: true
-                            Component.onCompleted: console.info("[Settings Geometry] settings navigation column:", width, "x", height, "implicit:", implicitWidth)
-                            onWidthChanged: console.info("[Settings Geometry] settings navigation column width:", width, "implicit:", implicitWidth)
                             spacing: 10
 
                             Label {
@@ -1798,11 +1798,10 @@ ApplicationWindow {
 
                         Rectangle {
                             id: settingsContentCard
+                            Layout.minimumWidth: 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             radius: theme.radiusLarge
-                            Component.onCompleted: console.info("[Settings Geometry] settings content card:", width, "x", height)
-                            onWidthChanged: console.info("[Settings Geometry] settings content card width:", width)
                             color: theme.surface
                             border.color: theme.divider
                             clip: true
