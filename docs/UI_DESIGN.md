@@ -63,7 +63,7 @@ A user should not need to search a metadata database and manually associate ever
 
 ## Themes and backgrounds
 
-Provide a curated set of built-in appearance presets. A preset should coordinate the background, accent, and surface palette so the application remains coherent. Users may choose a preset and optionally a supported background treatment or bundled background image. Custom user-supplied images can be considered later.
+Provide curated static themes, optional lightweight animated themes, and user-selected custom still-image backgrounds. A preset coordinates background, accent, and surface colors. Animated backgrounds pause while the app is minimized or inactive. Support small, medium, and large font sizes plus reduced-motion preferences. Custom images should be scaled/cropped automatically and previewed before applying. Bundle only original, public-domain, or appropriately licensed artwork.
 
 Do not begin with an overwhelming theme editor or dozens of arbitrary color controls. The first implementation should have a small, high-quality selection of presets and a clear default.
 
@@ -91,7 +91,7 @@ Only expose settings that have real behavior. Avoid placeholder toggles.
 
 ## Input and accessibility
 
-Mouse and keyboard remain supported. The design should be built with a clear focus model so full controller navigation can be added without redesigning every screen. Controller support is a planned experience goal, not a claim of current functionality. Maintain readable contrast, accessible labels, predictable tab order, and scalable layouts.
+Mouse and keyboard remain supported. Controller navigation will support Xbox and PlayStation controllers with predefined mappings and user remapping. The frontend must suspend controller input while the launched game session owns the controller, then resume after the actual game process/session exits. Maintain readable contrast, accessible labels, predictable tab order, and scalable layouts.
 
 ## Implementation principles
 
