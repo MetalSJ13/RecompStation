@@ -63,7 +63,7 @@ A user should not need to search a metadata database and manually associate ever
 
 ## Themes and backgrounds
 
-Provide curated static themes, optional lightweight animated themes, and user-selected custom still-image backgrounds. A preset coordinates background, accent, and surface colors. Animated backgrounds pause while the app is minimized or inactive. Support small, medium, and large font sizes plus reduced-motion preferences. Custom images should be scaled/cropped automatically and previewed before applying. Bundle only original, public-domain, or appropriately licensed artwork.
+Provide curated static themes, optional lightweight animated themes, and user-selected custom still-image backgrounds. A preset coordinates background, accent, and surface colors. Animated backgrounds pause while the app is minimized or inactive. Support small, medium, and large font sizes throughout the interface plus a reduced-motion preference that disables nonessential animations. Custom images should be scaled/cropped automatically and previewed before applying. Bundle only original, public-domain, or appropriately licensed artwork.
 
 Do not begin with an overwhelming theme editor or dozens of arbitrary color controls. The first implementation should have a small, high-quality selection of presets and a clear default.
 
