@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QDebug>
 
 PlatformManager::PlatformManager(QObject *parent)
     : PlatformManager(QString(), parent)
@@ -47,6 +48,7 @@ bool PlatformManager::initialize(const QStringList &supportedPlatforms)
         return false;
 
     const QStringList directories = {
+        "config",
         "launchers",
         "downloads/staging",
         "artwork",
@@ -58,7 +60,24 @@ bool PlatformManager::initialize(const QStringList &supportedPlatforms)
             return false;
     }
 
-    QSettings settings;
+    m_settingsFilePath = QDir(m_dataDirectory).filePath(
+        QStringLiteral("config/settings.ini"));
+
+    // Migrate existing QSettings preferences into the application data directory
+    // once. This preserves the library root and preferences from older versions.
+    if (!QFileInfo::exists(m_settingsFilePath)) {
+        QSettings legacySettings;
+        QSettings migratedSettings(m_settingsFilePath, QSettings::IniFormat);
+        for (const QString &key : legacySettings.allKeys())
+            migratedSettings.setValue(key, legacySettings.value(key));
+        migratedSettings.sync();
+        if (migratedSettings.status() != QSettings::NoError) {
+            qWarning() << "Could not migrate legacy settings to" << m_settingsFilePath;
+            return false;
+        }
+    }
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
     m_libraryDirectory = QDir::cleanPath(settings.value(
         QStringLiteral("library/root")).toString());
     if (!m_libraryDirectory.isEmpty()) {
@@ -85,6 +104,11 @@ bool PlatformManager::initialize(const QStringList &supportedPlatforms)
 QString PlatformManager::dataDirectory() const
 {
     return m_dataDirectory;
+}
+
+QString PlatformManager::settingsFilePath() const
+{
+    return m_settingsFilePath;
 }
 
 QString PlatformManager::libraryDirectory() const
@@ -125,7 +149,7 @@ bool PlatformManager::setLibraryDirectory(const QUrl &directoryUrl)
             return false;
     }
 
-    QSettings settings;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
     settings.setValue(QStringLiteral("library/root"), selectedPath);
     settings.sync();
     if (settings.status() != QSettings::NoError)
