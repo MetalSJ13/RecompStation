@@ -203,12 +203,11 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         const QString repository = object.value(QStringLiteral("repositoryName")).toString().trimmed();
         const QJsonArray titles = object.value(QStringLiteral("gameTitles")).toArray();
         const QJsonObject architectures = object.value(QStringLiteral("architectures")).toObject();
-        const QStringList supportedPlatforms = {QStringLiteral("N64"), QStringLiteral("PS1"),
-                                                 QStringLiteral("GameCube"), QStringLiteral("Wii")};
-
         static const QRegularExpression idPattern(QStringLiteral("^[a-z0-9][a-z0-9-]*$"));
+        static const QRegularExpression platformPattern(
+            QStringLiteral("^[A-Za-z0-9][A-Za-z0-9 _-]*$"));
         if (!idPattern.match(id).hasMatch() || projectIds.contains(id)
-            || name.isEmpty() || !supportedPlatforms.contains(platform)
+            || name.isEmpty() || !platformPattern.match(platform).hasMatch()
             || !validRepositoryPart(owner) || !validRepositoryPart(repository)
             || titles.isEmpty() || architectures.isEmpty()
             || !QStringList{QStringLiteral("playable"), QStringLiteral("beta"),
