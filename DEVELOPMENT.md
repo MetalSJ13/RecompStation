@@ -54,6 +54,7 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 2: Application shell and navigation
 
 - [ ] Refine the main window, navigation, content area, and page transitions
+- [x] Add an animated, collapsible navigation sidebar with compact navigation controls and reduced-motion support (local validation pending)
 - [ ] Remove Metadata Search and Platforms as top-level navigation destinations
 - [ ] Move platform selection/filtering into the Game Library
 - [ ] Rehome launcher discovery and management contextually without removing existing capabilities
