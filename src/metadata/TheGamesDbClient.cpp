@@ -1,4 +1,5 @@
 #include "TheGamesDbClient.h"
+#include "../core/Logging.h"
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -180,6 +181,8 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
 {
     const int requestId = m_nextRequestId++;
     const QString term = searchTerm.trimmed();
+    qCInfo(lcMetadata) << "TheGamesDB search started. Term:" << term
+                       << "platform ID:" << platformId;
 
     if (!isConfigured()) {
         emit requestFailed(requestId,
@@ -226,6 +229,7 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
                       .arg(statusCode)
                       .arg(reply->errorString());
             reply->deleteLater();
+            qCWarning(lcMetadata) << "TheGamesDB search failed:" << message;
             emit requestFailed(requestId, message);
             return;
         }
@@ -234,11 +238,13 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
         QString parseError;
         if (!parseSearchResponse(reply->readAll(), &results, &parseError)) {
             reply->deleteLater();
+            qCWarning(lcMetadata) << "TheGamesDB response could not be parsed:" << parseError;
             emit requestFailed(requestId, parseError);
             return;
         }
 
         reply->deleteLater();
+        qCInfo(lcMetadata) << "TheGamesDB search completed. Results:" << results.size();
         emit searchCompleted(requestId, results);
     });
 }
