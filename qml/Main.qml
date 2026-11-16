@@ -1203,6 +1203,12 @@ ApplicationWindow {
                                 width: gameGrid.cellWidth - 14
                                 height: gameGrid.cellHeight - 14
                                 focus: GridView.isCurrentItem
+                                z: GridView.isCurrentItem ? 2 : 1
+                                scale: GridView.isCurrentItem ? 1.025 : 1.0
+                                Behavior on scale {
+                                    enabled: !settingsManager.reducedMotion
+                                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                                }
 
                                 Rectangle {
                                     anchors.fill: parent
