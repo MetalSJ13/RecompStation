@@ -41,7 +41,7 @@
       "romRequirements": "Requires a legally obtained US version of Conker's Bad Fur Day. The project does not include game data; you supply your own ROM.",
       "architectures": {
         "x86_64": {
-          "assetNameRegex": "^.*Linux.*\\.tar\\.gz$",
+          "assetNameRegex": "^ConkerRecompiled-V[0-9.]+-Linux\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "ConkerRecomp"
         }
@@ -70,6 +70,33 @@
           "assetNameRegex": "^DKR-R-.*-Linux-aarch64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "DKR-R-Linux-aarch64.AppImage"
+        }
+      }
+    },
+    {
+      "id": "pokemon-snap-recompiled",
+      "name": "Pokémon Snap: Recomp",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Pokémon Snap",
+        "Pokemon Snap",
+        "Pokémon Snap: Recompiled",
+        "Snap64 Recomp"
+      ],
+      "repositoryOwner": "JackandBeans",
+      "repositoryName": "Snap64Recomp",
+      "romRequirements": "Requires the US Pokémon Snap ROM (SHA-1 edc7c49cc568c045fe48be0d18011c30f393cbaf). The Linux builds are marked experimental by the project; SDL2, GTK 3 and a Vulkan 1.2 driver are required. The project does not include game data.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Snap64Recomp-.*-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Snap64Recomp"
+        },
+        "aarch64": {
+          "assetNameRegex": "^Snap64Recomp-.*-linux-arm64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Snap64Recomp"
         }
       }
     }
