@@ -140,6 +140,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             this, [this](const QString &message) {
         if (!m_busy)
             return;
+        qCWarning(lcMetadata) << "Metadata lookup stopped:" << message;
         setStatus(QStringLiteral("Metadata lookup stopped: %1").arg(message));
         m_queue.clear();
         m_currentGame.clear();
