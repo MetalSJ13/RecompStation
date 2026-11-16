@@ -75,6 +75,8 @@ if(BUILD_TESTING)
     find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
 
     qt_add_executable(ArchiveExtractorTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/ArchiveExtractorTest.cpp
         src/core/ArchiveExtractor.h
         src/core/ArchiveExtractor.cpp
@@ -91,6 +93,8 @@ if(BUILD_TESTING)
     add_test(NAME ArchiveExtractorTests COMMAND ArchiveExtractorTests)
 
     qt_add_executable(PlatformManagerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/PlatformManagerTest.cpp
         src/core/PlatformManager.h
         src/core/PlatformManager.cpp
@@ -107,6 +111,8 @@ if(BUILD_TESTING)
     add_test(NAME PlatformManagerTests COMMAND PlatformManagerTests)
 
     qt_add_executable(LauncherDownloadManagerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/LauncherDownloadManagerTest.cpp
         src/core/LauncherDownloadManager.h
         src/core/LauncherDownloadManager.cpp
@@ -127,6 +133,8 @@ if(BUILD_TESTING)
     add_test(NAME LauncherDownloadManagerTests COMMAND LauncherDownloadManagerTests)
 
     qt_add_executable(GameLaunchManagerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/GameLaunchManagerTest.cpp
         src/core/GameLaunchManager.h
         src/core/GameLaunchManager.cpp
@@ -149,6 +157,8 @@ if(BUILD_TESTING)
     add_test(NAME GameLaunchManagerTests COMMAND GameLaunchManagerTests)
 
     qt_add_executable(LibraryScannerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/LibraryScannerTest.cpp
         src/core/PlatformManager.h
         src/core/PlatformManager.cpp
@@ -169,6 +179,8 @@ if(BUILD_TESTING)
     add_test(NAME LibraryScannerTests COMMAND LibraryScannerTests)
 
     qt_add_executable(DatabaseManagerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/DatabaseManagerTest.cpp
         src/database/DatabaseManager.h
         src/database/DatabaseManager.cpp
@@ -185,6 +197,8 @@ if(BUILD_TESTING)
     add_test(NAME DatabaseManagerTests COMMAND DatabaseManagerTests)
 
     qt_add_executable(ArtworkManagerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/ArtworkManagerTest.cpp
         src/core/ArtworkManager.h
         src/core/ArtworkManager.cpp
@@ -203,6 +217,8 @@ if(BUILD_TESTING)
     add_test(NAME ArtworkManagerTests COMMAND ArtworkManagerTests)
 
     qt_add_executable(MetadataProviderTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/MetadataProviderTest.cpp
         src/metadata/GameMetadata.h
         src/metadata/MetadataPlatformMapping.h
@@ -224,6 +240,8 @@ if(BUILD_TESTING)
     add_test(NAME MetadataProviderTests COMMAND MetadataProviderTests)
 
     qt_add_executable(LibraryMetadataMatcherTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/LibraryMetadataMatcherTest.cpp
         src/core/LibraryMetadataMatcher.h
         src/core/LibraryMetadataMatcher.cpp
@@ -249,6 +267,8 @@ if(BUILD_TESTING)
     add_test(NAME LibraryMetadataMatcherTests COMMAND LibraryMetadataMatcherTests)
 
     qt_add_executable(ProjectCatalogTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/ProjectCatalogTest.cpp
         data/projects.qrc
         src/projects/ProjectCatalog.h
@@ -266,6 +286,8 @@ if(BUILD_TESTING)
     add_test(NAME ProjectCatalogTests COMMAND ProjectCatalogTests)
 
     qt_add_executable(GitHubManagerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
         tests/GitHubManagerTest.cpp
         tests/GitHubManagerTest.h
         src/github/GitHubManager.h
