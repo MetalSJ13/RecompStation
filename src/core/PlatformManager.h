@@ -15,6 +15,8 @@ class PlatformManager : public QObject
         READ dataDirectory
         CONSTANT
     )
+    Q_PROPERTY(QString libraryDirectory READ libraryDirectory NOTIFY libraryDirectoryChanged)
+    Q_PROPERTY(bool libraryConfigured READ libraryConfigured NOTIFY libraryDirectoryChanged)
 
 public:
     explicit PlatformManager(QObject *parent = nullptr);
@@ -24,13 +26,16 @@ public:
     );
 
     bool initialize();
+    bool initialize(const QStringList &supportedPlatforms);
 
     QString dataDirectory() const;
     QString stagingDirectory() const;
+    QString libraryDirectory() const;
+    bool libraryConfigured() const;
 
     Q_INVOKABLE QStringList platforms() const;
 
-    Q_INVOKABLE bool setPlatformDirectory(const QString &platform, const QUrl &directoryUrl);
+    Q_INVOKABLE bool setLibraryDirectory(const QUrl &directoryUrl);
 
     Q_INVOKABLE QString platformDirectory(
         const QString &platform
@@ -45,11 +50,11 @@ public:
     );
 
 signals:
-    void platformDirectoryChanged(const QString &platform, const QString &directory);
+    void libraryDirectoryChanged();
 
 private:
     QString m_dataDirectory;
-    QHash<QString, QString> m_platformDirectories;
+    QString m_libraryDirectory;
     QStringList m_platforms;
 
     bool createDirectory(const QString &path);
