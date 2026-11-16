@@ -171,7 +171,7 @@ void ArchiveExtractorTest::findsExecutableInsideSingleTopLevelDirectory()
     QVERIFY(createArchive(archivePath, {
         {{QStringLiteral("name"), QStringLiteral("ConkerRecompiled/")}, {QStringLiteral("type"), QStringLiteral("directory")}},
         {{QStringLiteral("name"), QStringLiteral("ConkerRecompiled/ConkerRecomp")},
-         {QStringLiteral("data"), QByteArray("#!/bin/sh\\necho ok\\n")},
+         {QStringLiteral("data"), QByteArray("#!/bin/sh\necho ok\n")},
          {QStringLiteral("mode"), 0644}},
         {{QStringLiteral("name"), QStringLiteral("ConkerRecompiled/assets/thumbnail.png")},
          {QStringLiteral("data"), QByteArray("artwork")}}
