@@ -3,6 +3,7 @@
 #include "core/SettingsManager.h"
 
 #include <QSettings>
+#include <QSignalSpy>
 
 class SettingsManagerTest : public QObject
 {
