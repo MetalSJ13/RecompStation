@@ -4,6 +4,9 @@
 
 #include <QSettings>
 #include <QSignalSpy>
+#include <QTemporaryDir>
+#include <QDir>
+#include <QFileInfo>
 
 class SettingsManagerTest : public QObject
 {
@@ -13,6 +16,7 @@ private slots:
     void init();
     void defaultsToScanningOnStartup();
     void persistsScanOnStartupPreference();
+    void persistsPreferencesInExplicitConfigFile();
 };
 
 void SettingsManagerTest::init()
@@ -44,6 +48,27 @@ void SettingsManagerTest::persistsScanOnStartupPreference()
     QVERIFY(reloaded.scanOnStartup());
     QCOMPARE(QSettings().value(QStringLiteral("library/scanOnStartup")).toBool(), true);
     QSettings().clear();
+}
+
+
+void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    {
+        SettingsManager manager(settingsPath);
+        manager.setThemeName(QStringLiteral("ember"));
+        manager.setScanOnStartup(false);
+        QCOMPARE(manager.themeName(), QStringLiteral("ember"));
+        QVERIFY(!manager.scanOnStartup());
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.themeName(), QStringLiteral("ember"));
+    QVERIFY(!reloaded.scanOnStartup());
+    QVERIFY(QFileInfo(settingsPath).isFile());
 }
 
 QTEST_GUILESS_MAIN(SettingsManagerTest)
