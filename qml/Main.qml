@@ -13,6 +13,12 @@ ApplicationWindow {
     visible: true
     title: "RecompStation"
     color: theme.windowBackground
+    background: Rectangle {
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: theme.backgroundTop }
+            GradientStop { position: 1.0; color: theme.backgroundBottom }
+        }
+    }
 
     Component.onCompleted: window.applyPreferredPresentationSize()
 
@@ -1780,7 +1786,7 @@ ApplicationWindow {
                                                         : downloadState.bytesTotal > 0
                                                             ? Math.floor(downloadState.bytesReceived / downloadState.bytesTotal * 100) + "%"
                                                             : (downloadState.bytesReceived / 1048576).toFixed(1) + " MB"
-                                                    color: downloadState.error.length > 0 ? "#ff8b8b" : "#a98cff"
+                                                    color: downloadState.error.length > 0 ? theme.error : theme.accent
                                                     font.pixelSize: 10 * theme.fontScale
                                                     wrapMode: Text.Wrap
                                                 }
