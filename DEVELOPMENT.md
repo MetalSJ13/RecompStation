@@ -83,7 +83,7 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 5: Settings and first-run experience
 
 - [ ] Add curated appearance presets and coordinated background/accent/surface palettes
-- [x] Add persisted fullscreen default plus windowed and borderless mode controls (initial implementation; local validation pending)
+- [ ] Add fullscreen default plus safely supported windowed and borderless modes
 - [ ] Enumerate actual display devices and supported resolutions before offering choices
 - [ ] Add library folder and automatic-monitoring configuration
 - [ ] Add metadata provider status and cache/refresh controls
