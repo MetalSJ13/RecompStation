@@ -13,6 +13,7 @@ ApplicationWindow {
     visible: true
     title: "RecompStation"
     property bool sidebarExpanded: true
+    property bool sidebarAnimationEnabled: false
     color: theme.windowBackground
     background: Rectangle {
         gradient: Gradient {
@@ -980,7 +981,8 @@ ApplicationWindow {
             Layout.fillHeight: true
             color: theme.sidebarBackground
             Behavior on Layout.preferredWidth {
-                enabled: !settingsManager.reducedMotion
+                // Do not animate the initial layout pass; animate only user toggles.
+                enabled: window.sidebarAnimationEnabled && !settingsManager.reducedMotion
                 NumberAnimation { duration: 260; easing.type: Easing.InOutCubic }
             }
 
@@ -988,11 +990,6 @@ ApplicationWindow {
                 anchors.fill: parent
                 anchors.margins: window.sidebarExpanded ? 20 : 12
                 spacing: 15
-
-                Behavior on anchors.margins {
-                    enabled: !settingsManager.reducedMotion
-                    NumberAnimation { duration: 220; easing.type: Easing.InOutCubic }
-                }
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -1035,7 +1032,10 @@ ApplicationWindow {
                         Layout.preferredHeight: 30
                         text: window.sidebarExpanded ? "‹" : "›"
                         font.pixelSize: 20
-                        onClicked: window.sidebarExpanded = !window.sidebarExpanded
+                        onClicked: {
+                            window.sidebarAnimationEnabled = true
+                            window.sidebarExpanded = !window.sidebarExpanded
+                        }
                         ToolTip.visible: hovered
                         ToolTip.text: window.sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"
                     }
