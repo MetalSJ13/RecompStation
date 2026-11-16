@@ -18,6 +18,7 @@ ApplicationWindow {
 
     property string currentPage: "Library"
     property string pendingThemeName: settingsManager.themeName
+    property string pendingDisplayMode: settingsManager.displayMode
     property string selectedPlatform: "All Games"
     property string librarySearchText: ""
     property var selectedGame: null
@@ -46,6 +47,23 @@ ApplicationWindow {
         function onThemeNameChanged() {
             pendingThemeName = settingsManager.themeName
             console.info("[Settings QML] Applied theme changed:", settingsManager.themeName)
+        }
+    }
+
+    function applyDisplayMode(mode) {
+        if (mode === "fullscreen") {
+            window.flags = Qt.Window
+            window.showFullScreen()
+        } else if (mode === "borderless") {
+            window.flags = Qt.Window | Qt.FramelessWindowHint
+            window.showNormal()
+            window.x = Screen.virtualX
+            window.y = Screen.virtualY
+            window.width = Screen.width
+            window.height = Screen.height
+        } else {
+            window.flags = Qt.Window
+            window.showNormal()
         }
     }
 
