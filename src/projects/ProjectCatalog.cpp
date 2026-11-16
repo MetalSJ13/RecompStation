@@ -75,6 +75,17 @@ QVariantList ProjectCatalog::projects() const
     return m_projects;
 }
 
+QStringList ProjectCatalog::supportedPlatforms() const
+{
+    QStringList platforms;
+    for (const QVariant &entry : m_projects) {
+        const QString platform = entry.toMap().value(QStringLiteral("platform")).toString();
+        if (!platform.isEmpty() && !platforms.contains(platform))
+            platforms.append(platform);
+    }
+    return platforms;
+}
+
 QVariantMap ProjectCatalog::project(const QString &projectId) const
 {
     for (const QVariant &entry : m_projects) {
