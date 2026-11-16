@@ -19,6 +19,7 @@ public:
     QString currentArchitecture() const;
 
     Q_INVOKABLE QVariantList projects() const;
+    Q_INVOKABLE QStringList supportedPlatforms() const;
     Q_INVOKABLE QVariantMap project(const QString &projectId) const;
     Q_INVOKABLE QVariantList projectsForGame(const QString &metadataTitle,
                                               const QString &platform) const;
