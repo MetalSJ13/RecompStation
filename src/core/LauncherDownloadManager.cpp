@@ -1,6 +1,7 @@
 #include "LauncherDownloadManager.h"
 
 #include "PlatformManager.h"
+#include "Logging.h"
 
 #include <QtConcurrent/QtConcurrentRun>
 #include <QFile>
@@ -62,6 +63,7 @@ int LauncherDownloadManager::downloadAsset(
 )
 {
     const int requestId = m_nextRequestId++;
+    qCInfo(lcLauncher) << "Launcher asset download requested:" << projectId << assetName;
 
     QString validationError;
     if (!m_platformManager) {
@@ -77,6 +79,7 @@ int LauncherDownloadManager::downloadAsset(
     }
 
     if (!validationError.isEmpty()) {
+        qCWarning(lcLauncher) << "Download rejected:" << validationError;
         QTimer::singleShot(0, this, [this, requestId, validationError]() {
             emit downloadFailed(requestId, validationError);
         });
@@ -152,7 +155,8 @@ int LauncherDownloadManager::downloadAsset(
                                     .arg(download->file.errorString());
         delete download;
         QTimer::singleShot(0, this, [this, requestId, message]() {
-            emit downloadFailed(requestId, message);
+            qCWarning(lcLauncher) << "Download failed (request" << requestId << "):" << message;
+    emit downloadFailed(requestId, message);
         });
         return requestId;
     }
@@ -165,6 +169,7 @@ int LauncherDownloadManager::downloadAsset(
     );
     request.setRawHeader("User-Agent", "RecompStation");
 
+    qCInfo(lcLauncher) << "Starting HTTPS download for" << projectId << assetName;
     QNetworkReply *reply = m_network.get(request);
     download->reply = reply;
     m_downloads.insert(requestId, download);
@@ -294,6 +299,8 @@ void LauncherDownloadManager::finishDownload(int requestId)
     reply->deleteLater();
     delete download;
 
+    qCInfo(lcLauncher) << "Download completed:" << projectId << assetName
+                       << "bytes:" << download->bytesReceived;
     emit downloadCompleted(requestId, projectId, assetName, filePath);
 }
 
@@ -354,6 +361,8 @@ int LauncherDownloadManager::installDownloadedAsset(
 )
 {
     const int requestId = m_nextRequestId++;
+    qCInfo(lcLauncher) << "Launcher installation requested:" << projectId
+                       << assetName << "format:" << packageFormat;
     auto reject = [this, requestId](const QString &message) {
         QTimer::singleShot(0, this, [this, requestId, message]() {
             emit installationFailed(requestId, message);
@@ -441,6 +450,7 @@ int LauncherDownloadManager::installDownloadedAsset(
         watcher->deleteLater();
 
         if (!result.success) {
+            qCWarning(lcLauncher) << "Launcher extraction failed for" << projectId << ":" << result.error;
             emit installationFailed(requestId, result.error);
             return;
         }
@@ -489,6 +499,7 @@ int LauncherDownloadManager::installDownloadedAsset(
         }
 
         QFile::remove(archivePath);
+        qCInfo(lcLauncher) << "Launcher installed:" << projectId;
         emit installationCompleted(requestId, projectId, executablePath);
     });
 
