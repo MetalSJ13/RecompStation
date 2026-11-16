@@ -56,6 +56,7 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
     const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
 
     {
         SettingsManager manager(settingsPath);
