@@ -9,6 +9,7 @@
 namespace {
 const QString kDefaultTheme = QStringLiteral("midnight-violet");
 const QString kDefaultPresentationSize = QStringLiteral("system");
+const QString kDefaultFontSize = QStringLiteral("medium");
 }
 
 SettingsManager::SettingsManager(QObject *parent)
@@ -39,8 +40,22 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         ? storedPresentationSize
         : kDefaultPresentationSize;
 
+    const QString storedFontSize = settings.value(
+        QStringLiteral("appearance/fontSize"),
+        kDefaultFontSize
+    ).toString();
+    m_fontSize = isSupportedFontSize(storedFontSize)
+        ? storedFontSize
+        : kDefaultFontSize;
+    m_reducedMotion = settings.value(
+        QStringLiteral("appearance/reducedMotion"),
+        false
+    ).toBool();
+
     qCInfo(lcSettings) << "Loaded theme:" << m_themeName;
     qCInfo(lcSettings) << "Loaded preferred presentation size:" << m_preferredPresentationSize;
+    qCInfo(lcSettings) << "Loaded font size:" << m_fontSize;
+    qCInfo(lcSettings) << "Loaded reduced motion:" << m_reducedMotion;
 }
 
 bool SettingsManager::scanOnStartup() const
@@ -125,6 +140,56 @@ void SettingsManager::setPreferredPresentationSize(const QString &size)
     qCInfo(lcSettings) << "Saved preferred presentation size:" << size;
 }
 
+QString SettingsManager::fontSize() const
+{
+    return m_fontSize;
+}
+
+void SettingsManager::setFontSize(const QString &size)
+{
+    if (!isSupportedFontSize(size)) {
+        qCWarning(lcSettings) << "Rejected unsupported font size:" << size;
+        return;
+    }
+    if (m_fontSize == size)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("appearance/fontSize"), size);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist font size:" << size;
+        return;
+    }
+
+    m_fontSize = size;
+    emit fontSizeChanged();
+    qCInfo(lcSettings) << "Saved font size:" << size;
+}
+
+bool SettingsManager::reducedMotion() const
+{
+    return m_reducedMotion;
+}
+
+void SettingsManager::setReducedMotion(bool enabled)
+{
+    if (m_reducedMotion == enabled)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("appearance/reducedMotion"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist reduced-motion preference.";
+        return;
+    }
+
+    m_reducedMotion = enabled;
+    emit reducedMotionChanged();
+    qCInfo(lcSettings) << "Saved reduced motion:" << m_reducedMotion;
+}
+
 bool SettingsManager::isSupportedTheme(const QString &themeName)
 {
     static const QStringList supportedThemes = {
@@ -146,6 +211,17 @@ bool SettingsManager::isSupportedPresentationSize(const QString &size)
         QStringLiteral("3440x1440"),
         QStringLiteral("3840x2160"),
         QStringLiteral("5120x2160")
+    };
+
+    return supportedSizes.contains(size);
+}
+
+bool SettingsManager::isSupportedFontSize(const QString &size)
+{
+    static const QStringList supportedSizes = {
+        QStringLiteral("small"),
+        QStringLiteral("medium"),
+        QStringLiteral("large")
     };
 
     return supportedSizes.contains(size);
