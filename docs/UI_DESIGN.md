@@ -69,7 +69,7 @@ Provide three distinct background/theme types:
 2. **Optional animated themes** — subtle ambient gradients or particles, with motion paused while the app is minimized or inactive and disabled when reduced motion is enabled.
 3. **Custom still-image backgrounds** — user-selected PNG, JPEG, or WebP images, automatically scaled/cropped and previewed before applying.
 
-A theme is a complete visual system, not just an accent-color choice. It coordinates the background, layered surfaces, controls, dividers, text hierarchy, status colors, and artwork overlays. Start with a small set of carefully designed presets and a clear default. The current static foundation provides Midnight Violet, Electric Blue, and Ember with coordinated semantic color tokens and a subtle background gradient.
+A theme is a complete visual system, not just an accent-color choice. It coordinates the background, layered surfaces, controls, dividers, text hierarchy, status colors, and artwork overlays. Start with a small set of carefully designed presets and a clear default. The current static foundation provides Midnight Violet, Electric Blue, and Ember with coordinated semantic color tokens and a subtle background gradient. Selecting a preset previews it across the interface immediately; applying it saves the choice.
 
 Keep theme selection and applying a preset explicit. Later background types should extend the same theme-selection experience rather than create a separate settings workflow. Animated backgrounds must remain optional and lightweight. Bundle only original, public-domain, or appropriately licensed artwork.
 
