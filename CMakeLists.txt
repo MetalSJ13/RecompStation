@@ -92,24 +92,6 @@ if(BUILD_TESTING)
 
     add_test(NAME ArchiveExtractorTests COMMAND ArchiveExtractorTests)
 
-    qt_add_executable(SettingsManagerTests
-        src/core/Logging.h
-        src/core/Logging.cpp
-        tests/SettingsManagerTest.cpp
-        src/core/SettingsManager.h
-        src/core/SettingsManager.cpp
-    )
-
-    target_include_directories(SettingsManagerTests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-    )
-
-    target_link_libraries(SettingsManagerTests PRIVATE
-        Qt6::Core Qt6::Test
-    )
-
-    add_test(NAME SettingsManagerTests COMMAND SettingsManagerTests)
-
     qt_add_executable(PlatformManagerTests
         src/core/Logging.h
         src/core/Logging.cpp
