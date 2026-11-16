@@ -105,7 +105,7 @@ Keep the application buildable after each focused change. Preserve working backe
 
 - [ ] Ensure keyboard navigation and visible focus across all screens
 - [ ] Establish controller-friendly navigation, Xbox/PlayStation defaults, remapping, and launcher/game-session input ownership
-- [ ] Review contrast, accessible labels, tab order, scaling, reduced motion, and font-size options
+- [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
 - [ ] Add lightweight navigation sounds with volume controls
 - [ ] Add optional animated backgrounds that pause while minimized or inactive, static/custom background choices, and smooth page/library transitions
 - [ ] Check fullscreen, windowed, and multi-display behavior
