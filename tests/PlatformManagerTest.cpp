@@ -18,8 +18,9 @@ private slots:
     void initializeCreatesStagingDirectory();
     void providesProjectSpecificLauncherDirectory();
     void rejectsUnsafeProjectIds();
-    void persistsConfiguredPlatformFolders();
-    void rejectsInvalidPlatformFolders();
+    void configuresOneLibraryRootAndCreatesOnlySupportedFolders();
+    void persistsLibraryRootAcrossRestarts();
+    void rejectsInvalidLibraryLocations();
 };
 
 
@@ -49,8 +50,8 @@ void PlatformManagerTest::initializeCreatesStagingDirectory()
     QVERIFY(QFileInfo(QDir(temporaryDirectory.path())
                           .filePath("launchers")).isDir());
 
-    // Existing per-platform game and launcher paths remain available.
-    QVERIFY(QFileInfo(manager.platformDirectory("N64")).isDir());
+    // ROM folders are not created until the user chooses a library root.
+    QVERIFY(manager.platformDirectory("N64").isEmpty());
     QVERIFY(QFileInfo(QDir(temporaryDirectory.path())
                           .filePath("launchers/N64")).isDir());
 }
@@ -105,44 +106,58 @@ void PlatformManagerTest::rejectsUnsafeProjectIds()
 }
 
 
-void PlatformManagerTest::persistsConfiguredPlatformFolders()
+void PlatformManagerTest::configuresOneLibraryRootAndCreatesOnlySupportedFolders()
 {
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
-    const QString customFolder = QDir(temporaryDirectory.path()).filePath("My N64 Games");
-    QVERIFY(QDir().mkpath(customFolder));
+    const QString libraryRoot = QDir(temporaryDirectory.path()).filePath("My Games");
+    QVERIFY(QDir().mkpath(libraryRoot));
+
+    PlatformManager manager(temporaryDirectory.path());
+    QVERIFY(manager.initialize(QStringList{QStringLiteral("N64")}));
+    QVERIFY(!manager.libraryConfigured());
+    QVERIFY(manager.setLibraryDirectory(QUrl::fromLocalFile(libraryRoot)));
+
+    QCOMPARE(manager.libraryDirectory(), QDir(libraryRoot).absolutePath());
+    QVERIFY(manager.libraryConfigured());
+    QVERIFY(QFileInfo(QDir(libraryRoot).filePath("N64")).isDir());
+    QVERIFY(!QFileInfo::exists(QDir(libraryRoot).filePath("PS1")));
+    QCOMPARE(manager.platformDirectory("N64"), QDir(libraryRoot).filePath("N64"));
+    QVERIFY(manager.platformDirectory("PS1").isEmpty());
+}
+
+void PlatformManagerTest::persistsLibraryRootAcrossRestarts()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString libraryRoot = QDir(temporaryDirectory.path()).filePath("ROMs");
+    QVERIFY(QDir().mkpath(libraryRoot));
 
     {
         PlatformManager manager(temporaryDirectory.path());
-        QVERIFY(manager.initialize());
-        QVERIFY(manager.setPlatformDirectory("N64", QUrl::fromLocalFile(customFolder)));
-        QCOMPARE(manager.platformDirectory("N64"), QDir(customFolder).absolutePath());
+        QVERIFY(manager.initialize(QStringList{QStringLiteral("N64"), QStringLiteral("Wii")}));
+        QVERIFY(manager.setLibraryDirectory(QUrl::fromLocalFile(libraryRoot)));
     }
 
     PlatformManager reloaded(temporaryDirectory.path());
-    QVERIFY(reloaded.initialize());
-    QCOMPARE(reloaded.platformDirectory("N64"), QDir(customFolder).absolutePath());
-    QVERIFY(QSettings().contains(QStringLiteral("library/folders/N64")));
-    QSettings().clear();
+    QVERIFY(reloaded.initialize(QStringList{QStringLiteral("N64")}));
+    QCOMPARE(reloaded.libraryDirectory(), QDir(libraryRoot).absolutePath());
+    QVERIFY(QFileInfo(QDir(libraryRoot).filePath("N64")).isDir());
+    QVERIFY(QFileInfo(QDir(libraryRoot).filePath("Wii")).isDir());
+    QVERIFY(QSettings().contains(QStringLiteral("library/root")));
 }
 
-void PlatformManagerTest::rejectsInvalidPlatformFolders()
+void PlatformManagerTest::rejectsInvalidLibraryLocations()
 {
-    QCoreApplication::setOrganizationName(QStringLiteral("RecompStationPlatformManagerTests"));
-    QCoreApplication::setApplicationName(QStringLiteral("PlatformManagerTests"));
-    QSettings().clear();
-
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
     PlatformManager manager(temporaryDirectory.path());
-    QVERIFY(manager.initialize());
+    QVERIFY(manager.initialize(QStringList{QStringLiteral("N64")}));
 
-    QVERIFY(!manager.setPlatformDirectory("Dreamcast",
-        QUrl::fromLocalFile(temporaryDirectory.path())));
-    QVERIFY(!manager.setPlatformDirectory("N64",
+    QVERIFY(!manager.setLibraryDirectory(QUrl(QStringLiteral("https://example.com/roms"))));
+    QVERIFY(!manager.setLibraryDirectory(
         QUrl::fromLocalFile(QDir(temporaryDirectory.path()).filePath("missing"))));
-    QVERIFY(manager.platformDirectory("N64").endsWith("/games/N64"));
-    QSettings().clear();
+    QVERIFY(!manager.libraryConfigured());
 }
 
 QTEST_GUILESS_MAIN(PlatformManagerTest)
