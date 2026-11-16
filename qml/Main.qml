@@ -17,6 +17,7 @@ ApplicationWindow {
     onHeightChanged: console.info("[Settings Geometry] window height:", height)
 
     property string currentPage: "Library"
+    property string pendingThemeName: settingsManager.themeName
     property string selectedPlatform: "All Games"
     property string librarySearchText: ""
     property var selectedGame: null
@@ -43,7 +44,8 @@ ApplicationWindow {
     Connections {
         target: settingsManager
         function onThemeNameChanged() {
-            console.info("[Settings QML] themeNameChanged received:", settingsManager.themeName)
+            pendingThemeName = settingsManager.themeName
+            console.info("[Settings QML] Applied theme changed:", settingsManager.themeName)
         }
     }
 
@@ -1729,22 +1731,12 @@ ApplicationWindow {
                 Item {
                     id: settingsPage
                     property string section: "Appearance"
-                    onWidthChanged: console.info("[Settings Geometry] settings page width:", width)
-                    onHeightChanged: console.info("[Settings Geometry] settings page height:", height)
-
-                    Component.onCompleted: console.info(
-                        "[Settings QML] Settings page created; section:", section,
-                        "currentPage:", window.currentPage, "size:", width, "x", height)
-                    onSectionChanged: console.info(
-                        "[Settings QML] Section changed:", section,
-                        "currentPage:", window.currentPage)
+                    onSectionChanged: console.info("[Settings QML] Section changed:", section)
 
                     RowLayout {
                         id: settingsLayoutRow
                         anchors.fill: parent
                         spacing: 22
-                        Component.onCompleted: console.info("[Settings Geometry] settings row:", width, "x", height)
-                        onWidthChanged: console.info("[Settings Geometry] settings row width:", width)
 
                         ColumnLayout {
                             id: settingsNavigationColumn
@@ -1812,13 +1804,6 @@ ApplicationWindow {
                                 anchors.margins: 26
                                 spacing: 16
                                 visible: settingsPage.section === "Appearance"
-                                Component.onCompleted: {
-                                    console.info("[Settings Geometry] appearance layout:", width, "x", height)
-                                    console.info(
-                                        "[Settings QML] Appearance content created; visible:", visible,
-                                        "size:", width, "x", height)
-                                }
-                                onWidthChanged: console.info("[Settings Geometry] appearance layout width:", width)
                                 onVisibleChanged: console.info(
                                     "[Settings QML] Appearance content visibility:", visible,
                                     "section:", settingsPage.section,
@@ -1859,30 +1844,14 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 76
                                         padding: 0
-                                        Component.onCompleted: console.info(
-                                            "[Settings QML] Theme preset created:", modelData.id,
-                                            "visible:", visible, "enabled:", enabled,
-                                            "geometry:", x, y, width, height)
-                                        onHoveredChanged: {
-                                            if (hovered)
-                                                console.info("[Settings QML] Theme preset hovered:", modelData.id)
-                                        }
-                                        onPressedChanged: {
-                                            if (pressed)
-                                                console.info("[Settings QML] Theme preset pressed:", modelData.id)
-                                        }
-                                        onClicked: {
-                                            console.info("[Settings QML] Preset clicked:", modelData.id)
-                                            settingsManager.themeName = modelData.id
-                                            console.info("[Settings QML] Theme after assignment:", settingsManager.themeName)
-                                        }
+                                        onClicked: pendingThemeName = modelData.id
 
                                         background: Rectangle {
                                             radius: theme.radiusCard
                                             color: themePresetButton.hovered
                                                 ? theme.elevatedSurface : theme.sidebarBackground
-                                            border.width: settingsManager.themeName === modelData.id ? 2 : 1
-                                            border.color: settingsManager.themeName === modelData.id
+                                            border.width: pendingThemeName === modelData.id ? 2 : 1
+                                            border.color: pendingThemeName === modelData.id
                                                 ? theme.accent : theme.divider
                                         }
 
@@ -1924,19 +1893,38 @@ ApplicationWindow {
                                             }
 
                                             Label {
-                                                text: settingsManager.themeName === modelData.id ? "✓  Selected" : "Select"
-                                                color: settingsManager.themeName === modelData.id ? theme.accent : theme.textSecondary
+                                                text: pendingThemeName === modelData.id
+                                                    ? (settingsManager.themeName === modelData.id ? "✓  Applied" : "✓  Selected")
+                                                    : "Select"
+                                                color: pendingThemeName === modelData.id ? theme.accent : theme.textSecondary
                                                 font.pixelSize: 12
-                                                font.bold: settingsManager.themeName === modelData.id
+                                                font.bold: pendingThemeName === modelData.id
                                             }
                                         }
                                     }
                                 }
 
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 12
+                                    Item { Layout.fillWidth: true }
+                                    Label {
+                                        visible: pendingThemeName !== settingsManager.themeName
+                                        text: "You have an unapplied theme selection."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11
+                                    }
+                                    Button {
+                                        text: "Apply Theme"
+                                        enabled: pendingThemeName !== settingsManager.themeName
+                                        highlighted: enabled
+                                        onClicked: settingsManager.themeName = pendingThemeName
+                                    }
+                                }
                                 Item { Layout.fillHeight: true }
                                 Label {
                                     Layout.fillWidth: true
-                                    text: "Your choice is saved automatically and applied immediately."
+                                    text: "Select a palette, then apply it to save your choice."
                                     color: theme.textMuted
                                     font.pixelSize: 11
                                     wrapMode: Text.Wrap
