@@ -384,7 +384,7 @@ ApplicationWindow {
             Label {
                 Layout.fillWidth: true
                 text: "Your games will stay where they are; this only creates folders and sets the locations RecompStation scans."
-                color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+                color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
             }
             Button {
                 Layout.alignment: Qt.AlignRight
@@ -514,12 +514,12 @@ ApplicationWindow {
                         Layout.alignment: Qt.AlignHCenter
                         text: "▧"
                         color: theme.textMuted
-                        font.pixelSize: 38
+                        font.pixelSize: 38 * theme.fontScale
                     }
                     Label {
                         text: "Artwork unavailable"
                         color: theme.textMuted
-                        font.pixelSize: 12
+                        font.pixelSize: 12 * theme.fontScale
                     }
                 }
                 Rectangle {
@@ -539,7 +539,7 @@ ApplicationWindow {
                     anchors.margins: 16
                     text: window.selectedGame ? window.selectedGame.platform : ""
                     color: theme.textPrimary
-                    font.pixelSize: 12
+                    font.pixelSize: 12 * theme.fontScale
                     font.bold: true
                 }
             }
@@ -559,7 +559,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             text: window.selectedGame ? window.selectedGame.title : ""
                             color: theme.textPrimary
-                            font.pixelSize: 25
+                            font.pixelSize: 25 * theme.fontScale
                             font.bold: true
                             elide: Text.ElideRight
                         }
@@ -569,7 +569,7 @@ ApplicationWindow {
                                 ? "GAME INFORMATION"
                                 : "LOCAL LIBRARY ENTRY"
                             color: theme.accentHover
-                            font.pixelSize: 10
+                            font.pixelSize: 10 * theme.fontScale
                             font.bold: true
                         }
                     }
@@ -604,7 +604,7 @@ ApplicationWindow {
                             Label {
                                 text: "ABOUT THIS GAME"
                                 color: theme.textMuted
-                                font.pixelSize: 10
+                                font.pixelSize: 10 * theme.fontScale
                                 font.bold: true
                             }
                             Label {
@@ -614,7 +614,7 @@ ApplicationWindow {
                                         || window.selectedGame.metadataTitle.length === 0)
                                 text: "METADATA NOT FOUND"
                                 color: theme.textMuted
-                                font.pixelSize: 10
+                                font.pixelSize: 10 * theme.fontScale
                                 font.bold: true
                             }
                             Label {
@@ -623,7 +623,7 @@ ApplicationWindow {
                                     ? window.selectedGame.metadataOverview
                                     : "No description is available yet. RecompStation will add game information when matching metadata is found."
                                 color: theme.textSecondary
-                                font.pixelSize: 13
+                                font.pixelSize: 13 * theme.fontScale
                                 wrapMode: Text.Wrap
                             }
                             Label {
@@ -638,7 +638,7 @@ ApplicationWindow {
                                           .filter(value => value.length > 0).join("    •    ")
                                     : ""
                                 color: theme.textMuted
-                                font.pixelSize: 11
+                                font.pixelSize: 11 * theme.fontScale
                             }
                         }
 
@@ -661,7 +661,7 @@ ApplicationWindow {
                                 Label {
                                     text: "RECOMPILATION SUPPORT"
                                     color: theme.textMuted
-                                    font.pixelSize: 10
+                                    font.pixelSize: 10 * theme.fontScale
                                     font.bold: true
                                 }
                                 Label {
@@ -670,7 +670,7 @@ ApplicationWindow {
                                         ? gameDetailsPopup.primaryProject.name
                                         : "No supported recompilation project is currently listed for this game."
                                     color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
-                                    font.pixelSize: 14
+                                    font.pixelSize: 14 * theme.fontScale
                                     font.bold: true
                                     wrapMode: Text.Wrap
                                 }
@@ -691,7 +691,7 @@ ApplicationWindow {
                                             ? String(gameDetailsPopup.primaryProject.developmentStatus)
                                                 .replace("_", " ").toUpperCase() : ""
                                         color: "#f3d59b"
-                                        font.pixelSize: 10
+                                        font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
                                     }
                                 }
@@ -705,7 +705,7 @@ ApplicationWindow {
                                         ? "This project is in beta. Features may be incomplete and you may encounter bugs."
                                         : "This project is in alpha. Expect incomplete features and potential instability."
                                     color: theme.textSecondary
-                                    font.pixelSize: 11
+                                    font.pixelSize: 11 * theme.fontScale
                                     wrapMode: Text.Wrap
                                 }
                                 Label {
@@ -715,7 +715,7 @@ ApplicationWindow {
                                         ? "Installed at  " + gameDetailsPopup.installedProject.executablePath
                                         : ""
                                     color: theme.textMuted
-                                    font.pixelSize: 10
+                                    font.pixelSize: 10 * theme.fontScale
                                     wrapMode: Text.WrapAnywhere
                                 }
                                 Label {
@@ -763,7 +763,7 @@ ApplicationWindow {
                                         + "    •    Linux / " + projectCatalog.currentArchitecture
                                         + "\n" + gameDetailsPopup.selectedAssetName
                                     color: theme.textSecondary
-                                    font.pixelSize: 11
+                                    font.pixelSize: 11 * theme.fontScale
                                     wrapMode: Text.Wrap
                                 }
                                 Label {
@@ -915,7 +915,7 @@ ApplicationWindow {
                         Label {
                             anchors.centerIn: parent
                             text: "R"
-                            font.pixelSize: 23
+                            font.pixelSize: 23 * theme.fontScale
                             font.bold: true
                         }
                     }
@@ -923,13 +923,13 @@ ApplicationWindow {
                         spacing: 0
                         Label {
                             text: "RecompStation"
-                            font.pixelSize: 17
+                            font.pixelSize: 17 * theme.fontScale
                             font.bold: true
                             color: "white"
                         }
                         Label {
                             text: "Version 0.1.0"
-                            font.pixelSize: 11
+                            font.pixelSize: 11 * theme.fontScale
                             color: "#9999aa"
                         }
                     }
@@ -939,7 +939,7 @@ ApplicationWindow {
                 Label {
                     text: "EXPLORE"
                     color: theme.textMuted
-                    font.pixelSize: 11
+                    font.pixelSize: 11 * theme.fontScale
                     font.bold: true
                 }
 
@@ -1008,7 +1008,7 @@ ApplicationWindow {
                                 spacing: 5
                                 Label {
                                     text: selectedPlatform === "All Games" ? "Your Collection" : selectedPlatform
-                                    font.pixelSize: 32
+                                    font.pixelSize: 32 * theme.fontScale
                                     font.bold: true
                                     color: theme.textPrimary
                                 }
@@ -1017,7 +1017,7 @@ ApplicationWindow {
                                     Label {
                                         text: gameGrid.count + (gameGrid.count === 1 ? " GAME" : " GAMES")
                                         color: theme.accentHover
-                                        font.pixelSize: 11
+                                        font.pixelSize: 11 * theme.fontScale
                                         font.bold: true
                                     }
                                     Rectangle {
@@ -1029,7 +1029,7 @@ ApplicationWindow {
                                     Label {
                                         text: "Your recompiled game library"
                                         color: theme.textMuted
-                                        font.pixelSize: 13
+                                        font.pixelSize: 13 * theme.fontScale
                                     }
                                 }
                             }
@@ -1066,7 +1066,7 @@ ApplicationWindow {
                                     Layout.fillWidth: true
                                     text: "LIBRARY MANAGEMENT"
                                     color: theme.textMuted
-                                    font.pixelSize: 10
+                                    font.pixelSize: 10 * theme.fontScale
                                     font.bold: true
                                     font.letterSpacing: 1
                                 }
@@ -1213,13 +1213,13 @@ ApplicationWindow {
                                                     anchors.horizontalCenter: parent.horizontalCenter
                                                     text: "▧"
                                                     color: theme.textMuted
-                                                    font.pixelSize: 34
+                                                    font.pixelSize: 34 * theme.fontScale
                                                 }
                                                 Label {
                                                     anchors.horizontalCenter: parent.horizontalCenter
                                                     text: "Artwork unavailable"
                                                     color: theme.textMuted
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 10 * theme.fontScale
                                                 }
                                             }
                                         }
@@ -1228,7 +1228,7 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             text: gameTile.title
                                             color: theme.textPrimary
-                                            font.pixelSize: 14
+                                            font.pixelSize: 14 * theme.fontScale
                                             font.bold: true
                                             elide: Text.ElideRight
                                         }
@@ -1238,13 +1238,13 @@ ApplicationWindow {
                                                 Layout.fillWidth: true
                                                 text: gameTile.platform
                                                 color: theme.textSecondary
-                                                font.pixelSize: 11
+                                                font.pixelSize: 11 * theme.fontScale
                                                 elide: Text.ElideRight
                                             }
                                             Label {
                                                 text: gameTile.metadataTitle.length > 0 ? "METADATA" : ""
                                                 color: theme.success
-                                                font.pixelSize: 9
+                                                font.pixelSize: 9 * theme.fontScale
                                                 font.bold: true
                                             }
                                         }
@@ -1282,7 +1282,7 @@ ApplicationWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: window.librarySearchText.trim().length > 0 ? "NO MATCHES" : "WELCOME TO YOUR COLLECTION"
                                     color: theme.accentHover
-                                    font.pixelSize: 11
+                                    font.pixelSize: 11 * theme.fontScale
                                     font.bold: true
                                     font.letterSpacing: 1.4
                                 }
@@ -1292,7 +1292,7 @@ ApplicationWindow {
                                         ? "No games match your search."
                                         : "Your library is ready for its first game."
                                     color: theme.textPrimary
-                                    font.pixelSize: 22
+                                    font.pixelSize: 22 * theme.fontScale
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     wrapMode: Text.Wrap
@@ -1302,7 +1302,7 @@ ApplicationWindow {
                                     visible: window.librarySearchText.trim().length === 0
                                     text: "Add game files to one of your platform folders, then scan your library to discover them."
                                     color: theme.textSecondary
-                                    font.pixelSize: 13
+                                    font.pixelSize: 13 * theme.fontScale
                                     horizontalAlignment: Text.AlignHCenter
                                     wrapMode: Text.Wrap
                                 }
@@ -1328,7 +1328,7 @@ ApplicationWindow {
 
                         Label {
                             text: "Metadata Search"
-                            font.pixelSize: 30
+                            font.pixelSize: 30 * theme.fontScale
                             font.bold: true
                             color: "white"
                         }
@@ -1495,7 +1495,7 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         text: title
                                         color: "white"
-                                        font.pixelSize: 17
+                                        font.pixelSize: 17 * theme.fontScale
                                         font.bold: true
                                         wrapMode: Text.Wrap
                                     }
@@ -1505,14 +1505,14 @@ ApplicationWindow {
                                               + "  •  " + (rating.length > 0 ? rating : "Rating unavailable")
                                               + "  •  TheGamesDB ID: " + providerGameId
                                         color: "#a98cff"
-                                        font.pixelSize: 11
+                                        font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     Label {
                                         Layout.fillWidth: true
                                         text: overview.length > 0 ? overview : "No description available."
                                         color: "#b7b7c5"
-                                        font.pixelSize: 12
+                                        font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
                                         maximumLineCount: 4
                                         elide: Text.ElideRight
@@ -1556,7 +1556,7 @@ ApplicationWindow {
                                             visible: artworkUrl.length === 0
                                             text: "No cover image available"
                                             color: "#9999aa"
-                                            font.pixelSize: 11
+                                            font.pixelSize: 11 * theme.fontScale
                                             wrapMode: Text.Wrap
                                         }
                                     }
@@ -1581,7 +1581,7 @@ ApplicationWindow {
                     ColumnLayout {
                         anchors.fill: parent
                         spacing: 20
-                        Label { text: "Platforms"; font.pixelSize: 30; font.bold: true; color: "white" }
+                        Label { text: "Platforms"; font.pixelSize: 30 * theme.fontScale; font.bold: true; color: "white" }
                         Label { text: "Browse your supported console platforms."; color: "#9999aa" }
                         GridLayout {
                             Layout.fillWidth: true
@@ -1600,10 +1600,10 @@ ApplicationWindow {
                                         anchors.fill: parent
                                         anchors.margins: 18
                                         spacing: 5
-                                        Label { text: modelData; color: "white"; font.pixelSize: 20; font.bold: true }
-                                        Label { text: "Game directory"; color: "#9999aa"; font.pixelSize: 12 }
+                                        Label { text: modelData; color: "white"; font.pixelSize: 20 * theme.fontScale; font.bold: true }
+                                        Label { text: "Game directory"; color: "#9999aa"; font.pixelSize: 12 * theme.fontScale }
                                         Item { Layout.fillHeight: true }
-                                        Label { text: "Open platform"; color: "#a98cff"; font.pixelSize: 12 }
+                                        Label { text: "Open platform"; color: "#a98cff"; font.pixelSize: 12 * theme.fontScale }
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -1619,7 +1619,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             text: "Game folders: " + platformManager.dataDirectory + "/games/"
                             color: "#777788"
-                            font.pixelSize: 11
+                            font.pixelSize: 11 * theme.fontScale
                             wrapMode: Text.WrapAnywhere
                         }
                     }
@@ -1629,7 +1629,7 @@ ApplicationWindow {
                     ColumnLayout {
                         anchors.fill: parent
                         spacing: 16
-                        Label { text: "Launcher Discovery"; color: "white"; font.pixelSize: 30; font.bold: true }
+                        Label { text: "Launcher Discovery"; color: "white"; font.pixelSize: 30 * theme.fontScale; font.bold: true }
                         Label {
                             Layout.fillWidth: true
                             text: "Browse supported projects, check compatible Linux releases, and install compatible launchers automatically."
@@ -1659,19 +1659,19 @@ ApplicationWindow {
                                     Label {
                                         text: modelData.name
                                         color: "white"
-                                        font.pixelSize: 18
+                                        font.pixelSize: 18 * theme.fontScale
                                         font.bold: true
                                     }
                                     Label {
                                         text: modelData.platform + "  •  " + modelData.repositoryOwner + "/" + modelData.repositoryName
                                         color: "#9999aa"
-                                        font.pixelSize: 12
+                                        font.pixelSize: 12 * theme.fontScale
                                     }
                                     Label {
                                         Layout.fillWidth: true
                                         text: modelData.romRequirements
                                         color: "#b7b7c5"
-                                        font.pixelSize: 11
+                                        font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     RowLayout {
@@ -1736,13 +1736,13 @@ ApplicationWindow {
                                                     Layout.fillWidth: true
                                                     text: modelData.name
                                                     color: "#91d6a5"
-                                                    font.pixelSize: 12
+                                                    font.pixelSize: 12 * theme.fontScale
                                                     wrapMode: Text.Wrap
                                                 }
                                                 Label {
                                                     text: (modelData.size / 1048576).toFixed(1) + " MB"
                                                     color: "#9999aa"
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 11 * theme.fontScale
                                                 }
                                                 Button {
                                                     property string downloadKey: modelData.projectId + "|" + modelData.name
@@ -1779,7 +1779,7 @@ ApplicationWindow {
                                                             ? Math.floor(downloadState.bytesReceived / downloadState.bytesTotal * 100) + "%"
                                                             : (downloadState.bytesReceived / 1048576).toFixed(1) + " MB"
                                                     color: downloadState.error.length > 0 ? "#ff8b8b" : "#a98cff"
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 10 * theme.fontScale
                                                     wrapMode: Text.Wrap
                                                 }
                                             }
@@ -1799,7 +1799,7 @@ ApplicationWindow {
                                               ? "Release published: " + releaseState.release.publishedAt
                                               : ""
                                         color: "#9999aa"
-                                        font.pixelSize: 11
+                                        font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                 }
@@ -1830,7 +1830,7 @@ ApplicationWindow {
                             Label {
                                 text: "SETTINGS"
                                 color: theme.textMuted
-                                font.pixelSize: 11
+                                font.pixelSize: 11 * theme.fontScale
                                 font.bold: true
                                 font.letterSpacing: 1
                             }
@@ -1838,7 +1838,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 text: "Personalize your RecompStation experience."
                                 color: theme.textSecondary
-                                font.pixelSize: 12
+                                font.pixelSize: 12 * theme.fontScale
                                 wrapMode: Text.Wrap
                             }
                             Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
@@ -1876,7 +1876,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 text: "Other settings will be added when their features are ready."
                                 color: theme.textMuted
-                                font.pixelSize: 11
+                                font.pixelSize: 11 * theme.fontScale
                                 wrapMode: Text.Wrap
                             }
                         }
@@ -1906,21 +1906,21 @@ ApplicationWindow {
                                 Label {
                                     text: "Appearance"
                                     color: theme.textPrimary
-                                    font.pixelSize: 27
+                                    font.pixelSize: 27 * theme.fontScale
                                     font.bold: true
                                 }
                                 Label {
                                     Layout.fillWidth: true
                                     text: "Choose a coordinated color palette for the entire application."
                                     color: theme.textSecondary
-                                    font.pixelSize: 13
+                                    font.pixelSize: 13 * theme.fontScale
                                     wrapMode: Text.Wrap
                                 }
                                 Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                 Label {
                                     text: "COLOR PRESETS"
                                     color: theme.textMuted
-                                    font.pixelSize: 10
+                                    font.pixelSize: 10 * theme.fontScale
                                     font.bold: true
                                     font.letterSpacing: 1
                                 }
@@ -1978,7 +1978,7 @@ ApplicationWindow {
                                                     Layout.minimumWidth: 0
                                                     text: modelData.title
                                                     color: theme.textPrimary
-                                                    font.pixelSize: 14
+                                                    font.pixelSize: 14 * theme.fontScale
                                                     font.bold: true
                                                     elide: Text.ElideRight
                                                 }
@@ -1987,7 +1987,7 @@ ApplicationWindow {
                                                     Layout.minimumWidth: 0
                                                     text: modelData.description
                                                     color: theme.textMuted
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 11 * theme.fontScale
                                                     wrapMode: Text.Wrap
                                                     maximumLineCount: 2
                                                     elide: Text.ElideRight
@@ -2004,7 +2004,7 @@ ApplicationWindow {
                                                     ? (settingsManager.themeName === modelData.id ? "✓  Applied" : "✓  Selected")
                                                     : "Select"
                                                 color: pendingThemeName === modelData.id ? theme.accent : theme.textSecondary
-                                                font.pixelSize: 12
+                                                font.pixelSize: 12 * theme.fontScale
                                                 font.bold: pendingThemeName === modelData.id
                                             }
                                         }
@@ -2019,7 +2019,7 @@ ApplicationWindow {
                                         visible: pendingThemeName !== settingsManager.themeName
                                         text: "You have an unapplied theme selection."
                                         color: theme.textMuted
-                                        font.pixelSize: 11
+                                        font.pixelSize: 11 * theme.fontScale
                                     }
                                     Button {
                                         text: "Apply Theme"
@@ -2028,12 +2028,85 @@ ApplicationWindow {
                                         onClicked: settingsManager.themeName = pendingThemeName
                                     }
                                 }
+                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                Label {
+                                    text: "ACCESSIBILITY"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10 * theme.fontScale
+                                    font.bold: true
+                                    font.letterSpacing: 1
+                                }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 18
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        Layout.minimumWidth: 0
+                                        spacing: 4
+                                        Label {
+                                            text: "Interface font size"
+                                            color: theme.textPrimary
+                                            font.pixelSize: 14 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Adjust text throughout RecompStation."
+                                            color: theme.textMuted
+                                            font.pixelSize: 11 * theme.fontScale
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
+                                    ComboBox {
+                                        id: fontSizeSelector
+                                        Layout.preferredWidth: 150
+                                        textRole: "label"
+                                        valueRole: "value"
+                                        model: [
+                                            { label: "Small", value: "small" },
+                                            { label: "Medium", value: "medium" },
+                                            { label: "Large", value: "large" }
+                                        ]
+                                        Component.onCompleted: {
+                                            const savedIndex = indexOfValue(settingsManager.fontSize)
+                                            currentIndex = savedIndex >= 0 ? savedIndex : 1
+                                        }
+                                        onActivated: settingsManager.fontSize = currentValue
+                                    }
+                                }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 18
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        Layout.minimumWidth: 0
+                                        spacing: 4
+                                        Label {
+                                            text: "Reduced motion"
+                                            color: theme.textPrimary
+                                            font.pixelSize: 14 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Disable nonessential interface animations."
+                                            color: theme.textMuted
+                                            font.pixelSize: 11 * theme.fontScale
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
+                                    Switch {
+                                        checked: settingsManager.reducedMotion
+                                        onToggled: settingsManager.reducedMotion = checked
+                                        Accessible.name: "Reduced motion"
+                                    }
+                                }
                                 Item { Layout.fillHeight: true }
                                 Label {
                                     Layout.fillWidth: true
                                     text: "Select a palette, then apply it to save your choice."
                                     color: theme.textMuted
-                                    font.pixelSize: 11
+                                    font.pixelSize: 11 * theme.fontScale
                                     wrapMode: Text.Wrap
                                 }
                             }
@@ -2052,21 +2125,21 @@ ApplicationWindow {
                                     Label {
                                         text: "Display"
                                         color: theme.textPrimary
-                                        font.pixelSize: 27
+                                        font.pixelSize: 27 * theme.fontScale
                                         font.bold: true
                                     }
                                     Label {
                                         Layout.fillWidth: true
                                         text: "Choose the preferred size of the RecompStation window. Your desktop compositor remains in control of the monitor resolution and window placement."
                                         color: theme.textSecondary
-                                        font.pixelSize: 13
+                                        font.pixelSize: 13 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                     Label {
                                         text: "CURRENT DISPLAY"
                                         color: theme.textMuted
-                                        font.pixelSize: 10
+                                        font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
                                         font.letterSpacing: 1
                                     }
@@ -2086,25 +2159,25 @@ ApplicationWindow {
                                             Label {
                                                 text: Screen.name.length > 0 ? Screen.name : "Current display"
                                                 color: theme.textPrimary
-                                                font.pixelSize: 13
+                                                font.pixelSize: 13 * theme.fontScale
                                                 font.bold: true
                                             }
                                             Label {
                                                 text: "Desktop resolution: " + Screen.width + " × " + Screen.height
                                                 color: theme.textSecondary
-                                                font.pixelSize: 12
+                                                font.pixelSize: 12 * theme.fontScale
                                             }
                                             Label {
                                                 text: "Available screen area: " + Screen.desktopAvailableWidth + " × " + Screen.desktopAvailableHeight
                                                 color: theme.textMuted
-                                                font.pixelSize: 11
+                                                font.pixelSize: 11 * theme.fontScale
                                             }
                                         }
                                     }
                                     Label {
                                         text: "PREFERRED WINDOW SIZE"
                                         color: theme.textMuted
-                                        font.pixelSize: 10
+                                        font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
                                         font.letterSpacing: 1
                                     }
@@ -2147,7 +2220,7 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         text: "Presets are scaled down proportionally, when needed, to fit within 90% of the current screen's logical size. Their aspect ratios are preserved. On Wayland, the compositor may also apply its own window-size constraints. Selecting Follow desktop leaves the current window size unchanged."
                                         color: theme.textMuted
-                                        font.pixelSize: 11
+                                        font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     Item { Layout.fillHeight: true }
@@ -2163,18 +2236,18 @@ ApplicationWindow {
                                 ColumnLayout {
                                     width: parent.width
                                     spacing: 16
-                                    Label { text: "Library"; color: theme.textPrimary; font.pixelSize: 27; font.bold: true }
+                                    Label { text: "Library"; color: theme.textPrimary; font.pixelSize: 27 * theme.fontScale; font.bold: true }
                                     Label {
                                         Layout.fillWidth: true
                                         text: "Choose one home for your game collection. RecompStation organizes it into platform folders automatically."
-                                        color: theme.textSecondary; font.pixelSize: 13; wrapMode: Text.Wrap
+                                        color: theme.textSecondary; font.pixelSize: 13 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label { text: "SUPPORTED PLATFORM FOLDERS"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                                    Label { text: "SUPPORTED PLATFORM FOLDERS"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1 }
                                     Label {
                                         Layout.fillWidth: true
                                         text: "Your library location is selected during first-time setup. RecompStation organizes supported games into platform subfolders beneath that location."
-                                        color: theme.textSecondary; font.pixelSize: 12; wrapMode: Text.Wrap
+                                        color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Flow {
                                         Layout.fillWidth: true
@@ -2185,12 +2258,12 @@ ApplicationWindow {
                                                 required property string modelData
                                                 radius: 12; color: theme.surface; border.color: theme.divider
                                                 width: platformChip.implicitWidth + 22; height: 30
-                                                Label { id: platformChip; anchors.centerIn: parent; text: modelData; color: theme.textSecondary; font.pixelSize: 11 }
+                                                Label { id: platformChip; anchors.centerIn: parent; text: modelData; color: theme.textSecondary; font.pixelSize: 11 * theme.fontScale }
                                             }
                                         }
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label { text: "SCAN BEHAVIOR"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                                    Label { text: "SCAN BEHAVIOR"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1 }
                                     Rectangle {
                                         Layout.fillWidth: true
                                         implicitHeight: scanStartupRow.implicitHeight + 24
@@ -2200,11 +2273,11 @@ ApplicationWindow {
                                             anchors.fill: parent; anchors.margins: 12; spacing: 12
                                             ColumnLayout {
                                                 Layout.fillWidth: true; spacing: 4
-                                                Label { text: "Scan library on startup"; color: theme.textPrimary; font.pixelSize: 13; font.bold: true }
+                                                Label { text: "Scan library on startup"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
                                                 Label {
                                                     Layout.fillWidth: true
                                                     text: "Automatically check the configured platform folders when RecompStation launches."
-                                                    color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+                                                    color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
                                                 }
                                             }
                                             Switch {
@@ -2221,7 +2294,7 @@ ApplicationWindow {
                                     Label {
                                         Layout.fillWidth: true
                                         text: "Place game files inside their matching platform folders. Automatic live folder monitoring will be added separately."
-                                        color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+                                        color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                 }
                             }
@@ -2235,19 +2308,19 @@ ApplicationWindow {
                                 Label {
                                     text: "Application"
                                     color: theme.textPrimary
-                                    font.pixelSize: 27
+                                    font.pixelSize: 27 * theme.fontScale
                                     font.bold: true
                                 }
                                 Label {
                                     text: "Application details and local storage."
                                     color: theme.textSecondary
-                                    font.pixelSize: 13
+                                    font.pixelSize: 13 * theme.fontScale
                                 }
                                 Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                 Label {
                                     text: "APPLICATION DATA DIRECTORY"
                                     color: theme.textMuted
-                                    font.pixelSize: 10
+                                    font.pixelSize: 10 * theme.fontScale
                                     font.bold: true
                                     font.letterSpacing: 1
                                 }
@@ -2267,21 +2340,21 @@ ApplicationWindow {
                                         Label {
                                             text: "Storage location"
                                             color: theme.textPrimary
-                                            font.pixelSize: 13
+                                            font.pixelSize: 13 * theme.fontScale
                                             font.bold: true
                                         }
                                         Label {
                                             Layout.fillWidth: true
                                             text: platformManager.dataDirectory
                                             color: theme.textSecondary
-                                            font.pixelSize: 12
+                                            font.pixelSize: 12 * theme.fontScale
                                             wrapMode: Text.WrapAnywhere
                                         }
                                         Label {
                                             Layout.fillWidth: true
                                             text: "Contains your game database, artwork cache, downloads, and installed launchers."
                                             color: theme.textMuted
-                                            font.pixelSize: 11
+                                            font.pixelSize: 11 * theme.fontScale
                                             wrapMode: Text.Wrap
                                         }
                                     }
@@ -2290,7 +2363,7 @@ ApplicationWindow {
                                 Label {
                                     text: "RecompStation  •  Version 0.1.0"
                                     color: theme.textMuted
-                                    font.pixelSize: 11
+                                    font.pixelSize: 11 * theme.fontScale
                                 }
                             }
                         }
