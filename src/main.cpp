@@ -2,6 +2,11 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDebug>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QMutex>
+#include <QMutexLocker>
 
 #include "core/PlatformManager.h"
 #include "core/SettingsManager.h"
@@ -15,6 +20,36 @@
 #include "metadata/MetadataManager.h"
 #include "github/GitHubManager.h"
 #include "projects/ProjectCatalog.h"
+
+namespace {
+QFile *g_runtimeLogFile = nullptr;
+QMutex g_logMutex;
+
+void runtimeMessageHandler(QtMsgType type, const QMessageLogContext &context,
+                           const QString &message)
+{
+    static const char *levelNames[] = {"DEBUG", "INFO", "WARNING", "CRITICAL", "FATAL"};
+    const int level = static_cast<int>(type);
+    const QString timestamp = QDateTime::currentDateTime().toString(Qt::ISODateWithMs);
+    const QString category = context.category ? QString::fromUtf8(context.category)
+                                              : QStringLiteral("default");
+    const QString line = QStringLiteral("%1 [%2] [%3] %4")
+                             .arg(timestamp,
+                                  QString::fromLatin1(levelNames[qBound(0, level, 4)]),
+                                  category, message);
+
+    QMutexLocker locker(&g_logMutex);
+    fprintf(stderr, "%s\\n", line.toLocal8Bit().constData());
+    if (g_runtimeLogFile && g_runtimeLogFile->isOpen()) {
+        g_runtimeLogFile->write(line.toUtf8());
+        g_runtimeLogFile->write("\\n");
+        g_runtimeLogFile->flush();
+    }
+
+    if (type == QtFatalMsg)
+        abort();
+}
+}
 
 int main(int argc, char *argv[])
 {
@@ -31,7 +66,17 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    DatabaseManager databaseManager;
+    const QString logDirectory = platformManager.dataDirectory() + "/logs";
+    QDir().mkpath(logDirectory);
+    g_runtimeLogFile = new QFile(logDirectory + "/runtime.log");
+    if (g_runtimeLogFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        qInstallMessageHandler(runtimeMessageHandler);
+        qInfo() << "Runtime logging enabled. Log file:" << g_runtimeLogFile->fileName();
+    } else {
+        qWarning() << "Could not open runtime log file:" << g_runtimeLogFile->fileName();
+    }
+
+    SettingsManager settingsManager;    DatabaseManager databaseManager;
     const QString databasePath =
         platformManager.dataDirectory() + "/database/library.sqlite";
     if (!databaseManager.initialize(databasePath)) {
