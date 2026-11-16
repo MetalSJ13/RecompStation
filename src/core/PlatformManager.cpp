@@ -75,6 +75,10 @@ bool PlatformManager::initialize(const QStringList &supportedPlatforms)
             qWarning() << "Could not migrate legacy settings to" << m_settingsFilePath;
             return false;
         }
+        // Clear the old location after a successful migration. This prevents a
+        // deleted settings.ini from being silently recreated from stale settings.
+        legacySettings.clear();
+        legacySettings.sync();
     }
 
     QSettings settings(m_settingsFilePath, QSettings::IniFormat);
