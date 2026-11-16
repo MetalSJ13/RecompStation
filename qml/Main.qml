@@ -408,7 +408,7 @@ ApplicationWindow {
             text: "This removes only the RecompStation-managed launcher files for "
                   + window.pendingUninstallProjectId
                   + ". Your ROMs, saves, and other files are not targeted."
-            color: "#dddddf"
+            color: theme.textPrimary
         }
         onAccepted: {
             if (launcherDownloadManager.uninstallLauncher(window.pendingUninstallProjectId)) {
@@ -529,7 +529,7 @@ ApplicationWindow {
                     height: 54
                     gradient: Gradient {
                         GradientStop { position: 0.0; color: "transparent" }
-                        GradientStop { position: 1.0; color: "#cc11131b" }
+                        GradientStop { position: 1.0; color: theme.artworkFade }
                     }
                 }
                 Label {
@@ -680,7 +680,7 @@ ApplicationWindow {
                                     radius: 5
                                     color: gameDetailsPopup.primaryProject
                                         && gameDetailsPopup.primaryProject.developmentStatus === "beta"
-                                        ? "#5b4525" : "#3b3d4c"
+                                        ? theme.warningSurface : theme.neutralStatusSurface
                                     implicitWidth: projectStatusLabel.implicitWidth + 16
                                     implicitHeight: projectStatusLabel.implicitHeight + 8
 
@@ -690,7 +690,7 @@ ApplicationWindow {
                                         text: gameDetailsPopup.primaryProject
                                             ? String(gameDetailsPopup.primaryProject.developmentStatus)
                                                 .replace("_", " ").toUpperCase() : ""
-                                        color: "#f3d59b"
+                                        color: theme.warningText
                                         font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
                                     }
@@ -925,12 +925,12 @@ ApplicationWindow {
                             text: "RecompStation"
                             font.pixelSize: 17 * theme.fontScale
                             font.bold: true
-                            color: "white"
+                            color: theme.textPrimary
                         }
                         Label {
                             text: "Version 0.1.0"
                             font.pixelSize: 11 * theme.fontScale
-                            color: "#9999aa"
+                            color: theme.textMuted
                         }
                     }
                 }
@@ -1092,7 +1092,7 @@ ApplicationWindow {
                         Label {
                             Layout.fillWidth: true
                             text: scanMessage
-                            color: "#a98cff"
+                            color: theme.accent
                             wrapMode: Text.Wrap
                         }
 
@@ -1195,7 +1195,7 @@ ApplicationWindow {
                                             }
                                             Rectangle {
                                                 anchors.fill: parent
-                                                color: "#9911131b"
+                                                color: theme.artworkOverlay
                                                 visible: gameTile.artworkPath.length > 0
                                             }
                                             Image {
@@ -1332,12 +1332,12 @@ ApplicationWindow {
                             text: "Metadata Search"
                             font.pixelSize: 30 * theme.fontScale
                             font.bold: true
-                            color: "white"
+                            color: theme.textPrimary
                         }
                         Label {
                             Layout.fillWidth: true
                             text: "Search TheGamesDB for a game and review possible matches."
-                            color: "#9999aa"
+                            color: theme.textMuted
                             wrapMode: Text.Wrap
                         }
 
@@ -1352,7 +1352,7 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 anchors.margins: 14
                                 text: "TheGamesDB is not configured. Set RECOMPSTATION_TGDB_API_KEY in the environment before launching RecompStation."
-                                color: "#e5bd79"
+                                color: theme.warning
                                 wrapMode: Text.Wrap
                             }
                         }
@@ -1361,7 +1361,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Label {
                                 text: "Platform"
-                                color: "#b7b7c5"
+                                color: theme.textSecondary
                             }
                             ComboBox {
                                 id: metadataPlatformSelector
@@ -1375,7 +1375,7 @@ ApplicationWindow {
                             Label {
                                 visible: metadataManager.platformsLoading
                                 text: "Loading platform catalog..."
-                                color: "#a98cff"
+                                color: theme.accent
                             }
                         }
 
@@ -1383,7 +1383,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Label {
                                 text: "Local ROM"
-                                color: "#b7b7c5"
+                                color: theme.textSecondary
                             }
                             ComboBox {
                                 id: localGameSelector
@@ -1401,7 +1401,7 @@ ApplicationWindow {
                         Label {
                             Layout.fillWidth: true
                             text: "Choose the local ROM first, then associate one of the metadata results below."
-                            color: "#9999aa"
+                            color: theme.textMuted
                             wrapMode: Text.Wrap
                         }
 
@@ -1410,7 +1410,7 @@ ApplicationWindow {
                             visible: window.metadataAssociationMessage.length > 0
                             text: window.metadataAssociationMessage
                             color: window.metadataAssociationMessage.startsWith("Metadata associated")
-                                   ? "#91d6a5" : "#ff8b8b"
+                                   ? theme.success : theme.error
                             wrapMode: Text.Wrap
                         }
 
@@ -1440,7 +1440,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             visible: window.artworkMessage.length > 0
                             text: window.artworkMessage
-                            color: window.artworkMessage.startsWith("Artwork saved") ? "#91d6a5" : "#a98cff"
+                            color: window.artworkMessage.startsWith("Artwork saved") ? theme.success : theme.accent
                             wrapMode: Text.Wrap
                         }
 
@@ -1448,7 +1448,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             visible: metadataManager.errorString.length > 0
                             text: metadataManager.errorString
-                            color: "#ff8b8b"
+                            color: theme.error
                             wrapMode: Text.Wrap
                         }
 
@@ -1456,7 +1456,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             visible: metadataManager.searching
                             text: "Searching TheGamesDB..."
-                            color: "#a98cff"
+                            color: theme.accent
                         }
 
                         Label {
@@ -1465,7 +1465,7 @@ ApplicationWindow {
                                      && metadataManager.errorString.length === 0
                                      && metadataManager.results.length > 0
                             text: metadataManager.results.length + " result(s) found."
-                            color: "#9999aa"
+                            color: theme.textMuted
                         }
 
                         ListView {
@@ -1496,7 +1496,7 @@ ApplicationWindow {
                                     Label {
                                         Layout.fillWidth: true
                                         text: title
-                                        color: "white"
+                                        color: theme.textPrimary
                                         font.pixelSize: 17 * theme.fontScale
                                         font.bold: true
                                         wrapMode: Text.Wrap
@@ -1506,14 +1506,14 @@ ApplicationWindow {
                                         text: (releaseDate.length > 0 ? releaseDate : "Release date unknown")
                                               + "  •  " + (rating.length > 0 ? rating : "Rating unavailable")
                                               + "  •  TheGamesDB ID: " + providerGameId
-                                        color: "#a98cff"
+                                        color: theme.accent
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     Label {
                                         Layout.fillWidth: true
                                         text: overview.length > 0 ? overview : "No description available."
-                                        color: "#b7b7c5"
+                                        color: theme.textSecondary
                                         font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
                                         maximumLineCount: 4
@@ -1557,7 +1557,7 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             visible: artworkUrl.length === 0
                                             text: "No cover image available"
-                                            color: "#9999aa"
+                                            color: theme.textMuted
                                             font.pixelSize: 11 * theme.fontScale
                                             wrapMode: Text.Wrap
                                         }
@@ -1574,7 +1574,7 @@ ApplicationWindow {
                                      && metadataResultsList.count === 0
                                      && metadataManager.configured
                             text: "Enter a game title above to search for metadata."
-                            color: "#9999aa"
+                            color: theme.textMuted
                         }
                     }
                 }
@@ -1583,8 +1583,8 @@ ApplicationWindow {
                     ColumnLayout {
                         anchors.fill: parent
                         spacing: 20
-                        Label { text: "Platforms"; font.pixelSize: 30 * theme.fontScale; font.bold: true; color: "white" }
-                        Label { text: "Browse your supported console platforms."; color: "#9999aa" }
+                        Label { text: "Platforms"; font.pixelSize: 30 * theme.fontScale; font.bold: true; color: theme.textPrimary }
+                        Label { text: "Browse your supported console platforms."; color: theme.textMuted }
                         GridLayout {
                             Layout.fillWidth: true
                             columns: 2
@@ -1602,10 +1602,10 @@ ApplicationWindow {
                                         anchors.fill: parent
                                         anchors.margins: 18
                                         spacing: 5
-                                        Label { text: modelData; color: "white"; font.pixelSize: 20 * theme.fontScale; font.bold: true }
-                                        Label { text: "Game directory"; color: "#9999aa"; font.pixelSize: 12 * theme.fontScale }
+                                        Label { text: modelData; color: theme.textPrimary; font.pixelSize: 20 * theme.fontScale; font.bold: true }
+                                        Label { text: "Game directory"; color: theme.textMuted; font.pixelSize: 12 * theme.fontScale }
                                         Item { Layout.fillHeight: true }
-                                        Label { text: "Open platform"; color: "#a98cff"; font.pixelSize: 12 * theme.fontScale }
+                                        Label { text: "Open platform"; color: theme.accent; font.pixelSize: 12 * theme.fontScale }
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -1620,7 +1620,7 @@ ApplicationWindow {
                         Label {
                             Layout.fillWidth: true
                             text: "Game folders: " + platformManager.dataDirectory + "/games/"
-                            color: "#777788"
+                            color: theme.textSubtle
                             font.pixelSize: 11 * theme.fontScale
                             wrapMode: Text.WrapAnywhere
                         }
@@ -1631,11 +1631,11 @@ ApplicationWindow {
                     ColumnLayout {
                         anchors.fill: parent
                         spacing: 16
-                        Label { text: "Launcher Discovery"; color: "white"; font.pixelSize: 30 * theme.fontScale; font.bold: true }
+                        Label { text: "Launcher Discovery"; color: theme.textPrimary; font.pixelSize: 30 * theme.fontScale; font.bold: true }
                         Label {
                             Layout.fillWidth: true
                             text: "Browse supported projects, check compatible Linux releases, and install compatible launchers automatically."
-                            color: "#9999aa"
+                            color: theme.textMuted
                             wrapMode: Text.Wrap
                         }
                         ListView {
@@ -1660,19 +1660,19 @@ ApplicationWindow {
                                     spacing: 7
                                     Label {
                                         text: modelData.name
-                                        color: "white"
+                                        color: theme.textPrimary
                                         font.pixelSize: 18 * theme.fontScale
                                         font.bold: true
                                     }
                                     Label {
                                         text: modelData.platform + "  •  " + modelData.repositoryOwner + "/" + modelData.repositoryName
-                                        color: "#9999aa"
+                                        color: theme.textMuted
                                         font.pixelSize: 12 * theme.fontScale
                                     }
                                     Label {
                                         Layout.fillWidth: true
                                         text: modelData.romRequirements
-                                        color: "#b7b7c5"
+                                        color: theme.textSecondary
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
@@ -1698,7 +1698,7 @@ ApplicationWindow {
                                             text: releaseState.release
                                                   ? "Latest: " + releaseState.release.tagName
                                                   : ""
-                                            color: "#a98cff"
+                                            color: theme.accent
                                             wrapMode: Text.Wrap
                                         }
                                     }
@@ -1706,14 +1706,14 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         visible: releaseState.loading === true
                                         text: "Contacting GitHub and checking release assets..."
-                                        color: "#a98cff"
+                                        color: theme.accent
                                         wrapMode: Text.Wrap
                                     }
                                     Label {
                                         Layout.fillWidth: true
                                         visible: releaseState.error.length > 0
                                         text: releaseState.error || ""
-                                        color: "#ff8b8b"
+                                        color: theme.error
                                         wrapMode: Text.Wrap
                                     }
                                     Repeater {
@@ -1737,13 +1737,13 @@ ApplicationWindow {
                                                 Label {
                                                     Layout.fillWidth: true
                                                     text: modelData.name
-                                                    color: "#91d6a5"
+                                                    color: theme.success
                                                     font.pixelSize: 12 * theme.fontScale
                                                     wrapMode: Text.Wrap
                                                 }
                                                 Label {
                                                     text: (modelData.size / 1048576).toFixed(1) + " MB"
-                                                    color: "#9999aa"
+                                                    color: theme.textMuted
                                                     font.pixelSize: 11 * theme.fontScale
                                                 }
                                                 Button {
@@ -1791,7 +1791,7 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         visible: releaseState.release !== null && (releaseState.assets || []).length === 0
                                         text: "No compatible Linux package was found for this device (" + projectCatalog.currentArchitecture + ")."
-                                        color: "#e5bd79"
+                                        color: theme.warning
                                         wrapMode: Text.Wrap
                                     }
                                     Label {
@@ -1800,7 +1800,7 @@ ApplicationWindow {
                                         text: releaseState.release
                                               ? "Release published: " + releaseState.release.publishedAt
                                               : ""
-                                        color: "#9999aa"
+                                        color: theme.textMuted
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
@@ -1929,9 +1929,9 @@ ApplicationWindow {
 
                                 Repeater {
                                     model: [
-                                        { id: "midnight-violet", title: "Midnight Violet", description: "The original RecompStation palette", accent: "#8174e8", background: "#11131b", surface: "#222635" },
-                                        { id: "electric-blue", title: "Electric Blue", description: "A cool, vivid blue palette", accent: "#55a8f5", background: "#101722", surface: "#202e40" },
-                                        { id: "ember", title: "Ember", description: "Warm copper and amber highlights", accent: "#d58b59", background: "#191411", surface: "#30231c" }
+                                        { id: "midnight-violet", title: "Midnight Violet", description: "A deep, atmospheric palette with violet highlights", accent: "#8174e8", accentSoft: "#978cf2", background: "#11131b", surface: "#222635", elevated: "#2a3042" },
+                                        { id: "electric-blue", title: "Electric Blue", description: "Cool layered blues with bright electric accents", accent: "#55a8f5", accentSoft: "#7bbcff", background: "#101722", surface: "#202e40", elevated: "#293b51" },
+                                        { id: "ember", title: "Ember", description: "Warm charcoal surfaces with copper and amber accents", accent: "#d58b59", accentSoft: "#e6a875", background: "#191411", surface: "#30231c", elevated: "#3b2b22" }
                                     ]
                                     delegate: Button {
                                         id: themePresetButton
@@ -1962,12 +1962,18 @@ ApplicationWindow {
                                                 color: modelData.background
                                                 border.color: theme.divider
 
-                                                RowLayout {
+                                                ColumnLayout {
                                                     anchors.fill: parent
                                                     anchors.margins: 6
                                                     spacing: 3
                                                     Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.surface }
-                                                    Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.accent }
+                                                    RowLayout {
+                                                        Layout.fillWidth: true
+                                                        Layout.fillHeight: true
+                                                        spacing: 3
+                                                        Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.elevated }
+                                                        Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.accent }
+                                                    }
                                                 }
                                             }
 
