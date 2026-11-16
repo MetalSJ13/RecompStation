@@ -11,9 +11,15 @@ const QString kDefaultTheme = QStringLiteral("midnight-violet");
 }
 
 SettingsManager::SettingsManager(QObject *parent)
-    : QObject(parent)
+    : SettingsManager(QSettings().fileName(), parent)
 {
-    QSettings settings;
+}
+
+SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *parent)
+    : QObject(parent)
+    , m_settingsFilePath(settingsFilePath)
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
     const QString storedTheme = settings.value(
         QStringLiteral("appearance/theme"),
         kDefaultTheme
@@ -37,7 +43,7 @@ void SettingsManager::setScanOnStartup(bool enabled)
     if (m_scanOnStartup == enabled)
         return;
 
-    QSettings settings;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
     settings.setValue(QStringLiteral("library/scanOnStartup"), enabled);
     settings.sync();
     if (settings.status() != QSettings::NoError) {
@@ -69,7 +75,7 @@ void SettingsManager::setThemeName(const QString &themeName)
 
     m_themeName = themeName;
 
-    QSettings settings;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
     settings.setValue(QStringLiteral("appearance/theme"), m_themeName);
     settings.sync();
     if (settings.status() == QSettings::NoError)
