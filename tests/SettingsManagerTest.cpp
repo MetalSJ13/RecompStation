@@ -15,8 +15,10 @@ class SettingsManagerTest : public QObject
 private slots:
     void init();
     void defaultsToScanningOnStartup();
+    void defaultsToSystemPresentationSize();
     void persistsScanOnStartupPreference();
     void persistsPreferencesInExplicitConfigFile();
+    void rejectsUnsupportedPresentationSize();
 };
 
 void SettingsManagerTest::init()
@@ -30,6 +32,16 @@ void SettingsManagerTest::defaultsToScanningOnStartup()
 {
     SettingsManager manager;
     QVERIFY(manager.scanOnStartup());
+}
+
+void SettingsManagerTest::defaultsToSystemPresentationSize()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("system"));
 }
 
 void SettingsManagerTest::persistsScanOnStartupPreference()
@@ -50,7 +62,6 @@ void SettingsManagerTest::persistsScanOnStartupPreference()
     QSettings().clear();
 }
 
-
 void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
 {
     QTemporaryDir temporaryDirectory;
@@ -62,14 +73,32 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
         SettingsManager manager(settingsPath);
         manager.setThemeName(QStringLiteral("ember"));
         manager.setScanOnStartup(false);
+        manager.setPreferredPresentationSize(QStringLiteral("3440x1440"));
         QCOMPARE(manager.themeName(), QStringLiteral("ember"));
         QVERIFY(!manager.scanOnStartup());
+        QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("3440x1440"));
     }
 
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.themeName(), QStringLiteral("ember"));
     QVERIFY(!reloaded.scanOnStartup());
+    QCOMPARE(reloaded.preferredPresentationSize(), QStringLiteral("3440x1440"));
     QVERIFY(QFileInfo(settingsPath).isFile());
+}
+
+void SettingsManagerTest::rejectsUnsupportedPresentationSize()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QSignalSpy changed(&manager, &SettingsManager::preferredPresentationSizeChanged);
+    manager.setPreferredPresentationSize(QStringLiteral("800x600"));
+
+    QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("system"));
+    QCOMPARE(changed.count(), 0);
 }
 
 QTEST_GUILESS_MAIN(SettingsManagerTest)
