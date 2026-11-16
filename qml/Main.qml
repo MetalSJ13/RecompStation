@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
+import QtQuick.Dialogs
 
 ApplicationWindow {
     id: window
@@ -311,6 +312,20 @@ ApplicationWindow {
             window.libraryRevision++
             window.scanMessage = "Metadata complete: " + matched
                 + " matched, " + unresolved + " left unresolved."
+        }
+    }
+
+    FolderDialog {
+        id: libraryFolderDialog
+        title: "Choose game folder"
+        property string targetPlatform: ""
+        onAccepted: {
+            if (platformManager.setPlatformDirectory(targetPlatform, selectedFolder)) {
+                window.scanMessage = targetPlatform + " folder updated. Scanning library..."
+                libraryScanner.scanAll()
+            } else {
+                window.scanMessage = "Could not use the selected folder. Choose an existing, readable local directory."
+            }
         }
     }
 
@@ -1779,6 +1794,12 @@ ApplicationWindow {
                             }
                             Button {
                                 Layout.fillWidth: true
+                                text: "▤   Library"
+                                highlighted: settingsPage.section === "Library"
+                                onClicked: settingsPage.section = "Library"
+                            }
+                            Button {
+                                Layout.fillWidth: true
                                 text: "⌘   Application"
                                 highlighted: settingsPage.section === "Application"
                                 onClicked: settingsPage.section = "Application"
@@ -2019,6 +2040,85 @@ ApplicationWindow {
                                     wrapMode: Text.Wrap
                                 }
                                 Item { Layout.fillHeight: true }
+                            }
+
+                            ScrollView {
+                                anchors.fill: parent
+                                anchors.margins: 26
+                                clip: true
+                                visible: settingsPage.section === "Library"
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                ColumnLayout {
+                                    width: parent.width
+                                    spacing: 16
+                                    Label { text: "Library"; color: theme.textPrimary; font.pixelSize: 27; font.bold: true }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Choose where RecompStation looks for your game files. Each platform can use its own folder."
+                                        color: theme.textSecondary; font.pixelSize: 13; wrapMode: Text.Wrap
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label { text: "GAME FOLDERS"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                                    Repeater {
+                                        model: platformManager.platforms()
+                                        delegate: Rectangle {
+                                            required property string modelData
+                                            Layout.fillWidth: true
+                                            implicitHeight: folderRow.implicitHeight + 24
+                                            radius: theme.radiusCard; color: theme.sidebarBackground; border.color: theme.divider
+                                            RowLayout {
+                                                id: folderRow
+                                                anchors.fill: parent; anchors.margins: 12; spacing: 12
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true; Layout.minimumWidth: 0; spacing: 5
+                                                    Label { text: modelData; color: theme.textPrimary; font.pixelSize: 14; font.bold: true }
+                                                    Label {
+                                                        Layout.fillWidth: true
+                                                        text: platformManager.platformDirectory(modelData)
+                                                        color: theme.textSecondary; font.pixelSize: 11; wrapMode: Text.WrapAnywhere
+                                                    }
+                                                }
+                                                Button {
+                                                    text: "Choose Folder"
+                                                    onClicked: { libraryFolderDialog.targetPlatform = modelData; libraryFolderDialog.open() }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label { text: "SCAN BEHAVIOR"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: scanStartupRow.implicitHeight + 24
+                                        radius: theme.radiusCard; color: theme.sidebarBackground; border.color: theme.divider
+                                        RowLayout {
+                                            id: scanStartupRow
+                                            anchors.fill: parent; anchors.margins: 12; spacing: 12
+                                            ColumnLayout {
+                                                Layout.fillWidth: true; spacing: 4
+                                                Label { text: "Scan library on startup"; color: theme.textPrimary; font.pixelSize: 13; font.bold: true }
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: "Automatically check configured game folders when RecompStation launches."
+                                                    color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+                                                }
+                                            }
+                                            Switch {
+                                                checked: settingsManager.scanOnStartup
+                                                onToggled: settingsManager.setScanOnStartup(checked)
+                                            }
+                                        }
+                                    }
+                                    Button {
+                                        text: "Scan Library Now"; highlighted: true
+                                        onClicked: { window.scanMessage = "Scanning configured game folders..."; libraryScanner.scanAll() }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Changing a folder does not move or delete your game files. Scan the library after changing locations so the library can reconcile the new folder contents. Automatic live folder monitoring will be added separately."
+                                        color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+                                    }
+                                }
                             }
 
                             ColumnLayout {
