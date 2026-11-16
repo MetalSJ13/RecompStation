@@ -14,6 +14,8 @@ ApplicationWindow {
     title: "RecompStation"
     color: theme.windowBackground
 
+    Component.onCompleted: window.applyPreferredPresentationSize()
+
     onWidthChanged: console.info("[Settings Geometry] window width:", width)
     onHeightChanged: console.info("[Settings Geometry] window height:", height)
 
@@ -36,8 +38,8 @@ ApplicationWindow {
 
         // Stay within the current screen's logical dimensions. The compositor
         // remains responsible for placement and all monitor-wide mode changes.
-        const safeWidth = Math.max(640, Math.floor(Screen.width * 0.9))
-        const safeHeight = Math.max(480, Math.floor(Screen.height * 0.9))
+        const safeWidth = Math.max(640, Math.floor(Screen.desktopAvailableWidth * 0.9))
+        const safeHeight = Math.max(480, Math.floor(Screen.desktopAvailableHeight * 0.9))
         window.width = Math.min(requestedWidth, safeWidth)
         window.height = Math.min(requestedHeight, safeHeight)
     }
