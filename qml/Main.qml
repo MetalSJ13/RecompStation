@@ -1839,11 +1839,11 @@ ApplicationWindow {
                                                 font.pixelSize: 12
                                                 font.bold: settingsManager.themeName === modelData.id
                                             }
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: settingsManager.themeName = modelData.id
-                                            }
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: settingsManager.setThemeName(modelData.id)
                                         }
                                     }
                                 }
