@@ -3,6 +3,7 @@
 #include "core/PlatformManager.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QSettings>
