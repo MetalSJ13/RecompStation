@@ -983,6 +983,58 @@ ApplicationWindow {
             Component.onCompleted: console.info("[Settings Geometry] main content panel:", width, "x", height)
             onWidthChanged: console.info("[Settings Geometry] main content panel width:", width)
 
+            // The selected game's cached cover art becomes a quiet, full-panel
+            // atmosphere layer. The overlay keeps library text and controls legible.
+            Image {
+                id: libraryAtmosphereImage
+                anchors.fill: parent
+                source: currentPage === "Library" && gameGrid.currentItem
+                    ? gameGrid.currentItem.artworkPath : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                opacity: status === Image.Ready ? 0.34 : 0
+                visible: currentPage === "Library"
+                Behavior on opacity {
+                    enabled: !settingsManager.reducedMotion
+                    NumberAnimation { duration: 420; easing.type: Easing.OutCubic }
+                }
+            }
+
+            MultiEffect {
+                anchors.fill: libraryAtmosphereImage
+                source: libraryAtmosphereImage
+                blurEnabled: true
+                blur: 0.82
+                autoPaddingEnabled: false
+                visible: currentPage === "Library"
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                visible: currentPage === "Library"
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0.0
+                        color: Qt.rgba(theme.windowBackground.r,
+                                       theme.windowBackground.g,
+                                       theme.windowBackground.b, 0.60)
+                    }
+                    GradientStop {
+                        position: 0.58
+                        color: Qt.rgba(theme.windowBackground.r,
+                                       theme.windowBackground.g,
+                                       theme.windowBackground.b, 0.76)
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: Qt.rgba(theme.backgroundBottom.r,
+                                       theme.backgroundBottom.g,
+                                       theme.backgroundBottom.b, 0.88)
+                    }
+                }
+            }
+
             StackLayout {
                 id: mainPageStack
                 anchors.fill: parent
