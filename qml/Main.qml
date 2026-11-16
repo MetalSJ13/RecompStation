@@ -1747,8 +1747,11 @@ ApplicationWindow {
                         onWidthChanged: console.info("[Settings Geometry] settings row width:", width)
 
                         ColumnLayout {
+                            id: settingsNavigationColumn
                             Layout.preferredWidth: 205
                             Layout.fillHeight: true
+                            Component.onCompleted: console.info("[Settings Geometry] settings navigation column:", width, "x", height, "implicit:", implicitWidth)
+                            onWidthChanged: console.info("[Settings Geometry] settings navigation column width:", width, "implicit:", implicitWidth)
                             spacing: 10
 
                             Label {
