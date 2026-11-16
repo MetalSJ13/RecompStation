@@ -4,7 +4,7 @@ This document is the authoritative development status and implementation order f
 
 ## Project status
 
-**Current implementation focus:** Automatic metadata matching is being connected to the existing library scan flow. The first pass uses conservative exact-title matching within the mapped platform, records completed lookups to avoid repeated provider requests, and downloads artwork for accepted matches. This work still requires a local build and regression-test verification.
+**Current implementation focus:** The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is being connected to the existing library scan flow. The first pass uses conservative exact-title matching within the mapped platform, records completed lookups to avoid repeated provider requests, and downloads artwork for accepted matches. This work still requires a local build and regression-test verification.
 
 **Current development branch:** `ui/interface-redesign`  
 **Base:** The existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.  
@@ -82,10 +82,10 @@ Keep the application buildable after each focused change. Preserve working backe
 
 ### Milestone 5: Settings and first-run experience
 
-- [ ] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
+- [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
 - [ ] Add curated appearance presets and coordinated background/accent/surface palettes
-- [ ] Add compositor-respecting preferred presentation sizes and safe fullscreen/window behavior (never force monitor-wide resolution changes)
-- [ ] Enumerate actual display devices and supported resolutions before offering choices
+- [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
+- [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
 - [ ] Add automatic filesystem monitoring for configured folders
 - [ ] Add metadata provider status, provider enablement, field selection, and cache/refresh controls
