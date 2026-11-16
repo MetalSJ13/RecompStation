@@ -1698,24 +1698,230 @@ ApplicationWindow {
                 }
 
                 Item {
-                    ColumnLayout {
+                    id: settingsPage
+                    property string section: "Appearance"
+
+                    RowLayout {
                         anchors.fill: parent
-                        spacing: 20
-                        Label { text: "Settings"; color: "white"; font.pixelSize: 30; font.bold: true }
-                        Label { text: "Application configuration"; color: "#9999aa" }
+                        spacing: 26
+
+                        ColumnLayout {
+                            Layout.preferredWidth: 220
+                            Layout.fillHeight: true
+                            spacing: 8
+                            Label {
+                                text: "SETTINGS"
+                                color: theme.textMuted
+                                font.pixelSize: 11
+                                font.bold: true
+                                font.letterSpacing: 1.2
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: "Make RecompStation feel like yours."
+                                color: theme.textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.Wrap
+                            }
+                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                            Repeater {
+                                model: [
+                                    { title: "Appearance", detail: "Themes and visual style", icon: "✦" },
+                                    { title: "Application", detail: "App information and storage", icon: "⌘" }
+                                ]
+                                delegate: Button {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    text: modelData.icon + "   " + modelData.title
+                                    highlighted: settingsPage.section === modelData.title
+                                    onClicked: settingsPage.section = modelData.title
+                                }
+                            }
+                            Item { Layout.fillHeight: true }
+                            Label {
+                                Layout.fillWidth: true
+                                text: "Additional settings will be added as their underlying features are implemented."
+                                color: theme.textMuted
+                                font.pixelSize: 11
+                                wrapMode: Text.Wrap
+                            }
+                        }
+
                         Rectangle {
                             Layout.fillWidth: true
-                            height: 100
-                            radius: 12
+                            Layout.fillHeight: true
+                            radius: theme.radiusLarge
                             color: theme.surface
-                            ColumnLayout {
+                            border.color: theme.divider
+                            clip: true
+                            StackLayout {
                                 anchors.fill: parent
-                                anchors.margins: 15
-                                Label { text: "Application data directory"; color: "white"; font.bold: true }
-                                Label {
-                                    text: platformManager.dataDirectory
-                                    color: "#9999aa"
-                                    wrapMode: Text.WrapAnywhere
+                                anchors.margins: 26
+                                currentIndex: settingsPage.section === "Appearance" ? 0 : 1
+
+                                ColumnLayout {
+                                    spacing: 18
+                                    Label {
+                                        text: "Appearance"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 28
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        Layout.maximumWidth: 680
+                                        text: "Choose a visual style for your game library. Each preset coordinates the background, surfaces, and accent color."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "COLOR THEME"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        columns: 3
+                                        columnSpacing: 12
+                                        rowSpacing: 12
+                                        Repeater {
+                                            model: [
+                                                { id: "midnight-violet", title: "Midnight Violet", description: "The original RecompStation look", accent: "#8174e8", background: "#11131b" },
+                                                { id: "electric-blue", title: "Electric Blue", description: "Cool, vivid blue highlights", accent: "#55a8f5", background: "#101722" },
+                                                { id: "ember", title: "Ember", description: "Warm copper and amber tones", accent: "#d58b59", background: "#191411" }
+                                            ]
+                                            delegate: Rectangle {
+                                                required property var modelData
+                                                Layout.fillWidth: true
+                                                Layout.preferredHeight: 150
+                                                radius: theme.radiusCard
+                                                color: theme.sidebarBackground
+                                                border.width: settingsManager.themeName === modelData.id ? 2 : 1
+                                                border.color: settingsManager.themeName === modelData.id ? theme.accent : theme.divider
+                                                ColumnLayout {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 13
+                                                    spacing: 8
+                                                    RowLayout {
+                                                        spacing: 7
+                                                        Rectangle { width: 12; height: 12; radius: 6; color: modelData.accent }
+                                                        Label {
+                                                            Layout.fillWidth: true
+                                                            text: modelData.title
+                                                            color: theme.textPrimary
+                                                            font.pixelSize: 13
+                                                            font.bold: true
+                                                            elide: Text.ElideRight
+                                                        }
+                                                        Label {
+                                                            text: settingsManager.themeName === modelData.id ? "✓" : ""
+                                                            color: theme.accent
+                                                            font.pixelSize: 15
+                                                            font.bold: true
+                                                        }
+                                                    }
+                                                    Rectangle {
+                                                        Layout.fillWidth: true
+                                                        Layout.fillHeight: true
+                                                        radius: 7
+                                                        color: modelData.background
+                                                        border.color: theme.divider
+                                                        RowLayout {
+                                                            anchors.fill: parent
+                                                            anchors.margins: 9
+                                                            spacing: 6
+                                                            Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 4; color: Qt.darker(modelData.background, 1.2) }
+                                                            Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 4; color: Qt.lighter(modelData.background, 1.3); border.color: modelData.accent; border.width: 2 }
+                                                        }
+                                                    }
+                                                    Label {
+                                                        text: modelData.description
+                                                        color: theme.textMuted
+                                                        font.pixelSize: 10
+                                                        wrapMode: Text.Wrap
+                                                    }
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: settingsManager.themeName = modelData.id
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                    Label {
+                                        text: "Your selection is saved automatically and will be used the next time you open RecompStation."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    spacing: 16
+                                    Label {
+                                        text: "Application"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 28
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        text: "Application details and local storage locations."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 13
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "APPLICATION DATA"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: appDataContent.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: theme.divider
+                                        ColumnLayout {
+                                            id: appDataContent
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 7
+                                            Label {
+                                                text: "Application data directory"
+                                                color: theme.textPrimary
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: platformManager.dataDirectory
+                                                color: theme.textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WrapAnywhere
+                                            }
+                                            Label {
+                                                text: "Stores your library database, cached artwork, downloads, and installed launchers."
+                                                color: theme.textMuted
+                                                font.pixelSize: 11
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                    Label {
+                                        text: "RecompStation  •  Version 0.1.0"
+                                        color: theme.textMuted
+                                        font.pixelSize: 11
+                                    }
                                 }
                             }
                         }
