@@ -12,8 +12,6 @@ ApplicationWindow {
     minimumHeight: 550
     visible: true
     title: "RecompStation"
-    property bool sidebarExpanded: true
-    property bool sidebarAnimationEnabled: false
     color: theme.windowBackground
     background: Rectangle {
         gradient: Gradient {
@@ -968,129 +966,13 @@ ApplicationWindow {
         }
     }
 
-    RowLayout {
+    Item {
         id: mainNavigationRow
         anchors.fill: parent
-        spacing: 0
-        Component.onCompleted: console.info("[Settings Geometry] main navigation row:", width, "x", height)
-        onWidthChanged: console.info("[Settings Geometry] main navigation row width:", width)
-
-        Rectangle {
-            id: navigationSidebar
-            Layout.preferredWidth: window.sidebarExpanded ? 225 : 72
-            Layout.fillHeight: true
-            color: theme.sidebarBackground
-            Behavior on Layout.preferredWidth {
-                // Do not animate the initial layout pass; animate only user toggles.
-                enabled: window.sidebarAnimationEnabled && !settingsManager.reducedMotion
-                NumberAnimation { duration: 260; easing.type: Easing.InOutCubic }
-            }
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: window.sidebarExpanded ? 20 : 8
-                spacing: 15
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-                    Rectangle {
-                        visible: window.sidebarExpanded
-                        width: 38
-                        height: 38
-                        radius: 10
-                        color: theme.accent
-                        Label {
-                            anchors.centerIn: parent
-                            text: "R"
-                            font.pixelSize: 23 * theme.fontScale
-                            font.bold: true
-                        }
-                    }
-                    ColumnLayout {
-                        visible: window.sidebarExpanded
-                        opacity: window.sidebarExpanded ? 1 : 0
-                        Behavior on opacity {
-                            enabled: !settingsManager.reducedMotion
-                            NumberAnimation { duration: 160 }
-                        }
-                        spacing: 0
-                        Label {
-                            text: "RecompStation"
-                            font.pixelSize: 17 * theme.fontScale
-                            font.bold: true
-                            color: theme.textPrimary
-                        }
-                        Label {
-                            text: "Version 0.1.0"
-                            font.pixelSize: 11 * theme.fontScale
-                            color: theme.textMuted
-                        }
-                    }
-                    Item { Layout.fillWidth: true }
-                    Button {
-                        Layout.preferredWidth: window.sidebarExpanded ? 30 : 44
-                        Layout.preferredHeight: 32
-                        Layout.alignment: window.sidebarExpanded ? Qt.AlignRight : Qt.AlignHCenter
-                        text: window.sidebarExpanded ? "‹" : ">"
-                        font.pixelSize: 20
-                        onClicked: {
-                            window.sidebarAnimationEnabled = true
-                            window.sidebarExpanded = !window.sidebarExpanded
-                        }
-                        ToolTip.visible: hovered
-                        ToolTip.text: window.sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"
-                    }
-                }
-
-                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                Label {
-                    visible: window.sidebarExpanded
-                    opacity: window.sidebarExpanded ? 1 : 0
-                    Behavior on opacity {
-                        enabled: !settingsManager.reducedMotion
-                        NumberAnimation { duration: 160 }
-                    }
-                    text: "EXPLORE"
-                    color: theme.textMuted
-                    font.pixelSize: 11 * theme.fontScale
-                    font.bold: true
-                }
-
-                Button {
-                    Layout.fillWidth: true
-                    text: window.sidebarExpanded ? "Game Library" : "▦"
-                    highlighted: currentPage === "Library"
-                    ToolTip.visible: hovered && !window.sidebarExpanded
-                    ToolTip.text: "Game Library"
-                    onClicked: {
-                        console.info("[UI] Navigation: Game Library")
-                        currentPage = "Library"
-                    }
-                }
-
-                Item { Layout.fillHeight: true }
-
-                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-
-                Button {
-                    Layout.fillWidth: true
-                    text: window.sidebarExpanded ? "Settings" : "⚙"
-                    highlighted: currentPage === "Settings"
-                    ToolTip.visible: hovered && !window.sidebarExpanded
-                    ToolTip.text: "Settings"
-                    onClicked: {
-                        console.info("[UI] Navigation: Settings")
-                        currentPage = "Settings"
-                    }
-                }
-            }
-        }
 
         Rectangle {
             id: mainContentPanel
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+            anchors.fill: parent
             color: theme.windowBackground
             Component.onCompleted: console.info("[Settings Geometry] main content panel:", width, "x", height)
             onWidthChanged: console.info("[Settings Geometry] main content panel width:", width)
@@ -2538,5 +2420,59 @@ ApplicationWindow {
                 }
             }
         }
-    }
+    
+        RowLayout {
+            id: quickNavigation
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.topMargin: 18
+            anchors.rightMargin: 24
+            spacing: 8
+            z: 20
+
+            Rectangle {
+                radius: theme.radiusCard
+                color: Qt.rgba(theme.sidebarBackground.r,
+                               theme.sidebarBackground.g,
+                               theme.sidebarBackground.b, 0.94)
+                border.color: theme.divider
+                Layout.preferredWidth: quickNavigationButtons.implicitWidth + 12
+                Layout.preferredHeight: 48
+
+                RowLayout {
+                    id: quickNavigationButtons
+                    anchors.centerIn: parent
+                    spacing: 6
+
+                    Button {
+                        Layout.preferredWidth: 42
+                        Layout.preferredHeight: 40
+                        text: "▦"
+                        font.pixelSize: 21
+                        highlighted: currentPage === "Library"
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Game Library"
+                        onClicked: {
+                            console.info("[UI] Navigation: Game Library")
+                            currentPage = "Library"
+                        }
+                    }
+
+                    Button {
+                        Layout.preferredWidth: 42
+                        Layout.preferredHeight: 40
+                        text: "⚙"
+                        font.pixelSize: 21
+                        highlighted: currentPage === "Settings"
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Settings"
+                        onClicked: {
+                            console.info("[UI] Navigation: Settings")
+                            currentPage = "Settings"
+                        }
+                    }
+                }
+            }
+        }
+}
 }
