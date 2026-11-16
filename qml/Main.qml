@@ -2089,34 +2089,11 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 13; wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label { text: "LIBRARY LOCATION"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        implicitHeight: libraryRootRow.implicitHeight + 24
-                                        radius: theme.radiusCard; color: theme.sidebarBackground; border.color: theme.divider
-                                        RowLayout {
-                                            id: libraryRootRow
-                                            anchors.fill: parent; anchors.margins: 12; spacing: 12
-                                            ColumnLayout {
-                                                Layout.fillWidth: true; Layout.minimumWidth: 0; spacing: 5
-                                                Label { text: "Game library root"; color: theme.textPrimary; font.pixelSize: 14; font.bold: true }
-                                                Label {
-                                                    Layout.fillWidth: true
-                                                    text: platformManager.libraryConfigured ? platformManager.libraryDirectory : "No library folder selected yet"
-                                                    color: theme.textSecondary; font.pixelSize: 11; wrapMode: Text.WrapAnywhere
-                                                }
-                                            }
-                                            Button {
-                                                text: platformManager.libraryConfigured ? "Change Folder" : "Choose Folder"
-                                                highlighted: true
-                                                onClicked: libraryFolderDialog.open()
-                                            }
-                                        }
-                                    }
+                                    Label { text: "SUPPORTED PLATFORM FOLDERS"; color: theme.textMuted; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "RecompStation creates a subfolder for each platform represented in its supported recompiled-game catalog. For example: N64, PS1, GameCube, and Wii when those platforms have catalog entries."
-                                        color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
+                                        text: "Your library location is selected during first-time setup. RecompStation organizes supported games into platform subfolders beneath that location."
+                                        color: theme.textSecondary; font.pixelSize: 12; wrapMode: Text.Wrap
                                     }
                                     Flow {
                                         Layout.fillWidth: true
@@ -2162,7 +2139,7 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Changing the root does not move or delete existing game files. RecompStation scans the new platform folders; put your ROMs inside the matching subfolder. Automatic live folder monitoring will be added separately."
+                                        text: "Place game files inside their matching platform folders. Automatic live folder monitoring will be added separately."
                                         color: theme.textMuted; font.pixelSize: 11; wrapMode: Text.Wrap
                                     }
                                 }
