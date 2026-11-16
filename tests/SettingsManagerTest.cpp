@@ -18,6 +18,7 @@ private slots:
     void defaultsToSystemPresentationSize();
     void persistsScanOnStartupPreference();
     void persistsPreferencesInExplicitConfigFile();
+    void rejectsUnsupportedTheme();
     void rejectsUnsupportedPresentationSize();
     void defaultsToMediumFontAndFullMotion();
     void persistsAccessibilityPreferences();
@@ -87,6 +88,21 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
     QVERIFY(!reloaded.scanOnStartup());
     QCOMPARE(reloaded.preferredPresentationSize(), QStringLiteral("3440x1440"));
     QVERIFY(QFileInfo(settingsPath).isFile());
+}
+
+void SettingsManagerTest::rejectsUnsupportedTheme()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QSignalSpy changed(&manager, &SettingsManager::themeNameChanged);
+    manager.setThemeName(QStringLiteral("unsupported-theme"));
+
+    QCOMPARE(manager.themeName(), QStringLiteral("midnight-violet"));
+    QCOMPARE(changed.count(), 0);
 }
 
 void SettingsManagerTest::defaultsToMediumFontAndFullMotion()
