@@ -63,7 +63,7 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context,
             rotateLogs(path);
             g_logFile.setFileName(path);
             if (!g_logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-                fprintf(stderr, "RecompStation: unable to reopen runtime log file: %s\\n",
+                fprintf(stderr, "RecompStation: unable to reopen runtime log file: %s\n",
                         path.toUtf8().constData());
             }
         }
