@@ -1154,9 +1154,11 @@ ApplicationWindow {
                                     border.color: tileMouse.containsMouse || gameTile.GridView.isCurrentItem
                                         ? theme.accent : theme.divider
                                     Behavior on border.color {
+                                        enabled: !settingsManager.reducedMotion
                                         ColorAnimation { duration: 140 }
                                     }
                                     Behavior on border.width {
+                                        enabled: !settingsManager.reducedMotion
                                         NumberAnimation { duration: 140 }
                                     }
 
