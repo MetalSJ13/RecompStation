@@ -294,13 +294,14 @@ void LauncherDownloadManager::finishDownload(int requestId)
     const QString projectId = download->projectId;
     const QString assetName = download->assetName;
     const QString filePath = download->targetPath;
+    const qint64 bytesReceived = download->bytesReceived;
     m_activeTargets.remove(download->targetPath);
     m_downloads.remove(requestId);
     reply->deleteLater();
     delete download;
 
     qCInfo(lcLauncher) << "Download completed:" << projectId << assetName
-                       << "bytes:" << download->bytesReceived;
+                       << "bytes:" << bytesReceived;
     emit downloadCompleted(requestId, projectId, assetName, filePath);
 }
 
@@ -322,6 +323,7 @@ void LauncherDownloadManager::failDownload(
     download->file.cancelWriting();
     delete download;
 
+    qCWarning(lcLauncher) << "Download failed (request" << requestId << "):" << message;
     emit downloadFailed(requestId, message);
 }
 
@@ -499,6 +501,7 @@ int LauncherDownloadManager::installDownloadedAsset(
         }
 
         QFile::remove(archivePath);
+        qCInfo(lcLauncher) << "Launcher installed:" << projectId;
         qCInfo(lcLauncher) << "Launcher installed:" << projectId;
         emit installationCompleted(requestId, projectId, executablePath);
     });
