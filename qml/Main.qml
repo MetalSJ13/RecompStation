@@ -720,7 +720,10 @@ ApplicationWindow {
                                 || window.selectedGame.artworkPath.length === 0)
                         enabled: metadataManager.configured && !metadataMatcher.busy
                         text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
-                        onClicked: metadataMatcher.scrapeGame(window.selectedGame.id)
+                        onClicked: {
+                            console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
+                            metadataMatcher.scrapeGame(window.selectedGame.id)
+                        }
                     }
 
                     Button {
@@ -855,7 +858,10 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     text: "Game Library"
                     highlighted: currentPage === "Library"
-                    onClicked: currentPage = "Library"
+                    onClicked: {
+                        console.info("[UI] Navigation: Game Library")
+                        currentPage = "Library"
+                    }
                 }
 
                 Item { Layout.fillHeight: true }
@@ -866,7 +872,10 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     text: "Settings"
                     highlighted: currentPage === "Settings"
-                    onClicked: currentPage = "Settings"
+                    onClicked: {
+                        console.info("[UI] Navigation: Settings")
+                        currentPage = "Settings"
+                    }
                 }
             }
         }
@@ -978,6 +987,7 @@ ApplicationWindow {
                                     highlighted: true
                                     onClicked: {
                                         scanMessage = "Scanning game folders..."
+                                        console.info("[UI] Manual library scan requested")
                                         libraryScanner.scanAll()
                                     }
                                 }
