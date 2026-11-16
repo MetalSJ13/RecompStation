@@ -23,6 +23,7 @@ private slots:
     void rejectsSymlinkedStagingRoot();
     void acceptsValidRequestAndReportsMissingNetworkDestination();
     void installsAndUninstallsManagedLauncher();
+    void installsLauncherFromNestedArchiveDirectory();
     void installsZipLauncherWithCompanionFiles();
     void installsStandaloneAppImage();
 };
@@ -280,6 +281,68 @@ void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
     QVERIFY(QFileInfo::exists(unrelatedFile));
 }
 
+
+void LauncherDownloadManagerTest::installsLauncherFromNestedArchiveDirectory()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("nested-sample-project");
+    const QString assetName = QStringLiteral("NestedLauncher-Linux.tar.gz");
+    const QString stagingDirectory = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(stagingDirectory));
+    const QString archivePath = QDir(stagingDirectory).filePath(assetName);
+
+    struct archive *writer = archive_write_new();
+    QVERIFY(writer != nullptr);
+    QCOMPARE(archive_write_add_filter_gzip(writer), ARCHIVE_OK);
+    QCOMPARE(archive_write_set_format_pax_restricted(writer), ARCHIVE_OK);
+    const QByteArray archivePathBytes = QFile::encodeName(archivePath);
+    QCOMPARE(archive_write_open_filename(writer, archivePathBytes.constData()), ARCHIVE_OK);
+
+    struct archive_entry *directory = archive_entry_new();
+    QVERIFY(directory != nullptr);
+    archive_entry_set_pathname(directory, "NestedLauncher/");
+    archive_entry_set_filetype(directory, AE_IFDIR);
+    archive_entry_set_perm(directory, 0755);
+    archive_entry_set_size(directory, 0);
+    QCOMPARE(archive_write_header(writer, directory), ARCHIVE_OK);
+    archive_entry_free(directory);
+
+    const QByteArray executableContents("#!/bin/sh\\necho nested launcher\\n");
+    struct archive_entry *executable = archive_entry_new();
+    QVERIFY(executable != nullptr);
+    archive_entry_set_pathname(executable, "NestedLauncher/ConkerRecomp");
+    archive_entry_set_filetype(executable, AE_IFREG);
+    archive_entry_set_perm(executable, 0644);
+    archive_entry_set_size(executable, executableContents.size());
+    QCOMPARE(archive_write_header(writer, executable), ARCHIVE_OK);
+    QCOMPARE(archive_write_data(writer, executableContents.constData(), executableContents.size()),
+             static_cast<la_ssize_t>(executableContents.size()));
+    archive_entry_free(executable);
+    QCOMPARE(archive_write_close(writer), ARCHIVE_OK);
+    QCOMPARE(archive_write_free(writer), ARCHIVE_OK);
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completedSpy(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failedSpy(&manager, &LauncherDownloadManager::installationFailed);
+    const int requestId = manager.installDownloadedAsset(
+        projectId, assetName, QStringLiteral("tar.gz"), QStringLiteral("ConkerRecomp"));
+    QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 10000);
+    QCOMPARE(completedSpy.takeFirst().at(0).toInt(), requestId);
+    QCOMPARE(failedSpy.count(), 0);
+
+    const QString expectedExecutable = QDir(platformManager.dataDirectory()).filePath(
+        "launchers/" + projectId + "/NestedLauncher/ConkerRecomp");
+    QVERIFY(QFileInfo(expectedExecutable).isExecutable());
+
+    const QVariantList installed = manager.installedLaunchers();
+    QCOMPARE(installed.size(), 1);
+    QCOMPARE(installed.first().toMap().value(QStringLiteral("executablePath")).toString(),
+             expectedExecutable);
+}
 
 void LauncherDownloadManagerTest::installsZipLauncherWithCompanionFiles()
 {
