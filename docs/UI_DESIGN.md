@@ -35,8 +35,8 @@ Metadata management is a background service, not a separate user workflow.
 
 Use a combined approach:
 
-1. Monitor configured game folders for additions, removals, and relevant file changes, where supported by the platform and filesystem.
-2. Provide a manual library scan/scrape action for initial setup, recovery, and user-requested refreshes.
+1. (Planned) Monitor configured game folders for additions, removals, and relevant file changes, where supported by the platform and filesystem.
+2. Provide a manual library scan/scrape action for initial setup, recovery, and user-requested refreshes; the current Settings page also supports a configurable startup scan.
 3. Route both paths through the same discovery and metadata-matching pipeline.
 
 The intended flow is:
@@ -82,7 +82,7 @@ Initial categories:
 
 - **Appearance:** built-in theme, background treatment, accent preset, motion preferences.
 - **Display:** fullscreen/windowed/borderless mode, monitor selection, supported resolution.
-- **Library:** configured game folders, automatic monitoring, scan behavior, sorting defaults.
+- **Library:** configurable per-platform game folders, startup scan preference, and a manual scan action. Automatic monitoring remains a future capability until implemented.
 - **Metadata:** provider configuration/status, cache management, refresh behavior.
 - **Launchers:** managed installation location, installed launcher management, update behavior as it becomes available.
 - **Application:** startup behavior, notifications, language where supported, diagnostics/logging.
