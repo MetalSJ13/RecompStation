@@ -37,6 +37,13 @@ ApplicationWindow {
         id: theme
     }
 
+    Connections {
+        target: settingsManager
+        function onThemeNameChanged() {
+            console.info("[Settings QML] themeNameChanged received:", settingsManager.themeName)
+        }
+    }
+
     function installedLauncher(projectId) {
         launcherRevision
         const entries = launcherDownloadManager.installedLaunchers()
@@ -1797,7 +1804,11 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 76
                                         padding: 0
-                                        onClicked: settingsManager.themeName = modelData.id
+                                        onClicked: {
+                                            console.info("[Settings QML] Preset clicked:", modelData.id)
+                                            settingsManager.themeName = modelData.id
+                                            console.info("[Settings QML] Theme after assignment:", settingsManager.themeName)
+                                        }
 
                                         background: Rectangle {
                                             radius: theme.radiusCard
