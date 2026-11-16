@@ -13,12 +13,26 @@ class PlatformManagerTest : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
+    void init();
     void initializeCreatesStagingDirectory();
     void providesProjectSpecificLauncherDirectory();
     void rejectsUnsafeProjectIds();
     void persistsConfiguredPlatformFolders();
     void rejectsInvalidPlatformFolders();
 };
+
+
+void PlatformManagerTest::initTestCase()
+{
+    QCoreApplication::setOrganizationName(QStringLiteral("RecompStationPlatformManagerTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("PlatformManagerTests"));
+}
+
+void PlatformManagerTest::init()
+{
+    QSettings().clear();
+}
 
 void PlatformManagerTest::initializeCreatesStagingDirectory()
 {
@@ -93,10 +107,6 @@ void PlatformManagerTest::rejectsUnsafeProjectIds()
 
 void PlatformManagerTest::persistsConfiguredPlatformFolders()
 {
-    QCoreApplication::setOrganizationName(QStringLiteral("RecompStationPlatformManagerTests"));
-    QCoreApplication::setApplicationName(QStringLiteral("PlatformManagerTests"));
-    QSettings().clear();
-
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
     const QString customFolder = QDir(temporaryDirectory.path()).filePath("My N64 Games");
