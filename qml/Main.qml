@@ -676,7 +676,7 @@ ApplicationWindow {
                                         ? gameDetailsPopup.primaryProject.name
                                         : "No supported recompilation project is currently listed for this game."
                                     color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
-                                    font.pixelSize: 16 * theme.fontScale
+                                    font.pixelSize: 14 * theme.fontScale
                                     font.bold: true
                                     wrapMode: Text.Wrap
                                 }
@@ -1294,7 +1294,7 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             text: gameTile.title
                                             color: theme.textPrimary
-                                            font.pixelSize: 14 * theme.fontScale
+                                            font.pixelSize: 16 * theme.fontScale
                                             font.bold: true
                                             elide: Text.ElideRight
                                         }
