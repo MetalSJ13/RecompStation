@@ -52,9 +52,18 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context,
     const QByteArray encoded = line.toUtf8();
     fprintf(stderr, "%s\n", encoded.constData());
     if (g_logFile.isOpen()) {
+        if (g_logFile.size() >= kMaximumLogSize) {
+            const QString path = g_logFile.fileName();
+            g_logFile.close();
+            rotateLogs(path);
+            g_logFile.setFileName(path);
+            g_logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+        }
+        if (g_logFile.isOpen()) {
         g_logFile.write(encoded);
         g_logFile.write("\n");
         g_logFile.flush();
+        }
     }
 
     if (type == QtFatalMsg)
