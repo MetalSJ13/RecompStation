@@ -4,6 +4,7 @@
 #include <QDebug>
 
 #include "core/PlatformManager.h"
+#include "core/SettingsManager.h"
 #include "core/LauncherDownloadManager.h"
 #include "core/GameLaunchManager.h"
 #include "core/LibraryScanner.h"
@@ -21,6 +22,8 @@ int main(int argc, char *argv[])
     QGuiApplication::setOrganizationName("RecompStation");
     QGuiApplication::setApplicationName("RecompStation");
     QGuiApplication::setApplicationVersion("0.1.0");
+
+    SettingsManager settingsManager;
 
     PlatformManager platformManager;
     if (!platformManager.initialize()) {
@@ -50,6 +53,7 @@ int main(int argc, char *argv[])
     if (!projectCatalog.isLoaded())
         qWarning() << "Project catalog unavailable:" << projectCatalog.errorString();
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
     engine.rootContext()->setContextProperty("platformManager", &platformManager);
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);
     engine.rootContext()->setContextProperty("libraryScanner", &libraryScanner);
