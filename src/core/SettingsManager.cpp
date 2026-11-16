@@ -1,6 +1,7 @@
 #include "SettingsManager.h"
 
 #include <QSettings>
+#include <QDebug>
 #include <QStringList>
 
 namespace {
@@ -19,6 +20,7 @@ SettingsManager::SettingsManager(QObject *parent)
     m_themeName = isSupportedTheme(storedTheme)
         ? storedTheme
         : kDefaultTheme;
+    qInfo() << "[Settings] Loaded theme:" << m_themeName;
 }
 
 QString SettingsManager::themeName() const
@@ -28,16 +30,27 @@ QString SettingsManager::themeName() const
 
 void SettingsManager::setThemeName(const QString &themeName)
 {
-    if (!isSupportedTheme(themeName) || m_themeName == themeName)
+    qInfo() << "[Settings] setThemeName requested:" << themeName
+            << "current:" << m_themeName;
+    if (!isSupportedTheme(themeName)) {
+        qWarning() << "[Settings] Rejected unsupported theme:" << themeName;
         return;
+    }
+    if (m_themeName == themeName) {
+        qInfo() << "[Settings] Theme already selected; no change needed.";
+        return;
+    }
 
     m_themeName = themeName;
 
     QSettings settings;
     settings.setValue(QStringLiteral("appearance/theme"), m_themeName);
     settings.sync();
+    qInfo() << "[Settings] Saved theme:" << m_themeName
+            << "QSettings status:" << settings.status();
 
     emit themeNameChanged();
+    qInfo() << "[Settings] themeNameChanged emitted.";
 }
 
 bool SettingsManager::isSupportedTheme(const QString &themeName)
