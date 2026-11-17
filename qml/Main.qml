@@ -30,10 +30,63 @@ ApplicationWindow {
         return "Arrow Keys  Navigate     Enter  Select     Esc  Back     F11  Fullscreen"
     }
 
+    function collectFocusableItems(item, output) {
+        if (!item || item.visible === false || item.enabled === false)
+            return
+        if (item.activeFocusOnTab && item.width > 0 && item.height > 0)
+            output.push(item)
+        const children = item.children || []
+        for (let i = 0; i < children.length; ++i)
+            collectFocusableItems(children[i], output)
+    }
+
+    function moveDirectionalFocus(container, direction) {
+        const candidates = []
+        collectFocusableItems(container, candidates)
+        const current = window.activeFocusItem
+        if (!current || candidates.indexOf(current) < 0) {
+            if (candidates.length > 0)
+                candidates[0].forceActiveFocus()
+            return candidates.length > 0
+        }
+
+        const origin = current.mapToItem(container, current.width / 2, current.height / 2)
+        let best = null
+        let bestScore = Number.POSITIVE_INFINITY
+        for (let i = 0; i < candidates.length; ++i) {
+            const candidate = candidates[i]
+            if (candidate === current)
+                continue
+            const point = candidate.mapToItem(container,
+                candidate.width / 2, candidate.height / 2)
+            const dx = point.x - origin.x
+            const dy = point.y - origin.y
+            const primary = direction === "right" ? dx
+                : direction === "left" ? -dx
+                : direction === "down" ? dy : -dy
+            if (primary <= 4)
+                continue
+            const cross = direction === "left" || direction === "right"
+                ? Math.abs(dy) : Math.abs(dx)
+            const score = primary + cross * 2.2
+            if (score < bestScore) {
+                bestScore = score
+                best = candidate
+            }
+        }
+
+        if (!best)
+            return false
+        best.forceActiveFocus()
+        return true
+    }
+
     function controllerNavigate(direction) {
         activeInputDevice = "controller"
 
         if (gameDetailsPopup.visible) {
+            if (window.moveDirectionalFocus(detailsContentFrame, direction))
+                return
             if (direction === "up" || direction === "down") {
                 const bar = gameInfoScroll.ScrollBar.vertical
                 bar.position = Math.max(0, Math.min(1,
@@ -64,12 +117,18 @@ ApplicationWindow {
 
     function controllerSelect() {
         activeInputDevice = "controller"
-        if (gameDetailsPopup.visible)
+        if (gameDetailsPopup.visible) {
+            const focused = window.activeFocusItem
+            if (focused && typeof focused.click === "function")
+                focused.click()
             return
+        }
         if (currentPage === "Library" && gameGrid.count > 0) {
             const tile = gameGrid.itemAtIndex(gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex)
             if (tile && tile.openDetails)
                 tile.openDetails()
+        } else if (currentPage === "Settings") {
+            moveDirectionalFocus(settingsContentCard, "down")
         }
     }
 
@@ -726,6 +785,7 @@ ApplicationWindow {
                  bytesReceived: 0, bytesTotal: 0 })
 
         onOpened: {
+            detailsBackButton.forceActiveFocus()
             screenshotIndex = 0
             previousScreenshotIndex = -1
             screenshotLayerA = true
@@ -787,6 +847,7 @@ ApplicationWindow {
             }
 
             Button {
+                id: detailsBackButton
                 z: 10
                 anchors.left: parent.left
                 anchors.top: parent.top
