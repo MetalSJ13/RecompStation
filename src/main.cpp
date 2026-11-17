@@ -9,6 +9,7 @@
 #include "core/GameLaunchManager.h"
 #include "core/LibraryScanner.h"
 #include "core/ArtworkManager.h"
+#include "core/ScreenshotManager.h"
 #include "core/LibraryMetadataMatcher.h"
 #include "database/DatabaseManager.h"
 #include "metadata/TheGamesDbClient.h"
@@ -72,6 +73,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("libraryScanner", &libraryScanner);
     engine.rootContext()->setContextProperty("metadataManager", &metadataManager);
     engine.rootContext()->setContextProperty("artworkManager", &artworkManager);
+    engine.rootContext()->setContextProperty("screenshotManager", &screenshotManager);
     engine.rootContext()->setContextProperty("metadataMatcher", &metadataMatcher);
     engine.rootContext()->setContextProperty("githubManager", &githubManager);
     engine.rootContext()->setContextProperty("launcherDownloadManager", &launcherDownloadManager);
