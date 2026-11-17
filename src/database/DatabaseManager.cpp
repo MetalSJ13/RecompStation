@@ -537,6 +537,26 @@ bool DatabaseManager::addGameScreenshot(int gameId, const QString &localPath)
     return true;
 }
 
+bool DatabaseManager::clearGameScreenshots(int gameId)
+{
+    if (!m_database.isOpen() || gameId <= 0) {
+        m_lastError = QStringLiteral("A valid local game is required.");
+        emit errorChanged();
+        return false;
+    }
+    QSqlQuery query(m_database);
+    query.prepare("DELETE FROM game_screenshots WHERE game_id = :game_id");
+    query.bindValue(":game_id", gameId);
+    if (!query.exec()) {
+        m_lastError = query.lastError().text();
+        emit errorChanged();
+        return false;
+    }
+    m_lastError.clear();
+    emit errorChanged();
+    return true;
+}
+
 QVariantList DatabaseManager::gameScreenshots(int gameId) const
 {
     QVariantList result;
