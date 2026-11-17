@@ -140,10 +140,17 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             this, [this](const QString &message) {
         if (!m_busy)
             return;
-        qCWarning(lcMetadata) << "Metadata lookup stopped:" << message;
-        setStatus(QStringLiteral("Metadata lookup stopped: %1").arg(message));
+        qCWarning(lcMetadata) << "Metadata lookup failed for the current game:"
+                               << m_currentGame.value(QStringLiteral("title")).toString()
+                               << message;
+        // A provider/network failure is not a definitive no-match. Leave
+        // lookup-attempt records untouched so a later scan can retry.
+        ++m_unresolvedCount;
+        m_completedCount += 1 + m_queue.size();
         m_queue.clear();
         m_currentGame.clear();
+        emit progressChanged();
+        setStatus(QStringLiteral("Metadata lookup stopped: %1").arg(message));
         setBusy(false);
         emit scrapeFinished(m_matchedCount, m_unresolvedCount);
     });
@@ -351,10 +358,22 @@ void LibraryMetadataMatcher::processNext()
         m_currentGame.value(QStringLiteral("platform")).toString();
     const int platformId = m_metadata->metadataPlatformId(platform);
     if (platformId <= 0) {
-        setStatus(QStringLiteral("Waiting for the metadata platform catalog."));
-        m_queue.prepend(m_currentGame);
-        m_currentGame.clear();
-        setBusy(false);
+        if (m_metadata->platformsLoading()) {
+            setStatus(QStringLiteral("Waiting for the metadata platform catalog."));
+            m_queue.prepend(m_currentGame);
+            m_currentGame.clear();
+            setBusy(false);
+            return;
+        }
+
+        // The catalog has finished loading but has no mapping for this
+        // platform. Count this game as unresolved and continue with the rest
+        // of the queue rather than blocking every subsequent platform.
+        qCWarning(lcMetadata) << "No metadata provider platform mapping for"
+                              << platform << "- skipping this game for now.";
+        finishCurrent(false,
+            QStringLiteral("No provider platform mapping for %1; skipped")
+                .arg(platform));
         return;
     }
 
