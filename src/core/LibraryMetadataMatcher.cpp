@@ -12,6 +12,18 @@
 namespace {
 QString normalizedTitle(QString title)
 {
+    // ROM databases commonly put the leading article at the end of a title,
+    // e.g. "Legend of Zelda, The - Ocarina of Time". Move it to the front
+    // before producing the provider query and comparison key.
+    static const QRegularExpression trailingArticle(
+        QStringLiteral(R"(^\\s*(.+?),\\s*The\\s*[-:–—]\\s*(.+?)\\s*$)"),
+        QRegularExpression::CaseInsensitiveOption);
+    const QRegularExpressionMatch articleMatch = trailingArticle.match(title);
+    if (articleMatch.hasMatch()) {
+        title = QStringLiteral("The %1 %2")
+                    .arg(articleMatch.captured(1), articleMatch.captured(2));
+    }
+
     // Strip recognized region identifiers, but preserve revision tags.
     static const QRegularExpression regionTag(
         QStringLiteral(
@@ -83,6 +95,18 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             qCWarning(lcMetadata) << "No confident match for" << localTitle
                                   << "platform ID:" << expectedPlatformId
                                   << "candidate count:" << results.size();
+            // Keep enough provider-side detail in the runtime log to
+            // distinguish a title-normalization issue from genuinely
+            // unrelated or cross-platform search results.
+            for (const QVariant &entry : results) {
+                const QVariantMap candidate = entry.toMap();
+                qCInfo(lcMetadata) << "Metadata candidate:"
+                                   << candidate.value(QStringLiteral("title")).toString()
+                                   << "platform ID:"
+                                   << candidate.value(QStringLiteral("platformId")).toInt()
+                                   << "artwork pixels:"
+                                   << candidate.value(QStringLiteral("artworkPixelCount")).toInt();
+            }
             const bool ambiguous = matchIndex == -2;
             const int gameId = m_currentGame.value(QStringLiteral("id")).toInt();
             if (m_database) {
