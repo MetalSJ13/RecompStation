@@ -25,6 +25,7 @@ qt_add_executable(RecompStationApp
     src/core/Logging.h
     src/core/Logging.cpp
     data/projects.qrc
+    data/ui_icons.qrc
     src/projects/ProjectCatalog.h
     src/projects/ProjectCatalog.cpp
     src/github/GitHubManager.h
