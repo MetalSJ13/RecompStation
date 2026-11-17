@@ -306,7 +306,7 @@ QVariantList DatabaseManager::games(const QString &platform) const
         const QString artworkPath = query.value(11).toString();
         game.insert("artworkPath", artworkPath.isEmpty()
                     ? QString() : QUrl::fromLocalFile(artworkPath).toString());
-        game.insert("metadataArtworkUrl", query.value(12).toString());
+        game.insert("metadataArtworkUrl", query.value(12).toString());\n        game.insert("screenshots", gameScreenshots(id));
         result.append(game);
     }
     return result;
@@ -489,4 +489,68 @@ bool DatabaseManager::markMetadataLookupAttempt(int gameId, const QString &statu
     m_lastError.clear();
     emit errorChanged();
     return true;
+}
+
+QVariantList DatabaseManager::gamesWithMetadata() const
+{
+    QVariantList result;
+    if (!m_database.isOpen())
+        return result;
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        SELECT games.id, game_metadata.provider, game_metadata.provider_game_id
+        FROM games
+        JOIN game_metadata ON game_metadata.game_id = games.id
+        WHERE games.is_available = 1
+        ORDER BY games.id
+    )");
+    if (!query.exec())
+        return result;
+    while (query.next()) {
+        result.append(QVariantMap{
+            {QStringLiteral("id"), query.value(0).toInt()},
+            {QStringLiteral("metadataProvider"), query.value(1).toString()},
+            {QStringLiteral("metadataGameId"), query.value(2).toInt()}
+        });
+    }
+    return result;
+}
+
+bool DatabaseManager::addGameScreenshot(int gameId, const QString &localPath)
+{
+    if (!m_database.isOpen() || gameId <= 0 || localPath.trimmed().isEmpty()) {
+        m_lastError = QStringLiteral("A valid game and screenshot path are required.");
+        emit errorChanged();
+        return false;
+    }
+    QSqlQuery query(m_database);
+    query.prepare("INSERT OR IGNORE INTO game_screenshots (game_id, local_path) VALUES (:game_id, :path)");
+    query.bindValue(":game_id", gameId);
+    query.bindValue(":path", localPath);
+    if (!query.exec()) {
+        m_lastError = query.lastError().text();
+        emit errorChanged();
+        return false;
+    }
+    m_lastError.clear();
+    emit errorChanged();
+    return true;
+}
+
+QVariantList DatabaseManager::gameScreenshots(int gameId) const
+{
+    QVariantList result;
+    if (!m_database.isOpen() || gameId <= 0)
+        return result;
+    QSqlQuery query(m_database);
+    query.prepare("SELECT local_path FROM game_screenshots WHERE game_id = :game_id ORDER BY id");
+    query.bindValue(":game_id", gameId);
+    if (!query.exec())
+        return result;
+    while (query.next()) {
+        const QString path = query.value(0).toString();
+        if (QFileInfo::exists(path))
+            result.append(QUrl::fromLocalFile(path).toString());
+    }
+    return result;
 }
