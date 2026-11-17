@@ -2020,65 +2020,195 @@ ApplicationWindow {
                         anchors.fill: parent
                         spacing: 22
 
-                        ColumnLayout {
-                            id: settingsNavigationColumn
-                            Layout.minimumWidth: 205
-                            Layout.maximumWidth: 205
-                            Layout.preferredWidth: 205
+                        Rectangle {
+                            id: settingsNavigationPanel
+                            Layout.minimumWidth: 224
+                            Layout.maximumWidth: 224
+                            Layout.preferredWidth: 224
                             Layout.fillHeight: true
-                            spacing: 10
+                            radius: theme.radiusLarge
+                            color: theme.sidebarBackground
+                            border.color: theme.divider
 
-                            Label {
-                                text: "SETTINGS"
-                                color: theme.textMuted
-                                font.pixelSize: 11 * theme.fontScale
-                                font.bold: true
-                                font.letterSpacing: 1
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: "Personalize your RecompStation experience."
-                                color: theme.textSecondary
-                                font.pixelSize: 12 * theme.fontScale
-                                wrapMode: Text.Wrap
-                            }
-                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                            ColumnLayout {
+                                id: settingsNavigationColumn
+                                anchors.fill: parent
+                                anchors.margins: 16
+                                spacing: 12
 
-                            Button {
-                                Layout.fillWidth: true
-                                text: "✦   Appearance"
-                                highlighted: settingsPage.section === "Appearance"
-                                onClicked: {
-                                    console.info("[Settings QML] Appearance navigation clicked")
-                                    settingsPage.section = "Appearance"
+                                Label {
+                                    text: "PREFERENCES"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10 * theme.fontScale
+                                    font.bold: true
+                                    font.letterSpacing: 1.2
                                 }
-                            }
-                            Button {
-                                Layout.fillWidth: true
-                                text: "▣   Display"
-                                highlighted: settingsPage.section === "Display"
-                                onClicked: settingsPage.section = "Display"
-                            }
-                            Button {
-                                Layout.fillWidth: true
-                                text: "▤   Library"
-                                highlighted: settingsPage.section === "Library"
-                                onClicked: settingsPage.section = "Library"
-                            }
-                            Button {
-                                Layout.fillWidth: true
-                                text: "⌘   Application"
-                                highlighted: settingsPage.section === "Application"
-                                onClicked: settingsPage.section = "Application"
-                            }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Configure your RecompStation experience."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 1
+                                    color: theme.divider
+                                }
 
-                            Item { Layout.fillHeight: true }
-                            Label {
-                                Layout.fillWidth: true
-                                text: "Other settings will be added when their features are ready."
-                                color: theme.textMuted
-                                font.pixelSize: 11 * theme.fontScale
-                                wrapMode: Text.Wrap
+                                Button {
+                                    id: appearanceNavigationButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 48
+                                    padding: 10
+                                    highlighted: settingsPage.section === "Appearance"
+                                    onClicked: settingsPage.section = "Appearance"
+                                    background: Rectangle {
+                                        radius: theme.radiusCard
+                                        color: appearanceNavigationButton.highlighted
+                                            ? theme.elevatedSurface
+                                            : appearanceNavigationButton.hovered
+                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
+                                                : "transparent"
+                                        border.width: appearanceNavigationButton.highlighted ? 1 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.fillHeight: true
+                                            radius: 2
+                                            color: appearanceNavigationButton.highlighted
+                                                ? theme.accent : "transparent"
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Appearance"
+                                            color: appearanceNavigationButton.highlighted
+                                                ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.bold: appearanceNavigationButton.highlighted
+                                        }
+                                    }
+                                }
+                                Button {
+                                    id: displayNavigationButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 48
+                                    padding: 10
+                                    highlighted: settingsPage.section === "Display"
+                                    onClicked: settingsPage.section = "Display"
+                                    background: Rectangle {
+                                        radius: theme.radiusCard
+                                        color: displayNavigationButton.highlighted
+                                            ? theme.elevatedSurface
+                                            : displayNavigationButton.hovered
+                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
+                                                : "transparent"
+                                        border.width: displayNavigationButton.highlighted ? 1 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.fillHeight: true
+                                            radius: 2
+                                            color: displayNavigationButton.highlighted
+                                                ? theme.accent : "transparent"
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Display"
+                                            color: displayNavigationButton.highlighted
+                                                ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.bold: displayNavigationButton.highlighted
+                                        }
+                                    }
+                                }
+                                Button {
+                                    id: libraryNavigationButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 48
+                                    padding: 10
+                                    highlighted: settingsPage.section === "Library"
+                                    onClicked: settingsPage.section = "Library"
+                                    background: Rectangle {
+                                        radius: theme.radiusCard
+                                        color: libraryNavigationButton.highlighted
+                                            ? theme.elevatedSurface
+                                            : libraryNavigationButton.hovered
+                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
+                                                : "transparent"
+                                        border.width: libraryNavigationButton.highlighted ? 1 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.fillHeight: true
+                                            radius: 2
+                                            color: libraryNavigationButton.highlighted
+                                                ? theme.accent : "transparent"
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Library"
+                                            color: libraryNavigationButton.highlighted
+                                                ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.bold: libraryNavigationButton.highlighted
+                                        }
+                                    }
+                                }
+                                Button {
+                                    id: applicationNavigationButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 48
+                                    padding: 10
+                                    highlighted: settingsPage.section === "Application"
+                                    onClicked: settingsPage.section = "Application"
+                                    background: Rectangle {
+                                        radius: theme.radiusCard
+                                        color: applicationNavigationButton.highlighted
+                                            ? theme.elevatedSurface
+                                            : applicationNavigationButton.hovered
+                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
+                                                : "transparent"
+                                        border.width: applicationNavigationButton.highlighted ? 1 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.fillHeight: true
+                                            radius: 2
+                                            color: applicationNavigationButton.highlighted
+                                                ? theme.accent : "transparent"
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Application"
+                                            color: applicationNavigationButton.highlighted
+                                                ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.bold: applicationNavigationButton.highlighted
+                                        }
+                                    }
+                                }
+
+                                Item { Layout.fillHeight: true }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "More preferences will appear here as features are added."
+                                    color: theme.textMuted
+                                    font.pixelSize: 10 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
                             }
                         }
 
