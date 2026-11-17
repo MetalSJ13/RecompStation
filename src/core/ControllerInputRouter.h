@@ -1,0 +1,46 @@
+#pragma once
+
+#include <QObject>
+#include <QString>
+
+// Hardware-independent controller input state machine. SDL (or another input
+// backend) supplies normalized button states; this class owns edge detection,
+// repeat timing, and input suspension so those behaviors can be tested
+// without a physical controller.
+class ControllerInputRouter final : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit ControllerInputRouter(QObject *parent = nullptr);
+
+    void processFrame(const QString &direction,
+                      bool selectPressed,
+                      bool backPressed,
+                      bool menuPressed,
+                      bool previousSectionPressed,
+                      bool nextSectionPressed,
+                      qint64 elapsedMs);
+
+    bool inputEnabled() const;
+    void setInputEnabled(bool enabled);
+
+signals:
+    void navigationRequested(const QString &direction);
+    void selectRequested();
+    void backRequested();
+    void menuRequested();
+    void previousSectionRequested();
+    void nextSectionRequested();
+    void inputEnabledChanged();
+
+private:
+    bool m_inputEnabled = true;
+    bool m_previousSelect = false;
+    bool m_previousBack = false;
+    bool m_previousMenu = false;
+    bool m_previousPreviousSection = false;
+    bool m_previousNextSection = false;
+    QString m_currentDirection;
+    qint64 m_lastNavigationMs = 0;
+};
