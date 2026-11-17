@@ -71,13 +71,16 @@ void SettingsManagerTest::persistsDisplayMode()
     {
         SettingsManager manager(settingsPath);
         QSignalSpy changed(&manager, &SettingsManager::displayModeChanged);
+        manager.setRestoreDisplayMode(QStringLiteral("maximized"));
         manager.setDisplayMode(QStringLiteral("fullscreen"));
         QCOMPARE(manager.displayMode(), QStringLiteral("fullscreen"));
+        QCOMPARE(manager.restoreDisplayMode(), QStringLiteral("maximized"));
         QCOMPARE(changed.count(), 1);
     }
 
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.displayMode(), QStringLiteral("fullscreen"));
+    QCOMPARE(reloaded.restoreDisplayMode(), QStringLiteral("maximized"));
 }
 
 void SettingsManagerTest::rejectsUnsupportedDisplayMode()
@@ -129,6 +132,7 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
         QVERIFY(!manager.scanOnStartup());
         QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("3440x1440"));
         QCOMPARE(manager.displayMode(), QStringLiteral("maximized"));
+        QCOMPARE(manager.restoreDisplayMode(), QStringLiteral("maximized"));
     }
 
     SettingsManager reloaded(settingsPath);
@@ -136,6 +140,7 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
     QVERIFY(!reloaded.scanOnStartup());
     QCOMPARE(reloaded.preferredPresentationSize(), QStringLiteral("3440x1440"));
     QCOMPARE(reloaded.displayMode(), QStringLiteral("maximized"));
+    QCOMPARE(reloaded.restoreDisplayMode(), QStringLiteral("maximized"));
     QVERIFY(QFileInfo(settingsPath).isFile());
 }
 
