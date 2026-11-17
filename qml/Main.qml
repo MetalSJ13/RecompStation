@@ -2626,6 +2626,10 @@ ApplicationWindow {
                 live: false
                 hideSource: false
                 recursive: true
+                // A slightly smaller snapshot texture reduces GPU work during
+                // navigation, while smooth filtering keeps the transition crisp.
+                textureSize: Qt.size(Math.max(1, Math.round(width * 0.75)),
+                                      Math.max(1, Math.round(height * 0.75)))
                 smooth: true
                 visible: window.navigationTransitionRunning
                 z: 10
