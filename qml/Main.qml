@@ -533,6 +533,9 @@ ApplicationWindow {
                  bytesReceived: 0, bytesTotal: 0 })
 
         onOpened: {
+            screenshotIndex = 0
+            previousScreenshotIndex = -1
+            screenshotLayerA = true
             installPromptVisible = false
             if (primaryProject && !releaseState.loading
                     && !releaseState.release && releaseState.error.length === 0)
