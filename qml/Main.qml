@@ -3090,6 +3090,10 @@ ApplicationWindow {
         Rectangle {
             id: topNavigationBar
             anchors.top: parent.top
+            Keys.onPressed: function(event) {
+                if (!event.isAutoRepeat)
+                    window.activeInputDevice = "keyboard"
+            }
             anchors.left: parent.left
             anchors.right: parent.right
             height: 66
