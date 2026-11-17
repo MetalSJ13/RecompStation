@@ -1260,6 +1260,7 @@ ApplicationWindow {
                                 required property string metadataOverview
                                 required property string metadataReleaseDate
                                 required property string metadataRating
+                                required property var screenshots
                                 required property int id
                                 required property int index
                                 property int gameId: id
@@ -1270,6 +1271,7 @@ ApplicationWindow {
                                         platform: gameTile.platform,
                                         path: gameTile.path,
                                         artworkPath: gameTile.artworkPath,
+                                        screenshots: gameTile.screenshots,
                                         metadataTitle: gameTile.metadataTitle,
                                         metadataOverview: gameTile.metadataOverview,
                                         metadataReleaseDate: gameTile.metadataReleaseDate,
