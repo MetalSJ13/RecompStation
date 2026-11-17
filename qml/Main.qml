@@ -603,19 +603,19 @@ ApplicationWindow {
                 spacing: 48
 
             Rectangle {
-                Layout.preferredWidth: Math.min(420, Math.max(300, height * 0.48))
-                Layout.fillHeight: true
-                Layout.maximumHeight: 760
-                Layout.alignment: Qt.AlignVCenter
-                radius: theme.radiusLarge
-                color: theme.sidebarBackground
-                border.color: theme.divider
-                border.width: 1
+                Layout.preferredWidth: 214
+                Layout.preferredHeight: 306
+                Layout.fillHeight: false
+                Layout.alignment: Qt.AlignTop
+                radius: theme.radiusMedium
+                color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.12)
+                border.color: theme.accentHover
+                border.width: 2
                 clip: true
 
                 Image {
                     anchors.fill: parent
-                    anchors.margins: 12
+                    anchors.margins: 5
                     source: window.selectedGame ? window.selectedGame.artworkPath : ""
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
@@ -737,7 +737,7 @@ ApplicationWindow {
                                     ? window.selectedGame.metadataOverview
                                     : "No description is available yet. RecompStation will add game information when matching metadata is found."
                                 color: theme.textSecondary
-                                font.pixelSize: 13 * theme.fontScale
+                                font.pixelSize: 16 * theme.fontScale
                                 wrapMode: Text.Wrap
                             }
                             Label {
@@ -903,120 +903,121 @@ ApplicationWindow {
                                                 : "")
                                     color: theme.accentHover
                                 }
-                            }
+                                                            RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    Button {
+                                        visible: !!window.selectedGame
+                                            && (!window.selectedGame.metadataTitle
+                                                || window.selectedGame.metadataTitle.length === 0
+                                                || !window.selectedGame.artworkPath
+                                                || window.selectedGame.artworkPath.length === 0)
+                                        enabled: metadataManager.configured && !metadataMatcher.busy
+                                        text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
+                                        onClicked: {
+                                            console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
+                                            metadataMatcher.scrapeGame(window.selectedGame.id)
+                                        }
+                                    }
+
+                                    Button {
+                                        visible: gameDetailsPopup.installedProject !== null
+                                        highlighted: true
+                                        text: gameDetailsPopup.primaryProject
+                                            && window.runningLaunchers[gameDetailsPopup.primaryProject.id]
+                                            ? "Running…" : "Play Game"
+                                        icon.source: "qrc:/icons/play.svg"
+                                        icon.width: 18
+                                        icon.height: 18
+                                        icon.color: theme.textPrimary
+                                        enabled: gameDetailsPopup.primaryProject !== null
+                                            && gameDetailsPopup.installedProject !== null
+                                            && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
+                                        onClicked: window.launchSupportedGame(gameDetailsPopup.primaryProject.id)
+                                    }
+                                    Button {
+                                        visible: gameDetailsPopup.installedProject !== null
+                                        text: "Uninstall"
+                                        icon.source: "qrc:/icons/uninstall.svg"
+                                        icon.width: 18
+                                        icon.height: 18
+                                        icon.color: theme.textPrimary
+                                        onClicked: {
+                                            window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
+                                            uninstallDialog.open()
+                                        }
+                                    }
+                                    Button {
+                                        visible: gameDetailsPopup.primaryProject !== null
+                                            && gameDetailsPopup.installedProject === null
+                                            && !gameDetailsPopup.installPromptVisible
+                                            && !gameDetailsPopup.releaseState.loading
+                                            && gameDetailsPopup.releaseState.assets.length > 0
+                                        highlighted: true
+                                        text: "Install Launcher"
+                                        icon.source: "qrc:/icons/install.svg"
+                                        icon.width: 18
+                                        icon.height: 18
+                                        icon.color: theme.textPrimary
+                                        onClicked: gameDetailsPopup.installPromptVisible = true
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        visible: !!gameDetailsPopup.installPromptVisible
+                                            && !!gameDetailsPopup.primaryProject
+                                            && gameDetailsPopup.installedProject === null
+                                        text: gameDetailsPopup.primaryProject
+                                            ? (gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                                ? "This is a BETA project. It may contain bugs or incomplete features. Install "
+                                                    + gameDetailsPopup.primaryProject.name + "?"
+                                                : gameDetailsPopup.primaryProject.developmentStatus === "alpha"
+                                                    ? "This is an ALPHA project and may be unstable. Install "
+                                                        + gameDetailsPopup.primaryProject.name + "?"
+                                                    : "Install " + gameDetailsPopup.primaryProject.name + "?")
+                                            : ""
+                                        color: theme.textPrimary
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Button {
+                                        visible: gameDetailsPopup.installPromptVisible
+                                            && gameDetailsPopup.installedProject === null
+                                        highlighted: true
+                                        text: "Yes"
+                                        icon.source: "qrc:/icons/check.svg"
+                                        icon.width: 16
+                                        icon.height: 16
+                                        icon.color: theme.textPrimary
+                                        onClicked: {
+                                            gameDetailsPopup.installPromptVisible = false
+                                            const asset = gameDetailsPopup.selectedAsset
+                                            if (asset)
+                                                window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
+                                        }
+                                    }
+                                    Button {
+                                        visible: gameDetailsPopup.installPromptVisible
+                                            && gameDetailsPopup.installedProject === null
+                                        text: "No"
+                                        icon.source: "qrc:/icons/close.svg"
+                                        icon.width: 16
+                                        icon.height: 16
+                                        icon.color: theme.textPrimary
+                                        onClicked: gameDetailsPopup.installPromptVisible = false
+                                    }
+                                    Button {
+                                        visible: gameDetailsPopup.primaryProject !== null
+                                            && gameDetailsPopup.releaseState.error.length > 0
+                                        text: "Retry"
+                                        onClicked: window.checkProjectRelease(gameDetailsPopup.primaryProject)
+                                    }
+                                }
+}
                         }
                     }
                 }
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
 
-                    Button {
-                        visible: !!window.selectedGame
-                            && (!window.selectedGame.metadataTitle
-                                || window.selectedGame.metadataTitle.length === 0
-                                || !window.selectedGame.artworkPath
-                                || window.selectedGame.artworkPath.length === 0)
-                        enabled: metadataManager.configured && !metadataMatcher.busy
-                        text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
-                        onClicked: {
-                            console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
-                            metadataMatcher.scrapeGame(window.selectedGame.id)
-                        }
-                    }
-
-                    Button {
-                        visible: gameDetailsPopup.installedProject !== null
-                        highlighted: true
-                        text: gameDetailsPopup.primaryProject
-                            && window.runningLaunchers[gameDetailsPopup.primaryProject.id]
-                            ? "Running…" : "Play Game"
-                        icon.source: "qrc:/icons/play.svg"
-                        icon.width: 18
-                        icon.height: 18
-                        icon.color: theme.textPrimary
-                        enabled: gameDetailsPopup.primaryProject !== null
-                            && gameDetailsPopup.installedProject !== null
-                            && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
-                        onClicked: window.launchSupportedGame(gameDetailsPopup.primaryProject.id)
-                    }
-                    Button {
-                        visible: gameDetailsPopup.installedProject !== null
-                        text: "Uninstall"
-                        icon.source: "qrc:/icons/uninstall.svg"
-                        icon.width: 18
-                        icon.height: 18
-                        icon.color: theme.textPrimary
-                        onClicked: {
-                            window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
-                            uninstallDialog.open()
-                        }
-                    }
-                    Button {
-                        visible: gameDetailsPopup.primaryProject !== null
-                            && gameDetailsPopup.installedProject === null
-                            && !gameDetailsPopup.installPromptVisible
-                            && !gameDetailsPopup.releaseState.loading
-                            && gameDetailsPopup.releaseState.assets.length > 0
-                        highlighted: true
-                        text: "Install Launcher"
-                        icon.source: "qrc:/icons/install.svg"
-                        icon.width: 18
-                        icon.height: 18
-                        icon.color: theme.textPrimary
-                        onClicked: gameDetailsPopup.installPromptVisible = true
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        visible: !!gameDetailsPopup.installPromptVisible
-                            && !!gameDetailsPopup.primaryProject
-                            && gameDetailsPopup.installedProject === null
-                        text: gameDetailsPopup.primaryProject
-                            ? (gameDetailsPopup.primaryProject.developmentStatus === "beta"
-                                ? "This is a BETA project. It may contain bugs or incomplete features. Install "
-                                    + gameDetailsPopup.primaryProject.name + "?"
-                                : gameDetailsPopup.primaryProject.developmentStatus === "alpha"
-                                    ? "This is an ALPHA project and may be unstable. Install "
-                                        + gameDetailsPopup.primaryProject.name + "?"
-                                    : "Install " + gameDetailsPopup.primaryProject.name + "?")
-                            : ""
-                        color: theme.textPrimary
-                        wrapMode: Text.Wrap
-                    }
-                    Button {
-                        visible: gameDetailsPopup.installPromptVisible
-                            && gameDetailsPopup.installedProject === null
-                        highlighted: true
-                        text: "Yes"
-                        icon.source: "qrc:/icons/check.svg"
-                        icon.width: 16
-                        icon.height: 16
-                        icon.color: theme.textPrimary
-                        onClicked: {
-                            gameDetailsPopup.installPromptVisible = false
-                            const asset = gameDetailsPopup.selectedAsset
-                            if (asset)
-                                window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
-                        }
-                    }
-                    Button {
-                        visible: gameDetailsPopup.installPromptVisible
-                            && gameDetailsPopup.installedProject === null
-                        text: "No"
-                        icon.source: "qrc:/icons/close.svg"
-                        icon.width: 16
-                        icon.height: 16
-                        icon.color: theme.textPrimary
-                        onClicked: gameDetailsPopup.installPromptVisible = false
-                    }
-                    Button {
-                        visible: gameDetailsPopup.primaryProject !== null
-                            && gameDetailsPopup.releaseState.error.length > 0
-                        text: "Retry"
-                        onClicked: window.checkProjectRelease(gameDetailsPopup.primaryProject)
-                    }
-                }
             }
             }
         }
