@@ -609,9 +609,18 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignTop
                 radius: theme.radiusMedium
                 color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.12)
-                border.color: theme.accentHover
+                border.color: theme.textPrimary
                 border.width: 2
                 clip: true
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 3
+                    radius: Math.max(0, parent.radius - 2)
+                    color: "transparent"
+                    border.color: theme.accent
+                    border.width: 1
+                }
 
                 Image {
                     anchors.fill: parent
@@ -737,8 +746,10 @@ ApplicationWindow {
                                     ? window.selectedGame.metadataOverview
                                     : "No description is available yet. RecompStation will add game information when matching metadata is found."
                                 color: theme.textSecondary
-                                font.pixelSize: 16 * theme.fontScale
+                                font.pixelSize: 19 * theme.fontScale
                                 wrapMode: Text.Wrap
+                                lineHeight: 1.18
+                                lineHeightMode: Text.ProportionalHeight
                             }
                             Label {
                                 Layout.fillWidth: true
@@ -960,50 +971,52 @@ ApplicationWindow {
                                         icon.width: 18
                                         icon.height: 18
                                         icon.color: theme.textPrimary
+                                        implicitHeight: 48
+                                        Layout.minimumWidth: 150
                                         onClicked: gameDetailsPopup.installPromptVisible = true
                                     }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        visible: !!gameDetailsPopup.installPromptVisible
-                                            && !!gameDetailsPopup.primaryProject
-                                            && gameDetailsPopup.installedProject === null
-                                        text: gameDetailsPopup.primaryProject
-                                            ? (gameDetailsPopup.primaryProject.developmentStatus === "beta"
-                                                ? "This is a BETA project. It may contain bugs or incomplete features. Install "
-                                                    + gameDetailsPopup.primaryProject.name + "?"
-                                                : gameDetailsPopup.primaryProject.developmentStatus === "alpha"
-                                                    ? "This is an ALPHA project and may be unstable. Install "
-                                                        + gameDetailsPopup.primaryProject.name + "?"
-                                                    : "Install " + gameDetailsPopup.primaryProject.name + "?")
-                                            : ""
-                                        color: theme.textPrimary
-                                        wrapMode: Text.Wrap
-                                    }
-                                    Button {
+                                    RowLayout {
                                         visible: gameDetailsPopup.installPromptVisible
                                             && gameDetailsPopup.installedProject === null
-                                        highlighted: true
-                                        text: "Yes"
-                                        icon.source: "qrc:/icons/check.svg"
-                                        icon.width: 16
-                                        icon.height: 16
-                                        icon.color: theme.textPrimary
-                                        onClicked: {
-                                            gameDetailsPopup.installPromptVisible = false
-                                            const asset = gameDetailsPopup.selectedAsset
-                                            if (asset)
-                                                window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
+                                        spacing: 8
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: gameDetailsPopup.primaryProject
+                                                ? (gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                                    ? "Install this BETA launcher?"
+                                                    : gameDetailsPopup.primaryProject.developmentStatus === "alpha"
+                                                        ? "Install this ALPHA launcher?"
+                                                        : "Install this launcher?")
+                                                : "Install launcher?"
+                                            color: theme.textPrimary
+                                            wrapMode: Text.Wrap
                                         }
-                                    }
-                                    Button {
-                                        visible: gameDetailsPopup.installPromptVisible
-                                            && gameDetailsPopup.installedProject === null
-                                        text: "No"
-                                        icon.source: "qrc:/icons/close.svg"
-                                        icon.width: 16
-                                        icon.height: 16
-                                        icon.color: theme.textPrimary
-                                        onClicked: gameDetailsPopup.installPromptVisible = false
+                                        Button {
+                                            highlighted: true
+                                            text: "Yes"
+                                            icon.source: "qrc:/icons/check.svg"
+                                            icon.width: 16
+                                            icon.height: 16
+                                            icon.color: theme.textPrimary
+                                            implicitHeight: 48
+                                            Layout.minimumWidth: 88
+                                            onClicked: {
+                                                gameDetailsPopup.installPromptVisible = false
+                                                const asset = gameDetailsPopup.selectedAsset
+                                                if (asset)
+                                                    window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
+                                            }
+                                        }
+                                        Button {
+                                            text: "No"
+                                            icon.source: "qrc:/icons/close.svg"
+                                            icon.width: 16
+                                            icon.height: 16
+                                            icon.color: theme.textPrimary
+                                            implicitHeight: 48
+                                            Layout.minimumWidth: 88
+                                            onClicked: gameDetailsPopup.installPromptVisible = false
+                                        }
                                     }
                                     Button {
                                         visible: gameDetailsPopup.primaryProject !== null
