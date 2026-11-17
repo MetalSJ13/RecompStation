@@ -46,6 +46,8 @@ qt_add_executable(RecompStationApp
     src/core/LibraryMetadataMatcher.cpp
     src/core/ArtworkManager.h
     src/core/ArtworkManager.cpp
+    src/core/ScreenshotManager.h
+    src/core/ScreenshotManager.cpp
     src/database/DatabaseManager.h
     src/database/DatabaseManager.cpp
     src/metadata/GameMetadata.h
