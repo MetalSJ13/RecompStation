@@ -497,6 +497,7 @@ ApplicationWindow {
         property var installedProject: primaryProject
             ? window.installedLauncher(primaryProject.id) : null
         property bool installPromptVisible: false
+        property int screenshotIndex: 0
         property var releaseState: primaryProject
             ? (window.releaseStates[primaryProject.id]
                 || ({ loading: false, error: "", release: null, assets: [] }))
@@ -548,6 +549,18 @@ ApplicationWindow {
                 icon.height: 18
                 icon.color: theme.textPrimary
                 onClicked: gameDetailsPopup.close()
+            }
+
+            Timer {
+                interval: 9000
+                repeat: true
+                running: gameDetailsPopup.visible && !settingsManager.reducedMotion
+                    && window.selectedGame && window.selectedGame.screenshots
+                    && window.selectedGame.screenshots.length > 1
+                onTriggered: {
+                    const count = window.selectedGame.screenshots.length
+                    gameDetailsPopup.screenshotIndex = (gameDetailsPopup.screenshotIndex + 1) % count
+                }
             }
 
             Image {
@@ -2379,6 +2392,28 @@ ApplicationWindow {
                                             window.scanMessage = "Refreshing metadata for unresolved games..."
                                             metadataMatcher.scrapeLibrary(true)
                                         }
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "GAMEPLAY SCREENSHOTS"
+                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Download gameplay screenshots for games that already have saved TheGamesDB metadata. This does not repeat metadata matching or change cover artwork."
+                                        color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
+                                    }
+                                    Button {
+                                        text: screenshotManager.busy ? "Refreshing Screenshots…" : "Refresh Screenshots"
+                                        highlighted: true
+                                        enabled: metadataManager.configured && !screenshotManager.busy
+                                        onClicked: screenshotManager.refreshLibraryScreenshots()
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: screenshotManager.status
+                                        visible: screenshotManager.status.length > 0
+                                        color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Label {
                                         Layout.fillWidth: true
