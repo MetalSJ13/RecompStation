@@ -59,6 +59,8 @@ ApplicationWindow {
     }
 
     property string currentPage: "Library"
+    property string pendingNavigationPage: ""
+    property bool navigationTransitionRunning: false
     property string pendingThemeName: settingsManager.themeName
     property string selectedPlatform: "All Platforms"
     property string librarySearchText: ""
@@ -88,6 +90,39 @@ ApplicationWindow {
         function onThemeNameChanged() {
             pendingThemeName = settingsManager.themeName
             console.info("[Settings QML] Applied theme changed:", settingsManager.themeName)
+        }
+    }
+
+    function navigateToPage(pageName) {
+        if (pageName === currentPage || navigationTransitionRunning)
+            return
+
+        pendingNavigationPage = pageName
+        navigationTransitionRunning = true
+        pageNavigationAnimation.start()
+    }
+
+    SequentialAnimation {
+        id: pageNavigationAnimation
+        NumberAnimation {
+            target: mainPageStack
+            property: "opacity"
+            to: 0
+            duration: 180
+            easing.type: Easing.InOutCubic
+        }
+        ScriptAction {
+            script: window.currentPage = window.pendingNavigationPage
+        }
+        NumberAnimation {
+            target: mainPageStack
+            property: "opacity"
+            to: 1
+            duration: 260
+            easing.type: Easing.InOutCubic
+        }
+        ScriptAction {
+            script: window.navigationTransitionRunning = false
         }
     }
 
@@ -1193,6 +1228,7 @@ ApplicationWindow {
             StackLayout {
                 id: mainPageStack
                 anchors.fill: parent
+                opacity: 1
                 Component.onCompleted: console.info("[Settings Geometry] main page stack:", width, "x", height)
                 onWidthChanged: console.info("[Settings Geometry] main page stack width:", width)
                 anchors.leftMargin: 30
@@ -2634,9 +2670,10 @@ ApplicationWindow {
                         icon.height: 18
                         icon.color: theme.textPrimary
                         highlighted: currentPage === "Library"
+                        enabled: !window.navigationTransitionRunning
                         onClicked: {
                             console.info("[UI] Navigation: Game Library")
-                            currentPage = "Library"
+                            window.navigateToPage("Library")
                         }
                     }
                     Button {
@@ -2646,9 +2683,10 @@ ApplicationWindow {
                         icon.height: 18
                         icon.color: theme.textPrimary
                         highlighted: currentPage === "Settings"
+                        enabled: !window.navigationTransitionRunning
                         onClicked: {
                             console.info("[UI] Navigation: Settings")
-                            currentPage = "Settings"
+                            window.navigateToPage("Settings")
                         }
                     }
                 }
