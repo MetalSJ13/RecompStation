@@ -11,20 +11,9 @@ ApplicationWindow {
     minimumWidth: 850
     minimumHeight: 550
     visible: true
-    focus: true
     title: "RecompStation"
 
     property string activeInputDevice: controllerManager.connected ? "controller" : "keyboard"
-
-    Keys.onPressed: function(event) {
-        if (!event.isAutoRepeat)
-            window.activeInputDevice = "keyboard"
-    }
-
-    HoverHandler {
-        acceptedDevices: PointerDevice.Mouse
-        onPointChanged: window.activeInputDevice = "mouse"
-    }
 
     function inputHintText() {
         if (activeInputDevice === "controller" && controllerManager.connected) {
@@ -767,6 +756,16 @@ ApplicationWindow {
             height: window.height
             clip: true
 
+            Keys.onPressed: function(event) {
+                if (!event.isAutoRepeat)
+                    window.activeInputDevice = "keyboard"
+            }
+
+            HoverHandler {
+                acceptedDevices: PointerDevice.Mouse
+                onPointChanged: window.activeInputDevice = "mouse"
+            }
+
             Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
@@ -1371,6 +1370,16 @@ ApplicationWindow {
     Item {
         id: mainNavigationRow
         anchors.fill: parent
+
+        Keys.onPressed: function(event) {
+            if (!event.isAutoRepeat)
+                window.activeInputDevice = "keyboard"
+        }
+
+        HoverHandler {
+            acceptedDevices: PointerDevice.Mouse
+            onPointChanged: window.activeInputDevice = "mouse"
+        }
 
         Rectangle {
             id: mainContentPanel
