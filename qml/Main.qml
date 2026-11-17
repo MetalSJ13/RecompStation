@@ -2225,7 +2225,7 @@ ApplicationWindow {
                             ColumnLayout {
                                 id: appearanceContent
                                 anchors.fill: parent
-                                anchors.margins: 26
+                                anchors.margins: 30
                                 spacing: 16
                                 visible: settingsPage.section === "Appearance"
                                 onVisibleChanged: console.info(
@@ -2450,7 +2450,7 @@ ApplicationWindow {
 
                             ScrollView {
                                 anchors.fill: parent
-                                anchors.margins: 26
+                                anchors.margins: 30
                                 clip: true
                                 visible: settingsPage.section === "Display"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -2566,7 +2566,7 @@ ApplicationWindow {
 
                             ScrollView {
                                 anchors.fill: parent
-                                anchors.margins: 26
+                                anchors.margins: 30
                                 clip: true
                                 visible: settingsPage.section === "Library"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -2679,7 +2679,7 @@ ApplicationWindow {
 
                             ColumnLayout {
                                 anchors.fill: parent
-                                anchors.margins: 26
+                                anchors.margins: 30
                                 spacing: 16
                                 visible: settingsPage.section === "Application"
 
@@ -2690,9 +2690,11 @@ ApplicationWindow {
                                     font.bold: true
                                 }
                                 Label {
+                                    Layout.fillWidth: true
                                     text: "Application details and local storage."
                                     color: theme.textSecondary
                                     font.pixelSize: 13 * theme.fontScale
+                                    wrapMode: Text.Wrap
                                 }
                                 Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                 Label {
