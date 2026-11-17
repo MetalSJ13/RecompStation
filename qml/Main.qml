@@ -11,7 +11,86 @@ ApplicationWindow {
     minimumWidth: 850
     minimumHeight: 550
     visible: true
+    focus: true
     title: "RecompStation"
+
+    property string activeInputDevice: controllerManager.connected ? "controller" : "keyboard"
+
+    Keys.onPressed: function(event) {
+        if (!event.isAutoRepeat)
+            window.activeInputDevice = "keyboard"
+    }
+
+    HoverHandler {
+        acceptedDevices: PointerDevice.Mouse
+        onPointChanged: window.activeInputDevice = "mouse"
+    }
+
+    function inputHintText() {
+        if (activeInputDevice === "controller" && controllerManager.connected) {
+            if (controllerManager.controllerType === "playstation")
+                return "D-pad / Left Stick  Navigate     ✕  Select     ○  Back     L1 / R1  Switch"
+            if (controllerManager.controllerType === "xbox")
+                return "D-pad / Left Stick  Navigate     A  Select     B  Back     LB / RB  Switch"
+            if (controllerManager.controllerType === "nintendo")
+                return "D-pad / Left Stick  Navigate     B  Select     A  Back     L / R  Switch"
+            return "D-pad / Left Stick  Navigate     South  Select     East  Back     L / R  Switch"
+        }
+        if (activeInputDevice === "mouse")
+            return "Mouse  Select     Scroll  Navigate     Keyboard shortcuts available"
+        return "Arrow Keys  Navigate     Enter  Select     Esc  Back     F11  Fullscreen"
+    }
+
+    function controllerNavigate(direction) {
+        activeInputDevice = "controller"
+
+        if (gameDetailsPopup.visible) {
+            if (direction === "up" || direction === "down") {
+                const bar = gameInfoScroll.ScrollBar.vertical
+                bar.position = Math.max(0, Math.min(1,
+                    bar.position + (direction === "down" ? 0.12 : -0.12)))
+            }
+            return
+        }
+
+        if (currentPage === "Library" && gameGrid.count > 0) {
+            const columns = Math.max(1, Math.floor(gameGrid.width / gameGrid.cellWidth))
+            let next = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
+            if (direction === "left") next--
+            else if (direction === "right") next++
+            else if (direction === "up") next -= columns
+            else if (direction === "down") next += columns
+            next = Math.max(0, Math.min(gameGrid.count - 1, next))
+            gameGrid.currentIndex = next
+            gameGrid.positionViewAtIndex(next, GridView.Contain)
+            gameGrid.forceActiveFocus()
+        } else if (currentPage === "Settings") {
+            const sections = ["Appearance", "Display", "Library", "Application"]
+            let index = sections.indexOf(settingsPage.section)
+            if (direction === "up") index = Math.max(0, index - 1)
+            if (direction === "down") index = Math.min(sections.length - 1, index + 1)
+            settingsPage.section = sections[index]
+        }
+    }
+
+    function controllerSelect() {
+        activeInputDevice = "controller"
+        if (gameDetailsPopup.visible)
+            return
+        if (currentPage === "Library" && gameGrid.count > 0) {
+            const tile = gameGrid.itemAtIndex(gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex)
+            if (tile && tile.openDetails)
+                tile.openDetails()
+        }
+    }
+
+    function controllerBack() {
+        activeInputDevice = "controller"
+        if (gameDetailsPopup.visible)
+            gameDetailsPopup.close()
+        else if (currentPage !== "Library")
+            navigateToPage("Library")
+    }
     color: theme.windowBackground
     background: Rectangle {
         gradient: Gradient {
@@ -142,6 +221,33 @@ ApplicationWindow {
 
     Theme {
         id: theme
+    }
+
+    Connections {
+        target: controllerManager
+
+        function onConnectedChanged() {
+            window.activeInputDevice = controllerManager.connected ? "controller" : "keyboard"
+        }
+        function onNavigationRequested(direction) {
+            window.controllerNavigate(direction)
+        }
+        function onSelectRequested() {
+            window.controllerSelect()
+        }
+        function onBackRequested() {
+            window.controllerBack()
+        }
+        function onPreviousSectionRequested() {
+            window.activeInputDevice = "controller"
+            if (!gameDetailsPopup.visible)
+                window.navigateToPage("Library")
+        }
+        function onNextSectionRequested() {
+            window.activeInputDevice = "controller"
+            if (!gameDetailsPopup.visible)
+                window.navigateToPage("Settings")
+        }
     }
 
     Connections {
@@ -660,6 +766,26 @@ ApplicationWindow {
             width: window.width
             height: window.height
             clip: true
+
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 18
+                width: Math.min(parent.width - 48, detailsHintLabel.implicitWidth + 34)
+                height: 38
+                radius: 19
+                color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g,
+                               theme.sidebarBackground.b, 0.88)
+                border.color: theme.divider
+                z: 20
+                Label {
+                    id: detailsHintLabel
+                    anchors.centerIn: parent
+                    text: window.inputHintText()
+                    color: theme.textSecondary
+                    font.pixelSize: 10 * theme.fontScale
+                }
+            }
 
             Button {
                 z: 10
@@ -2956,5 +3082,26 @@ ApplicationWindow {
                 }
             }
         }
-}
+
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
+            width: Math.min(parent.width - 48, inputHintLabel.implicitWidth + 34)
+            height: 36
+            radius: 18
+            color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g,
+                           theme.sidebarBackground.b, 0.88)
+            border.color: theme.divider
+            z: 30
+            visible: !gameDetailsPopup.visible && currentPage !== ""
+            Label {
+                id: inputHintLabel
+                anchors.centerIn: parent
+                text: window.inputHintText()
+                color: theme.textSecondary
+                font.pixelSize: 10 * theme.fontScale
+            }
+        }
+    }
 }
