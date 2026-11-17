@@ -156,7 +156,7 @@ Keep the application buildable after each focused change. Preserve working backe
 ## Build and development workflow
 
 Dependencies:
-- Qt 6.5 or newer
+- Qt 6.5 or newer (including Qt SVG)
 - C++20 compiler and CMake
 - Ninja (recommended by the build script)
 - libarchive (Arch Linux package: `libarchive`)
