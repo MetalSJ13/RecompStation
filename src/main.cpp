@@ -1,8 +1,10 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QSet>
 
 #include "core/Logging.h"
+#include "core/ControllerManager.h"
 #include "core/PlatformManager.h"
 #include "core/SettingsManager.h"
 #include "core/LauncherDownloadManager.h"
@@ -65,6 +67,26 @@ int main(int argc, char *argv[])
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
+    ControllerManager controllerManager;
+
+    // Do not let RecompStation consume controller input while a launched game
+    // is active. Keep input suspended until every launched process has exited.
+    QSet<QString> activeGameProcesses;
+    QObject::connect(&gameLaunchManager, &GameLaunchManager::launchStarted,
+                     &app, [&controllerManager, &activeGameProcesses](const QString &projectId, qint64) {
+        activeGameProcesses.insert(projectId);
+        controllerManager.setInputEnabled(false);
+    });
+    QObject::connect(&gameLaunchManager, &GameLaunchManager::launchFailed,
+                     &app, [&controllerManager, &activeGameProcesses](const QString &projectId, const QString &) {
+        activeGameProcesses.remove(projectId);
+        controllerManager.setInputEnabled(activeGameProcesses.isEmpty());
+    });
+    QObject::connect(&gameLaunchManager, &GameLaunchManager::processFinished,
+                     &app, [&controllerManager, &activeGameProcesses](const QString &projectId, int, bool) {
+        activeGameProcesses.remove(projectId);
+        controllerManager.setInputEnabled(activeGameProcesses.isEmpty());
+    });
     if (projectCatalog.isLoaded())
         qCInfo(lcApplication) << "Project catalog loaded with supported platforms:"
                               << projectCatalog.supportedPlatforms();
@@ -81,6 +103,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("githubManager", &githubManager);
     engine.rootContext()->setContextProperty("launcherDownloadManager", &launcherDownloadManager);
     engine.rootContext()->setContextProperty("gameLaunchManager", &gameLaunchManager);
+    engine.rootContext()->setContextProperty("controllerManager", &controllerManager);
     engine.rootContext()->setContextProperty("projectCatalog", &projectCatalog);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
