@@ -556,7 +556,7 @@ ApplicationWindow {
             Timer {
                 interval: 9000
                 repeat: true
-                running: gameDetailsPopup.visible && !settingsManager.reducedMotion
+                running: gameDetailsPopup.visible && window.active && !settingsManager.reducedMotion
                     && window.selectedGame && window.selectedGame.screenshots
                     && window.selectedGame.screenshots.length > 1
                 onTriggered: {
