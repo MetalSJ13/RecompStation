@@ -345,6 +345,16 @@ ApplicationWindow {
     }
 
     Connections {
+        target: screenshotManager
+        function onRefreshFinished(downloaded, withoutScreenshots, failed) {
+            window.libraryRevision++
+            window.scanMessage = "Screenshots refreshed: " + downloaded
+                + " downloaded, " + withoutScreenshots + " without screenshots, "
+                + failed + " failed."
+        }
+    }
+
+    Connections {
         target: metadataMatcher
         function onStatusChanged() {
             window.scanMessage = metadataMatcher.status
