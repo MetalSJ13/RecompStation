@@ -625,11 +625,14 @@ ApplicationWindow {
                     anchors.centerIn: parent
                     visible: !window.selectedGame || window.selectedGame.artworkPath.length === 0
                     spacing: 8
-                    Label {
+                    Image {
                         Layout.alignment: Qt.AlignHCenter
-                        text: "▧"
-                        color: theme.textMuted
-                        font.pixelSize: 38 * theme.fontScale
+                        source: "qrc:/icons/artwork-placeholder.svg"
+                        sourceSize.width: 42
+                        sourceSize.height: 42
+                        Layout.preferredWidth: 42
+                        Layout.preferredHeight: 42
+                        opacity: 0.65
                     }
                     Label {
                         text: "Artwork unavailable"
@@ -1255,11 +1258,14 @@ ApplicationWindow {
                                                 anchors.centerIn: parent
                                                 spacing: 5
                                                 visible: gameTile.artworkPath.length === 0
-                                                Label {
+                                                Image {
                                                     anchors.horizontalCenter: parent.horizontalCenter
-                                                    text: "▧"
-                                                    color: theme.textMuted
-                                                    font.pixelSize: 34 * theme.fontScale
+                                                    source: "qrc:/icons/artwork-placeholder.svg"
+                                                    sourceSize.width: 38
+                                                    sourceSize.height: 38
+                                                    width: 38
+                                                    height: 38
+                                                    opacity: 0.65
                                                 }
                                                 Label {
                                                     anchors.horizontalCenter: parent.horizontalCenter
