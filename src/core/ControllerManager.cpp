@@ -134,9 +134,6 @@ void ControllerManager::pollController()
                 type = QStringLiteral("playstation");
                 break;
             case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
-            case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
-            case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
-            case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR:
                 type = QStringLiteral("nintendo");
                 break;
             default:
