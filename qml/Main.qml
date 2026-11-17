@@ -20,10 +20,66 @@ ApplicationWindow {
         }
     }
 
-    Component.onCompleted: window.applyPreferredPresentationSize()
+    Component.onCompleted: window.applyDisplayMode(settingsManager.displayMode)
 
     onWidthChanged: console.info("[Settings Geometry] window width:", width)
     onHeightChanged: console.info("[Settings Geometry] window height:", height)
+
+    property string preFullscreenMode: "windowed"
+
+    function applyDisplayMode(mode) {
+        // Apply the preferred geometry before changing the window state.
+        if (window.visibility === Window.Windowed)
+            window.applyPreferredPresentationSize()
+
+        if (mode === "fullscreen") {
+            window.showFullScreen()
+        } else if (mode === "maximized") {
+            window.showMaximized()
+        } else {
+            window.showNormal()
+            window.applyPreferredPresentationSize()
+        }
+    }
+
+    function toggleFullscreen() {
+        if (window.visibility === Window.FullScreen) {
+            const restoreMode = window.preFullscreenMode
+            settingsManager.setDisplayMode(restoreMode)
+            window.applyDisplayMode(restoreMode)
+        } else {
+            window.preFullscreenMode = window.visibility === Window.Maximized
+                ? "maximized" : "windowed"
+            settingsManager.setDisplayMode("fullscreen")
+            window.applyDisplayMode("fullscreen")
+        }
+    }
+
+    onVisibilityChanged: {
+        if (visibility === Window.FullScreen) {
+            // Preserve the last non-fullscreen preference when fullscreen is
+            // entered by the compositor or another window-manager action.
+            if (settingsManager.displayMode !== "fullscreen") {
+                preFullscreenMode = settingsManager.displayMode === "maximized"
+                    ? "maximized" : "windowed"
+                settingsManager.setDisplayMode("fullscreen")
+            }
+        } else if (visibility === Window.Maximized) {
+            preFullscreenMode = "maximized"
+            if (settingsManager.displayMode !== "maximized")
+                settingsManager.setDisplayMode("maximized")
+        } else if (visibility === Window.Windowed) {
+            preFullscreenMode = "windowed"
+            if (settingsManager.displayMode !== "windowed")
+                settingsManager.setDisplayMode("windowed")
+        }
+    }
+
+    Shortcut {
+        sequence: "F11"
+        context: Qt.ApplicationShortcut
+        onActivated: window.toggleFullscreen()
+    }
 
     function applyPreferredPresentationSize() {
         if (window.visibility !== Window.Windowed)
@@ -2513,6 +2569,40 @@ ApplicationWindow {
                                                 font.pixelSize: 11 * theme.fontScale
                                             }
                                         }
+                                    }
+                                    Label {
+                                        text: "WINDOW MODE"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    ComboBox {
+                                        id: displayModeSelector
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 46
+                                        textRole: "label"
+                                        valueRole: "value"
+                                        model: [
+                                            { label: "Windowed", value: "windowed" },
+                                            { label: "Maximized", value: "maximized" },
+                                            { label: "Fullscreen", value: "fullscreen" }
+                                        ]
+                                        Component.onCompleted: {
+                                            const savedIndex = indexOfValue(settingsManager.displayMode)
+                                            currentIndex = savedIndex >= 0 ? savedIndex : 0
+                                        }
+                                        onActivated: {
+                                            settingsManager.setDisplayMode(currentValue)
+                                            window.applyDisplayMode(currentValue)
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Fullscreen hides the desktop window frame without changing your monitor resolution. Press F11 to toggle fullscreen and return to your previous window mode."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11 * theme.fontScale
+                                        wrapMode: Text.Wrap
                                     }
                                     Label {
                                         text: "PREFERRED WINDOW SIZE"
