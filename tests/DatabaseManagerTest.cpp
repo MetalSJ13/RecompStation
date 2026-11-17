@@ -3,6 +3,9 @@
 #include "database/DatabaseManager.h"
 
 #include <QTemporaryDir>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QUrl>
 
 class DatabaseManagerTest : public QObject
@@ -137,6 +140,39 @@ private slots:
         QVERIFY(database.markMetadataLookupAttempt(
             gameId, QStringLiteral("matched")));
         QVERIFY(database.gamesNeedingMetadata().isEmpty());
+    }
+
+    void storesAndClearsGameplayScreenshots()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY2(database.initialize(temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+        QVERIFY(database.registerGame(QStringLiteral("Game"), QStringLiteral("N64"),
+                                      temporaryDirectory.path() + "/Game.z64"));
+        const int gameId = database.games().first().toMap().value("id").toInt();
+        QVERIFY(database.associateMetadata(
+            gameId, QStringLiteral("thegamesdb"), 4321,
+            QStringLiteral("Game"), {}, {}, 3, {}, {}));
+
+        const QVariantList matchedGames = database.gamesWithMetadata();
+        QCOMPARE(matchedGames.size(), 1);
+        QCOMPARE(matchedGames.first().toMap().value("metadataGameId").toInt(), 4321);
+
+        const QString screenshot = temporaryDirectory.path() + "/screenshots/1.jpg";
+        QVERIFY(database.addGameScreenshot(gameId, screenshot));
+        QCOMPARE(database.gameScreenshots(gameId).size(), 0); // Path is not present yet.
+        QVERIFY(QDir().mkpath(QFileInfo(screenshot).absolutePath()));
+        QFile image(screenshot);
+        QVERIFY(image.open(QIODevice::WriteOnly));
+        image.write("test");
+        image.close();
+        QCOMPARE(database.gameScreenshots(gameId).size(), 1);
+
+        QVERIFY(database.clearGameScreenshots(gameId));
+        QVERIFY(database.gameScreenshots(gameId).isEmpty());
     }
 
     void rejectsAssociationForUnknownLocalGame()
