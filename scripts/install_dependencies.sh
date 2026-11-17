@@ -37,6 +37,7 @@ PACKAGES=(
     qtcreator
     gdb
     qt6-base
+    qt6-svg
     qt6-declarative
     qt6-tools
     qt6-wayland
