@@ -11,6 +11,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool scanOnStartup READ scanOnStartup WRITE setScanOnStartup NOTIFY scanOnStartupChanged)
     Q_PROPERTY(QString preferredPresentationSize READ preferredPresentationSize WRITE setPreferredPresentationSize NOTIFY preferredPresentationSizeChanged)
     Q_PROPERTY(QString displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged)
+    Q_PROPERTY(QString restoreDisplayMode READ restoreDisplayMode WRITE setRestoreDisplayMode NOTIFY restoreDisplayModeChanged)
     Q_PROPERTY(QString fontSize READ fontSize WRITE setFontSize NOTIFY fontSizeChanged)
     Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
 
@@ -30,6 +31,9 @@ public:
     QString displayMode() const;
     Q_INVOKABLE void setDisplayMode(const QString &mode);
 
+    QString restoreDisplayMode() const;
+    Q_INVOKABLE void setRestoreDisplayMode(const QString &mode);
+
     QString fontSize() const;
     Q_INVOKABLE void setFontSize(const QString &size);
 
@@ -41,6 +45,7 @@ signals:
     void scanOnStartupChanged();
     void preferredPresentationSizeChanged();
     void displayModeChanged();
+    void restoreDisplayModeChanged();
     void fontSizeChanged();
     void reducedMotionChanged();
 
@@ -49,6 +54,7 @@ private:
     QString m_themeName;
     QString m_preferredPresentationSize = QStringLiteral("system");
     QString m_displayMode = QStringLiteral("windowed");
+    QString m_restoreDisplayMode = QStringLiteral("windowed");
     QString m_fontSize = QStringLiteral("medium");
     bool m_reducedMotion = false;
     bool m_scanOnStartup = true;
