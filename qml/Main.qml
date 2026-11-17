@@ -673,7 +673,7 @@ ApplicationWindow {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: Math.max(32, Math.min(88, width * 0.045))
+                anchors.margins: Math.max(32, Math.min(88, detailsContentFrame.width * 0.045))
                 spacing: 48
 
             Rectangle {
