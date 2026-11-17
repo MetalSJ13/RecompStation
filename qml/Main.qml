@@ -550,7 +550,11 @@ ApplicationWindow {
         }
 
         background: Rectangle {
-            color: "transparent"
+            // Keep the library page fully covered while background screenshots
+            // crossfade or wait for the next image to finish loading.
+            color: Qt.rgba(theme.windowBackground.r,
+                           theme.windowBackground.g,
+                           theme.windowBackground.b, 1.0)
         }
 
         contentItem: Item {
