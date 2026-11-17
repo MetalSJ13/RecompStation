@@ -48,6 +48,12 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
     m_displayMode = isSupportedDisplayMode(storedDisplayMode)
         ? storedDisplayMode
         : kDefaultDisplayMode;
+    const QString storedRestoreDisplayMode = settings.value(
+        QStringLiteral("display/restoreWindowMode"),
+        kDefaultDisplayMode
+    ).toString();
+    m_restoreDisplayMode = storedRestoreDisplayMode == QStringLiteral("maximized")
+        ? QStringLiteral("maximized") : QStringLiteral("windowed");
 
     const QString storedFontSize = settings.value(
         QStringLiteral("appearance/fontSize"),
@@ -64,6 +70,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
     qCInfo(lcSettings) << "Loaded theme:" << m_themeName;
     qCInfo(lcSettings) << "Loaded preferred presentation size:" << m_preferredPresentationSize;
     qCInfo(lcSettings) << "Loaded display mode:" << m_displayMode;
+    qCInfo(lcSettings) << "Loaded restore display mode:" << m_restoreDisplayMode;
     qCInfo(lcSettings) << "Loaded font size:" << m_fontSize;
     qCInfo(lcSettings) << "Loaded reduced motion:" << m_reducedMotion;
 }
@@ -173,8 +180,36 @@ void SettingsManager::setDisplayMode(const QString &mode)
     }
 
     m_displayMode = mode;
+    if (mode != QStringLiteral("fullscreen"))
+        setRestoreDisplayMode(mode);
     emit displayModeChanged();
     qCInfo(lcSettings) << "Saved display mode:" << mode;
+}
+
+QString SettingsManager::restoreDisplayMode() const
+{
+    return m_restoreDisplayMode;
+}
+
+void SettingsManager::setRestoreDisplayMode(const QString &mode)
+{
+    if (mode != QStringLiteral("windowed") && mode != QStringLiteral("maximized")) {
+        qCWarning(lcSettings) << "Rejected unsupported restore display mode:" << mode;
+        return;
+    }
+    if (m_restoreDisplayMode == mode)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("display/restoreWindowMode"), mode);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist restore display mode:" << mode;
+        return;
+    }
+
+    m_restoreDisplayMode = mode;
+    emit restoreDisplayModeChanged();
 }
 
 QString SettingsManager::fontSize() const
