@@ -95,6 +95,22 @@ if(BUILD_TESTING)
 
     add_test(NAME ArchiveExtractorTests COMMAND ArchiveExtractorTests)
 
+    qt_add_executable(ControllerInputRouterTests
+        tests/ControllerInputRouterTest.cpp
+        src/core/ControllerInputRouter.h
+        src/core/ControllerInputRouter.cpp
+    )
+
+    target_include_directories(ControllerInputRouterTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ControllerInputRouterTests PRIVATE
+        Qt6::Core Qt6::Test
+    )
+
+    add_test(NAME ControllerInputRouterTests COMMAND ControllerInputRouterTests)
+
     qt_add_executable(SettingsManagerTests
         src/core/Logging.h
         src/core/Logging.cpp
