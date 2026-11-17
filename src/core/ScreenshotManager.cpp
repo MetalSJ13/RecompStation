@@ -145,6 +145,17 @@ void ScreenshotManager::processNextGame()
                 m_pendingUrls.append(resolved.toString());
         }
 
+        // Replace a game's old screenshot set only after a valid provider
+        // response has arrived; a network failure leaves its existing cache intact.
+        const QString cacheDirectory = QDir(m_artworkDirectory)
+                                           .filePath(QString("screenshots/%1").arg(m_currentGameId));
+        if (!m_database->clearGameScreenshots(m_currentGameId)) {
+            ++m_failed;
+            processNextGame();
+            return;
+        }
+        QDir(cacheDirectory).removeRecursively();
+
         if (m_pendingUrls.isEmpty()) {
             ++m_withoutScreenshots;
             processNextGame();
