@@ -377,10 +377,16 @@ void LibraryMetadataMatcher::processNext()
         return;
     }
 
+    const QString localTitle =
+        m_currentGame.value(QStringLiteral("title")).toString();
+    const QString searchTitle = normalizedTitle(localTitle);
     setStatus(QStringLiteral("Checking %1...")
-                  .arg(m_currentGame.value(QStringLiteral("title")).toString()));
-    m_metadata->searchGames(
-        m_currentGame.value(QStringLiteral("title")).toString(), platformId);
+                  .arg(localTitle));
+    qCInfo(lcMetadata) << "Searching TheGamesDB using normalized title:"
+                       << searchTitle << "(local title:" << localTitle << ")";
+    // Normalize only the provider query. The local game title and ROM path
+    // remain unchanged, including any region/revision tags in the filename.
+    m_metadata->searchGames(searchTitle, platformId);
 }
 
 void LibraryMetadataMatcher::finishCurrent(bool matched, const QString &reason)
