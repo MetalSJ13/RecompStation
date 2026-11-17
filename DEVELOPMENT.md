@@ -48,12 +48,12 @@ Keep the application buildable after each focused change. Preserve working backe
 - [x] Define metadata as an automated library service rather than a standalone search/association workflow
 - [x] Define dark visual language, curated themes, and fullscreen-first behavior
 - [ ] Audit all existing pages, dialogs, and interactions against `docs/UI_DESIGN.md`
-- [ ] Define reusable theme tokens and shared component patterns
+- [x] Bundle reusable SVG icon assets for navigation and common actions; define shared icon sizing (local validation pending)
 - [ ] Define page hierarchy, selection/focus behavior, and display-mode behavior
 
 ### Milestone 2: Application shell and navigation
 
-- [ ] Refine the main window, navigation, content area, and page transitions
+- [x] Refine main navigation and add an upward details-page entrance with a slower artwork dissolve (local validation pending)
 - [x] Replace the width-reserving sidebar with an integrated horizontal Library and Settings navigation bar; main content uses the available window area (local validation pending)
 - [x] Add a dedicated Back to Library control to immersive game details; Escape also closes the details view (local validation pending)
 - [ ] Remove Metadata Search and Platforms as top-level navigation destinations
@@ -64,7 +64,7 @@ Keep the application buildable after each focused change. Preserve working backe
 
 ### Milestone 3: Game Library experience
 
-- [ ] Create a cover-art-forward library with platform filtering, optional search, and sorting
+- [x] Simplify the library header to one platform selector (All Platforms by default); remove the separate collection search and duplicate management panel
 - [x] Expand game tiles into a responsive multi-row grid with larger artwork, clearer title/platform typography, and stronger selected-game emphasis (local validation pending)
 - [x] Add a theme-aware, selected-game artwork atmosphere layer behind the library content, with contrast overlays and reduced-motion-aware fading (first visual pass; local validation pending)
 - [x] Add subtle focus depth to the current game tile, respecting reduced motion (local validation pending)
@@ -73,7 +73,7 @@ Keep the application buildable after each focused change. Preserve working backe
 - [ ] Add a dedicated game-details experience
 - [ ] Present metadata, supported project, installation state, and launch action in the game context
 - [ ] Add useful empty, loading, scanning, missing-artwork, unsupported, and error states
-- [ ] Add a visible manual scan/scrape action
+- [x] Keep manual library scanning in Settings; remove duplicate scan and metadata-refresh controls from the Library page
 - [ ] Verify missing and differently proportioned artwork
 
 ### Milestone 4: Automatic library and metadata maintenance
