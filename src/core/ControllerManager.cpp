@@ -2,13 +2,15 @@
 
 #include "Logging.h"
 
+#include <QtMath>
+
 #ifdef RECOMPSTATION_HAS_SDL2
 #include <SDL.h>
 #endif
 
 ControllerManager::ControllerManager(QObject *parent)
     : QObject(parent)
-    , m_inputRouter(this)
+    , m_inputRouter()
 {
     connect(&m_inputRouter, &ControllerInputRouter::navigationRequested,
             this, &ControllerManager::navigationRequested);
@@ -26,7 +28,7 @@ ControllerManager::ControllerManager(QObject *parent)
             this, &ControllerManager::inputEnabledChanged);
 
 #ifdef RECOMPSTATION_HAS_SDL2
-    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0) {
+    if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
         qCWarning(lcApplication) << "Controller subsystem initialization failed:"
                                  << SDL_GetError();
         return;
@@ -50,7 +52,7 @@ ControllerManager::~ControllerManager()
     if (m_controller)
         SDL_GameControllerClose(m_controller);
     if (m_sdlInitialized)
-        SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
+        SDL_Quit();
 #endif
 }
 
