@@ -16,6 +16,9 @@ private slots:
     void init();
     void defaultsToScanningOnStartup();
     void defaultsToSystemPresentationSize();
+    void defaultsToWindowedDisplayMode();
+    void persistsDisplayMode();
+    void rejectsUnsupportedDisplayMode();
     void persistsScanOnStartupPreference();
     void persistsPreferencesInExplicitConfigFile();
     void rejectsUnsupportedTheme();
@@ -48,6 +51,49 @@ void SettingsManagerTest::defaultsToSystemPresentationSize()
     QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("system"));
 }
 
+void SettingsManagerTest::defaultsToWindowedDisplayMode()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.displayMode(), QStringLiteral("windowed"));
+}
+
+void SettingsManagerTest::persistsDisplayMode()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy changed(&manager, &SettingsManager::displayModeChanged);
+        manager.setDisplayMode(QStringLiteral("fullscreen"));
+        QCOMPARE(manager.displayMode(), QStringLiteral("fullscreen"));
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.displayMode(), QStringLiteral("fullscreen"));
+}
+
+void SettingsManagerTest::rejectsUnsupportedDisplayMode()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QSignalSpy changed(&manager, &SettingsManager::displayModeChanged);
+    manager.setDisplayMode(QStringLiteral("exclusive"));
+    QCOMPARE(manager.displayMode(), QStringLiteral("windowed"));
+    QCOMPARE(changed.count(), 0);
+}
+
 void SettingsManagerTest::persistsScanOnStartupPreference()
 {
     SettingsManager manager;
@@ -78,15 +124,18 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
         manager.setThemeName(QStringLiteral("ember"));
         manager.setScanOnStartup(false);
         manager.setPreferredPresentationSize(QStringLiteral("3440x1440"));
+        manager.setDisplayMode(QStringLiteral("maximized"));
         QCOMPARE(manager.themeName(), QStringLiteral("ember"));
         QVERIFY(!manager.scanOnStartup());
         QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("3440x1440"));
+        QCOMPARE(manager.displayMode(), QStringLiteral("maximized"));
     }
 
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.themeName(), QStringLiteral("ember"));
     QVERIFY(!reloaded.scanOnStartup());
     QCOMPARE(reloaded.preferredPresentationSize(), QStringLiteral("3440x1440"));
+    QCOMPARE(reloaded.displayMode(), QStringLiteral("maximized"));
     QVERIFY(QFileInfo(settingsPath).isFile());
 }
 
