@@ -2361,6 +2361,25 @@ ApplicationWindow {
                                         enabled: platformManager.libraryConfigured
                                         onClicked: { window.scanMessage = "Scanning configured game folders..."; libraryScanner.scanAll() }
                                     }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "METADATA"
+                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Retry metadata lookups for games that are still unmatched, and retry cover artwork downloads when a match is already saved. Successfully matched metadata is kept and is not searched again."
+                                        color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
+                                    }
+                                    Button {
+                                        text: metadataMatcher.busy ? "Refreshing Metadata…" : "Refresh Metadata"
+                                        highlighted: true
+                                        enabled: metadataManager.configured && !metadataMatcher.busy
+                                        onClicked: {
+                                            window.scanMessage = "Refreshing metadata for unresolved games..."
+                                            metadataMatcher.scrapeLibrary(true)
+                                        }
+                                    }
                                     Label {
                                         Layout.fillWidth: true
                                         text: "Place game files inside their matching platform folders. Automatic live folder monitoring will be added separately."
