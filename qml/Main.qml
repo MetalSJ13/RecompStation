@@ -2359,6 +2359,8 @@ ApplicationWindow {
                                         font.pixelSize: 11 * theme.fontScale
                                     }
                                     Button {
+                                        Layout.preferredWidth: 180
+                                        Layout.preferredHeight: 44
                                         text: "Apply Theme"
                                         enabled: pendingThemeName !== settingsManager.themeName
                                         highlighted: enabled
@@ -2396,7 +2398,8 @@ ApplicationWindow {
                                     }
                                     ComboBox {
                                         id: fontSizeSelector
-                                        Layout.preferredWidth: 150
+                                        Layout.preferredWidth: 170
+                                        Layout.preferredHeight: 44
                                         textRole: "label"
                                         valueRole: "value"
                                         model: [
@@ -2521,6 +2524,7 @@ ApplicationWindow {
                                     ComboBox {
                                         id: presentationSizeSelector
                                         Layout.fillWidth: true
+                                        Layout.preferredHeight: 46
                                         textRole: "label"
                                         valueRole: "value"
                                         model: [
@@ -2541,6 +2545,8 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Item { Layout.fillWidth: true }
                                         Button {
+                                            Layout.preferredWidth: 190
+                                            Layout.preferredHeight: 44
                                             text: "Apply Window Size"
                                             highlighted: true
                                             enabled: presentationSizeSelector.currentValue
@@ -2624,6 +2630,8 @@ ApplicationWindow {
                                         }
                                     }
                                     Button {
+                                        Layout.preferredWidth: 210
+                                        Layout.preferredHeight: 44
                                         text: "Scan Library Now"; highlighted: true
                                         enabled: platformManager.libraryConfigured
                                         onClicked: { window.scanMessage = "Scanning configured game folders..."; libraryScanner.scanAll() }
@@ -2639,6 +2647,8 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
+                                        Layout.preferredWidth: 210
+                                        Layout.preferredHeight: 44
                                         text: metadataMatcher.busy ? "Refreshing Metadata…" : "Refresh Metadata"
                                         highlighted: true
                                         enabled: metadataManager.configured && !metadataMatcher.busy
@@ -2658,6 +2668,8 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
+                                        Layout.preferredWidth: 210
+                                        Layout.preferredHeight: 44
                                         text: screenshotManager.busy ? "Refreshing Screenshots…" : "Refresh Screenshots"
                                         highlighted: true
                                         enabled: metadataManager.configured && !screenshotManager.busy
