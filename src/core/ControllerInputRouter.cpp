@@ -1,6 +1,5 @@
 #include "ControllerInputRouter.h"
 
-#include <QtMath>
 
 ControllerInputRouter::ControllerInputRouter(QObject *parent)
     : QObject(parent)
@@ -13,10 +12,19 @@ QString ControllerInputRouter::directionFromAxes(qint16 x, qint16 y, int deadZon
     // In particular, abs(-32768) cannot be represented by qint16.
     const int horizontal = static_cast<int>(x);
     const int vertical = static_cast<int>(y);
-    if (qAbs(horizontal) <= deadZone && qAbs(vertical) <= deadZone)
+    // These promoted values are bounded to [-32768, 32767], so negating
+    // them as int is always representable. Avoid qAbs() here entirely.
+    const unsigned int horizontalMagnitude = horizontal < 0
+        ? static_cast<unsigned int>(-horizontal)
+        : static_cast<unsigned int>(horizontal);
+    const unsigned int verticalMagnitude = vertical < 0
+        ? static_cast<unsigned int>(-vertical)
+        : static_cast<unsigned int>(vertical);
+    if (horizontalMagnitude <= static_cast<unsigned int>(deadZone)
+        && verticalMagnitude <= static_cast<unsigned int>(deadZone))
         return {};
 
-    if (qAbs(horizontal) > qAbs(vertical))
+    if (horizontalMagnitude > verticalMagnitude)
         return horizontal < 0 ? QStringLiteral("left")
                               : QStringLiteral("right");
 
