@@ -8,6 +8,9 @@ class ControllerInputRouterTest : public QObject
     Q_OBJECT
 
 private slots:
+    void mapsAnalogStickDirections();
+    void handlesExtremeAnalogAxisValues();
+    void respectsAnalogDeadZone();
     void emitsButtonActionsOnlyOnPressEdges();
     void emitsNavigationImmediatelyAndRepeatsAtCadence();
     void changingDirectionNavigatesImmediately();
@@ -16,6 +19,34 @@ private slots:
     void heldButtonsDoNotFireWhenInputResumes();
     void emitsInputEnabledChangeOnlyWhenStateChanges();
 };
+
+void ControllerInputRouterTest::mapsAnalogStickDirections()
+{
+    QCOMPARE(ControllerInputRouter::directionFromAxes(-20000, 0), QStringLiteral("left"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(20000, 0), QStringLiteral("right"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(0, -20000), QStringLiteral("up"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(0, 20000), QStringLiteral("down"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(12000, 22000), QStringLiteral("down"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(-22000, 12000), QStringLiteral("left"));
+}
+
+void ControllerInputRouterTest::handlesExtremeAnalogAxisValues()
+{
+    // SDL axes are signed 16-bit values; both extrema must be safe.
+    QCOMPARE(ControllerInputRouter::directionFromAxes(-32768, 0), QStringLiteral("left"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(32767, 0), QStringLiteral("right"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(0, -32768), QStringLiteral("up"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(0, 32767), QStringLiteral("down"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(-32768, 32767), QStringLiteral("left"));
+}
+
+void ControllerInputRouterTest::respectsAnalogDeadZone()
+{
+    QCOMPARE(ControllerInputRouter::directionFromAxes(15999, 0), QString());
+    QCOMPARE(ControllerInputRouter::directionFromAxes(0, -16000), QString());
+    QCOMPARE(ControllerInputRouter::directionFromAxes(16001, 0), QStringLiteral("right"));
+    QCOMPARE(ControllerInputRouter::directionFromAxes(0, -16001), QStringLiteral("up"));
+}
 
 void ControllerInputRouterTest::emitsButtonActionsOnlyOnPressEdges()
 {
