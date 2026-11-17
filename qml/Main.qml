@@ -569,9 +569,10 @@ ApplicationWindow {
             Timer {
                 interval: 9000
                 repeat: true
-                running: gameDetailsPopup.visible && window.active && !settingsManager.reducedMotion
-                    && window.selectedGame && window.selectedGame.screenshots
-                    && window.selectedGame.screenshots.length > 1
+                running: !!(gameDetailsPopup.visible && window.active
+                    && !settingsManager.reducedMotion && window.selectedGame
+                    && window.selectedGame.screenshots
+                    && window.selectedGame.screenshots.length > 1)
                 onTriggered: {
                     const count = window.selectedGame.screenshots.length
                     gameDetailsPopup.previousScreenshotIndex = gameDetailsPopup.screenshotIndex
@@ -582,8 +583,8 @@ ApplicationWindow {
 
             Image {
                 anchors.fill: parent
-                visible: window.selectedGame && window.selectedGame.screenshots
-                    && window.selectedGame.screenshots.length > 0
+                visible: !!(window.selectedGame && window.selectedGame.screenshots
+                    && window.selectedGame.screenshots.length > 0)
                 source: visible ? (gameDetailsPopup.screenshotLayerA
                     ? window.selectedGame.screenshots[gameDetailsPopup.screenshotIndex]
                     : (gameDetailsPopup.previousScreenshotIndex >= 0
@@ -623,8 +624,8 @@ ApplicationWindow {
             Image {
                 id: detailsBackdropImage
                 anchors.fill: parent
-                visible: !window.selectedGame || !window.selectedGame.screenshots
-                    || window.selectedGame.screenshots.length === 0
+                visible: !(window.selectedGame && window.selectedGame.screenshots
+                    && window.selectedGame.screenshots.length > 0)
                 source: window.selectedGame ? window.selectedGame.artworkPath : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
