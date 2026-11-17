@@ -9,6 +9,7 @@
 namespace {
 const QString kDefaultTheme = QStringLiteral("midnight-violet");
 const QString kDefaultPresentationSize = QStringLiteral("system");
+const QString kDefaultDisplayMode = QStringLiteral("windowed");
 const QString kDefaultFontSize = QStringLiteral("medium");
 }
 
@@ -40,6 +41,14 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         ? storedPresentationSize
         : kDefaultPresentationSize;
 
+    const QString storedDisplayMode = settings.value(
+        QStringLiteral("display/windowMode"),
+        kDefaultDisplayMode
+    ).toString();
+    m_displayMode = isSupportedDisplayMode(storedDisplayMode)
+        ? storedDisplayMode
+        : kDefaultDisplayMode;
+
     const QString storedFontSize = settings.value(
         QStringLiteral("appearance/fontSize"),
         kDefaultFontSize
@@ -54,6 +63,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
 
     qCInfo(lcSettings) << "Loaded theme:" << m_themeName;
     qCInfo(lcSettings) << "Loaded preferred presentation size:" << m_preferredPresentationSize;
+    qCInfo(lcSettings) << "Loaded display mode:" << m_displayMode;
     qCInfo(lcSettings) << "Loaded font size:" << m_fontSize;
     qCInfo(lcSettings) << "Loaded reduced motion:" << m_reducedMotion;
 }
@@ -140,6 +150,33 @@ void SettingsManager::setPreferredPresentationSize(const QString &size)
     qCInfo(lcSettings) << "Saved preferred presentation size:" << size;
 }
 
+QString SettingsManager::displayMode() const
+{
+    return m_displayMode;
+}
+
+void SettingsManager::setDisplayMode(const QString &mode)
+{
+    if (!isSupportedDisplayMode(mode)) {
+        qCWarning(lcSettings) << "Rejected unsupported display mode:" << mode;
+        return;
+    }
+    if (m_displayMode == mode)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("display/windowMode"), mode);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist display mode:" << mode;
+        return;
+    }
+
+    m_displayMode = mode;
+    emit displayModeChanged();
+    qCInfo(lcSettings) << "Saved display mode:" << mode;
+}
+
 QString SettingsManager::fontSize() const
 {
     return m_fontSize;
@@ -214,6 +251,17 @@ bool SettingsManager::isSupportedPresentationSize(const QString &size)
     };
 
     return supportedSizes.contains(size);
+}
+
+bool SettingsManager::isSupportedDisplayMode(const QString &mode)
+{
+    static const QStringList supportedModes = {
+        QStringLiteral("windowed"),
+        QStringLiteral("maximized"),
+        QStringLiteral("fullscreen")
+    };
+
+    return supportedModes.contains(mode);
 }
 
 bool SettingsManager::isSupportedFontSize(const QString &size)
