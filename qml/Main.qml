@@ -498,6 +498,8 @@ ApplicationWindow {
             ? window.installedLauncher(primaryProject.id) : null
         property bool installPromptVisible: false
         property int screenshotIndex: 0
+        property int previousScreenshotIndex: -1
+        property bool screenshotLayerA: true
         property var releaseState: primaryProject
             ? (window.releaseStates[primaryProject.id]
                 || ({ loading: false, error: "", release: null, assets: [] }))
@@ -559,13 +561,57 @@ ApplicationWindow {
                     && window.selectedGame.screenshots.length > 1
                 onTriggered: {
                     const count = window.selectedGame.screenshots.length
+                    gameDetailsPopup.previousScreenshotIndex = gameDetailsPopup.screenshotIndex
                     gameDetailsPopup.screenshotIndex = (gameDetailsPopup.screenshotIndex + 1) % count
+                    gameDetailsPopup.screenshotLayerA = !gameDetailsPopup.screenshotLayerA
                 }
             }
 
             Image {
+                anchors.fill: parent
+                visible: window.selectedGame && window.selectedGame.screenshots
+                    && window.selectedGame.screenshots.length > 0
+                source: visible ? (gameDetailsPopup.screenshotLayerA
+                    ? window.selectedGame.screenshots[gameDetailsPopup.screenshotIndex]
+                    : (gameDetailsPopup.previousScreenshotIndex >= 0
+                        ? window.selectedGame.screenshots[gameDetailsPopup.previousScreenshotIndex]
+                        : window.selectedGame.screenshots[gameDetailsPopup.screenshotIndex])) : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                smooth: true
+                opacity: visible && gameDetailsPopup.screenshotLayerA
+                    && status === Image.Ready ? 0.62 : 0
+                Behavior on opacity {
+                    enabled: !settingsManager.reducedMotion
+                    NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
+                }
+            }
+            Image {
+                anchors.fill: parent
+                visible: window.selectedGame && window.selectedGame.screenshots
+                    && window.selectedGame.screenshots.length > 0
+                source: visible ? (gameDetailsPopup.screenshotLayerA
+                    ? (gameDetailsPopup.previousScreenshotIndex >= 0
+                        ? window.selectedGame.screenshots[gameDetailsPopup.previousScreenshotIndex]
+                        : window.selectedGame.screenshots[gameDetailsPopup.screenshotIndex])
+                    : window.selectedGame.screenshots[gameDetailsPopup.screenshotIndex]) : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                smooth: true
+                opacity: visible && !gameDetailsPopup.screenshotLayerA
+                    && status === Image.Ready ? 0.62 : 0
+                Behavior on opacity {
+                    enabled: !settingsManager.reducedMotion
+                    NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
+                }
+            }
+            Image {
                 id: detailsBackdropImage
                 anchors.fill: parent
+                visible: !window.selectedGame || !window.selectedGame.screenshots
+                    || window.selectedGame.screenshots.length === 0
                 source: window.selectedGame ? window.selectedGame.artworkPath : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
