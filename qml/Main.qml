@@ -537,6 +537,13 @@ ApplicationWindow {
             previousScreenshotIndex = -1
             screenshotLayerA = true
             installPromptVisible = false
+            const screenshotCount = window.selectedGame && window.selectedGame.screenshots
+                ? window.selectedGame.screenshots.length : 0
+            console.info("[Details Screenshots] Opened:", window.selectedGame
+                ? window.selectedGame.title : "no selection",
+                "count:", screenshotCount,
+                "reduced motion:", settingsManager.reducedMotion,
+                "window active:", window.active)
             if (primaryProject && !releaseState.loading
                     && !releaseState.release && releaseState.error.length === 0)
                 window.checkProjectRelease(primaryProject)
@@ -573,11 +580,14 @@ ApplicationWindow {
                     && !settingsManager.reducedMotion && window.selectedGame
                     && window.selectedGame.screenshots
                     && window.selectedGame.screenshots.length > 1)
+                onRunningChanged: console.info("[Details Screenshots] Rotation timer running:", running)
                 onTriggered: {
                     const count = window.selectedGame.screenshots.length
                     gameDetailsPopup.previousScreenshotIndex = gameDetailsPopup.screenshotIndex
                     gameDetailsPopup.screenshotIndex = (gameDetailsPopup.screenshotIndex + 1) % count
                     gameDetailsPopup.screenshotLayerA = !gameDetailsPopup.screenshotLayerA
+                    console.info("[Details Screenshots] Advanced to image:",
+                        gameDetailsPopup.screenshotIndex, "of", count)
                 }
             }
 
@@ -594,6 +604,12 @@ ApplicationWindow {
                 asynchronous: true
                 cache: true
                 smooth: true
+                onStatusChanged: {
+                    if (status === Image.Error)
+                        console.warn("[Details Screenshots] Image failed:", source)
+                    else if (status === Image.Ready)
+                        console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
+                }
                 opacity: visible && gameDetailsPopup.screenshotLayerA
                     && status === Image.Ready ? 0.62 : 0
                 Behavior on opacity {
@@ -603,8 +619,8 @@ ApplicationWindow {
             }
             Image {
                 anchors.fill: parent
-                visible: window.selectedGame && window.selectedGame.screenshots
-                    && window.selectedGame.screenshots.length > 0
+                visible: !!(window.selectedGame && window.selectedGame.screenshots
+                    && window.selectedGame.screenshots.length > 0)
                 source: visible ? (gameDetailsPopup.screenshotLayerA
                     ? (gameDetailsPopup.previousScreenshotIndex >= 0
                         ? window.selectedGame.screenshots[gameDetailsPopup.previousScreenshotIndex]
@@ -614,6 +630,12 @@ ApplicationWindow {
                 asynchronous: true
                 cache: true
                 smooth: true
+                onStatusChanged: {
+                    if (status === Image.Error)
+                        console.warn("[Details Screenshots] Image failed:", source)
+                    else if (status === Image.Ready)
+                        console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
+                }
                 opacity: visible && !gameDetailsPopup.screenshotLayerA
                     && status === Image.Ready ? 0.62 : 0
                 Behavior on opacity {
