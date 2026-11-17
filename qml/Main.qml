@@ -60,7 +60,7 @@ ApplicationWindow {
 
     property string currentPage: "Library"
     property string pendingThemeName: settingsManager.themeName
-    property string selectedPlatform: "All Games"
+    property string selectedPlatform: "All Platforms"
     property string librarySearchText: ""
     property var selectedGame: null
     property int libraryRevision: 0
@@ -449,21 +449,41 @@ ApplicationWindow {
         padding: 0
 
         enter: Transition {
-            NumberAnimation {
-                property: "opacity"
-                from: 0
-                to: 1
-                duration: settingsManager.reducedMotion ? 0 : 380
-                easing.type: Easing.OutCubic
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 0
+                    to: 1
+                    duration: settingsManager.reducedMotion ? 0 : 560
+                    easing.type: Easing.OutCubic
+                }
+                NumberAnimation {
+                    target: detailsContentFrame
+                    property: "y"
+                    from: window.height
+                    to: 0
+                    duration: settingsManager.reducedMotion ? 0 : 680
+                    easing.type: Easing.OutCubic
+                }
             }
         }
         exit: Transition {
-            NumberAnimation {
-                property: "opacity"
-                from: 1
-                to: 0
-                duration: settingsManager.reducedMotion ? 0 : 260
-                easing.type: Easing.InCubic
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 1
+                    to: 0
+                    duration: settingsManager.reducedMotion ? 0 : 320
+                    easing.type: Easing.InCubic
+                }
+                NumberAnimation {
+                    target: detailsContentFrame
+                    property: "y"
+                    from: 0
+                    to: window.height
+                    duration: settingsManager.reducedMotion ? 0 : 520
+                    easing.type: Easing.InCubic
+                }
             }
         }
 
@@ -510,6 +530,9 @@ ApplicationWindow {
         }
 
         contentItem: Item {
+            id: detailsContentFrame
+            width: window.width
+            height: window.height
             clip: true
 
             Button {
@@ -518,7 +541,11 @@ ApplicationWindow {
                 anchors.top: parent.top
                 anchors.leftMargin: 28
                 anchors.topMargin: 24
-                text: "←   Back to Library"
+                text: "Back to Library"
+                icon.source: "qrc:/icons/back.svg"
+                icon.width: 18
+                icon.height: 18
+                icon.color: theme.textPrimary
                 onClicked: gameDetailsPopup.close()
             }
 
@@ -533,7 +560,7 @@ ApplicationWindow {
                 opacity: status === Image.Ready ? 0.62 : 0
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
-                    NumberAnimation { duration: 700; easing.type: Easing.OutCubic }
+                    NumberAnimation { duration: 900; easing.type: Easing.OutCubic }
                 }
             }
 
@@ -902,6 +929,10 @@ ApplicationWindow {
                         text: gameDetailsPopup.primaryProject
                             && window.runningLaunchers[gameDetailsPopup.primaryProject.id]
                             ? "Running…" : "Play Game"
+                        icon.source: "qrc:/icons/play.svg"
+                        icon.width: 18
+                        icon.height: 18
+                        icon.color: theme.textPrimary
                         enabled: gameDetailsPopup.primaryProject !== null
                             && gameDetailsPopup.installedProject !== null
                             && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
@@ -910,6 +941,10 @@ ApplicationWindow {
                     Button {
                         visible: gameDetailsPopup.installedProject !== null
                         text: "Uninstall"
+                        icon.source: "qrc:/icons/uninstall.svg"
+                        icon.width: 18
+                        icon.height: 18
+                        icon.color: theme.textPrimary
                         onClicked: {
                             window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
                             uninstallDialog.open()
@@ -923,6 +958,10 @@ ApplicationWindow {
                             && gameDetailsPopup.releaseState.assets.length > 0
                         highlighted: true
                         text: "Install Launcher"
+                        icon.source: "qrc:/icons/install.svg"
+                        icon.width: 18
+                        icon.height: 18
+                        icon.color: theme.textPrimary
                         onClicked: gameDetailsPopup.installPromptVisible = true
                     }
                     Label {
@@ -947,6 +986,10 @@ ApplicationWindow {
                             && gameDetailsPopup.installedProject === null
                         highlighted: true
                         text: "Yes"
+                        icon.source: "qrc:/icons/check.svg"
+                        icon.width: 16
+                        icon.height: 16
+                        icon.color: theme.textPrimary
                         onClicked: {
                             gameDetailsPopup.installPromptVisible = false
                             const asset = gameDetailsPopup.selectedAsset
@@ -958,6 +1001,10 @@ ApplicationWindow {
                         visible: gameDetailsPopup.installPromptVisible
                             && gameDetailsPopup.installedProject === null
                         text: "No"
+                        icon.source: "qrc:/icons/close.svg"
+                        icon.width: 16
+                        icon.height: 16
+                        icon.color: theme.textPrimary
                         onClicked: gameDetailsPopup.installPromptVisible = false
                     }
                     Button {
@@ -1051,7 +1098,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 spacing: 5
                                 Label {
-                                    text: selectedPlatform === "All Games" ? "Your Collection" : selectedPlatform
+                                    text: selectedPlatform === "All Platforms" ? "Your Collection" : selectedPlatform
                                     font.pixelSize: 32 * theme.fontScale
                                     font.bold: true
                                     color: theme.textPrimary
@@ -1078,66 +1125,13 @@ ApplicationWindow {
                                 }
                             }
 
-                            TextField {
-                                Layout.preferredWidth: 220
-                                Layout.preferredHeight: 42
-                                placeholderText: "Search collection"
-                                selectByMouse: true
-                                onTextChanged: window.librarySearchText = text
-                            }
                             ComboBox {
-                                Layout.preferredWidth: 170
+                                Layout.preferredWidth: 190
                                 Layout.preferredHeight: 42
-                                model: ["All Games"].concat(platformManager.platforms())
+                                model: ["All Platforms"].concat(platformManager.platforms())
                                 currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
                                 onActivated: window.selectedPlatform = currentText
                             }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 54
-                            radius: theme.radiusCard
-                            color: theme.surface
-                            border.color: theme.divider
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 14
-                                anchors.rightMargin: 10
-                                spacing: 10
-
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "LIBRARY MANAGEMENT"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-                                Button {
-                                    text: "Refresh Metadata"
-                                    onClicked: {
-                                        scanMessage = "Refreshing metadata and missing artwork..."
-                                        metadataMatcher.scrapeLibrary(true)
-                                    }
-                                }
-                                Button {
-                                    text: "Scan Library"
-                                    highlighted: true
-                                    onClicked: {
-                                        scanMessage = "Scanning game folders..."
-                                        console.info("[UI] Manual library scan requested")
-                                        libraryScanner.scanAll()
-                                    }
-                                }
-                            }
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: scanMessage
-                            color: theme.accent
-                            wrapMode: Text.Wrap
                         }
 
                         GridView {
@@ -1153,7 +1147,7 @@ ApplicationWindow {
                             model: {
                                 window.libraryRevision
                                 const games = databaseManager.games(
-                                    selectedPlatform === "All Games" ? "" : selectedPlatform)
+                                    selectedPlatform === "All Platforms" ? "" : selectedPlatform)
                                 const query = window.librarySearchText.trim().toLowerCase()
                                 return query.length === 0
                                     ? games
@@ -1357,16 +1351,6 @@ ApplicationWindow {
                                     font.pixelSize: 13 * theme.fontScale
                                     horizontalAlignment: Text.AlignHCenter
                                     wrapMode: Text.Wrap
-                                }
-                                Button {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    visible: window.librarySearchText.trim().length === 0
-                                    text: "Scan Library"
-                                    highlighted: true
-                                    onClicked: {
-                                        scanMessage = "Scanning game folders..."
-                                        libraryScanner.scanAll()
-                                    }
                                 }
                             }
                         }
@@ -2442,6 +2426,7 @@ ApplicationWindow {
             border.color: theme.divider
             border.width: 1
             z: 20
+            visible: !gameDetailsPopup.visible
 
             RowLayout {
                 anchors.fill: parent
@@ -2451,10 +2436,13 @@ ApplicationWindow {
 
                 RowLayout {
                     spacing: 10
-                    Label {
-                        text: "◈"
-                        color: theme.accent
-                        font.pixelSize: 25
+                    Image {
+                        source: "qrc:/icons/gamepad.svg"
+                        sourceSize.width: 28
+                        sourceSize.height: 28
+                        Layout.preferredWidth: 28
+                        Layout.preferredHeight: 28
+                        smooth: true
                     }
                     Label {
                         text: "RecompStation"
@@ -2469,7 +2457,11 @@ ApplicationWindow {
                 RowLayout {
                     spacing: 8
                     Button {
-                        text: "▦   Library"
+                        text: "Library"
+                        icon.source: "qrc:/icons/library.svg"
+                        icon.width: 18
+                        icon.height: 18
+                        icon.color: theme.textPrimary
                         highlighted: currentPage === "Library"
                         onClicked: {
                             console.info("[UI] Navigation: Game Library")
@@ -2477,7 +2469,11 @@ ApplicationWindow {
                         }
                     }
                     Button {
-                        text: "⚙   Settings"
+                        text: "Settings"
+                        icon.source: "qrc:/icons/settings.svg"
+                        icon.width: 18
+                        icon.height: 18
+                        icon.color: theme.textPrimary
                         highlighted: currentPage === "Settings"
                         onClicked: {
                             console.info("[UI] Navigation: Settings")
