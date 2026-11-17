@@ -3094,6 +3094,10 @@ ApplicationWindow {
                 if (!event.isAutoRepeat)
                     window.activeInputDevice = "keyboard"
             }
+            HoverHandler {
+                acceptedDevices: PointerDevice.Mouse
+                onPointChanged: window.activeInputDevice = "mouse"
+            }
             anchors.left: parent.left
             anchors.right: parent.right
             height: 66
