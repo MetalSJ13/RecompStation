@@ -107,11 +107,13 @@ ApplicationWindow {
             gameGrid.positionViewAtIndex(next, GridView.Contain)
             gameGrid.forceActiveFocus()
         } else if (currentPage === "Settings") {
-            const sections = ["Appearance", "Display", "Library", "Application"]
-            let index = sections.indexOf(settingsPage.section)
-            if (direction === "up") index = Math.max(0, index - 1)
-            if (direction === "down") index = Math.min(sections.length - 1, index + 1)
-            settingsPage.section = sections[index]
+            if (!moveDirectionalFocus(settingsPage, direction)) {
+                const sections = ["Appearance", "Display", "Library", "Application"]
+                let index = sections.indexOf(settingsPage.section)
+                if (direction === "up") index = Math.max(0, index - 1)
+                if (direction === "down") index = Math.min(sections.length - 1, index + 1)
+                settingsPage.section = sections[index]
+            }
         }
     }
 
@@ -128,7 +130,11 @@ ApplicationWindow {
             if (tile && tile.openDetails)
                 tile.openDetails()
         } else if (currentPage === "Settings") {
-            moveDirectionalFocus(settingsContentCard, "down")
+            const focused = window.activeFocusItem
+            if (focused && typeof focused.click === "function")
+                focused.click()
+            else
+                moveDirectionalFocus(settingsPage, "down")
         }
     }
 
