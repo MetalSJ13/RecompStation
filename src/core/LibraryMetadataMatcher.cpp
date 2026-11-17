@@ -16,7 +16,7 @@ QString normalizedTitle(QString title)
     // e.g. "Legend of Zelda, The - Ocarina of Time". Move it to the front
     // before producing the provider query and comparison key.
     static const QRegularExpression trailingArticle(
-        QStringLiteral(R"(^\\s*(.+?),\\s*The\\s*[-:–—]\\s*(.+?)\\s*$)"),
+        QStringLiteral(R"(^\s*(.+?),\s*The\s*[-:–—]\s*(.+?)\s*$)"),
         QRegularExpression::CaseInsensitiveOption);
     const QRegularExpressionMatch articleMatch = trailingArticle.match(title);
     if (articleMatch.hasMatch()) {
