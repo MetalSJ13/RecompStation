@@ -98,31 +98,31 @@ ApplicationWindow {
             return
 
         pendingNavigationPage = pageName
+        pageTransitionSnapshot.opacity = 1
         navigationTransitionRunning = true
+        pageTransitionSnapshot.scheduleUpdate()
         pageNavigationAnimation.start()
     }
 
     SequentialAnimation {
         id: pageNavigationAnimation
-        NumberAnimation {
-            target: mainPageStack
-            property: "opacity"
-            to: 0
-            duration: 180
-            easing.type: Easing.InOutCubic
-        }
+        PauseAnimation { duration: 40 }
         ScriptAction {
             script: window.currentPage = window.pendingNavigationPage
         }
         NumberAnimation {
-            target: mainPageStack
+            target: pageTransitionSnapshot
             property: "opacity"
-            to: 1
-            duration: 260
-            easing.type: Easing.InOutCubic
+            from: 1
+            to: 0
+            duration: 420
+            easing.type: Easing.OutCubic
         }
         ScriptAction {
-            script: window.navigationTransitionRunning = false
+            script: {
+                pageTransitionSnapshot.opacity = 1
+                window.navigationTransitionRunning = false
+            }
         }
     }
 
@@ -1228,7 +1228,6 @@ ApplicationWindow {
             StackLayout {
                 id: mainPageStack
                 anchors.fill: parent
-                opacity: 1
                 Component.onCompleted: console.info("[Settings Geometry] main page stack:", width, "x", height)
                 onWidthChanged: console.info("[Settings Geometry] main page stack width:", width)
                 anchors.leftMargin: 30
@@ -2618,6 +2617,18 @@ ApplicationWindow {
                         }
                     }
                 }
+            }
+
+            ShaderEffectSource {
+                id: pageTransitionSnapshot
+                anchors.fill: mainPageStack
+                sourceItem: mainPageStack
+                live: false
+                hideSource: false
+                recursive: true
+                smooth: true
+                visible: window.navigationTransitionRunning
+                z: 10
             }
         }
     
