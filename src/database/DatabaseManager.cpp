@@ -306,7 +306,8 @@ QVariantList DatabaseManager::games(const QString &platform) const
         const QString artworkPath = query.value(11).toString();
         game.insert("artworkPath", artworkPath.isEmpty()
                     ? QString() : QUrl::fromLocalFile(artworkPath).toString());
-        game.insert("metadataArtworkUrl", query.value(12).toString());\n        game.insert("screenshots", gameScreenshots(id));
+        game.insert("metadataArtworkUrl", query.value(12).toString());
+        game.insert("screenshots", gameScreenshots(id));
         result.append(game);
     }
     return result;
