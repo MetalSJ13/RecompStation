@@ -336,10 +336,11 @@ ApplicationWindow {
         function onScanCompleted(gamesFound) {
             window.libraryRevision++
             window.scanMessage = libraryScanner.lastError.length > 0
-                ? libraryScanner.lastError
+                ? libraryScanner.lastError + "\nChecking metadata for discovered games..."
                 : gamesFound + " new game(s) found. Checking metadata..."
-            if (libraryScanner.lastError.length === 0)
-                metadataMatcher.scrapeLibrary()
+            // A problem with one platform folder must not block metadata for
+            // games successfully discovered on other platforms.
+            metadataMatcher.scrapeLibrary()
         }
     }
 
