@@ -19,7 +19,7 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS
 find_package(LibArchive REQUIRED)
 
 # SDL2 is optional: builds without it retain keyboard/mouse support.
-find_package(SDL2 QUIET)
+find_package(SDL2 2.0.14 QUIET)
 qt_standard_project_setup(REQUIRES 6.5)
 qt_policy(SET QTP0004 NEW)
 
@@ -88,7 +88,7 @@ elseif(TARGET SDL2::SDL2-static)
 else()
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)
-        pkg_check_modules(SDL2_PC QUIET IMPORTED_TARGET sdl2)
+        pkg_check_modules(SDL2_PC QUIET IMPORTED_TARGET sdl2>=2.0.14)
         if(TARGET PkgConfig::SDL2_PC)
             target_link_libraries(RecompStationApp PRIVATE PkgConfig::SDL2_PC)
             target_compile_definitions(RecompStationApp PRIVATE RECOMPSTATION_HAS_SDL2)
