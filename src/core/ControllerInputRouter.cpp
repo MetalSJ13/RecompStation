@@ -1,8 +1,27 @@
 #include "ControllerInputRouter.h"
 
+#include <QtMath>
+
 ControllerInputRouter::ControllerInputRouter(QObject *parent)
     : QObject(parent)
 {
+}
+
+QString ControllerInputRouter::directionFromAxes(qint16 x, qint16 y, int deadZone)
+{
+    // Promote SDL's signed 16-bit axis values before taking absolute values.
+    // In particular, abs(-32768) cannot be represented by qint16.
+    const int horizontal = static_cast<int>(x);
+    const int vertical = static_cast<int>(y);
+    if (qAbs(horizontal) <= deadZone && qAbs(vertical) <= deadZone)
+        return {};
+
+    if (qAbs(horizontal) > qAbs(vertical))
+        return horizontal < 0 ? QStringLiteral("left")
+                              : QStringLiteral("right");
+
+    return vertical < 0 ? QStringLiteral("up")
+                        : QStringLiteral("down");
 }
 
 bool ControllerInputRouter::inputEnabled() const
