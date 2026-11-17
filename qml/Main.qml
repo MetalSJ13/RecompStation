@@ -942,6 +942,9 @@ ApplicationWindow {
                                         icon.width: 18
                                         icon.height: 18
                                         icon.color: theme.textPrimary
+                                        implicitHeight: 48
+                                        Layout.minimumWidth: 150
+                                        Layout.preferredWidth: 150
                                         enabled: gameDetailsPopup.primaryProject !== null
                                             && gameDetailsPopup.installedProject !== null
                                             && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
@@ -954,6 +957,9 @@ ApplicationWindow {
                                         icon.width: 18
                                         icon.height: 18
                                         icon.color: theme.textPrimary
+                                        implicitHeight: 48
+                                        Layout.minimumWidth: 150
+                                        Layout.preferredWidth: 150
                                         onClicked: {
                                             window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
                                             uninstallDialog.open()
@@ -973,6 +979,7 @@ ApplicationWindow {
                                         icon.color: theme.textPrimary
                                         implicitHeight: 48
                                         Layout.minimumWidth: 150
+                                        Layout.preferredWidth: 150
                                         onClicked: gameDetailsPopup.installPromptVisible = true
                                     }
                                     RowLayout {
