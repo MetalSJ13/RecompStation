@@ -2600,6 +2600,14 @@ ApplicationWindow {
                                             currentIndex = savedIndex >= 0 ? savedIndex : 0
                                         }
                                         onActivated: {
+                                            if (currentValue === "fullscreen"
+                                                    && window.visibility !== Window.FullScreen) {
+                                                window.preFullscreenMode =
+                                                    window.visibility === Window.Maximized
+                                                    ? "maximized" : "windowed"
+                                                settingsManager.setRestoreDisplayMode(
+                                                    window.preFullscreenMode)
+                                            }
                                             settingsManager.setDisplayMode(currentValue)
                                             window.applyDisplayMode(currentValue)
                                         }
