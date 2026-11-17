@@ -25,7 +25,7 @@ ApplicationWindow {
     onWidthChanged: console.info("[Settings Geometry] window width:", width)
     onHeightChanged: console.info("[Settings Geometry] window height:", height)
 
-    property string preFullscreenMode: "windowed"
+    property string preFullscreenMode: settingsManager.restoreDisplayMode
 
     function applyDisplayMode(mode) {
         // Apply the preferred geometry before changing the window state.
@@ -45,11 +45,13 @@ ApplicationWindow {
     function toggleFullscreen() {
         if (window.visibility === Window.FullScreen) {
             const restoreMode = window.preFullscreenMode
+            settingsManager.setRestoreDisplayMode(restoreMode)
             settingsManager.setDisplayMode(restoreMode)
             window.applyDisplayMode(restoreMode)
         } else {
             window.preFullscreenMode = window.visibility === Window.Maximized
                 ? "maximized" : "windowed"
+            settingsManager.setRestoreDisplayMode(preFullscreenMode)
             settingsManager.setDisplayMode("fullscreen")
             window.applyDisplayMode("fullscreen")
         }
@@ -62,6 +64,7 @@ ApplicationWindow {
             if (settingsManager.displayMode !== "fullscreen") {
                 preFullscreenMode = settingsManager.displayMode === "maximized"
                     ? "maximized" : "windowed"
+                settingsManager.setRestoreDisplayMode(preFullscreenMode)
                 settingsManager.setDisplayMode("fullscreen")
             }
         } else if (visibility === Window.Maximized) {
@@ -146,6 +149,10 @@ ApplicationWindow {
         function onThemeNameChanged() {
             pendingThemeName = settingsManager.themeName
             console.info("[Settings QML] Applied theme changed:", settingsManager.themeName)
+        }
+        function onDisplayModeChanged() {
+            displayModeSelector.currentIndex =
+                displayModeSelector.indexOfValue(settingsManager.displayMode)
         }
     }
 
