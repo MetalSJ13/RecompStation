@@ -14,6 +14,8 @@ class ControllerInputRouter final : public QObject
 public:
     explicit ControllerInputRouter(QObject *parent = nullptr);
 
+    static QString directionFromAxes(qint16 x, qint16 y, int deadZone = 16000);
+
     void processFrame(const QString &direction,
                       bool selectPressed,
                       bool backPressed,
