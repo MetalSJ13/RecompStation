@@ -96,6 +96,7 @@ Keep the application buildable after each focused change. Preserve working backe
 - [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
 - [ ] Add automatic filesystem monitoring for configured folders
+- [x] Add a separate gameplay screenshot refresh control for games with saved TheGamesDB associations; cache screenshots independently of cover art (local build/API validation pending)
 - [ ] Add metadata provider status, provider enablement, field selection, and cache/refresh controls
 - [ ] Add launcher installation/update preferences as supported
 - [ ] Add application preferences and useful first-run guidance
