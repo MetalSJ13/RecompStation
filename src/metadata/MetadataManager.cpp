@@ -47,9 +47,13 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
     });
     connect(m_provider, &MetadataProvider::platformsFailed,
             this, [this](const QString &message) {
+        qCWarning(lcMetadata) << "Metadata platform catalog unavailable:" << message;
         m_platformsLoading = false;
         setErrorString(message);
         emit platformsLoadingChanged();
+        // Wake any queued library scrape so it can report the unavailable
+        // platform catalog instead of silently waiting forever.
+        emit platformOptionsChanged();
     });
     m_provider->fetchPlatforms();
 
