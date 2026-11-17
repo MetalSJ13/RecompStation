@@ -69,6 +69,21 @@ private slots:
                      QStringLiteral("Game Title (Rev 1)"), results), 0);
     }
 
+    void movesTrailingTheArticleToTheFront()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "The Legend of Zelda: Majora's Mask"}},
+            QVariantMap{{"title", "The Legend of Zelda: Ocarina of Time"}}
+        };
+
+        QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(
+                     QStringLiteral("Legend of Zelda, The - Majora's Mask (USA)"),
+                     results), 0);
+        QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(
+                     QStringLiteral("Legend of Zelda, The - Ocarina of Time (USA)"),
+                     results), 1);
+    }
+
     void ignoresDiacriticDifferences()
     {
         const QVariantList results = {
