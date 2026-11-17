@@ -611,7 +611,7 @@ ApplicationWindow {
                         console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
                 }
                 opacity: visible && gameDetailsPopup.screenshotLayerA
-                    && status === Image.Ready ? 0.62 : 0
+                    && status === Image.Ready ? 1.0 : 0
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
@@ -637,7 +637,7 @@ ApplicationWindow {
                         console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
                 }
                 opacity: visible && !gameDetailsPopup.screenshotLayerA
-                    && status === Image.Ready ? 0.62 : 0
+                    && status === Image.Ready ? 1.0 : 0
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
@@ -663,6 +663,7 @@ ApplicationWindow {
             MultiEffect {
                 anchors.fill: detailsBackdropImage
                 source: detailsBackdropImage
+                visible: detailsBackdropImage.visible
                 blurEnabled: true
                 blur: 0.86
                 autoPaddingEnabled: false
