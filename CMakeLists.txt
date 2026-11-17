@@ -17,6 +17,9 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS
     Core Gui Quick QuickControls2 Sql Network Concurrent Svg
 )
 find_package(LibArchive REQUIRED)
+
+# SDL2 is optional: builds without it retain keyboard/mouse support.
+find_package(SDL2 QUIET)
 qt_standard_project_setup(REQUIRES 6.5)
 qt_policy(SET QTP0004 NEW)
 
@@ -24,6 +27,10 @@ qt_add_executable(RecompStationApp
     src/main.cpp
     src/core/Logging.h
     src/core/Logging.cpp
+    src/core/ControllerInputRouter.h
+    src/core/ControllerInputRouter.cpp
+    src/core/ControllerManager.h
+    src/core/ControllerManager.cpp
     data/projects.qrc
     data/ui_icons.qrc
     src/projects/ProjectCatalog.h
@@ -71,6 +78,23 @@ target_link_libraries(RecompStationApp PRIVATE
     Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql Qt6::Network Qt6::Concurrent Qt6::Svg
     LibArchive::LibArchive
 )
+
+if(TARGET SDL2::SDL2)
+    target_link_libraries(RecompStationApp PRIVATE SDL2::SDL2)
+    target_compile_definitions(RecompStationApp PRIVATE RECOMPSTATION_HAS_SDL2)
+elseif(TARGET SDL2::SDL2-static)
+    target_link_libraries(RecompStationApp PRIVATE SDL2::SDL2-static)
+    target_compile_definitions(RecompStationApp PRIVATE RECOMPSTATION_HAS_SDL2)
+else()
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(SDL2_PC QUIET IMPORTED_TARGET sdl2)
+        if(TARGET PkgConfig::SDL2_PC)
+            target_link_libraries(RecompStationApp PRIVATE PkgConfig::SDL2_PC)
+            target_compile_definitions(RecompStationApp PRIVATE RECOMPSTATION_HAS_SDL2)
+        endif()
+    endif()
+endif()
 
 include(CTest)
 
