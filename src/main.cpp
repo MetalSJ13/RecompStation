@@ -57,6 +57,9 @@ int main(int argc, char *argv[])
     MetadataManager metadataManager(&metadataProvider);
     ArtworkManager artworkManager(&databaseManager,
                                   platformManager.dataDirectory() + "/artwork");
+    ScreenshotManager screenshotManager(&databaseManager,
+                                        platformManager.dataDirectory() + "/artwork",
+                                        qEnvironmentVariable("RECOMPSTATION_TGDB_API_KEY"));
     LibraryMetadataMatcher metadataMatcher(&databaseManager, &metadataManager,
                                            &artworkManager);
     GitHubManager githubManager;
