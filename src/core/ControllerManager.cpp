@@ -122,10 +122,13 @@ void ControllerManager::pollController()
 
             QString type = QStringLiteral("generic");
             switch (SDL_GameControllerGetType(m_controller)) {
-            case SDL_CONTROLLER_TYPE_XBOX:
+            case SDL_CONTROLLER_TYPE_XBOX360:
+            case SDL_CONTROLLER_TYPE_XBOXONE:
                 type = QStringLiteral("xbox");
                 break;
-            case SDL_CONTROLLER_TYPE_PLAYSTATION:
+            case SDL_CONTROLLER_TYPE_PS3:
+            case SDL_CONTROLLER_TYPE_PS4:
+            case SDL_CONTROLLER_TYPE_PS5:
                 type = QStringLiteral("playstation");
                 break;
             case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
