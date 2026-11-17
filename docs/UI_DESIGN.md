@@ -25,7 +25,7 @@ The library should support:
 - Cover-art-forward browsing with clear keyboard/controller focus and selection states.
 - A dedicated game-details experience with available metadata, artwork, platform, supported recompilation project information, launcher installation state, and launch action.
 - Useful empty, loading, scanning, missing-artwork, metadata-unavailable, unsupported-project, and launch-error states.
-- A visible **Scan / Refresh Library** action that can initiate a user-requested scan and metadata scrape.
+- A single platform selector for narrowing the collection; library scanning remains in Settings rather than duplicating maintenance controls on the browsing page.
 
 The library should not become a storefront: avoid promotional modules, sales-like badges, recommendations that imply products for purchase, or excessive marketing copy.
 
@@ -36,8 +36,8 @@ Metadata management is a background service, not a separate user workflow.
 Use a combined approach:
 
 1. (Planned) Monitor configured game folders for additions, removals, and relevant file changes, where supported by the platform and filesystem.
-2. Provide a manual library scan/scrape action for initial setup, recovery, and user-requested refreshes; the current Settings page also supports a configurable startup scan.
-3. Route both paths through the same discovery and metadata-matching pipeline.
+2. Provide a manual library scan action in Settings for initial setup and recovery. A configurable startup scan discovers new files; it must not re-query games that already have saved metadata or a completed lookup attempt.
+3. Route discovery through one pipeline. Register newly found games first, then queue metadata only for games without a saved metadata association and without a completed lookup attempt.
 
 The intended flow is:
 
@@ -57,7 +57,8 @@ A user should not need to search a metadata database and manually associate ever
 - Restrained accent colors, initially exploring blue-violet and electric-blue families.
 - Strong typography hierarchy, comfortable spacing, consistent radii, and subtle surface separation.
 - Game artwork is visually important, but layouts should remain readable and performant.
-- Motion should be smooth and purposeful: page transitions, selection changes, and details presentation must never impede navigation.
+- Motion should be smooth and purposeful: game details rise into view from below, followed by a slightly slower artwork and information dissolve. All motion respects Reduced Motion.
+- Use a consistent set of bundled SVG icon assets for primary navigation and common actions; avoid Unicode symbols as interface icons.
 - Visible focus states and predictable interaction feedback are essential.
 - Avoid copying Steam Big Picture or other existing launcher/dashboard layouts. Use them only as broad evidence that controller-friendly, immersive browsing can be engaging.
 
