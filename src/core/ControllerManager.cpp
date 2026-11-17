@@ -35,6 +35,8 @@ ControllerManager::ControllerManager(QObject *parent)
     }
 
     m_sdlInitialized = true;
+    SDL_GameControllerEventState(SDL_IGNORE);
+    SDL_JoystickEventState(SDL_IGNORE);
     m_elapsedTimer.start();
     connect(&m_pollTimer, &QTimer::timeout,
             this, &ControllerManager::pollController);
