@@ -145,7 +145,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
                                << message;
         // A provider/network failure is not a definitive no-match. Leave
         // lookup-attempt records untouched so a later scan can retry.
-        ++m_unresolvedCount;
+        m_unresolvedCount += 1 + m_queue.size();
         m_completedCount += 1 + m_queue.size();
         m_queue.clear();
         m_currentGame.clear();
