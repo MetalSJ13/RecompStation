@@ -2,8 +2,6 @@
 
 #include "Logging.h"
 
-#include <QtMath>
-
 #ifdef RECOMPSTATION_HAS_SDL2
 #include <SDL.h>
 #endif
@@ -165,20 +163,11 @@ void ControllerManager::pollController()
     else if (pressed(SDL_CONTROLLER_BUTTON_DPAD_RIGHT))
         direction = QStringLiteral("right");
     else {
-        constexpr Sint16 deadZone = 16000;
         const Sint16 x = SDL_GameControllerGetAxis(
             m_controller, SDL_CONTROLLER_AXIS_LEFTX);
         const Sint16 y = SDL_GameControllerGetAxis(
             m_controller, SDL_CONTROLLER_AXIS_LEFTY);
-
-        if (qAbs(x) > qAbs(y) && x < -deadZone)
-            direction = QStringLiteral("left");
-        else if (qAbs(x) > qAbs(y) && x > deadZone)
-            direction = QStringLiteral("right");
-        else if (y < -deadZone)
-            direction = QStringLiteral("up");
-        else if (y > deadZone)
-            direction = QStringLiteral("down");
+        direction = ControllerInputRouter::directionFromAxes(x, y);
     }
 
     m_inputRouter.processFrame(
