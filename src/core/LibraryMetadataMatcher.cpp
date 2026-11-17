@@ -102,10 +102,18 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
                 const QVariantMap candidate = entry.toMap();
                 qCInfo(lcMetadata) << "Metadata candidate:"
                                    << candidate.value(QStringLiteral("title")).toString()
+                                   << "provider ID:"
+                                   << candidate.value(QStringLiteral("providerGameId")).toInt()
                                    << "platform ID:"
                                    << candidate.value(QStringLiteral("platformId")).toInt()
+                                   << "release date:"
+                                   << candidate.value(QStringLiteral("releaseDate")).toString()
                                    << "artwork pixels:"
-                                   << candidate.value(QStringLiteral("artworkPixelCount")).toInt();
+                                   << candidate.value(QStringLiteral("artworkPixelCount")).toInt()
+                                   << "has overview:"
+                                   << !candidate.value(QStringLiteral("overview")).toString().trimmed().isEmpty()
+                                   << "has artwork URL:"
+                                   << !candidate.value(QStringLiteral("artworkUrl")).toString().trimmed().isEmpty();
             }
             const bool ambiguous = matchIndex == -2;
             const int gameId = m_currentGame.value(QStringLiteral("id")).toInt();
