@@ -94,6 +94,12 @@ bool DatabaseManager::createTables()
             rating TEXT,
             artwork_url TEXT,
             FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE
+        ))",
+        R"(CREATE TABLE IF NOT EXISTS game_screenshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id INTEGER NOT NULL,
+            local_path TEXT NOT NULL UNIQUE,
+            FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE
         ))"
     };
 
