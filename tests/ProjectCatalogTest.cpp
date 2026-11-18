@@ -256,7 +256,7 @@ void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForNewProjects()
     const QVariantMap banjoTooieRule = banjoTooie.value(QStringLiteral("architectures"))
         .toMap().value(QStringLiteral("x86_64")).toMap();
     QCOMPARE(banjoTooieRule.value(QStringLiteral("executablePath")).toString(),
-             QStringLiteral("BanjoTooieRecompiled"));
+             QStringLiteral("run.sh"));
     QVERIFY(accepts("paper-mario-64-recompiled", "x86_64",
         "Paperboat-Mulberry-Delta-Linux.zip"));
 
