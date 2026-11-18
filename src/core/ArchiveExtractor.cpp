@@ -4,6 +4,7 @@
 #include <archive_entry.h>
 
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
@@ -259,6 +260,38 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
 
     archive_read_close(reader);
     archive_read_free(reader);
+
+    // Some Linux releases are ZIP wrappers around a TAR.GZ package.
+    // Only unwrap this single supported nesting level.
+    if (failure.isEmpty() && exactExecutablePath.isEmpty()
+        && executableNameMatches.isEmpty()
+        && QFileInfo(archivePath).suffix().compare(QStringLiteral("zip"), Qt::CaseInsensitive) == 0) {
+        QStringList nestedArchives;
+        QDirIterator iterator(extractionRoot, QDir::Files, QDirIterator::Subdirectories);
+        while (iterator.hasNext()) {
+            const QFileInfo candidate(iterator.next());
+            if (candidate.isSymLink())
+                continue;
+            const QString name = candidate.fileName().toLower();
+            if (name.endsWith(QStringLiteral(".tar.gz"))
+                || name.endsWith(QStringLiteral(".tgz")))
+                nestedArchives.append(candidate.absoluteFilePath());
+        }
+
+        if (nestedArchives.size() == 1) {
+            const QString nestedDestination = extractionRoot + QStringLiteral(".nested");
+            Result nestedResult = extractArchive(
+                nestedArchives.constFirst(), nestedDestination, expectedExecutable);
+            if (nestedResult.success) {
+                QDir(extractionRoot).removeRecursively();
+                return nestedResult;
+            }
+            failure = QStringLiteral("The ZIP contains a nested TAR.GZ package, but it could not be installed: %1")
+                          .arg(nestedResult.error);
+        } else if (nestedArchives.size() > 1) {
+            failure = QStringLiteral("The ZIP contains multiple nested TAR.GZ packages; refusing to guess which one is the launcher.");
+        }
+    }
 
     QString selectedExecutablePath = exactExecutablePath;
     if (failure.isEmpty() && selectedExecutablePath.isEmpty()) {
