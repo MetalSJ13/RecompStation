@@ -309,6 +309,7 @@ void SettingsManagerTest::defaultsToCuratedLibraryPresentation()
     SettingsManager manager(settingsPath);
     QCOMPARE(manager.libraryView(), QStringLiteral("grid"));
     QCOMPARE(manager.libraryDensity(), QStringLiteral("comfortable"));
+    QCOMPARE(manager.libraryListDensity(), QStringLiteral("comfortable"));
     QCOMPARE(manager.libraryBackgroundType(), QStringLiteral("static"));
     QVERIFY(manager.customLibraryBackground().isEmpty());
 }
@@ -332,16 +333,19 @@ void SettingsManagerTest::persistsLibraryPresentationPreferences()
         SettingsManager manager(settingsPath);
         QSignalSpy viewChanged(&manager, &SettingsManager::libraryViewChanged);
         QSignalSpy densityChanged(&manager, &SettingsManager::libraryDensityChanged);
+        QSignalSpy listDensityChanged(&manager, &SettingsManager::libraryListDensityChanged);
         QSignalSpy backgroundChanged(&manager, &SettingsManager::libraryBackgroundTypeChanged);
         QSignalSpy imageChanged(&manager, &SettingsManager::customLibraryBackgroundChanged);
 
         manager.setLibraryView(QStringLiteral("list"));
         manager.setLibraryDensity(QStringLiteral("spacious"));
+        manager.setLibraryListDensity(QStringLiteral("compact"));
         manager.setLibraryBackgroundType(QStringLiteral("custom"));
         manager.setCustomLibraryBackground(sourceImagePath);
 
         QCOMPARE(viewChanged.count(), 1);
         QCOMPARE(densityChanged.count(), 1);
+        QCOMPARE(listDensityChanged.count(), 1);
         QCOMPARE(backgroundChanged.count(), 1);
         QCOMPARE(imageChanged.count(), 1);
         savedBackground = manager.customLibraryBackground();
@@ -354,6 +358,7 @@ void SettingsManagerTest::persistsLibraryPresentationPreferences()
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.libraryView(), QStringLiteral("list"));
     QCOMPARE(reloaded.libraryDensity(), QStringLiteral("spacious"));
+    QCOMPARE(reloaded.libraryListDensity(), QStringLiteral("compact"));
     QCOMPARE(reloaded.libraryBackgroundType(), QStringLiteral("custom"));
     QCOMPARE(reloaded.customLibraryBackground(), savedBackground);
 }
@@ -368,17 +373,21 @@ void SettingsManagerTest::rejectsUnsupportedLibraryPresentationPreferences()
     SettingsManager manager(settingsPath);
     QSignalSpy viewChanged(&manager, &SettingsManager::libraryViewChanged);
     QSignalSpy densityChanged(&manager, &SettingsManager::libraryDensityChanged);
+    QSignalSpy listDensityChanged(&manager, &SettingsManager::libraryListDensityChanged);
     QSignalSpy backgroundChanged(&manager, &SettingsManager::libraryBackgroundTypeChanged);
 
     manager.setLibraryView(QStringLiteral("carousel"));
     manager.setLibraryDensity(QStringLiteral("extreme"));
+    manager.setLibraryListDensity(QStringLiteral("extreme"));
     manager.setLibraryBackgroundType(QStringLiteral("video"));
 
     QCOMPARE(manager.libraryView(), QStringLiteral("grid"));
     QCOMPARE(manager.libraryDensity(), QStringLiteral("comfortable"));
+    QCOMPARE(manager.libraryListDensity(), QStringLiteral("comfortable"));
     QCOMPARE(manager.libraryBackgroundType(), QStringLiteral("static"));
     QCOMPARE(viewChanged.count(), 0);
     QCOMPARE(densityChanged.count(), 0);
+    QCOMPARE(listDensityChanged.count(), 0);
     QCOMPARE(backgroundChanged.count(), 0);
 }
 
