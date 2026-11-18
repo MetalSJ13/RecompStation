@@ -2373,7 +2373,9 @@ ApplicationWindow {
                                 Keys.onReturnPressed: gameTile.openDetails()
                                 Keys.onEnterPressed: gameTile.openDetails()
                             }
-                            ScrollBar.vertical: ScrollBar {}
+                            ScrollBar.vertical: ScrollBar {
+                                policy: ScrollBar.AlwaysOff
+                            }
                         }
 
                         ListView {
