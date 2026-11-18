@@ -195,7 +195,9 @@ void SettingsManagerTest::controllerProfilesDefaultPerGuidAndPersistIndependentl
     QCOMPARE(reloaded.controllerProfile(xboxGuid).value(QStringLiteral("select")).toList().first().toString(),
              QStringLiteral("a"));
     QVERIFY(!reloaded.controllerProfileIds().contains(xboxGuid));
-    QVERIFY(reloaded.controllerProfileIds().contains(secondGuid));
+    // Merely reading an untouched default profile must not create a saved
+    // profile entry; the second controller remains on its implicit defaults.
+    QVERIFY(!reloaded.controllerProfileIds().contains(secondGuid));
 }
 
 void SettingsManagerTest::rejectsInvalidControllerProfiles()
