@@ -7,6 +7,8 @@
 #include <QTemporaryDir>
 #include <QDir>
 #include <QFileInfo>
+#include <QFile>
+#include <QUrl>
 
 class SettingsManagerTest : public QObject
 {
@@ -220,6 +222,14 @@ void SettingsManagerTest::persistsLibraryPresentationPreferences()
     const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
     QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
 
+    const QString sourceImagePath = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("wallpaper.webp"));
+    QFile sourceImage(sourceImagePath);
+    QVERIFY(sourceImage.open(QIODevice::WriteOnly));
+    QCOMPARE(sourceImage.write("test-image"), qint64(10));
+    sourceImage.close();
+
+    QString savedBackground;
     {
         SettingsManager manager(settingsPath);
         QSignalSpy viewChanged(&manager, &SettingsManager::libraryViewChanged);
@@ -230,20 +240,24 @@ void SettingsManagerTest::persistsLibraryPresentationPreferences()
         manager.setLibraryView(QStringLiteral("list"));
         manager.setLibraryDensity(QStringLiteral("spacious"));
         manager.setLibraryBackgroundType(QStringLiteral("custom"));
-        manager.setCustomLibraryBackground(QStringLiteral("file:///tmp/library-wallpaper.webp"));
+        manager.setCustomLibraryBackground(sourceImagePath);
 
         QCOMPARE(viewChanged.count(), 1);
         QCOMPARE(densityChanged.count(), 1);
         QCOMPARE(backgroundChanged.count(), 1);
         QCOMPARE(imageChanged.count(), 1);
+        savedBackground = manager.customLibraryBackground();
+        QVERIFY(savedBackground.startsWith(QStringLiteral("file://")));
+        const QString copiedImagePath = QUrl(savedBackground).toLocalFile();
+        QVERIFY(QFileInfo::isFile(copiedImagePath));
+        QVERIFY(copiedImagePath != sourceImagePath);
     }
 
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.libraryView(), QStringLiteral("list"));
     QCOMPARE(reloaded.libraryDensity(), QStringLiteral("spacious"));
     QCOMPARE(reloaded.libraryBackgroundType(), QStringLiteral("custom"));
-    QCOMPARE(reloaded.customLibraryBackground(),
-             QStringLiteral("file:///tmp/library-wallpaper.webp"));
+    QCOMPARE(reloaded.customLibraryBackground(), savedBackground);
 }
 
 void SettingsManagerTest::rejectsUnsupportedLibraryPresentationPreferences()
