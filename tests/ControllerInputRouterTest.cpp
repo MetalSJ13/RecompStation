@@ -20,7 +20,7 @@ private slots:
     void emitsInputEnabledChangeOnlyWhenStateChanges();
     void resolvesActionsFromCustomMappings();
     void resolvesNavigationFromCustomMappings();
-    void supportsMultipleInputsForOneAction();
+    void supportsMultipleInputsForOneAction();\n    void detectsOnlyNewlyPressedInputs();
 };
 
 void ControllerInputRouterTest::mapsAnalogStickDirections()
@@ -191,6 +191,20 @@ void ControllerInputRouterTest::resolvesNavigationFromCustomMappings()
     QCOMPARE(ControllerInputRouter::directionFromProfile(
                  profile, {QStringLiteral("dpad-right")}), QStringLiteral("right"));
     QVERIFY(ControllerInputRouter::directionFromProfile(profile, {}).isEmpty());
+}
+
+void ControllerInputRouterTest::detectsOnlyNewlyPressedInputs()
+{
+    QCOMPARE(ControllerInputRouter::firstNewInput(
+                 {QStringLiteral("a")}, {}),
+             QStringLiteral("a"));
+    QVERIFY(ControllerInputRouter::firstNewInput(
+                {QStringLiteral("a")}, {QStringLiteral("a")}).isEmpty());
+    QCOMPARE(ControllerInputRouter::firstNewInput(
+                 {QStringLiteral("a"), QStringLiteral("dpad-up")},
+                 {QStringLiteral("a")}),
+             QStringLiteral("dpad-up"));
+    QVERIFY(ControllerInputRouter::firstNewInput({}, {}).isEmpty());
 }
 
 void ControllerInputRouterTest::supportsMultipleInputsForOneAction()
