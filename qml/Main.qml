@@ -1800,6 +1800,8 @@ ApplicationWindow {
                                 required property int id
                                 required property int index
                                 property int gameId: id
+                                readonly property bool highlighted:
+                                    tileMouse.containsMouse || gameTile.GridView.isCurrentItem
                                 function openDetails() {
                                     window.selectedGame = {
                                         id: gameTile.gameId,
@@ -1852,9 +1854,10 @@ ApplicationWindow {
                                             color: theme.surface
                                         }
                                     }
-                                    border.width: tileMouse.containsMouse || gameTile.GridView.isCurrentItem ? 2 : 1
-                                    border.color: tileMouse.containsMouse || gameTile.GridView.isCurrentItem
-                                        ? theme.accent : theme.divider
+                                    border.width: gameTile.highlighted ? 2 : 1
+                                    border.color: gameTile.highlighted ? theme.accent
+                                        : Qt.rgba(theme.divider.r, theme.divider.g,
+                                                  theme.divider.b, 0.42)
                                     Behavior on border.color {
                                         enabled: !settingsManager.reducedMotion
                                         ColorAnimation { duration: 140 }
@@ -1876,9 +1879,14 @@ ApplicationWindow {
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
                                             border.width: 1
-                                            border.color: gameTile.GridView.isCurrentItem
-                                                ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.48)
-                                                : theme.divider
+                                            border.color: gameTile.highlighted
+                                                ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.78)
+                                                : Qt.rgba(theme.divider.r, theme.divider.g,
+                                                          theme.divider.b, 0.34)
+                                            Behavior on border.color {
+                                                enabled: !settingsManager.reducedMotion
+                                                ColorAnimation { duration: 170; easing.type: Easing.OutCubic }
+                                            }
                                             clip: true
 
                                             Image {
@@ -1981,6 +1989,10 @@ ApplicationWindow {
                                     id: tileMouse
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    onEntered: {
+                                        gameGrid.currentIndex = gameTile.index
+                                        window.activeInputDevice = "mouse"
+                                    }
                                     onClicked: {
                                         gameGrid.currentIndex = gameTile.index
                                         gameTile.openDetails()
@@ -3644,27 +3656,95 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 RowLayout {
-                    spacing: 8
+                    spacing: 22
+
                     Button {
-                        text: "Library"
-                        icon.source: "qrc:/icons/library.svg"
-                        icon.width: 18
-                        icon.height: 18
-                        icon.color: theme.textPrimary
-                        highlighted: currentPage === "Library"
+                        id: libraryNavigationButton
+                        Layout.preferredHeight: 42
+                        Layout.preferredWidth: libraryNavigationContent.implicitWidth + 18
+                        padding: 4
+                        background: Item {
+                            Rectangle {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                width: parent.width * 0.62
+                                height: 2
+                                radius: 1
+                                color: theme.accent
+                                opacity: currentPage === "Library" ? 1 : 0
+                                Behavior on opacity {
+                                    enabled: !settingsManager.reducedMotion
+                                    NumberAnimation { duration: 160 }
+                                }
+                            }
+                        }
+                        contentItem: RowLayout {
+                            id: libraryNavigationContent
+                            spacing: 8
+                            Image {
+                                source: "qrc:/icons/library.svg"
+                                sourceSize: Qt.size(19, 19)
+                                Layout.preferredWidth: 19
+                                Layout.preferredHeight: 19
+                                opacity: libraryNavigationButton.hovered
+                                    || currentPage === "Library" ? 1 : 0.76
+                            }
+                            Label {
+                                text: "Library"
+                                color: libraryNavigationButton.hovered
+                                    || currentPage === "Library" ? theme.textPrimary
+                                    : theme.textSecondary
+                                font.pixelSize: 12 * theme.fontScale
+                                font.bold: currentPage === "Library"
+                            }
+                        }
                         enabled: !window.navigationTransitionRunning
                         onClicked: {
                             console.info("[UI] Navigation: Game Library")
                             window.navigateToPage("Library")
                         }
                     }
+
                     Button {
-                        text: "Settings"
-                        icon.source: "qrc:/icons/settings.svg"
-                        icon.width: 18
-                        icon.height: 18
-                        icon.color: theme.textPrimary
-                        highlighted: currentPage === "Settings"
+                        id: settingsNavigationButton
+                        Layout.preferredHeight: 42
+                        Layout.preferredWidth: settingsNavigationContent.implicitWidth + 18
+                        padding: 4
+                        background: Item {
+                            Rectangle {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                width: parent.width * 0.62
+                                height: 2
+                                radius: 1
+                                color: theme.accent
+                                opacity: currentPage === "Settings" ? 1 : 0
+                                Behavior on opacity {
+                                    enabled: !settingsManager.reducedMotion
+                                    NumberAnimation { duration: 160 }
+                                }
+                            }
+                        }
+                        contentItem: RowLayout {
+                            id: settingsNavigationContent
+                            spacing: 8
+                            Image {
+                                source: "qrc:/icons/settings.svg"
+                                sourceSize: Qt.size(19, 19)
+                                Layout.preferredWidth: 19
+                                Layout.preferredHeight: 19
+                                opacity: settingsNavigationButton.hovered
+                                    || currentPage === "Settings" ? 1 : 0.76
+                            }
+                            Label {
+                                text: "Settings"
+                                color: settingsNavigationButton.hovered
+                                    || currentPage === "Settings" ? theme.textPrimary
+                                    : theme.textSecondary
+                                font.pixelSize: 12 * theme.fontScale
+                                font.bold: currentPage === "Settings"
+                            }
+                        }
                         enabled: !window.navigationTransitionRunning
                         onClicked: {
                             console.info("[UI] Navigation: Settings")
