@@ -3,6 +3,9 @@
     <file alias="gamepad.svg">../assets/icons/gamepad.svg</file>
     <file alias="mouse.svg">../assets/icons/mouse.svg</file>
     <file alias="dpad.svg">../assets/icons/dpad.svg</file>
+    <file alias="appearance.svg">../assets/icons/appearance.svg</file>
+    <file alias="display.svg">../assets/icons/display.svg</file>
+    <file alias="application.svg">../assets/icons/application.svg</file>
     <file alias="artwork-placeholder.svg">../assets/icons/artwork-placeholder.svg</file>
     <file alias="library.svg">../assets/icons/library.svg</file>
     <file alias="settings.svg">../assets/icons/settings.svg</file>
