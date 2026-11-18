@@ -249,7 +249,7 @@ void SettingsManagerTest::persistsLibraryPresentationPreferences()
         savedBackground = manager.customLibraryBackground();
         QVERIFY(savedBackground.startsWith(QStringLiteral("file://")));
         const QString copiedImagePath = QUrl(savedBackground).toLocalFile();
-        QVERIFY(QFileInfo::isFile(copiedImagePath));
+        QVERIFY(QFileInfo(copiedImagePath).isFile());
         QVERIFY(copiedImagePath != sourceImagePath);
     }
 
