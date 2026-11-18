@@ -4087,7 +4087,11 @@ ApplicationWindow {
                                                 Layout.fillWidth: true
                                                 CheckBox {
                                         activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus text: "ScreenScraper"; enabled: false; checked: false }
+                                        focusPolicy: Qt.StrongFocus
+                                                    text: "ScreenScraper"
+                                                    enabled: false
+                                                    checked: false
+                                                }
                                                 Item { Layout.fillWidth: true }
                                                 Label { text: "Not integrated"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
                                             }
@@ -4103,7 +4107,11 @@ ApplicationWindow {
                                                 Layout.fillWidth: true
                                                 CheckBox {
                                         activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus text: "Hasheous"; enabled: false; checked: false }
+                                        focusPolicy: Qt.StrongFocus
+                                                    text: "Hasheous"
+                                                    enabled: false
+                                                    checked: false
+                                                }
                                                 Item { Layout.fillWidth: true }
                                                 Label { text: "Under evaluation"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
                                             }
@@ -4119,7 +4127,11 @@ ApplicationWindow {
                                                 Layout.fillWidth: true
                                                 CheckBox {
                                         activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus text: "IGDB"; enabled: false; checked: false }
+                                        focusPolicy: Qt.StrongFocus
+                                                    text: "IGDB"
+                                                    enabled: false
+                                                    checked: false
+                                                }
                                                 Item { Layout.fillWidth: true }
                                                 Label { text: "Under evaluation"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
                                             }
