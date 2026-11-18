@@ -2047,6 +2047,8 @@ ApplicationWindow {
                                 width: gameList.width
                                 height: 112
                                 focus: ListView.isCurrentItem
+                                readonly property bool highlighted:
+                                    ListView.isCurrentItem || listTileMouse.containsMouse
                                 function openDetails() {
                                     window.selectedGame = { id: listTile.id, title: listTile.title,
                                         platform: listTile.platform, path: listTile.path,
@@ -2062,9 +2064,19 @@ ApplicationWindow {
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: theme.radiusCard
-                                    color: gameList.currentIndex === listTile.index ? theme.elevatedSurface : theme.surface
-                                    border.width: gameList.currentIndex === listTile.index ? 2 : 1
-                                    border.color: gameList.currentIndex === listTile.index ? theme.accent : theme.divider
+                                    color: listTile.highlighted ? theme.elevatedSurface : theme.surface
+                                    border.width: listTile.highlighted ? 2 : 1
+                                    border.color: listTile.highlighted ? theme.accent
+                                        : Qt.rgba(theme.divider.r, theme.divider.g,
+                                                  theme.divider.b, 0.42)
+                                    Behavior on border.color {
+                                        enabled: !settingsManager.reducedMotion
+                                        ColorAnimation { duration: 170; easing.type: Easing.OutCubic }
+                                    }
+                                    Behavior on border.width {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
+                                    }
                                 }
                                 Image {
                                     anchors.left: parent.left
@@ -2093,7 +2105,13 @@ ApplicationWindow {
                                     }
                                 }
                                 MouseArea {
+                                    id: listTileMouse
                                     anchors.fill: parent
+                                    hoverEnabled: true
+                                    onEntered: {
+                                        gameList.currentIndex = listTile.index
+                                        window.activeInputDevice = "mouse"
+                                    }
                                     onClicked: {
                                         gameGrid.currentIndex = listTile.index
                                         listTile.openDetails()
