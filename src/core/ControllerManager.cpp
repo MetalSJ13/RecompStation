@@ -68,6 +68,7 @@ bool ControllerManager::available() const
 bool ControllerManager::connected() const { return m_connected; }
 QString ControllerManager::controllerName() const { return m_controllerName; }
 QString ControllerManager::controllerType() const { return m_controllerType; }
+QString ControllerManager::controllerGuid() const { return m_controllerGuid; }
 bool ControllerManager::inputEnabled() const { return m_inputRouter.inputEnabled(); }
 
 void ControllerManager::setInputEnabled(bool enabled)
@@ -78,15 +79,16 @@ void ControllerManager::setInputEnabled(bool enabled)
 }
 
 void ControllerManager::setConnected(bool connected, const QString &name,
-                                     const QString &type)
+                                     const QString &type, const QString &guid)
 {
     if (m_connected == connected && m_controllerName == name
-        && m_controllerType == type)
+        && m_controllerType == type && m_controllerGuid == guid)
         return;
 
     m_connected = connected;
     m_controllerName = connected ? name : QString();
     m_controllerType = connected ? type : QStringLiteral("generic");
+    m_controllerGuid = connected ? guid : QString();
     emit connectedChanged();
 
     if (connected)
@@ -142,7 +144,11 @@ void ControllerManager::pollController()
                 break;
             }
 
-            setConnected(true, name, type);
+            char guidBuffer[64] = {};
+            const SDL_JoystickGUID hardwareGuid = SDL_JoystickGetGUID(
+                SDL_GameControllerGetJoystick(m_controller));
+            SDL_JoystickGetGUIDString(hardwareGuid, guidBuffer, sizeof(guidBuffer));
+            setConnected(true, name, type, QString::fromLatin1(guidBuffer));
             break;
         }
     }
