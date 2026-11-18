@@ -177,6 +177,26 @@ private slots:
         QVERIFY(error.contains(QStringLiteral("data.platforms")));
     }
 
+    void disabledProviderDoesNotStartSearchRequests()
+    {
+        TheGamesDbClient client(QStringLiteral("test-key"));
+        MetadataManager manager(&client, nullptr, false);
+
+        QVERIFY(!manager.isProviderEnabled());
+        QVERIFY(!manager.isConfigured());
+        QVERIFY(!manager.platformsLoading());
+
+        QSignalSpy failedSpy(&manager, &MetadataManager::searchFailed);
+        QVERIFY(failedSpy.isValid());
+
+        manager.searchGames(QStringLiteral("Super Mario 64"));
+
+        QCOMPARE(failedSpy.count(), 1);
+        QVERIFY(failedSpy.takeFirst().at(0).toString().contains(
+            QStringLiteral("disabled")));
+        QVERIFY(!manager.isSearching());
+    }
+
     void managerExposesProviderConfigurationAndErrors()
     {
         TheGamesDbClient client(QStringLiteral(""));
