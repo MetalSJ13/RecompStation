@@ -82,6 +82,10 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("library/density"), QStringLiteral("comfortable")).toString();
     m_libraryDensity = isSupportedLibraryDensity(storedLibraryDensity)
         ? storedLibraryDensity : QStringLiteral("comfortable");
+    const QString storedLibraryListDensity = settings.value(
+        QStringLiteral("library/listDensity"), QStringLiteral("comfortable")).toString();
+    m_libraryListDensity = isSupportedLibraryListDensity(storedLibraryListDensity)
+        ? storedLibraryListDensity : QStringLiteral("comfortable");
     const QString storedBackgroundType = settings.value(
         QStringLiteral("appearance/libraryBackgroundType"), QStringLiteral("static")).toString();
     m_libraryBackgroundType = isSupportedLibraryBackgroundType(storedBackgroundType)
@@ -465,6 +469,26 @@ void SettingsManager::setLibraryDensity(const QString &density)
     emit libraryDensityChanged();
 }
 
+QString SettingsManager::libraryListDensity() const
+{
+    return m_libraryListDensity;
+}
+
+void SettingsManager::setLibraryListDensity(const QString &density)
+{
+    if (!isSupportedLibraryListDensity(density) || m_libraryListDensity == density)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("library/listDensity"), density);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist library list density:" << density;
+        return;
+    }
+    m_libraryListDensity = density;
+    emit libraryListDensityChanged();
+}
+
 QString SettingsManager::libraryBackgroundType() const
 {
     return m_libraryBackgroundType;
@@ -551,6 +575,13 @@ bool SettingsManager::isSupportedLibraryView(const QString &view)
 }
 
 bool SettingsManager::isSupportedLibraryDensity(const QString &density)
+{
+    return density == QStringLiteral("compact")
+        || density == QStringLiteral("comfortable")
+        || density == QStringLiteral("spacious");
+}
+
+bool SettingsManager::isSupportedLibraryListDensity(const QString &density)
 {
     return density == QStringLiteral("compact")
         || density == QStringLiteral("comfortable")
