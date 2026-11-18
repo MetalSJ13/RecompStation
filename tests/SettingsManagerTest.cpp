@@ -26,6 +26,9 @@ private slots:
     void defaultsToMediumFontAndFullMotion();
     void persistsAccessibilityPreferences();
     void rejectsUnsupportedFontSize();
+    void defaultsToCuratedLibraryPresentation();
+    void persistsLibraryPresentationPreferences();
+    void rejectsUnsupportedLibraryPresentationPreferences();
 };
 
 void SettingsManagerTest::init()
@@ -195,6 +198,76 @@ void SettingsManagerTest::persistsAccessibilityPreferences()
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.fontSize(), QStringLiteral("large"));
     QVERIFY(reloaded.reducedMotion());
+}
+
+void SettingsManagerTest::defaultsToCuratedLibraryPresentation()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.libraryView(), QStringLiteral("grid"));
+    QCOMPARE(manager.libraryDensity(), QStringLiteral("comfortable"));
+    QCOMPARE(manager.libraryBackgroundType(), QStringLiteral("static"));
+    QVERIFY(manager.customLibraryBackground().isEmpty());
+}
+
+void SettingsManagerTest::persistsLibraryPresentationPreferences()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy viewChanged(&manager, &SettingsManager::libraryViewChanged);
+        QSignalSpy densityChanged(&manager, &SettingsManager::libraryDensityChanged);
+        QSignalSpy backgroundChanged(&manager, &SettingsManager::libraryBackgroundTypeChanged);
+        QSignalSpy imageChanged(&manager, &SettingsManager::customLibraryBackgroundChanged);
+
+        manager.setLibraryView(QStringLiteral("list"));
+        manager.setLibraryDensity(QStringLiteral("spacious"));
+        manager.setLibraryBackgroundType(QStringLiteral("custom"));
+        manager.setCustomLibraryBackground(QStringLiteral("file:///tmp/library-wallpaper.webp"));
+
+        QCOMPARE(viewChanged.count(), 1);
+        QCOMPARE(densityChanged.count(), 1);
+        QCOMPARE(backgroundChanged.count(), 1);
+        QCOMPARE(imageChanged.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.libraryView(), QStringLiteral("list"));
+    QCOMPARE(reloaded.libraryDensity(), QStringLiteral("spacious"));
+    QCOMPARE(reloaded.libraryBackgroundType(), QStringLiteral("custom"));
+    QCOMPARE(reloaded.customLibraryBackground(),
+             QStringLiteral("file:///tmp/library-wallpaper.webp"));
+}
+
+void SettingsManagerTest::rejectsUnsupportedLibraryPresentationPreferences()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QSignalSpy viewChanged(&manager, &SettingsManager::libraryViewChanged);
+    QSignalSpy densityChanged(&manager, &SettingsManager::libraryDensityChanged);
+    QSignalSpy backgroundChanged(&manager, &SettingsManager::libraryBackgroundTypeChanged);
+
+    manager.setLibraryView(QStringLiteral("carousel"));
+    manager.setLibraryDensity(QStringLiteral("extreme"));
+    manager.setLibraryBackgroundType(QStringLiteral("video"));
+
+    QCOMPARE(manager.libraryView(), QStringLiteral("grid"));
+    QCOMPARE(manager.libraryDensity(), QStringLiteral("comfortable"));
+    QCOMPARE(manager.libraryBackgroundType(), QStringLiteral("static"));
+    QCOMPARE(viewChanged.count(), 0);
+    QCOMPARE(densityChanged.count(), 0);
+    QCOMPARE(backgroundChanged.count(), 0);
 }
 
 void SettingsManagerTest::rejectsUnsupportedFontSize()
