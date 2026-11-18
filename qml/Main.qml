@@ -3200,33 +3200,35 @@ ApplicationWindow {
             anchors.fill: parent
             z: 100
             visible: window.systemMenuVisible
+            focus: visible
 
             Rectangle {
                 anchors.fill: parent
-                color: Qt.rgba(0, 0, 0, 0.62)
+                color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
+                               theme.windowBackground.b, 0.84)
             }
 
             Rectangle {
                 id: systemMenuPanel
                 anchors.centerIn: parent
-                width: Math.min(parent.width - 48, 440)
-                height: systemMenuContent.implicitHeight + 64
-                radius: theme.radiusCard
-                color: theme.panelBackground
+                width: Math.min(parent.width - 48, 480)
+                height: systemMenuContent.implicitHeight + 60
+                radius: theme.radiusLarge
+                color: theme.sidebarBackground
                 border.color: theme.divider
                 border.width: 1
 
                 ColumnLayout {
                     id: systemMenuContent
                     anchors.fill: parent
-                    anchors.margins: 30
-                    spacing: 14
+                    anchors.margins: 28
+                    spacing: 12
 
                     Label {
                         Layout.fillWidth: true
-                        text: window.quitConfirmationVisible ? "Quit RecompStation?" : "RecompStation Menu"
+                        text: window.quitConfirmationVisible ? "Quit RecompStation?" : "RecompStation"
                         color: theme.textPrimary
-                        font.pixelSize: 23 * theme.fontScale
+                        font.pixelSize: 25 * theme.fontScale
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -3234,63 +3236,101 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         text: window.quitConfirmationVisible
                               ? "Are you sure you want to close RecompStation?"
-                              : "Pause your session or manage the application."
+                              : "What would you like to do?"
                         color: theme.textSecondary
-                        font.pixelSize: 12 * theme.fontScale
+                        font.pixelSize: 13 * theme.fontScale
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.Wrap
                     }
 
-                    Button {
-                        id: resumeMenuButton
+                    component MenuChoice: Button {
+                        id: choice
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 48
+                        Layout.preferredHeight: 54
+                        activeFocusOnTab: true
+                        focusPolicy: Qt.StrongFocus
+                        leftPadding: 18
+                        rightPadding: 18
+                        background: Rectangle {
+                            radius: theme.radiusCard
+                            color: choice.activeFocus ? theme.controlHover : theme.surface
+                            border.width: choice.activeFocus ? 2 : 1
+                            border.color: choice.activeFocus ? theme.accent : theme.divider
+                            Rectangle {
+                                width: 4
+                                radius: 2
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 8
+                                color: choice.activeFocus ? theme.accent : "transparent"
+                            }
+                        }
+                        contentItem: RowLayout {
+                            spacing: 12
+                            Label {
+                                Layout.fillWidth: true
+                                text: choice.text
+                                color: choice.activeFocus ? theme.textPrimary : theme.textSecondary
+                                font.pixelSize: 15 * theme.fontScale
+                                font.bold: choice.activeFocus
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            Label {
+                                text: choice.activeFocus ? "●" : ""
+                                color: theme.accent
+                                font.pixelSize: 13
+                            }
+                        }
+                    }
+
+                    MenuChoice {
+                        id: resumeMenuButton
                         text: "Resume"
-                        highlighted: true
+                        visible: !window.quitConfirmationVisible
                         onClicked: {
                             window.quitConfirmationVisible = false
                             window.systemMenuVisible = false
                         }
-                        visible: !window.quitConfirmationVisible
                     }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 48
+                    MenuChoice {
+                        id: settingsMenuButton
                         text: "Settings"
+                        visible: !window.quitConfirmationVisible
                         onClicked: {
                             window.systemMenuVisible = false
                             window.navigateToPage("Settings")
                         }
-                        visible: !window.quitConfirmationVisible
                     }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 48
+                    MenuChoice {
+                        id: quitMenuButton
                         text: "Quit RecompStation"
+                        visible: !window.quitConfirmationVisible
                         onClicked: {
                             window.quitConfirmationVisible = true
                             Qt.callLater(function() { confirmQuitButton.forceActiveFocus() })
                         }
-                        visible: !window.quitConfirmationVisible
                     }
-                    Button {
+                    MenuChoice {
                         id: confirmQuitButton
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 48
                         text: "Yes, Quit"
-                        highlighted: true
-                        onClicked: Qt.quit()
                         visible: window.quitConfirmationVisible
+                        onClicked: Qt.quit()
                     }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 48
+                    MenuChoice {
+                        id: cancelQuitButton
                         text: "Cancel"
+                        visible: window.quitConfirmationVisible
                         onClicked: {
                             window.quitConfirmationVisible = false
                             Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
                         }
-                        visible: window.quitConfirmationVisible
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: theme.divider
                     }
                     Label {
                         Layout.fillWidth: true
@@ -3309,6 +3349,11 @@ ApplicationWindow {
                     window.controllerBack()
                     event.accepted = true
                 }
+            }
+
+            onVisibleChanged: {
+                if (visible)
+                    Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
             }
         }
 
