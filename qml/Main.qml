@@ -4078,6 +4078,20 @@ ApplicationWindow {
                                             RowLayout {
                                                 Layout.fillWidth: true
                                                 CheckBox {
+
+                                                    background: Rectangle {
+
+                                                        radius: 8
+
+                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+
+                                                        border.width: parent.activeFocus ? 2 : 0
+
+                                                        anchors.margins: -6
+
+                                                    }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                                     text: "TheGamesDB"
@@ -4127,6 +4141,20 @@ ApplicationWindow {
                                             RowLayout {
                                                 Layout.fillWidth: true
                                                 CheckBox {
+
+                                                    background: Rectangle {
+
+                                                        radius: 8
+
+                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+
+                                                        border.width: parent.activeFocus ? 2 : 0
+
+                                                        anchors.margins: -6
+
+                                                    }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                                     text: "ScreenScraper"
@@ -4147,6 +4175,20 @@ ApplicationWindow {
                                             RowLayout {
                                                 Layout.fillWidth: true
                                                 CheckBox {
+
+                                                    background: Rectangle {
+
+                                                        radius: 8
+
+                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+
+                                                        border.width: parent.activeFocus ? 2 : 0
+
+                                                        anchors.margins: -6
+
+                                                    }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                                     text: "Hasheous"
@@ -4167,6 +4209,20 @@ ApplicationWindow {
                                             RowLayout {
                                                 Layout.fillWidth: true
                                                 CheckBox {
+
+                                                    background: Rectangle {
+
+                                                        radius: 8
+
+                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+
+                                                        border.width: parent.activeFocus ? 2 : 0
+
+                                                        anchors.margins: -6
+
+                                                    }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                                     text: "IGDB"
