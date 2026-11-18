@@ -1515,19 +1515,19 @@ ApplicationWindow {
                                 Label {
                                     Layout.fillWidth: true
                                     text: gameDetailsPopup.selectedProject
-                                        ? gameDetailsPopup.primaryProject.name
+                                        ? gameDetailsPopup.selectedProject.name
                                         : "No supported recompilation project is currently listed for this game."
-                                    color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
+                                    color: gameDetailsPopup.selectedProject ? theme.success : theme.textSecondary
                                     font.pixelSize: 14 * theme.fontScale
                                     font.bold: true
                                     wrapMode: Text.Wrap
                                 }
                                 Rectangle {
-                                    visible: gameDetailsPopup.primaryProject !== null
-                                        && gameDetailsPopup.primaryProject.developmentStatus !== "playable"
+                                    visible: gameDetailsPopup.selectedProject !== null
+                                        && gameDetailsPopup.selectedProject.developmentStatus !== "playable"
                                     radius: 5
-                                    color: gameDetailsPopup.primaryProject
-                                        && gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                    color: gameDetailsPopup.selectedProject
+                                        && gameDetailsPopup.selectedProject.developmentStatus === "beta"
                                         ? theme.warningSurface : theme.neutralStatusSurface
                                     implicitWidth: projectStatusLabel.implicitWidth + 16
                                     implicitHeight: projectStatusLabel.implicitHeight + 8
@@ -1535,8 +1535,8 @@ ApplicationWindow {
                                     Label {
                                         id: projectStatusLabel
                                         anchors.centerIn: parent
-                                        text: gameDetailsPopup.primaryProject
-                                            ? String(gameDetailsPopup.primaryProject.developmentStatus)
+                                        text: gameDetailsPopup.selectedProject
+                                            ? String(gameDetailsPopup.selectedProject.developmentStatus)
                                                 .replace("_", " ").toUpperCase() : ""
                                         color: theme.warningText
                                         font.pixelSize: 10 * theme.fontScale
@@ -1545,11 +1545,11 @@ ApplicationWindow {
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: gameDetailsPopup.primaryProject !== null
-                                        && (gameDetailsPopup.primaryProject.developmentStatus === "beta"
-                                            || gameDetailsPopup.primaryProject.developmentStatus === "alpha")
-                                    text: gameDetailsPopup.primaryProject
-                                        && gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                    visible: gameDetailsPopup.selectedProject !== null
+                                        && (gameDetailsPopup.selectedProject.developmentStatus === "beta"
+                                            || gameDetailsPopup.selectedProject.developmentStatus === "alpha")
+                                    text: gameDetailsPopup.selectedProject
+                                        && gameDetailsPopup.selectedProject.developmentStatus === "beta"
                                         ? "This project is in beta. Features may be incomplete and you may encounter bugs."
                                         : "This project is in alpha. Expect incomplete features and potential instability."
                                     color: theme.textSecondary
@@ -1568,16 +1568,25 @@ ApplicationWindow {
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: gameDetailsPopup.primaryProject !== null
-                                        && window.launchErrors[gameDetailsPopup.primaryProject.id] !== undefined
-                                    text: gameDetailsPopup.primaryProject
-                                        ? (window.launchErrors[gameDetailsPopup.primaryProject.id] || "") : ""
+                                    visible: gameDetailsPopup.selectedProject !== null
+                                    text: gameDetailsPopup.selectedProject
+                                        ? gameDetailsPopup.selectedProject.romRequirements : ""
+                                    color: theme.textSecondary
+                                    font.pixelSize: 11 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.selectedProject !== null
+                                        && window.launchErrors[gameDetailsPopup.selectedProject.id] !== undefined
+                                    text: gameDetailsPopup.selectedProject
+                                        ? (window.launchErrors[gameDetailsPopup.selectedProject.id] || "") : ""
                                     color: theme.error
                                     wrapMode: Text.Wrap
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: gameDetailsPopup.primaryProject !== null
+                                    visible: gameDetailsPopup.selectedProject !== null
                                         && gameDetailsPopup.releaseState.loading
                                     text: "Checking for the latest compatible Linux release…"
                                     color: theme.accentHover
@@ -1585,7 +1594,7 @@ ApplicationWindow {
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: gameDetailsPopup.primaryProject !== null
+                                    visible: gameDetailsPopup.selectedProject !== null
                                         && gameDetailsPopup.releaseState.error.length > 0
                                     text: gameDetailsPopup.releaseState.error
                                     color: theme.error
@@ -1593,7 +1602,7 @@ ApplicationWindow {
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: gameDetailsPopup.primaryProject !== null
+                                    visible: gameDetailsPopup.selectedProject !== null
                                         && !!gameDetailsPopup.releaseInfo
                                         && gameDetailsPopup.compatibleAssets.length === 0
                                     text: "No compatible Linux launcher package is available for "
@@ -1603,7 +1612,7 @@ ApplicationWindow {
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: gameDetailsPopup.primaryProject !== null
+                                    visible: gameDetailsPopup.selectedProject !== null
                                         && !!gameDetailsPopup.releaseInfo
                                         && gameDetailsPopup.selectedAsset !== null
                                         && gameDetailsPopup.installedProject === null
@@ -1616,7 +1625,7 @@ ApplicationWindow {
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: !!gameDetailsPopup.primaryProject
+                                    visible: !!gameDetailsPopup.selectedProject
                                         && !!gameDetailsPopup.downloadState.error
                                         && gameDetailsPopup.downloadState.error.length > 0
                                     text: gameDetailsPopup.downloadState.error || ""
@@ -1625,7 +1634,7 @@ ApplicationWindow {
                                 }
                                 Label {
                                     Layout.fillWidth: true
-                                    visible: !!gameDetailsPopup.primaryProject
+                                    visible: !!gameDetailsPopup.selectedProject
                                         && (!!gameDetailsPopup.downloadState.loading
                                             || !!gameDetailsPopup.downloadState.installing)
                                     text: gameDetailsPopup.downloadState.installing
@@ -1669,8 +1678,8 @@ ApplicationWindow {
                                     Button {
                                         visible: gameDetailsPopup.installedProject !== null
                                         highlighted: true
-                                        text: gameDetailsPopup.primaryProject
-                                            && window.runningLaunchers[gameDetailsPopup.primaryProject.id]
+                                        text: gameDetailsPopup.selectedProject
+                                            && window.runningLaunchers[gameDetailsPopup.selectedProject.id]
                                             ? "Running…" : "Play Game"
                                         icon.source: "qrc:/icons/play.svg"
                                         icon.width: 18
@@ -1679,10 +1688,10 @@ ApplicationWindow {
                                         implicitHeight: 48
                                         Layout.minimumWidth: 150
                                         Layout.preferredWidth: 150
-                                        enabled: gameDetailsPopup.primaryProject !== null
+                                        enabled: gameDetailsPopup.selectedProject !== null
                                             && gameDetailsPopup.installedProject !== null
-                                            && !window.runningLaunchers[gameDetailsPopup.primaryProject.id]
-                                        onClicked: window.launchSupportedGame(gameDetailsPopup.primaryProject.id)
+                                            && !window.runningLaunchers[gameDetailsPopup.selectedProject.id]
+                                        onClicked: window.launchSupportedGame(gameDetailsPopup.selectedProject.id)
                                     }
                                     Button {
                                         visible: gameDetailsPopup.installedProject !== null
@@ -1695,12 +1704,12 @@ ApplicationWindow {
                                         Layout.minimumWidth: 150
                                         Layout.preferredWidth: 150
                                         onClicked: {
-                                            window.pendingUninstallProjectId = gameDetailsPopup.primaryProject.id
+                                            window.pendingUninstallProjectId = gameDetailsPopup.selectedProject.id
                                             uninstallDialog.open()
                                         }
                                     }
                                     Button {
-                                        visible: gameDetailsPopup.primaryProject !== null
+                                        visible: gameDetailsPopup.selectedProject !== null
                                             && gameDetailsPopup.installedProject === null
                                             && !gameDetailsPopup.installPromptVisible
                                             && !gameDetailsPopup.releaseState.loading
@@ -1722,10 +1731,10 @@ ApplicationWindow {
                                         spacing: 8
                                         Label {
                                             Layout.fillWidth: true
-                                            text: gameDetailsPopup.primaryProject
-                                                ? (gameDetailsPopup.primaryProject.developmentStatus === "beta"
+                                            text: gameDetailsPopup.selectedProject
+                                                ? (gameDetailsPopup.selectedProject.developmentStatus === "beta"
                                                     ? "Install this BETA launcher?"
-                                                    : gameDetailsPopup.primaryProject.developmentStatus === "alpha"
+                                                    : gameDetailsPopup.selectedProject.developmentStatus === "alpha"
                                                         ? "Install this ALPHA launcher?"
                                                         : "Install this launcher?")
                                                 : "Install launcher?"
@@ -1745,7 +1754,7 @@ ApplicationWindow {
                                                 gameDetailsPopup.installPromptVisible = false
                                                 const asset = gameDetailsPopup.selectedAsset
                                                 if (asset)
-                                                    window.startAssetDownload(gameDetailsPopup.primaryProject, asset)
+                                                    window.startAssetDownload(gameDetailsPopup.selectedProject, asset)
                                             }
                                         }
                                         Button {
@@ -1760,10 +1769,10 @@ ApplicationWindow {
                                         }
                                     }
                                     Button {
-                                        visible: gameDetailsPopup.primaryProject !== null
+                                        visible: gameDetailsPopup.selectedProject !== null
                                             && gameDetailsPopup.releaseState.error.length > 0
                                         text: "Retry"
-                                        onClicked: window.checkProjectRelease(gameDetailsPopup.primaryProject)
+                                        onClicked: window.checkProjectRelease(gameDetailsPopup.selectedProject)
                                     }
                                 }
 }
