@@ -127,7 +127,7 @@ These confirmations cover the specific interactions the user tested; they do not
 - [ ] Establish consistent shared page headers, actions, spacing, scroll behavior, and focus styling across all pages.
 - [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition.
 
-**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, and card entrance behavior are implemented and user-verified. Remaining work is legacy QML cleanup, shared-layout consistency, and the full regression pass; do not close the milestone until those are addressed and the relevant build/test workflow is confirmed.
+**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, and card entrance behavior are implemented and user-verified. Remaining work is shared-layout consistency and the full regression pass; obsolete Metadata Search, Platforms, and standalone Launcher Discovery page code has now been removed while retaining the underlying backend workflows. Do not close the milestone until remaining work and the relevant build/test workflow are confirmed.
 
 ### Milestone 3: Game Library experience
 
