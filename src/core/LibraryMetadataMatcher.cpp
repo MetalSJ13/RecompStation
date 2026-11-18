@@ -175,8 +175,18 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         qCWarning(lcMetadata) << "Metadata lookup failed for the current game:"
                                << m_currentGame.value(QStringLiteral("title")).toString()
                                << message;
-        // A provider/network failure is not a definitive no-match. Leave
-        // lookup-attempt records untouched so a later scan can retry.
+        // A provider/network failure is not a definitive no-match, but it
+        // should not be retried on every filesystem event. Persist the failure
+        // so automatic scans skip it; the explicit Refresh Metadata action
+        // can still retry previously checked games.
+        const int failedGameId =
+            m_currentGame.value(QStringLiteral("id")).toInt();
+        if (m_database && failedGameId > 0
+            && !m_database->markMetadataLookupAttempt(
+                failedGameId, QStringLiteral("provider_error"))) {
+            qCWarning(lcMetadata) << "Could not record provider failure for game"
+                                  << failedGameId << m_database->lastError();
+        }
         m_unresolvedCount += 1 + m_queue.size();
         m_completedCount += 1 + m_queue.size();
         m_queue.clear();
