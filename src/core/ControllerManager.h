@@ -71,6 +71,7 @@ private:
                       const QString &guid = {});
 
     QTimer m_pollTimer;
+    QTimer m_mappingCaptureTimer;
     QElapsedTimer m_elapsedTimer;
     _SDL_GameController *m_controller = nullptr;
     ControllerInputRouter m_inputRouter;
