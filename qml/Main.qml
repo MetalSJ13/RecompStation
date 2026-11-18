@@ -292,6 +292,12 @@ ApplicationWindow {
         function onBackRequested() {
             window.controllerBack()
         }
+        function onMenuRequested() {
+            window.activeInputDevice = "controller"
+            if (gameDetailsPopup.visible)
+                gameDetailsPopup.close()
+            window.navigateToPage("Settings")
+        }
         function onPreviousSectionRequested() {
             window.activeInputDevice = "controller"
             if (!gameDetailsPopup.visible)
