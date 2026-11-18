@@ -2387,6 +2387,10 @@ ApplicationWindow {
                             Layout.preferredHeight: settingsManager.libraryView === "list" && gameGrid.count > 0 ? 760 : 0
                             visible: settingsManager.libraryView === "list"
                             clip: true
+                            // Leave room for the selected row's scale animation so its
+                            // artwork and card edges are not clipped at the viewport.
+                            leftMargin: 18
+                            rightMargin: 18
                             spacing: 9
                             model: gameGrid.model
                             currentIndex: -1
@@ -2419,7 +2423,7 @@ ApplicationWindow {
                                 required property string path
                                 required property int id
                                 required property int index
-                                width: gameList.width
+                                width: gameList.width - gameList.leftMargin - gameList.rightMargin
                                 readonly property int rowHeight:
                                     settingsManager.libraryListDensity === "compact" ? 84
                                     : settingsManager.libraryListDensity === "spacious" ? 144 : 112
