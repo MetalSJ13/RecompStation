@@ -171,8 +171,11 @@ void ProjectCatalogTest::matchesGameByTitleAndPlatform()
              QStringLiteral("banjo-kazooie-recompiled"));
     QVERIFY(catalog.projectsForGame(
         QStringLiteral("Banjo-Kazooie"), QStringLiteral("PS1")).isEmpty());
-    QVERIFY(catalog.projectsForGame(
-        QStringLiteral("Donkey Kong 64"), QStringLiteral("N64")).isEmpty());
+    const QVariantList donkeyKongMatches = catalog.projectsForGame(
+        QStringLiteral("Donkey Kong 64"), QStringLiteral("N64"));
+    QCOMPARE(donkeyKongMatches.size(), 1);
+    QCOMPARE(donkeyKongMatches.first().toMap().value("id").toString(),
+             QStringLiteral("donkey-kong-64-recompiled"));
 
     const QVariantList marioMatches = catalog.projectsForGame(
         QStringLiteral("Super Mario 64"), QStringLiteral("N64"));
