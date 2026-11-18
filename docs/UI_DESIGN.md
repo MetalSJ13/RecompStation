@@ -35,7 +35,7 @@ Platforms are filters or navigation choices inside the Game Library, not a separ
    - Settings content is scrollable; category navigation and content controls have distinct focus ownership.
    - Back/Escape returns to the Library when no nested popup/dialog is active.
 
-Legacy Metadata Search, Platforms, and Launchers page implementations may remain temporarily in the QML stack during migration, but must not be exposed as primary navigation destinations. Retire their unreachable presentation code only after confirming that no current action or backend workflow depends on it.
+The obsolete Metadata Search, Platforms, and standalone Launcher Discovery page implementations have been removed from the active QML page stack. Their underlying metadata, platform-filtering, and launcher backend services remain available through the Library, Settings, and Game Details workflows.
 
 ## Game Library
 
@@ -160,7 +160,7 @@ The current implementation was reviewed against this specification. This is a de
 |---|---|---|
 | Primary navigation | Library and Settings only | Aligned |
 | Platform navigation | Filter inside Library | Aligned |
-| Metadata Search | No longer a primary destination; legacy stack implementation remains | Aligned at UX level; legacy code cleanup deferred |
+| Metadata Search | Removed from the page stack; metadata controls remain in Settings and game context | Aligned; obsolete presentation code removed |
 | Launcher management | Available contextually from Game Details | Aligned |
 | Game Details | Full-window modal overlay with Back to Library and Escape | Aligned |
 | Settings hierarchy | Appearance, Display, Library, Metadata, Controller, Application | Aligned |
@@ -170,4 +170,4 @@ The current implementation was reviewed against this specification. This is a de
 | Monitor handling | Current screen is informational; no explicit monitor selector or monitor-mode changes | Safe compositor-respecting baseline; additional selection deferred |
 | Library presentation | Title search, platform filter, Grid/List, configurable density and backgrounds | Search and browsing controls are grouped in the Library; sorting and remaining library states tracked in later milestones |
 
-Audit follow-up: remove obsolete unreachable Metadata Search/Platforms/Launchers presentation code only after checking dependencies; finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.
+Audit follow-up: finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.
