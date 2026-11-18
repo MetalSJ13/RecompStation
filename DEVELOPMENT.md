@@ -47,6 +47,16 @@ Keep the application buildable after each focused change. Preserve working backe
 
 These confirmations cover the specific interactions the user tested; they do not mean every screen, settings category, display configuration, or controller workflow has completed accessibility validation.
 
+### N64 project catalog expansion (2026-11-18)
+
+- [x] Add Star Fox 64, Donkey Kong 64, Mario Kart 64, Mario Party, Mario Party 2, Mario Party 3, and Super Smash Bros. projects.
+- [x] Add HarbourMasters Ghostship, Banjo-Tooie: Recompiled, and PaperBoat (Paper Mario).
+- [x] Restrict release matching to published Linux ZIP/TAR.GZ packages and supported CPU architectures; exclude Windows and Flatpak assets.
+- [x] Record project-specific ROM requirements, including documented revision and SHA-1 requirements where available.
+- [x] Allow multiple projects to match one game and provide a project selector in Game Details (notably Super Mario 64).
+- [x] Add catalog regression coverage for new game-title matching, multiple Super Mario 64 projects, and Linux asset filtering.
+- [ ] Build and run locally; verify archive extraction, expected executable paths, install, launch, and uninstall for representative projects.
+
 ## Completed foundation
 
 - [x] C++20, CMake, Qt 6.5+, and QML application foundation
