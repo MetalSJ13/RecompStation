@@ -3,6 +3,7 @@
 #include "LauncherDownloadManager.h"
 #include "Logging.h"
 
+#include <QDir>
 #include <QFileInfo>
 #include <QProcess>
 #include <QVariantMap>
@@ -62,8 +63,26 @@ bool GameLaunchManager::launchProject(const QString &projectId)
     }
 
     auto *process = new QProcess(this);
-    process->setProgram(executableInfo.absoluteFilePath());
     process->setWorkingDirectory(workingDirectory);
+
+    // Startup scripts often rely on being invoked from their installation
+    // directory (for example, "./run.sh") so their relative asset paths work.
+    if (executableInfo.suffix().compare(QStringLiteral("sh"), Qt::CaseInsensitive) == 0) {
+        const QString relativePath =
+            QDir(workingDirectory).relativeFilePath(executableInfo.absoluteFilePath());
+        if (relativePath == QStringLiteral("..")
+            || relativePath.startsWith(QStringLiteral("../"))) {
+            qCWarning(lcGameLaunch) << "Launcher script is outside its installation directory:"
+                                    << projectId;
+            emit launchFailed(projectId,
+                              QStringLiteral("The launcher script is outside its installation directory."));
+            process->deleteLater();
+            return false;
+        }
+        process->setProgram(QStringLiteral("./") + relativePath);
+    } else {
+        process->setProgram(executableInfo.absoluteFilePath());
+    }
     process->setProcessChannelMode(QProcess::ForwardedChannels);
     m_processes.insert(projectId, process);
 
