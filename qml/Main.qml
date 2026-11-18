@@ -2094,7 +2094,7 @@ ApplicationWindow {
                                         Layout.minimumWidth: 116
                                         spacing: 3
                                         Label {
-                                            text: "CARD SIZE"
+                                            text: settingsManager.libraryView === "grid" ? "CARD SIZE" : "ROW SIZE"
                                             color: theme.textMuted
                                             font.pixelSize: 9 * theme.fontScale
                                             font.bold: true
@@ -2110,9 +2110,16 @@ ApplicationWindow {
                                                 { label: "Comfortable", value: "comfortable" },
                                                 { label: "Spacious", value: "spacious" }
                                             ]
-                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
-                                            enabled: settingsManager.libraryView === "grid"
-                                            onActivated: settingsManager.libraryDensity = currentValue
+                                            currentIndex: Math.max(0, indexOfValue(
+                                                settingsManager.libraryView === "grid"
+                                                    ? settingsManager.libraryDensity
+                                                    : settingsManager.libraryListDensity))
+                                            onActivated: {
+                                                if (settingsManager.libraryView === "grid")
+                                                    settingsManager.libraryDensity = currentValue
+                                                else
+                                                    settingsManager.libraryListDensity = currentValue
+                                            }
                                         }
                                     }
                                 }
@@ -2371,7 +2378,11 @@ ApplicationWindow {
 
                         ListView {
                             id: gameList
-                            Layout.fillWidth: true
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignLeft
+                            Layout.preferredWidth: Math.min(parent.width,
+                                Math.max(300, Math.min(parent.width * 0.52, 760)))
+                            Layout.maximumWidth: parent.width * 0.56
                             Layout.fillHeight: settingsManager.libraryView === "list" && gameGrid.count > 0
                             Layout.preferredHeight: settingsManager.libraryView === "list" && gameGrid.count > 0 ? 760 : 0
                             visible: settingsManager.libraryView === "list"
@@ -2409,8 +2420,18 @@ ApplicationWindow {
                                 required property int id
                                 required property int index
                                 width: gameList.width
-                                height: 112
+                                readonly property int rowHeight:
+                                    settingsManager.libraryListDensity === "compact" ? 84
+                                    : settingsManager.libraryListDensity === "spacious" ? 144 : 112
+                                height: rowHeight
                                 focus: ListView.isCurrentItem
+                                z: highlighted ? 2 : 1
+                                scale: highlighted ? 1.035 : 1.0
+                                transformOrigin: Item.Center
+                                Behavior on scale {
+                                    enabled: !settingsManager.reducedMotion
+                                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                                }
                                 readonly property bool highlighted:
                                     ListView.isCurrentItem || listTileMouse.containsMouse
                                 function openDetails() {
@@ -2446,8 +2467,10 @@ ApplicationWindow {
                                     anchors.left: parent.left
                                     anchors.leftMargin: 12
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 76
-                                    height: 88
+                                    width: settingsManager.libraryListDensity === "compact" ? 54
+                                        : settingsManager.libraryListDensity === "spacious" ? 94 : 76
+                                    height: settingsManager.libraryListDensity === "compact" ? 62
+                                        : settingsManager.libraryListDensity === "spacious" ? 116 : 88
                                     source: listTile.artworkPath
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
@@ -2455,12 +2478,13 @@ ApplicationWindow {
                                 }
                                 ColumnLayout {
                                     anchors.left: parent.left
-                                    anchors.leftMargin: 104
+                                    anchors.leftMargin: settingsManager.libraryListDensity === "compact" ? 76
+                                        : settingsManager.libraryListDensity === "spacious" ? 122 : 104
                                     anchors.right: parent.right
                                     anchors.rightMargin: 18
                                     anchors.verticalCenter: parent.verticalCenter
                                     spacing: 5
-                                    Label { Layout.fillWidth: true; text: listTile.title; color: theme.textPrimary; font.pixelSize: 15 * theme.fontScale; font.bold: true; elide: Text.ElideRight }
+                                    Label { Layout.fillWidth: true; text: listTile.title; color: theme.textPrimary; font.pixelSize: (settingsManager.libraryListDensity === "compact" ? 13 : settingsManager.libraryListDensity === "spacious" ? 17 : 15) * theme.fontScale; font.bold: true; elide: Text.ElideRight }
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Label { text: listTile.platform; color: theme.textSecondary; font.pixelSize: 11 * theme.fontScale }
