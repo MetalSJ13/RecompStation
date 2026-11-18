@@ -142,6 +142,37 @@ private slots:
         QVERIFY(database.gamesNeedingMetadata().isEmpty());
     }
 
+    void readdingUnavailableGameClearsStaleLookupAttempt()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY2(database.initialize(
+                     temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+
+        const QString romPath = temporaryDirectory.path() + "/Banjo-Kazooie.z64";
+        QVERIFY(database.registerGame(
+            QStringLiteral("Banjo-Kazooie"), QStringLiteral("N64"), romPath));
+
+        const int gameId = database.games().first().toMap().value("id").toInt();
+        QVERIFY(database.markMetadataLookupAttempt(
+            gameId, QStringLiteral("ambiguous")));
+        QVERIFY(database.gamesNeedingMetadata().isEmpty());
+
+        // A completed scan with no ROMs marks the existing record unavailable.
+        QVERIFY(database.reconcilePlatformGames(QStringLiteral("N64"), {}));
+        QVERIFY(database.games().isEmpty());
+
+        // Reappearance reuses the original row but clears its stale failed lookup.
+        QVERIFY(database.registerGame(
+            QStringLiteral("Banjo-Kazooie"), QStringLiteral("N64"), romPath));
+        const QVariantList pending = database.gamesNeedingMetadata();
+        QCOMPARE(pending.size(), 1);
+        QCOMPARE(pending.first().toMap().value("id").toInt(), gameId);
+    }
+
     void providerFailuresAreSkippedByAutomaticScansButCanBeRetriedManually()
     {
         QTemporaryDir temporaryDirectory;
