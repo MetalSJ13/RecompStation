@@ -2,6 +2,8 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
+#include <QVariantMap>
 
 
 class SettingsManager : public QObject
@@ -32,6 +34,11 @@ public:
 
     bool theGamesDbEnabled() const;
     Q_INVOKABLE void setTheGamesDbEnabled(bool enabled);
+
+    Q_INVOKABLE QVariantMap controllerProfile(const QString &guid) const;
+    Q_INVOKABLE bool saveControllerProfile(const QString &guid, const QVariantMap &profile);
+    Q_INVOKABLE bool resetControllerProfile(const QString &guid);
+    Q_INVOKABLE QStringList controllerProfileIds() const;
 
     QString preferredPresentationSize() const;
     Q_INVOKABLE void setPreferredPresentationSize(const QString &size);
@@ -85,6 +92,8 @@ private:
     QString m_customLibraryBackground;
     bool m_scanOnStartup = true;
     bool m_theGamesDbEnabled = true;
+    static QVariantMap defaultControllerProfile();
+    static bool isValidControllerGuid(const QString &guid);
     static bool isSupportedTheme(const QString &themeName);
     static bool isSupportedPresentationSize(const QString &size);
     static bool isSupportedDisplayMode(const QString &mode);
