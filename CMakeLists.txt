@@ -77,6 +77,7 @@ qt_add_qml_module(RecompStationApp
         assets/library-waves-violet.svg
         assets/library-waves-emerald.svg
         assets/library-waves-ember.svg
+        assets/images/recompstation-controller.png
 )
 
 target_link_libraries(RecompStationApp PRIVATE
