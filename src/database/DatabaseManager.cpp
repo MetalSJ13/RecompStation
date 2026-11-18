@@ -167,14 +167,39 @@ bool DatabaseManager::registerGame(const QString &title,
         return false;
     }
 
+    if (!m_database.transaction()) {
+        m_lastError = m_database.lastError().text();
+        return false;
+    }
+
     QSqlQuery platformQuery(m_database);
     platformQuery.prepare("SELECT id FROM platforms WHERE name = :name");
     platformQuery.bindValue(":name", platform);
     if (!platformQuery.exec() || !platformQuery.next()) {
         m_lastError = platformQuery.lastError().text();
-        if (m_lastError.isEmpty()) m_lastError = "Platform is not registered: " + platform;
+        if (m_lastError.isEmpty())
+            m_lastError = "Platform is not registered: " + platform;
+        platformQuery.finish();
+        m_database.rollback();
         return false;
     }
+    const int platformId = platformQuery.value(0).toInt();
+    platformQuery.finish();
+
+    QSqlQuery existingQuery(m_database);
+    existingQuery.prepare(
+        "SELECT id, is_available FROM games WHERE game_path = :game_path");
+    existingQuery.bindValue(":game_path", gamePath);
+    if (!existingQuery.exec()) {
+        m_lastError = existingQuery.lastError().text();
+        m_database.rollback();
+        return false;
+    }
+    const bool isReappearing = existingQuery.next()
+        && existingQuery.value(1).toInt() == 0;
+    const int existingGameId = isReappearing
+        ? existingQuery.value(0).toInt() : 0;
+    existingQuery.finish();
 
     QSqlQuery insertQuery(m_database);
     insertQuery.prepare(
@@ -188,14 +213,43 @@ bool DatabaseManager::registerGame(const QString &title,
         "OR games.platform_id <> excluded.platform_id"
     );
     insertQuery.bindValue(":title", title);
-    insertQuery.bindValue(":platform_id", platformQuery.value(0));
+    insertQuery.bindValue(":platform_id", platformId);
     insertQuery.bindValue(":game_path", gamePath);
     if (!insertQuery.exec()) {
         m_lastError = insertQuery.lastError().text();
+        m_database.rollback();
+        return false;
+    }
+    const bool changed = insertQuery.numRowsAffected() > 0;
+    insertQuery.finish();
+
+    // A removed ROM keeps its database row and metadata. If it returns
+    // without an associated metadata record, let automatic matching try
+    // again instead of carrying forward an obsolete no-match/ambiguous state.
+    if (isReappearing && existingGameId > 0) {
+        QSqlQuery resetLookup(m_database);
+        resetLookup.prepare(R"(
+            DELETE FROM metadata_lookup_attempts
+            WHERE game_id = :game_id
+              AND NOT EXISTS (
+                  SELECT 1 FROM game_metadata
+                  WHERE game_metadata.game_id = :game_id
+              )
+        )");
+        resetLookup.bindValue(":game_id", existingGameId);
+        if (!resetLookup.exec()) {
+            m_lastError = resetLookup.lastError().text();
+            m_database.rollback();
+            return false;
+        }
+    }
+
+    if (!m_database.commit()) {
+        m_lastError = m_database.lastError().text();
         return false;
     }
     m_lastError.clear();
-    return insertQuery.numRowsAffected() > 0;
+    return changed;
 }
 
 bool DatabaseManager::reconcilePlatformGames(
