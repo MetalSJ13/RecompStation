@@ -22,7 +22,7 @@ Platforms are filters or navigation choices inside the Game Library, not a separ
    - A global system menu is an overlay for application-level actions such as fullscreen and quit; it is not a third content destination.
 2. **Game Library** (default)
    - Collection header with an always-available game-title search field and platform filter. Search applies to the current platform selection, or the entire collection when All Platforms is selected.
-   - Curated Grid/List presentation and Grid density controls (Compact, Comfortable, Spacious) live together in the Library header so users can adjust the collection and immediately see the result. Persist both preferences.
+   - Curated Grid/List presentation and view-specific size controls live together in the Library header. Grid density (Compact, Comfortable, Spacious) controls the number/size of cover cards; List row size (Compact, Comfortable, Spacious) independently controls row height, artwork size, and typography. Persist both preferences independently.
    - Game selection opens the immersive Game Details experience.
 3. **Game Details** (full-window modal experience over the Library)
    - Back to Library is always visible.
@@ -46,7 +46,9 @@ The library should support:
 - Sorting options appropriate to a personal collection (for example title, platform, and recently added).
 - Two curated presentation modes: a cover-art-forward Grid View (the signature default) and a compact, readable List View. Avoid arbitrary layout editors or unrestricted card resizing.
 - Three curated Grid View density presets (Compact, Comfortable, Spacious) that adapt card sizing to available window width. Comfortable is the default.
-- Grid/List and Grid density selectors in the Library header; do not duplicate browsing/presentation controls in Settings → Library. Persist both preferences.
+- List View uses a left-aligned panel capped at approximately 52% of the available content width (with a responsive maximum), leaving the remaining library background visible for custom or animated backgrounds. Three independent row-size presets adjust row height and artwork/text scale.
+- List rows use the same restrained selected/hover zoom treatment as Grid cards, with reduced-motion support and elevated stacking so neighboring rows do not visually cover the focused item.
+- Grid/List and the active view-specific size selector in the Library header; do not duplicate browsing/presentation controls in Settings → Library. Persist Grid density and List row size independently.
 - A library-only background selector in Settings → Library: static theme-coordinated background (default), subtle optional animated ambience, or a user-selected custom still image (PNG/JPEG/WebP). Keep the background dark enough for legibility and preserve the active theme's accent and surface language.
 - Animated ambience must pause when the window is hidden or minimized and be disabled when Reduced Motion is enabled.
 - Custom backgrounds are still images only; do not turn this into a wallpaper editor or allow unrestricted colors/layout rearrangement.
