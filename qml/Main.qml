@@ -458,7 +458,7 @@ ApplicationWindow {
     property string librarySearchText: ""
     property var selectedGame: null
     property int libraryRevision: 0
-    // Triggers the card reveal on first library load and when returning to Grid View.
+    // Triggers the card reveal on first library load, Grid View entry, and Library re-entry.
     property int gridRevealToken: 0
     property bool initialGridRevealPending: true
 
@@ -648,7 +648,17 @@ ApplicationWindow {
         id: pageNavigationAnimation
         PauseAnimation { duration: 40 }
         ScriptAction {
-            script: window.currentPage = window.pendingNavigationPage
+            script: {
+                const previousPage = window.currentPage
+                window.currentPage = window.pendingNavigationPage
+                // Re-entering the Library from Settings is a fresh page
+                // entrance, so replay the Grid card reveal after the page
+                // switch has made the library visible.
+                if (previousPage === "Settings" && window.currentPage === "Library"
+                        && settingsManager.libraryView === "grid") {
+                    window.gridRevealToken += 1
+                }
+            }
         }
         NumberAnimation {
             target: pageTransitionSnapshot
