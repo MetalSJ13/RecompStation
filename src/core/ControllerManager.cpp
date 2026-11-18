@@ -93,6 +93,11 @@ QString ControllerManager::mappingCaptureAction() const
     return m_mappingCaptureAction;
 }
 
+int ControllerManager::profileRevision() const
+{
+    return m_profileRevision;
+}
+
 bool ControllerManager::startMappingCapture(const QString &action)
 {
     static const QStringList actions = {
@@ -131,6 +136,8 @@ void ControllerManager::loadControllerProfile()
 {
     m_controllerProfile = (m_settingsManager && !m_controllerGuid.isEmpty())
         ? m_settingsManager->controllerProfile(m_controllerGuid) : QVariantMap{};
+    ++m_profileRevision;
+    emit controllerProfileChanged();
     if (!m_controllerProfile.isEmpty())
         qCInfo(lcApplication) << "Loaded controller mappings for GUID:" << m_controllerGuid;
 }
