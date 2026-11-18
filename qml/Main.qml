@@ -4594,6 +4594,7 @@ ApplicationWindow {
                                                             }
                                                             delegate: Rectangle {
                                                                 required property var modelData
+                                                                required property int index
                                                                 implicitWidth: bindingChipRow.implicitWidth + 12
                                                                 implicitHeight: 30
                                                                 radius: theme.radiusSmall
@@ -4633,9 +4634,8 @@ ApplicationWindow {
                                                                             const bindings = profile[actionKey] || []
                                                                             if (bindings.length <= 1)
                                                                                 return
-                                                                            const updated = bindings.filter(function(value) {
-                                                                                return value !== modelData
-                                                                            })
+                                                                            const updated = bindings.slice()
+                                                                            updated.splice(index, 1)
                                                                             profile[actionKey] = updated
                                                                             if (settingsManager.saveControllerProfile(controllerManager.controllerGuid, profile))
                                                                                 controllerManager.reloadControllerProfile()
