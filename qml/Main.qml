@@ -1577,7 +1577,7 @@ ApplicationWindow {
                     && settingsManager.libraryBackgroundType === "custom"
                     && settingsManager.customLibraryBackground.length > 0
                 source: settingsManager.customLibraryBackground
-                fillMode: Image.PreserveAspectCrop
+                fillMode: Image.PreserveAspectFit
                 asynchronous: true
                 cache: true
             }
@@ -1588,7 +1588,7 @@ ApplicationWindow {
                     && settingsManager.libraryBackgroundType === "custom"
                     && settingsManager.customLibraryBackground.length > 0
                 color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
-                               theme.windowBackground.b, 0.76)
+                               theme.windowBackground.b, 0.38)
             }
 
             Rectangle {
@@ -1602,22 +1602,58 @@ ApplicationWindow {
                 }
             }
 
-            Rectangle {
+            Canvas {
+                id: libraryWaveCanvas
                 anchors.fill: parent
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "animated"
-                opacity: 0.035
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: theme.accent }
-                    GradientStop { position: 0.55; color: "transparent" }
-                    GradientStop { position: 1.0; color: theme.accentHover }
+                property real phase: 0
+
+                onPaint: {
+                    const ctx = getContext("2d")
+                    ctx.clearRect(0, 0, width, height)
+                    const waveGradient = ctx.createLinearGradient(0, 0, width, height * 0.18)
+                    waveGradient.addColorStop(0.0, "rgba(45, 118, 235, 0.05)")
+                    waveGradient.addColorStop(0.35, "rgba(77, 164, 255, 0.72)")
+                    waveGradient.addColorStop(0.7, "rgba(65, 126, 245, 0.48)")
+                    waveGradient.addColorStop(1.0, "rgba(45, 118, 235, 0.06)")
+
+                    ctx.lineCap = "round"
+                    ctx.lineJoin = "round"
+                    ctx.strokeStyle = waveGradient
+                    ctx.shadowColor = "rgba(62, 145, 255, 0.62)"
+                    ctx.shadowBlur = 9
+
+                    // Layered, slow-moving sine curves create the calm blue hub-wave effect.
+                    for (let band = 0; band < 8; ++band) {
+                        ctx.beginPath()
+                        ctx.globalAlpha = 0.34 - band * 0.022
+                        ctx.lineWidth = band % 3 === 0 ? 2.0 : 1.15
+                        const baseY = height * (0.24 + band * 0.075)
+                        for (let x = -12; x <= width + 12; x += 10) {
+                            const broadWave = Math.sin(x * 0.0028 + phase + band * 0.48) * 31
+                            const fineWave = Math.sin(x * 0.006 + phase * 0.72 + band * 0.7) * 8
+                            const y = baseY + broadWave + fineWave
+                            if (x === -12)
+                                ctx.moveTo(x, y)
+                            else
+                                ctx.lineTo(x, y)
+                        }
+                        ctx.stroke()
+                    }
+                    ctx.globalAlpha = 1.0
+                    ctx.shadowBlur = 0
                 }
-                SequentialAnimation on opacity {
-                    running: visible && !settingsManager.reducedMotion
+
+                Timer {
+                    interval: 40
+                    repeat: true
+                    running: libraryWaveCanvas.visible && !settingsManager.reducedMotion
                         && window.active && window.visibility !== Window.Minimized
-                    loops: Animation.Infinite
-                    NumberAnimation { to: 0.12; duration: 9000; easing.type: Easing.InOutSine }
-                    NumberAnimation { to: 0.035; duration: 9000; easing.type: Easing.InOutSine }
+                    onTriggered: {
+                        libraryWaveCanvas.phase += 0.018
+                        libraryWaveCanvas.requestPaint()
+                    }
                 }
             }
 
@@ -3284,8 +3320,8 @@ ApplicationWindow {
                                         visible: settingsManager.libraryBackgroundType === "animated"
                                         Layout.fillWidth: true
                                         text: settingsManager.reducedMotion
-                                            ? "Reduced Motion is enabled, so animated ambience is currently paused."
-                                            : "Subtle ambient lighting is enabled. It pauses when motion is reduced or the window is hidden."
+                                            ? "Blue ambient wave lines are paused while Reduced Motion is enabled."
+                                            : "Slow, layered blue waves create a calm console-hub atmosphere. Animation pauses when the app is inactive or minimized."
                                         color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
