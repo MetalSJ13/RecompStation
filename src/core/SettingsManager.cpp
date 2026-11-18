@@ -9,6 +9,8 @@
 #include <QFileInfo>
 #include <QUrl>
 #include <QStringList>
+#include <QRegularExpression>
+#include <QVariantList>
 
 namespace {
 const QString kDefaultTheme = QStringLiteral("midnight-violet");
@@ -139,6 +141,115 @@ void SettingsManager::setTheGamesDbEnabled(bool enabled)
     m_theGamesDbEnabled = enabled;
     emit theGamesDbEnabledChanged();
     qCInfo(lcSettings) << "TheGamesDB provider enabled:" << m_theGamesDbEnabled;
+}
+
+
+QVariantMap SettingsManager::defaultControllerProfile()
+{
+    return {
+        {QStringLiteral("navigateUp"), QVariantList{QStringLiteral("dpad-up"), QStringLiteral("leftstick-up")}},
+        {QStringLiteral("navigateDown"), QVariantList{QStringLiteral("dpad-down"), QStringLiteral("leftstick-down")}},
+        {QStringLiteral("navigateLeft"), QVariantList{QStringLiteral("dpad-left"), QStringLiteral("leftstick-left")}},
+        {QStringLiteral("navigateRight"), QVariantList{QStringLiteral("dpad-right"), QStringLiteral("leftstick-right")}},
+        {QStringLiteral("select"), QVariantList{QStringLiteral("a")}},
+        {QStringLiteral("back"), QVariantList{QStringLiteral("b"), QStringLiteral("guide")}},
+        {QStringLiteral("menu"), QVariantList{QStringLiteral("start")}},
+        {QStringLiteral("previousSection"), QVariantList{QStringLiteral("leftshoulder")}},
+        {QStringLiteral("nextSection"), QVariantList{QStringLiteral("rightshoulder")}}
+    };
+}
+
+bool SettingsManager::isValidControllerGuid(const QString &guid)
+{
+    static const QRegularExpression pattern(QStringLiteral("^[A-Fa-f0-9]{32}$"));
+    return pattern.match(guid).hasMatch();
+}
+
+QVariantMap SettingsManager::controllerProfile(const QString &guid) const
+{
+    if (!isValidControllerGuid(guid))
+        return {};
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    const QString key = QStringLiteral("controllers/profiles/") + guid.toLower()
+        + QStringLiteral("/mappings");
+    if (!settings.contains(key))
+        return defaultControllerProfile();
+
+    const QVariantMap stored = settings.value(key).toMap();
+    const QVariantMap defaults = defaultControllerProfile();
+    // Reject incomplete or malformed profiles as a whole. Returning defaults
+    // is safer than exposing a partially corrupted mapping to the input layer.
+    if (stored.keys().toSet() != defaults.keys().toSet())
+        return defaults;
+    return stored;
+}
+
+bool SettingsManager::saveControllerProfile(const QString &guid, const QVariantMap &profile)
+{
+    if (!isValidControllerGuid(guid))
+        return false;
+
+    const QVariantMap defaults = defaultControllerProfile();
+    if (profile.keys().toSet() != defaults.keys().toSet())
+        return false;
+
+    static const QStringList supportedInputs = {
+        QStringLiteral("a"), QStringLiteral("b"), QStringLiteral("x"), QStringLiteral("y"),
+        QStringLiteral("back"), QStringLiteral("guide"), QStringLiteral("start"),
+        QStringLiteral("leftstick"), QStringLiteral("rightstick"),
+        QStringLiteral("leftshoulder"), QStringLiteral("rightshoulder"),
+        QStringLiteral("dpad-up"), QStringLiteral("dpad-down"),
+        QStringLiteral("dpad-left"), QStringLiteral("dpad-right"),
+        QStringLiteral("leftstick-up"), QStringLiteral("leftstick-down"),
+        QStringLiteral("leftstick-left"), QStringLiteral("leftstick-right")
+    };
+    for (auto it = profile.cbegin(); it != profile.cend(); ++it) {
+        const QVariantList inputs = it.value().toList();
+        if (inputs.isEmpty())
+            return false;
+        for (const QVariant &input : inputs) {
+            const QString token = input.toString();
+            if (!supportedInputs.contains(token))
+                return false;
+        }
+    }
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("controllers/profiles/") + guid.toLower()
+                          + QStringLiteral("/mappings"), profile);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist controller profile for GUID:" << guid;
+        return false;
+    }
+    qCInfo(lcSettings) << "Saved controller profile for GUID:" << guid;
+    return true;
+}
+
+bool SettingsManager::resetControllerProfile(const QString &guid)
+{
+    if (!isValidControllerGuid(guid))
+        return false;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.remove(QStringLiteral("controllers/profiles/") + guid.toLower());
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to reset controller profile for GUID:" << guid;
+        return false;
+    }
+    qCInfo(lcSettings) << "Reset controller profile for GUID:" << guid;
+    return true;
+}
+
+QStringList SettingsManager::controllerProfileIds() const
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.beginGroup(QStringLiteral("controllers/profiles"));
+    QStringList ids = settings.childGroups();
+    settings.endGroup();
+    return ids;
 }
 
 QString SettingsManager::themeName() const
