@@ -367,7 +367,7 @@
         "x86_64": {
           "assetNameRegex": "^Paperboat-.*-Linux\\.zip$",
           "packageFormat": "zip",
-          "executablePath": "paperboat.appimage"
+          "executablePath": "Paperboat.AppImage"
         }
       }
     }
