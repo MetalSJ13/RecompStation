@@ -1,13 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="controllerSpectrum" x1="4" y1="5" x2="44" y2="43" gradientUnits="userSpaceOnUse">
+    <linearGradient id="controllerSpectrum" x1="3" y1="8" x2="45" y2="40" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#39C6FF"/>
-      <stop offset=".48" stop-color="#9274FF"/>
+      <stop offset=".5" stop-color="#9274FF"/>
       <stop offset="1" stop-color="#FF72B6"/>
     </linearGradient>
   </defs>
-  <path d="M13 13h22c5.7 0 8.5 4.1 9.7 11.1l1.1 6.2c.8 4.7-4.3 7.5-7.7 4.2l-5.7-5.6H15.6l-5.7 5.6c-3.4 3.3-8.5.5-7.7-4.2l1.1-6.2C4.5 17.1 7.3 13 13 13Z" stroke="url(#controllerSpectrum)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M13 20v10M8 25h10" stroke="#39C6FF" stroke-width="2.6" stroke-linecap="round"/>
-  <circle cx="34" cy="22" r="2" fill="#FF72B6"/>
-  <circle cx="39" cy="27" r="2" fill="#A879FF"/>
+  <path d="M13.2 12.5h21.6c5.5 0 8.4 4 9.6 10.3l1.1 6.2c.8 4.5-3.9 7.5-7.3 4.6l-6.4-5.4H16.2l-6.4 5.4c-3.4 2.9-8.1-.1-7.3-4.6l1.1-6.2c1.2-6.3 4.1-10.3 9.6-10.3Z"
+        stroke="url(#controllerSpectrum)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 20.5v9M7.5 25h9" stroke="#39C6FF" stroke-width="2.4" stroke-linecap="round"/>
+  <g fill="#FF72B6">
+    <circle cx="34" cy="20.5" r="1.8"/>
+    <circle cx="38.5" cy="25" r="1.8"/>
+    <circle cx="34" cy="29.5" r="1.8"/>
+    <circle cx="29.5" cy="25" r="1.8"/>
+  </g>
 </svg>
