@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
     ControllerManager controllerManager;
+    controllerManager.setSettingsManager(&settingsManager);
 
     // Do not let RecompStation consume controller input while a launched game
     // is active. Keep input suspended until every launched process has exited.
