@@ -4015,7 +4015,7 @@ ApplicationWindow {
 
                                 ColumnLayout {
                                     width: parent.width
-                                    spacing: 18
+                                    spacing: 16
 
                                     Label {
                                         text: "Metadata"
@@ -4115,7 +4115,7 @@ ApplicationWindow {
 
                                 ColumnLayout {
                                     width: parent.width
-                                    spacing: 18
+                                    spacing: 16
 
                                     Label {
                                         text: "Controller"
