@@ -17,7 +17,7 @@ public:
     explicit ControllerInputRouter(QObject *parent = nullptr);
 
     static QString directionFromAxes(qint16 x, qint16 y, int deadZone = 16000);
-    static bool actionPressed(const QVariantMap &profile, const QString &action,
+    static QString firstNewInput(const QStringList &activeInputs,\n                                  const QStringList &previousInputs);\n    static bool actionPressed(const QVariantMap &profile, const QString &action,
                               const QStringList &activeInputs);
     static QString directionFromProfile(const QVariantMap &profile,
                                          const QStringList &activeInputs);
