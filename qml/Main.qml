@@ -3141,7 +3141,6 @@ ApplicationWindow {
                                 ColumnLayout {
                                     width: parent.width
                                     spacing: 16
-                                spacing: 16
                                 onVisibleChanged: console.info(
                                     "[Settings QML] Appearance content visibility:", visible,
                                     "section:", settingsPage.section,
@@ -3802,7 +3801,6 @@ ApplicationWindow {
                                 ColumnLayout {
                                     width: parent.width
                                     spacing: 16
-                                spacing: 16
                                 Label {
                                     text: "Application"
                                     color: theme.textPrimary
