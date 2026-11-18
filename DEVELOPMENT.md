@@ -114,17 +114,20 @@ These confirmations cover the specific interactions the user tested; they do not
 
 ### Milestone 2: Application shell and navigation
 
-- [x] Refine main navigation and add an upward details-page entrance with a slower artwork dissolve (local validation pending)
-- [x] Replace the width-reserving sidebar with an integrated horizontal Library and Settings navigation bar; main content uses the available window area (local validation pending)
-- [x] Add a dedicated Back to Library control to immersive game details; Escape also closes the details view (local validation pending)
-- [ ] Remove Metadata Search and Platforms as top-level navigation destinations
-- [x] Keep platform selection/filtering inside the Game Library; combine it with title search
-- [x] Add live game-title search in the Library; search respects the selected platform and shows a no-results state (local validation pending)
-- [x] Consolidate Grid/List and view-specific sizing controls in the Library header; persist Grid density and List row size independently (local validation pending)
-- [x] Constrain List View to approximately half the content width, preserving a large visible area for custom/animated backgrounds; add reduced-motion-aware selected/hover zoom (local validation pending)
-- [ ] Rehome launcher discovery and management contextually without removing existing capabilities
-- [ ] Establish shared page headers, actions, spacing, scroll behavior, and focus styling
-- [ ] Keep existing pages and backend connections functional during the transition
+- [x] Refine main navigation and add an upward details-page entrance with a slower artwork dissolve; user visually validated the navigation and details transitions.
+- [x] Replace the width-reserving sidebar with an integrated horizontal Library and Settings navigation bar; main content uses the available window area. User approved the updated navigation layout.
+- [x] Add a dedicated Back to Library control to immersive game details; Escape also closes the details view.
+- [x] Remove Metadata Search and Platforms as top-level navigation destinations; platform selection now lives in the Library. Legacy page components remain in QML pending safe cleanup.
+- [x] Keep platform selection/filtering inside the Game Library; combine it with title search.
+- [x] Add live game-title search in the Library; search respects the selected platform and shows a no-results state.
+- [x] Consolidate Grid/List and view-specific sizing controls in the Library header; persist Grid density and List row size independently.
+- [x] Constrain List View to approximately half the content width, preserving a large visible area for custom/animated backgrounds; add reduced-motion-aware selected/hover zoom.
+- [x] Rehome launcher discovery and management contextually in Game Details, preserving the existing download, install, launch, and uninstall capabilities.
+- [x] Add the bottom-up, staggered Grid card entrance for application startup, List-to-Grid switching, and return from Settings; respect Reduced Motion. User has visually validated the timing and behavior across these entry points.
+- [ ] Establish consistent shared page headers, actions, spacing, scroll behavior, and focus styling across all pages.
+- [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition.
+
+**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, and card entrance behavior are implemented and user-verified. Remaining work is legacy QML cleanup, shared-layout consistency, and the full regression pass; do not close the milestone until those are addressed and the relevant build/test workflow is confirmed.
 
 ### Milestone 3: Game Library experience
 
