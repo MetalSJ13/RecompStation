@@ -1071,8 +1071,8 @@ ApplicationWindow {
         property int screenshotIndex: 0
         property int previousScreenshotIndex: -1
         property bool screenshotLayerA: true
-        property var releaseState: primaryProject
-            ? (window.releaseStates[primaryProject.id]
+        property var releaseState: selectedProject
+            ? (window.releaseStates[selectedProject.id]
                 || ({ loading: false, error: "", release: null, assets: [] }))
             : ({ loading: false, error: "", release: null, assets: [] })
         property var releaseInfo: releaseState && releaseState.release
@@ -1086,8 +1086,8 @@ ApplicationWindow {
             ? compatibleAssets[0] : null
         property string selectedAssetName: selectedAsset && selectedAsset.name
             ? String(selectedAsset.name) : "Not available"
-        property var downloadState: primaryProject && selectedAsset
-            ? (window.downloadStates[primaryProject.id + "|" + selectedAsset.name]
+        property var downloadState: selectedProject && selectedAsset
+            ? (window.downloadStates[selectedProject.id + "|" + selectedAsset.name]
                 || ({ loading: false, installing: false, error: "",
                       bytesReceived: 0, bytesTotal: selectedAsset.size }))
             : ({ loading: false, installing: false, error: "",
