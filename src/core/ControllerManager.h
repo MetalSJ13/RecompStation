@@ -21,6 +21,8 @@ class ControllerManager final : public QObject
     Q_PROPERTY(QString controllerType READ controllerType NOTIFY connectedChanged)
     Q_PROPERTY(QString controllerGuid READ controllerGuid NOTIFY connectedChanged)
     Q_PROPERTY(bool inputEnabled READ inputEnabled WRITE setInputEnabled NOTIFY inputEnabledChanged)
+    Q_PROPERTY(bool mappingCaptureActive READ mappingCaptureActive NOTIFY mappingCaptureStateChanged)
+    Q_PROPERTY(QString mappingCaptureAction READ mappingCaptureAction NOTIFY mappingCaptureStateChanged)
 
 public:
     explicit ControllerManager(QObject *parent = nullptr);
@@ -32,11 +34,15 @@ public:
     QString controllerType() const;
     QString controllerGuid() const;
     bool inputEnabled() const;
+    bool mappingCaptureActive() const;
+    QString mappingCaptureAction() const;
 
 public slots:
     void setInputEnabled(bool enabled);
     void setSettingsManager(SettingsManager *settingsManager);
     Q_INVOKABLE void reloadControllerProfile();
+    Q_INVOKABLE bool startMappingCapture(const QString &action);
+    Q_INVOKABLE void cancelMappingCapture();
 
 signals:
     void connectedChanged();
@@ -48,6 +54,8 @@ signals:
     void previousSectionRequested();
     void nextSectionRequested();
     void rightStickScrollRequested(qreal amount);
+    void mappingCaptureStateChanged();
+    void mappingCaptured(const QString &action, const QString &input);
 
 private slots:
     void pollController();
@@ -64,6 +72,10 @@ private:
     ControllerInputRouter m_inputRouter;
     SettingsManager *m_settingsManager = nullptr;
     QVariantMap m_controllerProfile;
+    QString m_mappingCaptureAction;
+    QStringList m_previousActiveInputs;
+    bool m_mappingCaptureActive = false;
+    bool m_captureAwaitingRelease = false;
     QString m_controllerName;
     QString m_controllerType = QStringLiteral("generic");
     QString m_controllerGuid;
