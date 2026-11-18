@@ -286,15 +286,25 @@ int LibraryMetadataMatcher::bestMatchIndex(const QString &localTitle,
 
 void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked)
 {
-    if (m_busy || !m_database || !m_metadata)
+    qCInfo(lcMetadata) << "Library metadata scan requested. Include previously checked:"
+                       << includePreviouslyChecked
+                       << "busy:" << m_busy
+                       << "database available:" << (m_database != nullptr)
+                       << "provider available:" << (m_metadata != nullptr);
+    if (m_busy || !m_database || !m_metadata) {
+        qCInfo(lcMetadata) << "Library metadata scan skipped because the matcher is busy or unavailable.";
         return;
+    }
 
     if (!m_metadata->isConfigured()) {
+        qCWarning(lcMetadata) << "Library metadata scan skipped: metadata provider is not configured.";
         setStatus(QStringLiteral("Metadata is unavailable. Configure a TheGamesDB API key to enable automatic matching."));
         return;
     }
 
     const QVariantList games = m_database->gamesNeedingMetadata(includePreviouslyChecked);
+    qCInfo(lcMetadata) << "Library metadata scan queued" << games.size()
+                       << "game(s) for matching.";
     m_queue.clear();
     for (const QVariant &entry : games)
         m_queue.enqueue(entry.toMap());
