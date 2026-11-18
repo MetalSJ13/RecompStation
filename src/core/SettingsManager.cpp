@@ -67,6 +67,21 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         false
     ).toBool();
 
+    const QString storedLibraryView = settings.value(
+        QStringLiteral("library/view"), QStringLiteral("grid")).toString();
+    m_libraryView = isSupportedLibraryView(storedLibraryView)
+        ? storedLibraryView : QStringLiteral("grid");
+    const QString storedLibraryDensity = settings.value(
+        QStringLiteral("library/density"), QStringLiteral("comfortable")).toString();
+    m_libraryDensity = isSupportedLibraryDensity(storedLibraryDensity)
+        ? storedLibraryDensity : QStringLiteral("comfortable");
+    const QString storedBackgroundType = settings.value(
+        QStringLiteral("appearance/libraryBackgroundType"), QStringLiteral("static")).toString();
+    m_libraryBackgroundType = isSupportedLibraryBackgroundType(storedBackgroundType)
+        ? storedBackgroundType : QStringLiteral("static");
+    m_customLibraryBackground = settings.value(
+        QStringLiteral("appearance/customLibraryBackground")).toString();
+
     qCInfo(lcSettings) << "Loaded theme:" << m_themeName;
     qCInfo(lcSettings) << "Loaded preferred presentation size:" << m_preferredPresentationSize;
     qCInfo(lcSettings) << "Loaded display mode:" << m_displayMode;
@@ -260,6 +275,105 @@ void SettingsManager::setReducedMotion(bool enabled)
     m_reducedMotion = enabled;
     emit reducedMotionChanged();
     qCInfo(lcSettings) << "Saved reduced motion:" << m_reducedMotion;
+}
+
+QString SettingsManager::libraryView() const
+{
+    return m_libraryView;
+}
+
+void SettingsManager::setLibraryView(const QString &view)
+{
+    if (!isSupportedLibraryView(view) || m_libraryView == view)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("library/view"), view);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist library view:" << view;
+        return;
+    }
+    m_libraryView = view;
+    emit libraryViewChanged();
+}
+
+QString SettingsManager::libraryDensity() const
+{
+    return m_libraryDensity;
+}
+
+void SettingsManager::setLibraryDensity(const QString &density)
+{
+    if (!isSupportedLibraryDensity(density) || m_libraryDensity == density)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("library/density"), density);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist library density:" << density;
+        return;
+    }
+    m_libraryDensity = density;
+    emit libraryDensityChanged();
+}
+
+QString SettingsManager::libraryBackgroundType() const
+{
+    return m_libraryBackgroundType;
+}
+
+void SettingsManager::setLibraryBackgroundType(const QString &type)
+{
+    if (!isSupportedLibraryBackgroundType(type) || m_libraryBackgroundType == type)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("appearance/libraryBackgroundType"), type);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist library background type:" << type;
+        return;
+    }
+    m_libraryBackgroundType = type;
+    emit libraryBackgroundTypeChanged();
+}
+
+QString SettingsManager::customLibraryBackground() const
+{
+    return m_customLibraryBackground;
+}
+
+void SettingsManager::setCustomLibraryBackground(const QString &path)
+{
+    if (m_customLibraryBackground == path)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("appearance/customLibraryBackground"), path);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist custom library background.";
+        return;
+    }
+    m_customLibraryBackground = path;
+    emit customLibraryBackgroundChanged();
+}
+
+bool SettingsManager::isSupportedLibraryView(const QString &view)
+{
+    return view == QStringLiteral("grid") || view == QStringLiteral("list");
+}
+
+bool SettingsManager::isSupportedLibraryDensity(const QString &density)
+{
+    return density == QStringLiteral("compact")
+        || density == QStringLiteral("comfortable")
+        || density == QStringLiteral("spacious");
+}
+
+bool SettingsManager::isSupportedLibraryBackgroundType(const QString &type)
+{
+    return type == QStringLiteral("static")
+        || type == QStringLiteral("animated")
+        || type == QStringLiteral("custom");
 }
 
 bool SettingsManager::isSupportedTheme(const QString &themeName)
