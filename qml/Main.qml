@@ -1940,7 +1940,12 @@ ApplicationWindow {
                             clip: true
                             spacing: 9
                             model: gameGrid.model
-                            currentIndex: gameGrid.currentIndex
+                            currentIndex: gameGrid.currentIndex >= 0
+                                ? gameGrid.currentIndex : (gameGrid.count > 0 ? 0 : -1)
+                            onCurrentIndexChanged: {
+                                if (currentIndex !== gameGrid.currentIndex)
+                                    gameGrid.currentIndex = currentIndex
+                            }
                             keyNavigationEnabled: true
                             delegate: Item {
                                 id: listTile
