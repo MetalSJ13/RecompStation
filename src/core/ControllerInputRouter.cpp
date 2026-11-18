@@ -32,6 +32,37 @@ QString ControllerInputRouter::directionFromAxes(qint16 x, qint16 y, int deadZon
                         : QStringLiteral("down");
 }
 
+
+bool ControllerInputRouter::actionPressed(const QVariantMap &profile,
+                                          const QString &action,
+                                          const QStringList &activeInputs)
+{
+    const QVariantList mappedInputs = profile.value(action).toList();
+    for (const QVariant &mappedInput : mappedInputs) {
+        if (activeInputs.contains(mappedInput.toString()))
+            return true;
+    }
+    return false;
+}
+
+QString ControllerInputRouter::directionFromProfile(const QVariantMap &profile,
+                                                    const QStringList &activeInputs)
+{
+    // Keep direction selection deterministic when a user maps multiple
+    // simultaneously-held inputs to different directions.
+    static const QList<QPair<QString, QString>> directions = {
+        {QStringLiteral("navigateUp"), QStringLiteral("up")},
+        {QStringLiteral("navigateDown"), QStringLiteral("down")},
+        {QStringLiteral("navigateLeft"), QStringLiteral("left")},
+        {QStringLiteral("navigateRight"), QStringLiteral("right")}
+    };
+    for (const auto &direction : directions) {
+        if (actionPressed(profile, direction.first, activeInputs))
+            return direction.second;
+    }
+    return {};
+}
+
 bool ControllerInputRouter::inputEnabled() const
 {
     return m_inputEnabled;
