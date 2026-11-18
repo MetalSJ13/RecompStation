@@ -520,6 +520,32 @@ ApplicationWindow {
             if (!gameDetailsPopup.visible)
                 window.navigateToPage("Settings")
         }
+        function onRightStickScrollRequested(amount) {
+            if (window.currentPage !== "Settings"
+                || window.systemMenuVisible || gameDetailsPopup.visible
+                || !controllerManager.inputEnabled)
+                return
+
+            const scrollView = settingsPage.section === "Appearance" ? appearanceContent
+                : settingsPage.section === "Display" ? displayContent
+                : settingsPage.section === "Library" ? libraryContent
+                : settingsPage.section === "Application" ? applicationContent
+                : settingsPage.section === "Metadata" ? metadataContent
+                : settingsPage.section === "Controller" ? controllerContent : null
+
+            if (!scrollView || !scrollView.visible || !scrollView.contentItem)
+                return
+
+            const flickable = scrollView.contentItem
+            const maxY = Math.max(0, flickable.contentHeight - flickable.height)
+            if (maxY <= 0)
+                return
+
+            window.activeInputDevice = "controller"
+            // Polling runs at ~60 Hz; full deflection scrolls at a comfortable pace.
+            flickable.contentY = Math.max(0, Math.min(maxY,
+                flickable.contentY + amount * 14))
+        }
     }
 
     // Window-scoped shortcuts keep library navigation working even when
@@ -3463,6 +3489,7 @@ ApplicationWindow {
                             }
 
                             ScrollView {
+                                id: displayContent
                                 anchors.fill: parent
                                 anchors.margins: 30
                                 clip: true
@@ -3649,6 +3676,7 @@ ApplicationWindow {
                             }
 
                             ScrollView {
+                                id: libraryContent
                                 anchors.fill: parent
                                 anchors.margins: 30
                                 clip: true
@@ -3967,6 +3995,7 @@ ApplicationWindow {
                             }
 
                             ScrollView {
+                                id: applicationContent
                                 anchors.fill: parent
                                 anchors.margins: 30
                                 clip: true
@@ -4043,6 +4072,7 @@ ApplicationWindow {
                             }
 
                             ScrollView {
+                                id: metadataContent
                                 anchors.fill: parent
                                 anchors.margins: 30
                                 clip: true
@@ -4265,6 +4295,7 @@ ApplicationWindow {
                             }
 
                             ScrollView {
+                                id: controllerContent
                                 anchors.fill: parent
                                 anchors.margins: 30
                                 clip: true
