@@ -4570,11 +4570,10 @@ ApplicationWindow {
                                                     Label {
                                                         Layout.fillWidth: true
                                                         text: {
-                                                            const captureActive = controllerManager.mappingCaptureActive
                                                             const revision = controllerManager.profileRevision
                                                             const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
                                                             const values = profile[modelData.key] || []
-                                                            return values.length ? values.join("  /  ") : "No bindings"
+                                                            return revision >= 0 && values.length ? values.join("  /  ") : "No bindings"
                                                         }
                                                         color: theme.textSecondary
                                                         font.pixelSize: 10 * theme.fontScale
