@@ -19,6 +19,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
     Q_PROPERTY(QString libraryView READ libraryView WRITE setLibraryView NOTIFY libraryViewChanged)
     Q_PROPERTY(QString libraryDensity READ libraryDensity WRITE setLibraryDensity NOTIFY libraryDensityChanged)
+    Q_PROPERTY(QString libraryListDensity READ libraryListDensity WRITE setLibraryListDensity NOTIFY libraryListDensityChanged)
     Q_PROPERTY(QString libraryBackgroundType READ libraryBackgroundType WRITE setLibraryBackgroundType NOTIFY libraryBackgroundTypeChanged)
     Q_PROPERTY(QString customLibraryBackground READ customLibraryBackground WRITE setCustomLibraryBackground NOTIFY customLibraryBackgroundChanged)
 
@@ -59,6 +60,8 @@ public:
     Q_INVOKABLE void setLibraryView(const QString &view);
     QString libraryDensity() const;
     Q_INVOKABLE void setLibraryDensity(const QString &density);
+    QString libraryListDensity() const;
+    Q_INVOKABLE void setLibraryListDensity(const QString &density);
     QString libraryBackgroundType() const;
     Q_INVOKABLE void setLibraryBackgroundType(const QString &type);
     QString customLibraryBackground() const;
@@ -75,6 +78,7 @@ signals:
     void reducedMotionChanged();
     void libraryViewChanged();
     void libraryDensityChanged();
+    void libraryListDensityChanged();
     void libraryBackgroundTypeChanged();
     void customLibraryBackgroundChanged();
 
@@ -88,6 +92,7 @@ private:
     bool m_reducedMotion = false;
     QString m_libraryView = QStringLiteral("grid");
     QString m_libraryDensity = QStringLiteral("comfortable");
+    QString m_libraryListDensity = QStringLiteral("comfortable");
     QString m_libraryBackgroundType = QStringLiteral("static");
     QString m_customLibraryBackground;
     bool m_scanOnStartup = true;
@@ -100,5 +105,6 @@ private:
     static bool isSupportedFontSize(const QString &size);
     static bool isSupportedLibraryView(const QString &view);
     static bool isSupportedLibraryDensity(const QString &density);
+    static bool isSupportedLibraryListDensity(const QString &density);
     static bool isSupportedLibraryBackgroundType(const QString &type);
 };
