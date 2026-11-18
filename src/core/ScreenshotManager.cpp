@@ -51,9 +51,18 @@ void ScreenshotManager::setStatus(const QString &status)
     emit statusChanged();
 }
 
+void ScreenshotManager::setProviderEnabled(bool enabled)
+{
+    m_providerEnabled = enabled;
+}
+
 void ScreenshotManager::refreshLibraryScreenshots()
 {
     if (m_busy || !m_database) return;
+    if (!m_providerEnabled) {
+        setStatus("Screenshot downloads are disabled in Metadata Settings.");
+        return;
+    }
     if (m_apiKey.isEmpty()) {
         setStatus("Screenshot downloads require a configured TheGamesDB API key.");
         return;
