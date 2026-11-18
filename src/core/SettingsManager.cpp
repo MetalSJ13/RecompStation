@@ -180,7 +180,11 @@ QVariantMap SettingsManager::controllerProfile(const QString &guid) const
     const QVariantMap defaults = defaultControllerProfile();
     // Reject incomplete or malformed profiles as a whole. Returning defaults
     // is safer than exposing a partially corrupted mapping to the input layer.
-    if (stored.keys().toSet() != defaults.keys().toSet())
+    QStringList storedKeys = stored.keys();
+    QStringList defaultKeys = defaults.keys();
+    storedKeys.sort();
+    defaultKeys.sort();
+    if (storedKeys != defaultKeys)
         return defaults;
     return stored;
 }
@@ -191,7 +195,11 @@ bool SettingsManager::saveControllerProfile(const QString &guid, const QVariantM
         return false;
 
     const QVariantMap defaults = defaultControllerProfile();
-    if (profile.keys().toSet() != defaults.keys().toSet())
+    QStringList profileKeys = profile.keys();
+    QStringList defaultKeys = defaults.keys();
+    profileKeys.sort();
+    defaultKeys.sort();
+    if (profileKeys != defaultKeys)
         return false;
 
     static const QStringList supportedInputs = {
