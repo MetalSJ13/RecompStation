@@ -2026,28 +2026,76 @@ ApplicationWindow {
                                         gameGrid.currentIndex = 0
                                     }
                                 }
-                                ComboBox {
-                                    Layout.preferredWidth: 126
-                                    Layout.preferredHeight: 42
-                                    textRole: "label"
-                                    valueRole: "value"
-                                    model: [{ label: "Grid", value: "grid" }, { label: "List", value: "list" }]
-                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
-                                    onActivated: settingsManager.libraryView = currentValue
-                                }
-                                ComboBox {
-                                    visible: settingsManager.libraryView === "grid"
-                                    Layout.preferredWidth: 142
-                                    Layout.preferredHeight: 42
-                                    textRole: "label"
-                                    valueRole: "value"
-                                    model: [
-                                        { label: "Compact", value: "compact" },
-                                        { label: "Comfortable", value: "comfortable" },
-                                        { label: "Spacious", value: "spacious" }
-                                    ]
-                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
-                                    onActivated: settingsManager.libraryDensity = currentValue
+                                Rectangle {
+                                    Layout.preferredWidth: 326
+                                    Layout.minimumWidth: 326
+                                    Layout.preferredHeight: 76
+                                    radius: 10
+                                    color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.82)
+                                    border.color: theme.divider
+                                    border.width: 1
+
+                                    ColumnLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 9
+                                        spacing: 5
+
+                                        Label {
+                                            text: "LIBRARY DISPLAY"
+                                            color: theme.textMuted
+                                            font.pixelSize: 9 * theme.fontScale
+                                            font.bold: true
+                                            font.letterSpacing: 1.1
+                                        }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 8
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 3
+                                                Label {
+                                                    text: "View"
+                                                    color: theme.textSecondary
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                }
+                                                ComboBox {
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 34
+                                                    textRole: "label"
+                                                    valueRole: "value"
+                                                    model: [{ label: "Grid", value: "grid" }, { label: "List", value: "list" }]
+                                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
+                                                    onActivated: settingsManager.libraryView = currentValue
+                                                }
+                                            }
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 3
+                                                Label {
+                                                    text: "Card size"
+                                                    color: theme.textSecondary
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                }
+                                                ComboBox {
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 34
+                                                    textRole: "label"
+                                                    valueRole: "value"
+                                                    model: [
+                                                        { label: "Compact", value: "compact" },
+                                                        { label: "Comfortable", value: "comfortable" },
+                                                        { label: "Spacious", value: "spacious" }
+                                                    ]
+                                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
+                                                    enabled: settingsManager.libraryView === "grid"
+                                                    onActivated: settingsManager.libraryDensity = currentValue
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
