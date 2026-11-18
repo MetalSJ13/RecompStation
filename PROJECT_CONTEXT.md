@@ -30,7 +30,7 @@ Platform folders are derived from the platforms represented in the curated recom
 
 Implemented capabilities include:
 - One configurable library root, catalog-derived platform subfolders, first-run setup, and recursive game scanning
-- Persistent startup library scan preference; live filesystem monitoring remains planned
+- Persistent startup library scan preference and initial recursive filesystem monitoring with debounced automatic reconciliation (local build/runtime validation pending)
 - SQLite game-library records
 - TheGamesDB asynchronous search and runtime platform mapping
 - Metadata association to local ROM records
@@ -41,7 +41,7 @@ Implemented capabilities include:
 - Native process launch with running/finished/error state
 - Regression tests for scanner, database, metadata, artwork, GitHub, catalog, archive, launcher management, and process launching
 
-The library Settings page uses one local root folder. RecompStation creates one subfolder per platform represented in the supported project catalog, and the scanner searches those subfolders. First-run setup asks the user to choose the root before scanning; changing it triggers a full library scan. The startup scan preference remains persistent. The single-root setup implementation is awaiting local build and regression-test verification. Current scanning otherwise remains user-invoked; The active UI branch now connects the Scan Library action to a sequential automatic metadata matcher. Its initial policy accepts only a unique exact normalized-title match within the mapped platform; ambiguous and missing results remain unassociated. Lookup attempts are persisted to avoid repeating completed searches, and accepted metadata triggers the existing artwork cache. This initial implementation is awaiting local build and regression-test verification. Continuous filesystem monitoring remains planned.
+The library Settings page uses one local root folder. RecompStation creates one subfolder per platform represented in the supported project catalog, and the scanner searches those subfolders. First-run setup asks the user to choose the root before scanning; changing it triggers a full library scan. The startup scan preference remains persistent. The single-root setup implementation is awaiting local build and regression-test verification. Current scanning otherwise remains user-invoked; The active UI branch now connects the Scan Library action to a sequential automatic metadata matcher. Its initial policy accepts only a unique exact normalized-title match within the mapped platform; ambiguous and missing results remain unassociated. Lookup attempts are persisted to avoid repeating completed searches, and accepted metadata triggers the existing artwork cache. This initial implementation is awaiting local build and regression-test verification. Continuous filesystem monitoring now has an initial implementation: LibraryScanner watches the configured platform directories and their existing subdirectories, debounces directory changes, rescans the library, and refreshes watches so newly created nested folders are included. The initial regression tests cover nested-folder additions, file removals, and stopping/restarting monitoring. This implementation is committed on the active branch but still requires local build, test, and runtime validation.
 
 ## Product and UI direction
 
