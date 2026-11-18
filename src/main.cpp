@@ -72,6 +72,11 @@ int main(int argc, char *argv[])
     ScreenshotManager screenshotManager(&databaseManager,
                                         platformManager.dataDirectory() + "/artwork",
                                         qEnvironmentVariable("RECOMPSTATION_TGDB_API_KEY"));
+    screenshotManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
+    QObject::connect(&settingsManager, &SettingsManager::theGamesDbEnabledChanged,
+                     &screenshotManager, [&settingsManager, &screenshotManager]() {
+        screenshotManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
+    });
     LibraryMetadataMatcher metadataMatcher(&databaseManager, &metadataManager,
                                            &artworkManager);
     GitHubManager githubManager;
