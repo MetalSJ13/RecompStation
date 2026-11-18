@@ -188,7 +188,7 @@ ApplicationWindow {
             gameGrid.forceActiveFocus()
         } else if (currentPage === "Settings") {
             if (!moveDirectionalFocus(settingsPage, direction)) {
-                const sections = ["Appearance", "Display", "Library", "Controller", "Application"]
+                const sections = ["Appearance", "Display", "Library", "Metadata", "Controller", "Application"]
                 let index = sections.indexOf(settingsPage.section)
                 if (direction === "up") index = Math.max(0, index - 1)
                 if (direction === "down") index = Math.min(sections.length - 1, index + 1)
@@ -3018,6 +3018,52 @@ ApplicationWindow {
                                 Button {
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
+                                    id: metadataNavigationButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 52
+                                    padding: 10
+                                    highlighted: settingsPage.section === "Metadata"
+                                    onClicked: settingsPage.section = "Metadata"
+                                    background: Rectangle {
+                                        radius: theme.radiusCard
+                                        color: metadataNavigationButton.highlighted
+                                            ? theme.elevatedSurface
+                                            : metadataNavigationButton.hovered
+                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
+                                                : "transparent"
+                                        border.width: metadataNavigationButton.highlighted ? 1 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.fillHeight: true
+                                            radius: 2
+                                            color: metadataNavigationButton.highlighted
+                                                ? theme.accent : "transparent"
+                                        }
+                                        Image {
+                                            source: "qrc:/icons/metadata.svg"
+                                            sourceSize.width: 20
+                                            sourceSize.height: 20
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            opacity: metadataNavigationButton.highlighted ? 1.0 : 0.78
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Metadata"
+                                            color: metadataNavigationButton.highlighted
+                                                ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 14 * theme.fontScale
+                                            font.bold: metadataNavigationButton.highlighted
+                                        }
+                                    }
+                                }
+                                Button {
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
                                     id: applicationNavigationButton
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 52
@@ -3083,12 +3129,18 @@ ApplicationWindow {
                             border.color: theme.divider
                             clip: true
 
-                            ColumnLayout {
+                            ScrollView {
                                 id: appearanceContent
                                 anchors.fill: parent
                                 anchors.margins: 30
-                                spacing: 16
+                                clip: true
                                 visible: settingsPage.section === "Appearance"
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                                ColumnLayout {
+                                    width: parent.width
+                                    spacing: 16
+                                spacing: 16
                                 onVisibleChanged: console.info(
                                     "[Settings QML] Appearance content visibility:", visible,
                                     "section:", settingsPage.section,
@@ -3317,6 +3369,8 @@ ApplicationWindow {
                                     color: theme.textMuted
                                     font.pixelSize: 11 * theme.fontScale
                                     wrapMode: Text.Wrap
+                                }
+                            
                                 }
                             }
 
@@ -3687,7 +3741,7 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Retry metadata lookups for games that are still unmatched, and retry cover artwork downloads when a match is already saved. Successfully matched metadata is kept and is not searched again."
+                                        text: "Retry lookups for unmatched games using your enabled metadata providers. Existing matches are preserved, and previously checked games are not repeatedly queried during automatic scans."
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
@@ -3731,18 +3785,23 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Place game files inside their matching platform folders. Automatic live folder monitoring will be added separately."
+                                        text: "Place game files inside their matching platform folders. RecompStation monitors these folders and updates your library when games are added or removed."
                                         color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                 }
                             }
 
-                            ColumnLayout {
+                            ScrollView {
                                 anchors.fill: parent
                                 anchors.margins: 30
-                                spacing: 16
+                                clip: true
                                 visible: settingsPage.section === "Application"
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
+                                ColumnLayout {
+                                    width: parent.width
+                                    spacing: 16
+                                spacing: 16
                                 Label {
                                     text: "Application"
                                     color: theme.textPrimary
@@ -3804,6 +3863,152 @@ ApplicationWindow {
                                     text: "RecompStation  •  Version 0.1.0"
                                     color: theme.textMuted
                                     font.pixelSize: 11 * theme.fontScale
+                                }
+                            
+                                }
+                            }
+
+                            ScrollView {
+                                anchors.fill: parent
+                                anchors.margins: 30
+                                clip: true
+                                visible: settingsPage.section === "Metadata"
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                                ColumnLayout {
+                                    width: parent.width
+                                    spacing: 18
+
+                                    Label {
+                                        text: "Metadata"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 27 * theme.fontScale
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Choose which services RecompStation can use to identify games and retrieve metadata."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 13 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+
+                                    Label {
+                                        text: "AVAILABLE PROVIDERS"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: theGamesDbProviderColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: settingsManager.theGamesDbEnabled ? theme.accent : theme.divider
+                                        ColumnLayout {
+                                            id: theGamesDbProviderColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 8
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                CheckBox {
+                                                    text: "TheGamesDB"
+                                                    checked: settingsManager.theGamesDbEnabled
+                                                    onToggled: settingsManager.setTheGamesDbEnabled(checked)
+                                                }
+                                                Item { Layout.fillWidth: true }
+                                                Label {
+                                                    text: metadataManager.configured ? "Configured" : "API key required"
+                                                    color: metadataManager.configured ? "#48C78E" : theme.textMuted
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Game search, platform information, descriptions, ratings, and cover artwork. Uses the locally configured TheGamesDB API key."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
+
+                                    Label {
+                                        text: "PLANNED PROVIDERS"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: plannedProvidersColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: theme.divider
+                                        ColumnLayout {
+                                            id: plannedProvidersColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 12
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                CheckBox { text: "ScreenScraper"; enabled: false; checked: false }
+                                                Item { Layout.fillWidth: true }
+                                                Label { text: "Not integrated"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "ROM-focused identification using file hashes, with extensive game information and media."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                CheckBox { text: "Hasheous"; enabled: false; checked: false }
+                                                Item { Layout.fillWidth: true }
+                                                Label { text: "Under evaluation"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Potential hash-based identification and metadata enrichment provider."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                CheckBox { text: "IGDB"; enabled: false; checked: false }
+                                                Item { Layout.fillWidth: true }
+                                                Label { text: "Under evaluation"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Potential source for supplementary game descriptions, genres, and release information."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Only integrated providers can be enabled. Additional providers, provider priority, fallback behavior, and separate artwork sources will become configurable as integrations are added."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
                                 }
                             }
 
