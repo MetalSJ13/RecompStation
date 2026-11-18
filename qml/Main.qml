@@ -3856,11 +3856,13 @@ ApplicationWindow {
                                             spacing: 14
 
                                             Image {
-                                                source: "qrc:/icons/gamepad.svg"
-                                                sourceSize.width: 42
-                                                sourceSize.height: 34
-                                                Layout.preferredWidth: 42
-                                                Layout.preferredHeight: 34
+                                                source: "qrc:/qt/qml/RecompStation/assets/images/recompstation-controller.png"
+                                                sourceSize: Qt.size(384, 256)
+                                                fillMode: Image.PreserveAspectFit
+                                                Layout.preferredWidth: 52
+                                                Layout.preferredHeight: 36
+                                                smooth: true
+                                                mipmap: true
                                             }
                                             ColumnLayout {
                                                 Layout.fillWidth: true
@@ -4045,12 +4047,13 @@ ApplicationWindow {
                 RowLayout {
                     spacing: 10
                     Image {
-                        source: "qrc:/icons/gamepad.svg"
-                        sourceSize.width: 36
-                        sourceSize.height: 30
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 30
+                        source: "qrc:/qt/qml/RecompStation/assets/images/recompstation-controller.png"
+                        sourceSize: Qt.size(384, 256)
+                        fillMode: Image.PreserveAspectFit
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 28
                         smooth: true
+                        mipmap: true
                     }
                     Label {
                         text: "RecompStation"
