@@ -65,7 +65,7 @@ Mouse and keyboard remain supported. Controller support will include Xbox and Pl
 
 ## Metadata automation direction
 
-Metadata is a background library service, not a user-facing manual chore. Manual scanning/scraping and automatic folder monitoring should share one discovery/matching pipeline:
+Metadata is a background library service, not a user-facing manual chore. Manual scanning/scraping and automatic folder monitoring should share one discovery/matching pipeline. N64 hash groundwork is now present in `N64RomHash`: detect ROM byte order from magic, canonicalize to big-endian, and calculate MD5/CRC32. TheGamesDB `Games/ByGameHash` request integration remains the next step; hash results must be verified against known-good ROMs before they can override conservative title matching:
 - Discover a ROM and platform.
 - Search the provider using title and platform context.
 - Automatically associate only sufficiently confident matches.
