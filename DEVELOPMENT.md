@@ -98,15 +98,19 @@ These confirmations cover the specific interactions the user tested; they do not
 
 ## Ordered development roadmap
 
-### Milestone 1: Product experience and design foundation — current
+### Milestone 1: Product experience and design foundation — complete (design specification and code audit, 2026-11-18)
 
 - [x] Agree on the product direction: immersive personal game collection, not a storefront or clone of another launcher
 - [x] Establish the two primary destinations: Game Library and Settings
 - [x] Define metadata as an automated library service rather than a standalone search/association workflow
 - [x] Define dark visual language, curated themes, and fullscreen-first behavior
-- [ ] Audit all existing pages, dialogs, and interactions against `docs/UI_DESIGN.md`
+- [x] Audit the current primary pages, dialogs, overlays, and interactions against `docs/UI_DESIGN.md`; record aligned areas, legacy cleanup, and deferred validation.
 - [x] Bundle reusable SVG icon assets for navigation and common actions; define shared icon sizing (local validation pending)
-- [ ] Define page hierarchy, selection/focus behavior, and display-mode behavior
+- [x] Define the application/page hierarchy, Library and Settings navigation, Game Details overlay behavior, and contextual launcher/metadata workflows.
+- [x] Define the selection-versus-focus model and keyboard/controller navigation expectations for Library, Settings, nested popups, and Escape handling.
+- [x] Define display behavior accurately: Windowed, Maximized, and Fullscreen; preserve prior mode on F11; compositor owns monitor placement/resolution; borderless and explicit monitor selection remain deferred.
+
+**Milestone 1 exit note:** The design direction, hierarchy, interaction model, and current implementation audit are now documented in `docs/UI_DESIGN.md`. This closes the Milestone 1 planning/specification work. It does not mark later implementation/validation items complete: full accessibility/controller-only testing, legacy unreachable QML cleanup, additional display modes, and broader library states remain tracked in their respective milestones.
 
 ### Milestone 2: Application shell and navigation
 
