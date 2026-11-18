@@ -458,8 +458,9 @@ ApplicationWindow {
     property string librarySearchText: ""
     property var selectedGame: null
     property int libraryRevision: 0
-    // Incremented only when returning to Grid View, triggering the card reveal.
+    // Triggers the card reveal on first library load and when returning to Grid View.
     property int gridRevealToken: 0
+    property bool initialGridRevealPending: true
 
     Connections {
         target: settingsManager
@@ -2145,6 +2146,17 @@ ApplicationWindow {
                             GridView {
                             id: gameGrid
                             anchors.fill: parent
+                            onCountChanged: {
+                                if (count > 0 && window.initialGridRevealPending) {
+                                    window.initialGridRevealPending = false
+                                    if (settingsManager.libraryView === "grid") {
+                                        Qt.callLater(function() {
+                                            if (settingsManager.libraryView === "grid")
+                                                window.gridRevealToken += 1
+                                        })
+                                    }
+                                }
+                            }
                             visible: settingsManager.libraryView === "grid" || opacity > 0
                             opacity: settingsManager.libraryView === "grid" ? 1 : 0
                             Behavior on opacity {
@@ -2185,13 +2197,25 @@ ApplicationWindow {
                                 property int gameId: id
                                 property real revealOpacity: 1
                                 property real revealScale: 1
+                                property real revealOffsetY: 0
+                                readonly property int revealRow:
+                                    Math.floor(gameTile.index / Math.max(1, gameGrid.preferredColumns))
+                                readonly property int revealColumn:
+                                    gameTile.index % Math.max(1, gameGrid.preferredColumns)
+                                readonly property int revealRowCount:
+                                    Math.ceil(gameGrid.count / Math.max(1, gameGrid.preferredColumns))
                                 opacity: revealOpacity
-                                transform: Scale {
-                                    origin.x: gameTile.width / 2
-                                    origin.y: gameTile.height / 2
-                                    xScale: gameTile.revealScale
-                                    yScale: gameTile.revealScale
-                                }
+                                transform: [
+                                    Scale {
+                                        origin.x: gameTile.width / 2
+                                        origin.y: gameTile.height / 2
+                                        xScale: gameTile.revealScale
+                                        yScale: gameTile.revealScale
+                                    },
+                                    Translate {
+                                        y: gameTile.revealOffsetY
+                                    }
+                                ]
 
                                 Connections {
                                     target: window
@@ -2201,10 +2225,12 @@ ApplicationWindow {
                                         if (settingsManager.reducedMotion) {
                                             gameTile.revealOpacity = 1
                                             gameTile.revealScale = 1
+                                            gameTile.revealOffsetY = 0
                                             return
                                         }
                                         gameTile.revealOpacity = 0
-                                        gameTile.revealScale = 0.92
+                                        gameTile.revealScale = 0.94
+                                        gameTile.revealOffsetY = 26
                                         revealAnimation.restart()
                                     }
                                 }
@@ -2212,21 +2238,31 @@ ApplicationWindow {
                                 SequentialAnimation {
                                     id: revealAnimation
                                     PauseAnimation {
-                                        duration: Math.min(gameTile.index, 8) * 35
+                                        // Reveal the bottom row first, then work upward.
+                                        // Cards within each row follow from left to right.
+                                        duration: Math.max(0, gameTile.revealRowCount - 1 - gameTile.revealRow) * 125
+                                            + gameTile.revealColumn * 32
                                     }
                                     ParallelAnimation {
                                         NumberAnimation {
                                             target: gameTile
                                             property: "revealOpacity"
                                             to: 1
-                                            duration: 240
+                                            duration: 460
                                             easing.type: Easing.OutCubic
                                         }
                                         NumberAnimation {
                                             target: gameTile
                                             property: "revealScale"
                                             to: 1
-                                            duration: 300
+                                            duration: 520
+                                            easing.type: Easing.OutCubic
+                                        }
+                                        NumberAnimation {
+                                            target: gameTile
+                                            property: "revealOffsetY"
+                                            to: 0
+                                            duration: 520
                                             easing.type: Easing.OutCubic
                                         }
                                     }
