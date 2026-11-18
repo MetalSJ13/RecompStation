@@ -30,7 +30,8 @@ Platform folders are derived from the platforms represented in the curated recom
 
 Implemented capabilities include:
 - One configurable library root, catalog-derived platform subfolders, first-run setup, and recursive game scanning
-- Persistent startup library scan preference and initial recursive filesystem monitoring with debounced automatic reconciliation (local build/runtime validation pending)
+- Persistent startup library scan preference and recursive filesystem monitoring with debounced automatic reconciliation
+- Automatic metadata matching after library scans, with persistent lookup outcomes, explicit retry support, and stale failed-lookup reset when an unassociated ROM reappears (latest changes await local build/runtime verification)
 - SQLite game-library records
 - TheGamesDB asynchronous search and runtime platform mapping
 - Metadata association to local ROM records
