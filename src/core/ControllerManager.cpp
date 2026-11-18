@@ -78,6 +78,11 @@ void ControllerManager::setSettingsManager(SettingsManager *settingsManager)
     loadControllerProfile();
 }
 
+void ControllerManager::reloadControllerProfile()
+{
+    loadControllerProfile();
+}
+
 void ControllerManager::loadControllerProfile()
 {
     m_controllerProfile = (m_settingsManager && !m_controllerGuid.isEmpty())
