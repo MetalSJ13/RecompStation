@@ -138,6 +138,27 @@ ApplicationWindow {
         return true
     }
 
+    function isDescendantOf(item, ancestor) {
+        let current = item
+        while (current) {
+            if (current === ancestor)
+                return true
+            current = current.parent
+        }
+        return false
+    }
+
+    function settingsNavigationButtonForSection(section) {
+        switch (section) {
+        case "Display": return displayNavigationButton
+        case "Library": return libraryNavigationButton
+        case "Metadata": return metadataNavigationButton
+        case "Controller": return controllerNavigationButton
+        case "Application": return applicationNavigationButton
+        default: return appearanceNavigationButton
+        }
+    }
+
     function controllerNavigate(direction) {
         if (systemMenuVisible) {
             window.moveDirectionalFocus(systemMenuPanel, direction)
@@ -187,13 +208,42 @@ ApplicationWindow {
             gameGrid.positionViewAtIndex(next, GridView.Contain)
             gameGrid.forceActiveFocus()
         } else if (currentPage === "Settings") {
-            if (!moveDirectionalFocus(settingsPage, direction)) {
-                const sections = ["Appearance", "Display", "Library", "Metadata", "Controller", "Application"]
+            const sections = ["Appearance", "Display", "Library", "Metadata", "Controller", "Application"]
+            const focused = window.activeFocusItem
+            const inNavigation = window.isDescendantOf(focused, settingsNavigationPanel)
+            const inContent = window.isDescendantOf(focused, settingsContentCard)
+
+            // The category rail and the active settings page are separate
+            // focus zones. Up/down changes categories only while the rail
+            // owns focus; left returns from page controls to the rail.
+            if (inNavigation) {
                 let index = sections.indexOf(settingsPage.section)
-                if (direction === "up") index = Math.max(0, index - 1)
-                if (direction === "down") index = Math.min(sections.length - 1, index + 1)
-                settingsPage.section = sections[index]
+                if (direction === "up" || direction === "down") {
+                    index = Math.max(0, Math.min(sections.length - 1,
+                        index + (direction === "up" ? -1 : 1)))
+                    settingsPage.section = sections[index]
+                    Qt.callLater(function() {
+                        window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
+                    })
+                } else if (direction === "right") {
+                    const candidates = []
+                    window.collectFocusableItems(settingsContentCard, candidates, [])
+                    if (candidates.length > 0)
+                        candidates[0].forceActiveFocus()
+                }
+                return
             }
+
+            if (inContent) {
+                if (direction === "left") {
+                    window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
+                    return
+                }
+                window.moveDirectionalFocus(settingsContentCard, direction)
+                return
+            }
+
+            window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
         }
     }
 
@@ -3178,6 +3228,8 @@ ApplicationWindow {
                                     delegate: Button {
                                         id: themePresetButton
                                         required property var modelData
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 76
                                         padding: 0
@@ -3274,6 +3326,7 @@ ApplicationWindow {
                                         font.pixelSize: 11 * theme.fontScale
                                     }
                                     Button {
+                                        id: applyThemeButton
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 180
@@ -3281,6 +3334,28 @@ ApplicationWindow {
                                         text: "Apply Theme"
                                         enabled: pendingThemeName !== settingsManager.themeName
                                         highlighted: enabled
+                                        background: Rectangle {
+                                            radius: theme.radiusCard
+                                            color: !applyThemeButton.enabled
+                                                ? theme.sidebarBackground
+                                                : applyThemeButton.activeFocus
+                                                    ? theme.elevatedSurface
+                                                    : applyThemeButton.hovered
+                                                        ? Qt.lighter(theme.accent, 1.08)
+                                                        : theme.accent
+                                            border.width: applyThemeButton.activeFocus ? 3 : 1
+                                            border.color: applyThemeButton.activeFocus
+                                                ? theme.textPrimary : theme.accent
+                                        }
+                                        contentItem: Label {
+                                            text: applyThemeButton.text
+                                            color: applyThemeButton.enabled
+                                                ? theme.windowBackground : theme.textMuted
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.weight: Font.DemiBold
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
                                         onClicked: settingsManager.themeName = pendingThemeName
                                     }
                                 }
