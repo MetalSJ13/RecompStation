@@ -4,7 +4,9 @@ This document is the authoritative development status and implementation order f
 
 ## Project status
 
-**Current implementation focus:** The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is being connected to the existing library scan flow. The first pass uses conservative exact-title matching within the mapped platform, records completed lookups to avoid repeated provider requests, and downloads artwork for accepted matches. This work still requires a local build and regression-test verification.
+**Current implementation focus:** The Settings navigation has been widened and given category-specific SVG icons; Appearance, Display, Library, Controller, and Application categories are now represented. The new Controller overview reports connected/disconnected state, controller name/type, and whether controller support is available. Per-device profiles and button remapping remain planned, not implemented. This UI change is awaiting local build and runtime verification.
+
+ The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is being connected to the existing library scan flow. The first pass uses conservative exact-title matching within the mapped platform, records completed lookups to avoid repeated provider requests, and downloads artwork for accepted matches. This work still requires a local build and regression-test verification.
 
 **Current development branch:** `ui/interface-redesign`  
 **Base:** The existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.  
