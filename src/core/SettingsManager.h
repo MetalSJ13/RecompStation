@@ -14,6 +14,10 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString restoreDisplayMode READ restoreDisplayMode WRITE setRestoreDisplayMode NOTIFY restoreDisplayModeChanged)
     Q_PROPERTY(QString fontSize READ fontSize WRITE setFontSize NOTIFY fontSizeChanged)
     Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
+    Q_PROPERTY(QString libraryView READ libraryView WRITE setLibraryView NOTIFY libraryViewChanged)
+    Q_PROPERTY(QString libraryDensity READ libraryDensity WRITE setLibraryDensity NOTIFY libraryDensityChanged)
+    Q_PROPERTY(QString libraryBackgroundType READ libraryBackgroundType WRITE setLibraryBackgroundType NOTIFY libraryBackgroundTypeChanged)
+    Q_PROPERTY(QString customLibraryBackground READ customLibraryBackground WRITE setCustomLibraryBackground NOTIFY customLibraryBackgroundChanged)
 
 public:
     explicit SettingsManager(QObject *parent = nullptr);
@@ -40,6 +44,15 @@ public:
     bool reducedMotion() const;
     Q_INVOKABLE void setReducedMotion(bool enabled);
 
+    QString libraryView() const;
+    Q_INVOKABLE void setLibraryView(const QString &view);
+    QString libraryDensity() const;
+    Q_INVOKABLE void setLibraryDensity(const QString &density);
+    QString libraryBackgroundType() const;
+    Q_INVOKABLE void setLibraryBackgroundType(const QString &type);
+    QString customLibraryBackground() const;
+    Q_INVOKABLE void setCustomLibraryBackground(const QString &path);
+
 signals:
     void themeNameChanged();
     void scanOnStartupChanged();
@@ -48,6 +61,10 @@ signals:
     void restoreDisplayModeChanged();
     void fontSizeChanged();
     void reducedMotionChanged();
+    void libraryViewChanged();
+    void libraryDensityChanged();
+    void libraryBackgroundTypeChanged();
+    void customLibraryBackgroundChanged();
 
 private:
     QString m_settingsFilePath;
@@ -57,9 +74,16 @@ private:
     QString m_restoreDisplayMode = QStringLiteral("windowed");
     QString m_fontSize = QStringLiteral("medium");
     bool m_reducedMotion = false;
+    QString m_libraryView = QStringLiteral("grid");
+    QString m_libraryDensity = QStringLiteral("comfortable");
+    QString m_libraryBackgroundType = QStringLiteral("static");
+    QString m_customLibraryBackground;
     bool m_scanOnStartup = true;
     static bool isSupportedTheme(const QString &themeName);
     static bool isSupportedPresentationSize(const QString &size);
     static bool isSupportedDisplayMode(const QString &mode);
     static bool isSupportedFontSize(const QString &size);
+    static bool isSupportedLibraryView(const QString &view);
+    static bool isSupportedLibraryDensity(const QString &density);
+    static bool isSupportedLibraryBackgroundType(const QString &type);
 };
