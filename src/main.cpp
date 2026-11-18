@@ -22,6 +22,11 @@
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    // Keep the launcher terminal attached to the GUI process and make the
+    // expected desktop-window close behavior explicit.
+    QGuiApplication::setQuitOnLastWindowClosed(true);
+    QObject::connect(&app, &QGuiApplication::lastWindowClosed,
+                     &app, &QCoreApplication::quit);
     QGuiApplication::setOrganizationName("RecompStation");
     QGuiApplication::setApplicationName("RecompStation");
     QGuiApplication::setApplicationVersion("0.1.0");
