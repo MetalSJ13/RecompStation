@@ -119,8 +119,8 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Add a dedicated Back to Library control to immersive game details; Escape also closes the details view (local validation pending)
 - [ ] Remove Metadata Search and Platforms as top-level navigation destinations
 - [x] Keep platform selection/filtering inside the Game Library; combine it with title search
-- [x] Add live game-title search in the Library; search respects the selected platform and shows a no-results state
-- [x] Consolidate Grid/List and grid-density controls in the Library header; remove duplicate presentation controls from Settings → Library
+- [x] Add live game-title search in the Library; search respects the selected platform and shows a no-results state (local validation pending)
+- [x] Consolidate Grid/List and grid-density controls in the Library header; remove duplicate presentation controls from Settings → Library (local validation pending)
 - [ ] Rehome launcher discovery and management contextually without removing existing capabilities
 - [ ] Establish shared page headers, actions, spacing, scroll behavior, and focus styling
 - [ ] Keep existing pages and backend connections functional during the transition
