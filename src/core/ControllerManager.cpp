@@ -83,6 +83,50 @@ void ControllerManager::reloadControllerProfile()
     loadControllerProfile();
 }
 
+bool ControllerManager::mappingCaptureActive() const
+{
+    return m_mappingCaptureActive;
+}
+
+QString ControllerManager::mappingCaptureAction() const
+{
+    return m_mappingCaptureAction;
+}
+
+bool ControllerManager::startMappingCapture(const QString &action)
+{
+    static const QStringList actions = {
+        QStringLiteral("navigateUp"), QStringLiteral("navigateDown"),
+        QStringLiteral("navigateLeft"), QStringLiteral("navigateRight"),
+        QStringLiteral("select"), QStringLiteral("back"), QStringLiteral("menu"),
+        QStringLiteral("previousSection"), QStringLiteral("nextSection")
+    };
+    if (!m_connected || !m_settingsManager || !actions.contains(action))
+        return false;
+
+    m_mappingCaptureAction = action;
+    m_mappingCaptureActive = true;
+    m_captureAwaitingRelease = true;
+    m_previousActiveInputs.clear();
+    emit mappingCaptureStateChanged();
+    qCInfo(lcApplication) << "Started controller mapping capture for action:" << action;
+    return true;
+}
+
+void ControllerManager::cancelMappingCapture()
+{
+    if (!m_mappingCaptureActive)
+        return;
+
+    qCInfo(lcApplication) << "Cancelled controller mapping capture for action:"
+                          << m_mappingCaptureAction;
+    m_mappingCaptureActive = false;
+    m_captureAwaitingRelease = false;
+    m_mappingCaptureAction.clear();
+    m_previousActiveInputs.clear();
+    emit mappingCaptureStateChanged();
+}
+
 void ControllerManager::loadControllerProfile()
 {
     m_controllerProfile = (m_settingsManager && !m_controllerGuid.isEmpty())
@@ -175,6 +219,8 @@ void ControllerManager::pollController()
     }
 
     if (!m_controller) {
+        if (m_mappingCaptureActive)
+            cancelMappingCapture();
         m_inputRouter.processFrame({}, false, false, false, false, false,
                                    m_elapsedTimer.elapsed());
         return;
@@ -216,6 +262,40 @@ void ControllerManager::pollController()
         ControllerInputRouter::directionFromAxes(leftX, leftY);
     if (!leftStickDirection.isEmpty())
         activeInputs.append(QStringLiteral("leftstick-") + leftStickDirection);
+
+    if (m_mappingCaptureActive) {
+        if (m_captureAwaitingRelease) {
+            if (activeInputs.isEmpty())
+                m_captureAwaitingRelease = false;
+        } else {
+            for (const QString &input : activeInputs) {
+                if (!m_previousActiveInputs.contains(input)) {
+                    QVariantMap updatedProfile = m_controllerProfile;
+                    updatedProfile.insert(m_mappingCaptureAction, QVariantList{input});
+                    if (m_settingsManager->saveControllerProfile(m_controllerGuid, updatedProfile)) {
+                        const QString capturedAction = m_mappingCaptureAction;
+                        m_mappingCaptureActive = false;
+                        m_captureAwaitingRelease = false;
+                        m_mappingCaptureAction.clear();
+                        m_previousActiveInputs.clear();
+                        loadControllerProfile();
+                        emit mappingCaptureStateChanged();
+                        emit mappingCaptured(capturedAction, input);
+                        qCInfo(lcApplication) << "Saved controller mapping:"
+                                               << capturedAction << "->" << input;
+                    } else {
+                        cancelMappingCapture();
+                    }
+                    break;
+                }
+            }
+        }
+        m_previousActiveInputs = activeInputs;
+        m_inputRouter.processFrame({}, false, false, false, false, false,
+                                   m_elapsedTimer.elapsed());
+        return;
+    }
+    m_previousActiveInputs = activeInputs;
 
     const QString direction = ControllerInputRouter::directionFromProfile(
         m_controllerProfile, activeInputs);
