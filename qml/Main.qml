@@ -458,6 +458,16 @@ ApplicationWindow {
     property string librarySearchText: ""
     property var selectedGame: null
     property int libraryRevision: 0
+    // Incremented only when returning to Grid View, triggering the card reveal.
+    property int gridRevealToken: 0
+
+    Connections {
+        target: settingsManager
+        function onLibraryViewChanged() {
+            if (settingsManager.libraryView === "grid")
+                window.gridRevealToken += 1
+        }
+    }
     property int launcherRevision: 0
     property string pendingUninstallProjectId: ""
     property int selectedMetadataPlatformId: 0
@@ -2173,6 +2183,55 @@ ApplicationWindow {
                                 required property int id
                                 required property int index
                                 property int gameId: id
+                                property real revealOpacity: 1
+                                property real revealScale: 1
+                                opacity: revealOpacity
+                                transform: Scale {
+                                    origin.x: gameTile.width / 2
+                                    origin.y: gameTile.height / 2
+                                    xScale: gameTile.revealScale
+                                    yScale: gameTile.revealScale
+                                }
+
+                                Connections {
+                                    target: window
+                                    function onGridRevealTokenChanged() {
+                                        if (settingsManager.libraryView !== "grid")
+                                            return
+                                        if (settingsManager.reducedMotion) {
+                                            gameTile.revealOpacity = 1
+                                            gameTile.revealScale = 1
+                                            return
+                                        }
+                                        gameTile.revealOpacity = 0
+                                        gameTile.revealScale = 0.92
+                                        revealAnimation.restart()
+                                    }
+                                }
+
+                                SequentialAnimation {
+                                    id: revealAnimation
+                                    PauseAnimation {
+                                        duration: Math.min(gameTile.index, 8) * 35
+                                    }
+                                    ParallelAnimation {
+                                        NumberAnimation {
+                                            target: gameTile
+                                            property: "revealOpacity"
+                                            to: 1
+                                            duration: 240
+                                            easing.type: Easing.OutCubic
+                                        }
+                                        NumberAnimation {
+                                            target: gameTile
+                                            property: "revealScale"
+                                            to: 1
+                                            duration: 300
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
+                                }
+
                                 readonly property bool highlighted:
                                     tileMouse.containsMouse || gameTile.GridView.isCurrentItem
                                 function openDetails() {
