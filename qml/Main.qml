@@ -717,16 +717,6 @@ ApplicationWindow {
         pendingInstallRequests = pending
     }
 
-    function cancelAssetDownload(projectId, assetName) {
-        const key = projectId + "|" + assetName
-        for (const requestId in pendingDownloadRequests) {
-            if (pendingDownloadRequests[requestId] === key) {
-                launcherDownloadManager.cancelDownload(Number(requestId))
-                return
-            }
-        }
-    }
-
     function updateDownloadState(requestId, values) {
         const key = pendingDownloadRequests[requestId]
         if (!key)
@@ -1643,20 +1633,6 @@ ApplicationWindow {
                                         }
                                     }
 
-                                    Button {
-                                        visible: !!gameDetailsPopup.downloadState.loading
-                                        text: "Cancel Download"
-                                        icon.source: "qrc:/icons/close.svg"
-                                        icon.width: 16
-                                        icon.height: 16
-                                        icon.color: theme.textPrimary
-                                        implicitHeight: 48
-                                        Layout.minimumWidth: 150
-                                        Layout.preferredWidth: 150
-                                        onClicked: window.cancelAssetDownload(
-                                            gameDetailsPopup.primaryProject.id,
-                                            gameDetailsPopup.selectedAsset.name)
-                                    }
                                     Button {
                                         visible: gameDetailsPopup.installedProject !== null
                                         highlighted: true
