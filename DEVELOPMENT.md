@@ -12,6 +12,20 @@ This document is the authoritative development status and implementation order f
 
 Keep the application buildable after each focused change. Preserve working backend behavior while the user-facing workflows are redesigned.
 
+### Recently completed and user-verified UI work (2026-11-18)
+
+- The Library and Settings primary navigation has been simplified to compact icon-led controls; the user approved the current appearance.
+- The Game Library uses a curated artwork grid with configurable density and a restrained Grid/List choice, preserving the collection-first identity.
+- Library backgrounds support the coordinated static theme treatment, optional animated wave ambience, and custom still images. Custom images have been adjusted to scale more appropriately across the library.
+- The animated wave background is a lightweight QML effect. A more detailed pre-rendered 1080p/30fps ambient-video treatment was discussed and deliberately deferred until the final polish phase; it is not a current priority.
+- Game-card selection styling, artwork presentation, theme switching, and the adaptive navigation-hint panel have received iterative visual polish.
+- The navigation-hint panel now uses device-appropriate icons and labels for mouse, keyboard, and controller input.
+- Library keyboard navigation is confirmed working: arrow keys move through the grid, Enter/Return selects a game, and Escape returns from game details to the library.
+- Controller hot-plug detection is confirmed working when a controller is connected after the application starts. Controller navigation updates the active input hints when controller input is used.
+- The user approved the current Library/Settings button treatment and the icon-based navigation hints.
+
+These confirmations cover the specific interactions the user tested; they do not mean every screen, settings category, display configuration, or controller workflow has completed accessibility validation.
+
 ## Completed foundation
 
 - [x] C++20, CMake, Qt 6.5+, and QML application foundation
@@ -91,7 +105,7 @@ Keep the application buildable after each focused change. Preserve working backe
 
 - [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
 - [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying (local validation pending)
-- [ ] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior
+- [x] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior (initial lightweight wave ambience and image scaling implemented; further visual refinement remains)
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
 - [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
@@ -105,6 +119,7 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Milestone 6: Launcher experience
 
 - [ ] Present supported project discovery and installation contextually from game details
+- [ ] Derive and display one accurate Playable/Beta/Alpha status per game from curated project/launcher compatibility data (intentionally deferred until the core library experience is settled)
 - [ ] Refine release/asset selection and architecture compatibility explanations
 - [ ] Improve download progress, cancellation, extraction, installation, and failure feedback
 - [ ] Improve installed-launcher status and confirmation-protected uninstall
@@ -112,11 +127,16 @@ Keep the application buildable after each focused change. Preserve working backe
 
 ### Milestone 7: Input, accessibility, and regression pass
 
-- [ ] Ensure keyboard navigation and visible focus across all screens
-- [ ] Establish controller-friendly navigation, Xbox/PlayStation defaults, remapping, and launcher/game-session input ownership
+- [x] Add application-level arrow-key navigation for the Game Library Grid View and Enter/Return game selection
+- [x] Support Escape to return from immersive game details to the Game Library
+- [x] Add adaptive mouse, keyboard, and controller navigation hints with bundled icons
+- [x] Detect controllers connected after application startup; switch hints when controller input is used
+- [ ] Ensure keyboard navigation and visible focus across all screens (Library keyboard navigation works; Settings category focus/navigation remains deferred)
+- [ ] Establish controller-friendly navigation across all settings and dialogs
+- [ ] Implement per-controller button remapping profiles, keyed by stable controller hardware GUID; retain independent assignments and restore defaults per controller
+- [ ] Ensure Xbox/PlayStation defaults and launcher/game-session input ownership remain correct
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
 - [ ] Add lightweight navigation sounds with volume controls
-- [ ] Add optional animated backgrounds that pause while minimized or inactive, custom still-image background selection/preview, and smooth page/library transitions
 - [ ] Check fullscreen, windowed, and multi-display behavior
 - [ ] Run the full build and regression suite; manually exercise existing workflows
 - [ ] Fix regressions before considering the UI milestone complete
