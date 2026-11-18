@@ -33,6 +33,7 @@ Platforms are filters or navigation choices inside the Game Library, not a separ
    - Category navigation: Appearance, Display, Library, Metadata, Controller, Application.
    - Category selection changes the content panel without creating another primary destination.
    - Settings content is scrollable; category navigation and content controls have distinct focus ownership.
+   - All Settings categories share a 30 px content gutter, a consistent page-title/description/divider hierarchy, 16 px section spacing, and disabled horizontal scrolling; vertical scrolling appears only when content exceeds the viewport.
    - Back/Escape returns to the Library when no nested popup/dialog is active.
 
 The obsolete Metadata Search, Platforms, and standalone Launcher Discovery page implementations have been removed from the active QML page stack. Their underlying metadata, platform-filtering, and launcher backend services remain available through the Library, Settings, and Game Details workflows.
