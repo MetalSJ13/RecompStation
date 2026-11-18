@@ -1824,7 +1824,9 @@ ApplicationWindow {
                             cellWidth: Math.max(180, Math.min(480,
                                 Math.floor(width / Math.max(1, preferredColumns))))
                             cellHeight: Math.round(cellWidth * 1.35)
-                            keyNavigationEnabled: true
+                            // Window-level shortcuts own directional movement so
+                            // keyboard input cannot be processed twice by the view.
+                            keyNavigationEnabled: false
                             model: {
                                 window.libraryRevision
                                 const games = databaseManager.games(
@@ -2085,7 +2087,7 @@ ApplicationWindow {
                                         gameList.currentIndex = gameGrid.currentIndex
                                 }
                             }
-                            keyNavigationEnabled: true
+                            keyNavigationEnabled: false
                             delegate: Item {
                                 id: listTile
                                 required property string title
