@@ -99,6 +99,10 @@ void ControllerManager::setConnected(bool connected, const QString &name,
 void ControllerManager::pollController()
 {
 #ifdef RECOMPSTATION_HAS_SDL2
+    // Refresh SDL's device list before checking for newly attached or
+    // disconnected controllers. This keeps hot-plug detection reliable even
+    // when the application is otherwise processing no SDL window events.
+    SDL_PumpEvents();
     SDL_GameControllerUpdate();
 
     if (m_controller && !SDL_GameControllerGetAttached(m_controller)) {
