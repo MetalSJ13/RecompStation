@@ -120,7 +120,8 @@ These confirmations cover the specific interactions the user tested; they do not
 - [ ] Remove Metadata Search and Platforms as top-level navigation destinations
 - [x] Keep platform selection/filtering inside the Game Library; combine it with title search
 - [x] Add live game-title search in the Library; search respects the selected platform and shows a no-results state (local validation pending)
-- [x] Consolidate Grid/List and grid-density controls in the Library header; remove duplicate presentation controls from Settings → Library (local validation pending)
+- [x] Consolidate Grid/List and view-specific sizing controls in the Library header; persist Grid density and List row size independently (local validation pending)
+- [x] Constrain List View to approximately half the content width, preserving a large visible area for custom/animated backgrounds; add reduced-motion-aware selected/hover zoom (local validation pending)
 - [ ] Rehome launcher discovery and management contextually without removing existing capabilities
 - [ ] Establish shared page headers, actions, spacing, scroll behavior, and focus styling
 - [ ] Keep existing pages and backend connections functional during the transition
