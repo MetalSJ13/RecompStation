@@ -2126,12 +2126,21 @@ ApplicationWindow {
                             }
                         }
 
-                        GridView {
-                            id: gameGrid
-                            visible: settingsManager.libraryView === "grid"
+                        Item {
+                            id: libraryViewViewport
                             Layout.fillWidth: true
-                            Layout.fillHeight: gameGrid.count > 0 && settingsManager.libraryView === "grid"
-                            Layout.preferredHeight: gameGrid.count > 0 && settingsManager.libraryView === "grid" ? 760 : 0
+                            Layout.fillHeight: gameGrid.count > 0
+                            Layout.preferredHeight: gameGrid.count > 0 ? 760 : 0
+
+                            GridView {
+                            id: gameGrid
+                            anchors.fill: parent
+                            visible: settingsManager.libraryView === "grid" || opacity > 0
+                            opacity: settingsManager.libraryView === "grid" ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                            }
                             clip: true
                             readonly property int preferredColumns: settingsManager.libraryDensity === "compact" ? 10
                                 : settingsManager.libraryDensity === "spacious" ? 6 : 8
@@ -2380,14 +2389,16 @@ ApplicationWindow {
 
                         ListView {
                             id: gameList
-                            Layout.fillWidth: false
-                            Layout.alignment: Qt.AlignLeft
-                            Layout.preferredWidth: Math.min(parent.width,
+                            anchors.fill: parent
+                            LayoutMirroring.enabled: false
+                            width: Math.min(parent.width,
                                 Math.max(300, Math.min(parent.width * 0.52, 760)))
-                            Layout.maximumWidth: parent.width * 0.56
-                            Layout.fillHeight: settingsManager.libraryView === "list" && gameGrid.count > 0
-                            Layout.preferredHeight: settingsManager.libraryView === "list" && gameGrid.count > 0 ? 760 : 0
-                            visible: settingsManager.libraryView === "list"
+                            visible: settingsManager.libraryView === "list" || opacity > 0
+                            opacity: settingsManager.libraryView === "list" ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                            }
                             clip: true
                             // Leave room for the selected row's scale animation so its
                             // artwork and card edges are not clipped at the viewport.
@@ -2515,6 +2526,7 @@ ApplicationWindow {
                             ScrollBar.vertical: ScrollBar {
                                 policy: ScrollBar.AlwaysOff
                             }
+                        }
                         }
 
                         Rectangle {
