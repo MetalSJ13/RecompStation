@@ -2202,8 +2202,8 @@ ApplicationWindow {
                                     Math.floor(gameTile.index / Math.max(1, gameGrid.preferredColumns))
                                 readonly property int revealColumn:
                                     gameTile.index % Math.max(1, gameGrid.preferredColumns)
-                                readonly property int revealRowCount:
-                                    Math.ceil(gameGrid.count / Math.max(1, gameGrid.preferredColumns))
+                                readonly property int revealBottomVisibleRow:
+                                    Math.floor((gameGrid.contentY + gameGrid.height) / Math.max(1, gameGrid.cellHeight))
                                 opacity: revealOpacity
                                 transform: [
                                     Scale {
@@ -2240,8 +2240,8 @@ ApplicationWindow {
                                     PauseAnimation {
                                         // Reveal the bottom row first, then work upward.
                                         // Cards within each row follow from left to right.
-                                        duration: Math.max(0, gameTile.revealRowCount - 1 - gameTile.revealRow) * 125
-                                            + gameTile.revealColumn * 32
+                                        duration: Math.max(0, gameTile.revealBottomVisibleRow - gameTile.revealRow) * 115
+                                            + gameTile.revealColumn * 38
                                     }
                                     ParallelAnimation {
                                         NumberAnimation {
