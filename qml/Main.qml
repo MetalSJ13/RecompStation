@@ -3520,6 +3520,12 @@ ApplicationWindow {
                                         font.letterSpacing: 1
                                     }
                                     ComboBox {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         id: displayModeSelector
@@ -3564,6 +3570,12 @@ ApplicationWindow {
                                         font.letterSpacing: 1
                                     }
                                     ComboBox {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         id: presentationSizeSelector
@@ -3589,6 +3601,13 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Item { Layout.fillWidth: true }
                                         Button {
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 190
@@ -3647,6 +3666,12 @@ ApplicationWindow {
                                             Label { text: "Choose how your collection is presented."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 190
@@ -3667,6 +3692,12 @@ ApplicationWindow {
                                             Label { text: "Curated sizes adapt to your available screen width."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 190
@@ -3691,6 +3722,12 @@ ApplicationWindow {
                                             Label { text: "Keep the collection backdrop coordinated with your active theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 210
@@ -3715,6 +3752,12 @@ ApplicationWindow {
                                             Label { text: "Choose the ambient color independently of your application theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 210
@@ -3734,6 +3777,13 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         spacing: 10
                                         Button {
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             text: settingsManager.customLibraryBackground.length > 0
@@ -3741,6 +3791,13 @@ ApplicationWindow {
                                             onClicked: libraryBackgroundFileDialog.open()
                                         }
                                         Button {
+                                            background: Rectangle {
+                                                radius: 8
+                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                             visible: settingsManager.customLibraryBackground.length > 0
@@ -3795,6 +3852,13 @@ ApplicationWindow {
                                                 }
                                             }
                                             Switch {
+                                                background: Rectangle {
+                                                    radius: 8
+                                                    color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+                                                    border.color: parent.activeFocus ? theme.accent : "transparent"
+                                                    border.width: parent.activeFocus ? 2 : 0
+                                                    anchors.margins: -6
+                                                }
                                                 activeFocusOnTab: true
                                                 focusPolicy: Qt.StrongFocus
                                                 checked: settingsManager.scanOnStartup
@@ -3803,6 +3867,13 @@ ApplicationWindow {
                                         }
                                     }
                                     Button {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                : (parent.highlighted ? theme.accent : theme.surface)
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
@@ -3822,6 +3893,13 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                : (parent.highlighted ? theme.accent : theme.surface)
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
@@ -3845,6 +3923,13 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                : (parent.highlighted ? theme.accent : theme.surface)
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
@@ -4249,6 +4334,13 @@ ApplicationWindow {
                                                     }
                                                 }
                                                 Switch {
+                                                    background: Rectangle {
+                                                        radius: 8
+                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                        anchors.margins: -6
+                                                    }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                                     checked: controllerManager.inputEnabled
