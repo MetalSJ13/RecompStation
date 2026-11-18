@@ -25,6 +25,9 @@ ControllerManager::ControllerManager(QObject *parent)
             this, &ControllerManager::nextSectionRequested);
     connect(&m_inputRouter, &ControllerInputRouter::inputEnabledChanged,
             this, &ControllerManager::inputEnabledChanged);
+    m_mappingCaptureTimer.setSingleShot(true);
+    connect(&m_mappingCaptureTimer, &QTimer::timeout,
+            this, &ControllerManager::cancelMappingCapture);
 
 #ifdef RECOMPSTATION_HAS_SDL2
     if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
@@ -113,6 +116,7 @@ bool ControllerManager::startMappingCapture(const QString &action)
     m_mappingCaptureActive = true;
     m_captureAwaitingRelease = true;
     m_previousActiveInputs.clear();
+    m_mappingCaptureTimer.start(15000);
     emit mappingCaptureStateChanged();
     qCInfo(lcApplication) << "Started controller mapping capture for action:" << action;
     return true;
@@ -125,6 +129,7 @@ void ControllerManager::cancelMappingCapture()
 
     qCInfo(lcApplication) << "Cancelled controller mapping capture for action:"
                           << m_mappingCaptureAction;
+    m_mappingCaptureTimer.stop();
     m_mappingCaptureActive = false;
     m_captureAwaitingRelease = false;
     m_mappingCaptureAction.clear();
@@ -285,6 +290,7 @@ void ControllerManager::pollController()
                     updatedProfile.insert(m_mappingCaptureAction, bindings);
                     if (m_settingsManager->saveControllerProfile(m_controllerGuid, updatedProfile)) {
                         const QString capturedAction = m_mappingCaptureAction;
+                        m_mappingCaptureTimer.stop();
                         m_mappingCaptureActive = false;
                         m_captureAwaitingRelease = false;
                         m_mappingCaptureAction.clear();
