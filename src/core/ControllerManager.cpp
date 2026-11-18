@@ -271,7 +271,10 @@ void ControllerManager::pollController()
             for (const QString &input : activeInputs) {
                 if (!m_previousActiveInputs.contains(input)) {
                     QVariantMap updatedProfile = m_controllerProfile;
-                    updatedProfile.insert(m_mappingCaptureAction, QVariantList{input});
+                    QVariantList bindings = updatedProfile.value(m_mappingCaptureAction).toList();
+                    if (!bindings.contains(input))
+                        bindings.append(input);
+                    updatedProfile.insert(m_mappingCaptureAction, bindings);
                     if (m_settingsManager->saveControllerProfile(m_controllerGuid, updatedProfile)) {
                         const QString capturedAction = m_mappingCaptureAction;
                         m_mappingCaptureActive = false;
