@@ -62,6 +62,11 @@ int main(int argc, char *argv[])
     LibraryScanner libraryScanner(&platformManager, &databaseManager);
     TheGamesDbClient metadataProvider;
     MetadataManager metadataManager(&metadataProvider);
+    metadataManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
+    QObject::connect(&settingsManager, &SettingsManager::theGamesDbEnabledChanged,
+                     &metadataManager, [&settingsManager, &metadataManager]() {
+        metadataManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
+    });
     ArtworkManager artworkManager(&databaseManager,
                                   platformManager.dataDirectory() + "/artwork");
     ScreenshotManager screenshotManager(&databaseManager,
