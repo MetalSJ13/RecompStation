@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1408" viewBox="0 0 2200 1408">
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1769e8" stop-opacity=".08"/>
+      <stop offset=".34" stop-color="#43a5ff" stop-opacity=".72"/>
+      <stop offset=".68" stop-color="#75c5ff" stop-opacity=".58"/>
+      <stop offset="1" stop-color="#2467e9" stop-opacity=".08"/>
+    </linearGradient>
+    <linearGradient id="soft" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2c80ff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#61b8ff" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#2c80ff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <g fill="none" stroke-linecap="round">
+    <path d="M-80 390 C250 150 510 590 850 370 S1450 130 1800 390 S2180 600 2320 350" stroke="url(#blue)" stroke-width="5" opacity=".75" filter="url(#glow)"/>
+    <path d="M-80 390 C250 150 510 590 850 370 S1450 130 1800 390 S2180 600 2320 350" stroke="url(#blue)" stroke-width="2.2" opacity=".88"/>
+    <path d="M-80 520 C250 280 510 720 850 500 S1450 260 1800 520 S2180 730 2320 480" stroke="url(#soft)" stroke-width="18" opacity=".55"/>
+    <path d="M-80 700 C250 460 510 900 850 680 S1450 440 1800 700 S2180 910 2320 660" stroke="url(#blue)" stroke-width="3" opacity=".62"/>
+    <path d="M-80 850 C250 610 510 1050 850 830 S1450 590 1800 850 S2180 1060 2320 810" stroke="url(#soft)" stroke-width="26" opacity=".32"/>
+    <path d="M-80 1030 C250 790 510 1230 850 1010 S1450 770 1800 1030 S2180 1240 2320 990" stroke="url(#blue)" stroke-width="2.4" opacity=".54"/>
+    <path d="M-80 1160 C250 920 510 1360 850 1140 S1450 900 1800 1160 S2180 1370 2320 1120" stroke="url(#soft)" stroke-width="14" opacity=".28"/>
+  </g>
+</svg>
