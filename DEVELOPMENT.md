@@ -19,7 +19,8 @@ Keep the application buildable after each focused change. Preserve working backe
 - [x] Redesign the Controller settings page with separate device, controller-options, active-profile, and default-button-layout sections.
 - [x] Expose the existing controller-input enable/disable setting in the page.
 - [x] Document the actual current navigation bindings without presenting read-only mappings as editable.
-- [ ] Implement stable controller GUID detection, persistent per-device profiles, button capture/remapping, and per-device reset-to-default behavior.
+- [x] Expose stable SDL controller GUIDs and persist validated logical-action profiles independently per GUID.
+- [ ] Apply saved profile mappings in the input router; implement button capture/remapping and per-device reset controls.
 - [ ] Build and visually verify the revised Controller page with connected and disconnected controller states.
 
 ### Settings foundation update (2026-11-18)
@@ -157,7 +158,7 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Detect controllers connected after application startup; switch hints when controller input is used
 - [ ] Ensure keyboard navigation and visible focus across all screens (Library keyboard navigation works; Settings category focus/navigation remains deferred)
 - [ ] Establish controller-friendly navigation across all settings and dialogs
-- [ ] Implement per-controller button remapping profiles, keyed by stable controller hardware GUID; retain independent assignments and restore defaults per controller
+- [ ] Persist independent controller profiles keyed by stable SDL hardware GUID (backend foundation complete); apply assignments to the input router and implement interactive remapping/reset
 - [ ] Ensure Xbox/PlayStation defaults and launcher/game-session input ownership remain correct
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
 - [ ] Add lightweight navigation sounds with volume controls
