@@ -33,19 +33,26 @@ ApplicationWindow {
         return "Arrow Keys  Navigate     Enter  Select     Esc  Back     F11  Fullscreen"
     }
 
-    function collectFocusableItems(item, output) {
+    function collectFocusableItems(item, output, visited) {
         if (!item || item.visible === false || item.enabled === false)
             return
+        if (visited.indexOf(item) >= 0)
+            return
+        visited.push(item)
         if (item.activeFocusOnTab && item.width > 0 && item.height > 0)
             output.push(item)
         const children = item.children || []
         for (let i = 0; i < children.length; ++i)
-            collectFocusableItems(children[i], output)
+            collectFocusableItems(children[i], output, visited)
+        if (item.contentItem && item.contentItem !== item)
+            collectFocusableItems(item.contentItem, output, visited)
+        if (item.popup && item.popup.visible && item.popup.contentItem)
+            collectFocusableItems(item.popup.contentItem, output, visited)
     }
 
     function moveDirectionalFocus(container, direction) {
         const candidates = []
-        collectFocusableItems(container, candidates)
+        collectFocusableItems(container, candidates, [])
         const current = window.activeFocusItem
         if (!current || candidates.indexOf(current) < 0) {
             if (candidates.length > 0)
@@ -89,6 +96,17 @@ ApplicationWindow {
 
         if (systemMenuVisible) {
             window.moveDirectionalFocus(systemMenuPanel, direction)
+            return
+        }
+
+        if (currentPage === "Settings" && window.activeFocusItem
+                && window.activeFocusItem.popup
+                && window.activeFocusItem.popup.visible) {
+            const combo = window.activeFocusItem
+            if (direction === "up")
+                combo.currentIndex = Math.max(0, combo.currentIndex - 1)
+            else if (direction === "down")
+                combo.currentIndex = Math.min(combo.count - 1, combo.currentIndex + 1)
             return
         }
 
@@ -145,10 +163,16 @@ ApplicationWindow {
                 tile.openDetails()
         } else if (currentPage === "Settings") {
             const focused = window.activeFocusItem
-            if (focused && typeof focused.click === "function")
+            if (focused && focused.popup) {
+                if (focused.popup.visible)
+                    focused.popup.close()
+                else
+                    focused.popup.open()
+            } else if (focused && typeof focused.click === "function") {
                 focused.click()
-            else
+            } else {
                 moveDirectionalFocus(settingsPage, "down")
+            }
         }
     }
 
@@ -2592,8 +2616,10 @@ ApplicationWindow {
                                             radius: theme.radiusCard
                                             color: themePresetButton.hovered
                                                 ? theme.elevatedSurface : theme.sidebarBackground
-                                            border.width: pendingThemeName === modelData.id ? 2 : 1
-                                            border.color: pendingThemeName === modelData.id
+                                            border.width: themePresetButton.activeFocus ? 3
+                                                : pendingThemeName === modelData.id ? 2 : 1
+                                            border.color: themePresetButton.activeFocus
+                                                || pendingThemeName === modelData.id
                                                 ? theme.accent : theme.divider
                                         }
 
