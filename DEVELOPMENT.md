@@ -95,8 +95,8 @@ These confirmations cover the specific interactions the user tested; they do not
 ### Milestone 4: Automatic library and metadata maintenance
 
 - [ ] Use one shared discovery/matching pipeline for manual and automatic scans
-- [ ] Add filesystem monitoring for configured game folders, with debouncing and safe handling of bursts of changes
-- [ ] Detect additions, removals, and relevant changes without repeatedly registering duplicates
+- [x] Add recursive filesystem monitoring for configured platform folders, with a 750 ms debounce and automatic full-library reconciliation (implementation and regression tests committed; local build/runtime validation pending)
+- [x] Detect added and removed games, including newly created nested folders; preserve unavailable database records and avoid duplicate registration (local validation pending)
 - [ ] Automatically identify metadata using title and platform context (initial exact-title matcher implemented; validation pending)
 - [ ] Define and test conservative match-confidence rules; keep ambiguous matches unresolved
 - [ ] Cache metadata and artwork, avoid redundant API requests, and respect provider limits (persistent lookup-attempt tracking implemented; validation pending)
@@ -111,7 +111,7 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
 - [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
-- [ ] Add automatic filesystem monitoring for configured folders
+- [x] Add automatic filesystem monitoring for configured folders (initial implementation; local build/runtime validation pending)
 - [x] Add a separate gameplay screenshot refresh control for games with saved TheGamesDB associations; cache screenshots independently of cover art (local build/API validation pending)
 - [ ] Add metadata provider status, provider enablement, field selection, and cache/refresh controls
 - [ ] Add launcher installation/update preferences as supported
