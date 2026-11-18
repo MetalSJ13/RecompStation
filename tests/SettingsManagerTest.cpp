@@ -24,6 +24,8 @@ private slots:
     void persistsScanOnStartupPreference();
     void defaultsToTheGamesDbEnabled();
     void persistsTheGamesDbEnabledPreference();
+    void controllerProfilesDefaultPerGuidAndPersistIndependently();
+    void rejectsInvalidControllerProfiles();
     void persistsPreferencesInExplicitConfigFile();
     void rejectsUnsupportedTheme();
     void rejectsUnsupportedPresentationSize();
@@ -156,6 +158,62 @@ void SettingsManagerTest::persistsTheGamesDbEnabledPreference()
     reloaded.setTheGamesDbEnabled(true);
     QVERIFY(reloaded.theGamesDbEnabled());
     QCOMPARE(changed.count(), 1);
+}
+
+
+void SettingsManagerTest::controllerProfilesDefaultPerGuidAndPersistIndependently()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+    const QString xboxGuid = QStringLiteral("030000005e0400008e02000000000000");
+    const QString secondGuid = QStringLiteral("030000005e0400008e02000000000001");
+
+    SettingsManager manager(settingsPath);
+    const QVariantMap defaults = manager.controllerProfile(xboxGuid);
+    QVERIFY(!defaults.isEmpty());
+    QCOMPARE(defaults.value(QStringLiteral("select")).toList().first().toString(),
+             QStringLiteral("a"));
+
+    QVariantMap customized = defaults;
+    customized[QStringLiteral("select")] = QVariantList{QStringLiteral("x")};
+    QVERIFY(manager.saveControllerProfile(xboxGuid, customized));
+    QVERIFY(manager.controllerProfileIds().contains(xboxGuid));
+
+    const QVariantMap secondProfile = manager.controllerProfile(secondGuid);
+    QCOMPARE(secondProfile.value(QStringLiteral("select")).toList().first().toString(),
+             QStringLiteral("a"));
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.controllerProfile(xboxGuid).value(QStringLiteral("select")).toList().first().toString(),
+             QStringLiteral("x"));
+    QCOMPARE(reloaded.controllerProfile(secondGuid).value(QStringLiteral("select")).toList().first().toString(),
+             QStringLiteral("a"));
+
+    QVERIFY(reloaded.resetControllerProfile(xboxGuid));
+    QCOMPARE(reloaded.controllerProfile(xboxGuid).value(QStringLiteral("select")).toList().first().toString(),
+             QStringLiteral("a"));
+    QVERIFY(!reloaded.controllerProfileIds().contains(xboxGuid));
+    QVERIFY(reloaded.controllerProfileIds().contains(secondGuid));
+}
+
+void SettingsManagerTest::rejectsInvalidControllerProfiles()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QVERIFY(manager.controllerProfile(QStringLiteral("not-a-guid")).isEmpty());
+    QVERIFY(!manager.saveControllerProfile(QStringLiteral("not-a-guid"), {}));
+
+    const QString guid = QStringLiteral("030000005e0400008e02000000000000");
+    QVariantMap invalid = manager.controllerProfile(guid);
+    invalid[QStringLiteral("select")] = QVariantList{QStringLiteral("unknown-button")};
+    QVERIFY(!manager.saveControllerProfile(guid, invalid));
+    QVERIFY(!manager.saveControllerProfile(guid, {}));
 }
 
 void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
