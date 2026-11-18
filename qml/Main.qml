@@ -1618,9 +1618,10 @@ ApplicationWindow {
 
                 Image {
                     id: libraryWaveImage
-                    anchors.centerIn: parent
                     width: parent.width * 1.12
                     height: parent.height * 1.08
+                    x: (parent.width - width) / 2 - parent.width * 0.035
+                    y: (parent.height - height) / 2
                     source: "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
@@ -1629,20 +1630,21 @@ ApplicationWindow {
                     mipmap: true
                     opacity: 0.78
 
-                    SequentialAnimation on x {
+                    SequentialAnimation {
                         running: libraryWaveLayer.visible && !settingsManager.reducedMotion
                             && window.active && window.visibility !== Window.Minimized
                         loops: Animation.Infinite
-                        NumberAnimation { to: libraryWaveLayer.width * -0.035; duration: 26000; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: libraryWaveLayer.width * -0.065; duration: 26000; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: libraryWaveImage; property: "x"; to: (libraryWaveLayer.width - libraryWaveImage.width) / 2 - libraryWaveLayer.width * 0.065; duration: 26000; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: libraryWaveImage; property: "x"; to: (libraryWaveLayer.width - libraryWaveImage.width) / 2 - libraryWaveLayer.width * 0.035; duration: 26000; easing.type: Easing.InOutSine }
                     }
                 }
 
                 Image {
                     id: libraryWaveImageSecondary
-                    anchors.centerIn: parent
                     width: parent.width * 1.18
                     height: parent.height * 1.10
+                    x: (parent.width - width) / 2 - parent.width * 0.055
+                    y: (parent.height - height) / 2
                     source: "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
@@ -1652,12 +1654,12 @@ ApplicationWindow {
                     opacity: 0.24
                     rotation: 180
 
-                    SequentialAnimation on x {
+                    SequentialAnimation {
                         running: libraryWaveLayer.visible && !settingsManager.reducedMotion
                             && window.active && window.visibility !== Window.Minimized
                         loops: Animation.Infinite
-                        NumberAnimation { to: libraryWaveLayer.width * -0.055; duration: 34000; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: libraryWaveLayer.width * -0.025; duration: 34000; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: libraryWaveImageSecondary; property: "x"; to: (libraryWaveLayer.width - libraryWaveImageSecondary.width) / 2 - libraryWaveLayer.width * 0.025; duration: 34000; easing.type: Easing.InOutSine }
+                        NumberAnimation { target: libraryWaveImageSecondary; property: "x"; to: (libraryWaveLayer.width - libraryWaveImageSecondary.width) / 2 - libraryWaveLayer.width * 0.055; duration: 34000; easing.type: Easing.InOutSine }
                     }
                 }
             }
