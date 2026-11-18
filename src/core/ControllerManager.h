@@ -36,6 +36,7 @@ public:
 public slots:
     void setInputEnabled(bool enabled);
     void setSettingsManager(SettingsManager *settingsManager);
+    Q_INVOKABLE void reloadControllerProfile();
 
 signals:
     void connectedChanged();
