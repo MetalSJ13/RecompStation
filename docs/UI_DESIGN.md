@@ -11,9 +11,31 @@ The library is the center of the application. Users should spend their time brow
 The primary navigation contains only:
 
 - **Game Library** — the default landing view and main application experience.
-- **Settings** — appearance, display, library, metadata, launcher, and application configuration.
+- **Settings** — appearance, display, library, metadata, controller, and application configuration.
 
-Platforms are filters or navigation choices inside the Game Library, not a separate top-level destination. Metadata Search is removed as a standalone page. Launcher discovery and installation should be presented contextually from a game's details or supported-project state rather than requiring a separate management destination. Existing backend capabilities must remain available during the transition.
+Platforms are filters or navigation choices inside the Game Library, not a separate top-level destination. Metadata Search is not an active destination; metadata association and refresh belong to the library/game context. Launcher discovery, installation, launch, and uninstall are presented contextually from a game's details or supported-project state rather than requiring a separate management destination. Existing backend capabilities must remain available during the transition.
+
+### Page hierarchy and navigation model
+
+1. **Application shell**
+   - Persistent compact primary navigation: Game Library and Settings.
+   - A global system menu is an overlay for application-level actions such as fullscreen and quit; it is not a third content destination.
+2. **Game Library** (default)
+   - Collection header and platform filter.
+   - Curated Grid/List presentation; grid density is configured in Settings → Library.
+   - Game selection opens the immersive Game Details experience.
+3. **Game Details** (full-window modal experience over the Library)
+   - Back to Library is always visible.
+   - Escape closes Details and returns to the prior Library context.
+   - Present game metadata/artwork, platform, supported recompilation projects, release/install state, and relevant launch/install/uninstall actions together.
+   - Project selection and installation prompts remain inside this context.
+4. **Settings**
+   - Category navigation: Appearance, Display, Library, Metadata, Controller, Application.
+   - Category selection changes the content panel without creating another primary destination.
+   - Settings content is scrollable; category navigation and content controls have distinct focus ownership.
+   - Back/Escape returns to the Library when no nested popup/dialog is active.
+
+Legacy Metadata Search, Platforms, and Launchers page implementations may remain temporarily in the QML stack during migration, but must not be exposed as primary navigation destinations. Retire their unreachable presentation code only after confirming that no current action or backend workflow depends on it.
 
 ## Game Library
 
@@ -66,6 +88,11 @@ A user should not need to search a metadata database and manually associate ever
 - Motion should be smooth and purposeful: game details rise into view from below, followed by a slightly slower artwork and information dissolve. All motion respects Reduced Motion.
 - Use a consistent set of bundled SVG icon assets for primary navigation and common actions; avoid Unicode symbols as interface icons.
 - Visible focus states and predictable interaction feedback are essential.
+- Selection and focus are separate concepts: the selected game remains selected when pointer/controller focus moves elsewhere; focus indicates the next keyboard/controller action target.
+- The active primary destination and active Settings category must be visibly distinct from hover. Interactive controls must show a clear keyboard/controller focus treatment, not rely on color changes from hover alone.
+- In the Library, directional input moves between game tiles and preserves a sensible current selection when entering/leaving Details. Enter/Return opens the selected game; Escape closes Details. Mouse selection and activation remain available.
+- In Settings, Left/Right may move between category navigation and the content region; Up/Down move among controls in the active region. Popup controls (such as ComboBox menus) own focus while open; Escape closes the popup before leaving the current page.
+- Focus must remain visible at all supported window sizes and in both Grid and List modes. Reduced Motion removes/shortens transitions without changing navigation outcomes.
 - Avoid copying Steam Big Picture or other existing launcher/dashboard layouts. Use them only as broad evidence that controller-friendly, immersive browsing can be engaging.
 
 ## Themes and backgrounds
@@ -88,18 +115,23 @@ Do not begin with an overwhelming theme editor or dozens of arbitrary color cont
 - The current foundation detects the screen attached to the application window and offers preferred application window sizes, including common 16:9, 4:3, and ultrawide presets.
 - Preferred sizes are constrained to the available logical desktop area; the compositor remains responsible for window placement and may impose additional constraints, particularly on Wayland.
 - The default “Follow desktop” option leaves the current window size unchanged.
-- Fullscreen/windowed/borderless mode controls and explicit multi-monitor selection will be added only when they can be implemented reliably across supported compositors.
+- The implemented window modes are **Windowed**, **Maximized**, and **Fullscreen**. Fullscreen preserves the previous non-fullscreen mode so F11 can restore it.
+- The Display page may identify the screen associated with the application window and report its desktop/available dimensions. This is informational; it does not currently provide explicit monitor selection.
+- Do not describe Maximized as Borderless. Borderless-windowed mode and explicit multi-monitor selection remain deferred until they can be implemented and validated reliably across supported compositors.
+- Preferred application window sizes are separate from monitor resolution. Never expose a control that changes the monitor-wide mode.
 
 ## Settings organization
 
-Initial categories:
+Current categories:
 
 - **Appearance:** built-in theme, background treatment, accent preset, motion preferences.
-- **Display:** fullscreen/windowed/borderless mode, monitor selection, supported resolution.
-- **Library:** configurable per-platform game folders, startup scan preference, and a manual scan action. Automatic monitoring remains a future capability until implemented.
-- **Metadata:** provider configuration/status, cache management, refresh behavior.
-- **Launchers:** managed installation location, installed launcher management, update behavior as it becomes available.
-- **Application:** startup behavior, notifications, language where supported, diagnostics/logging.
+- **Display:** implemented Windowed/Maximized/Fullscreen modes, current-screen information, and preferred application window-size presets. Explicit monitor selection and borderless mode are deferred.
+- **Library:** configurable library/platform folders, startup scan preference, manual scan action, Grid/List preference, grid density, and library background selection.
+- **Metadata:** provider configuration/status and metadata refresh behavior. Additional providers, field selection, and independent artwork-source management remain future work.
+- **Controller:** connected-device status, controller-input enablement, active/default profile presentation, and navigation binding summary. Interactive remapping and per-device application remain future work.
+- **Application:** application-level preferences and diagnostics/logging where implemented.
+
+Launcher installation and management are contextual to Game Details rather than a Settings destination. A dedicated launcher Settings category may be added only when there are meaningful global launcher preferences to expose.
 
 Only expose settings that have real behavior. Avoid placeholder toggles.
 
@@ -115,3 +147,24 @@ Mouse and keyboard remain supported. Controller navigation will support Xbox and
 - Preserve existing scanner, metadata provider, artwork, project catalog, download/install, uninstall, and process-launch behavior.
 - Avoid mixing the visual redesign with a broad backend rewrite.
 - Add filesystem monitoring and automatic matching as explicit, testable capabilities; do not imply that current one-shot scanning already provides continuous monitoring.
+
+
+## Milestone 1 design audit (2026-11-18)
+
+The current implementation was reviewed against this specification. This is a design/structure audit, not a claim that every later milestone feature is complete.
+
+| Area | Current state | Audit outcome |
+|---|---|---|
+| Primary navigation | Library and Settings only | Aligned |
+| Platform navigation | Filter inside Library | Aligned |
+| Metadata Search | No longer a primary destination; legacy stack implementation remains | Aligned at UX level; legacy code cleanup deferred |
+| Launcher management | Available contextually from Game Details | Aligned |
+| Game Details | Full-window modal overlay with Back to Library and Escape | Aligned |
+| Settings hierarchy | Appearance, Display, Library, Metadata, Controller, Application | Aligned |
+| Focus model | Library grid/list navigation and Settings category/content focus handling; visible control focus styling | Implemented baseline; full accessibility/controller-only pass remains later work |
+| Dialogs and popups | First-run library setup, folder/background pickers, uninstall confirmation, project install prompt, ComboBox popups, and global system/quit overlay | Contextual overlays; must preserve parent context and close in Escape order |
+| Display modes | Windowed, Maximized, Fullscreen; F11 restores prior non-fullscreen mode | Documented accurately |
+| Monitor handling | Current screen is informational; no explicit monitor selector or monitor-mode changes | Safe compositor-respecting baseline; additional selection deferred |
+| Library presentation | Platform filter, Grid/List, configurable density and backgrounds | Core direction aligned; search/sorting and remaining library states tracked in later milestones |
+
+Audit follow-up: remove obsolete unreachable Metadata Search/Platforms/Launchers presentation code only after checking dependencies; finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.
