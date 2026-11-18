@@ -82,6 +82,14 @@ qt_add_qml_module(RecompStationApp
         assets/images/recompstation-controller.png
 )
 
+# GCC 16 enables -Wsfinae-incomplete by default. Qt 6's generated moc code
+# can trigger this diagnostic while probing QObject-derived types; it is a
+# toolchain/Qt meta-object warning rather than an application type error.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "16")
+    target_compile_options(RecompStationApp PRIVATE -Wno-sfinae-incomplete)
+endif()
+
 target_link_libraries(RecompStationApp PRIVATE
     Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql Qt6::Network Qt6::Concurrent Qt6::Svg
     LibArchive::LibArchive
