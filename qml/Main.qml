@@ -4154,7 +4154,6 @@ ApplicationWindow {
                                                 Switch {
                                                     checked: controllerManager.inputEnabled
                                                     onToggled: controllerManager.inputEnabled = checked
-                                                    accessibleName: "Enable controller navigation"
                                                 }
                                             }
                                             Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
