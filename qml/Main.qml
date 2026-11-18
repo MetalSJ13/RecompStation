@@ -4571,6 +4571,7 @@ ApplicationWindow {
                                                         Layout.fillWidth: true
                                                         text: {
                                                             const captureActive = controllerManager.mappingCaptureActive
+                                                            const revision = controllerManager.profileRevision
                                                             const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
                                                             const values = profile[modelData.key] || []
                                                             return values.length ? values.join("  /  ") : "No bindings"
