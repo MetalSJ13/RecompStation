@@ -4573,6 +4573,7 @@ ApplicationWindow {
                                                 anchors.rightMargin: 12
                                                 spacing: 12
                                                 ColumnLayout {
+                                                    id: actionDetailsColumn
                                                     Layout.fillWidth: true
                                                     spacing: 3
                                                     Label {
@@ -4590,7 +4591,7 @@ ApplicationWindow {
                                                             model: {
                                                                 const revision = controllerManager.profileRevision
                                                                 const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
-                                                                return profile[actionKey] || []
+                                                                return profile[actionDetailsColumn.actionKey] || []
                                                             }
                                                             delegate: Rectangle {
                                                                 required property var modelData
@@ -4631,12 +4632,12 @@ ApplicationWindow {
                                                                         }
                                                                         onClicked: {
                                                                             const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
-                                                                            const bindings = profile[actionKey] || []
+                                                                            const bindings = profile[actionDetailsColumn.actionKey] || []
                                                                             if (bindings.length <= 1)
                                                                                 return
                                                                             const updated = bindings.slice()
                                                                             updated.splice(index, 1)
-                                                                            profile[actionKey] = updated
+                                                                            profile[actionDetailsColumn.actionKey] = updated
                                                                             if (settingsManager.saveControllerProfile(controllerManager.controllerGuid, profile))
                                                                                 controllerManager.reloadControllerProfile()
                                                                         }
