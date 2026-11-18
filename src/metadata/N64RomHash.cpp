@@ -2,6 +2,8 @@
 
 #include <QCryptographicHash>
 
+#include <utility>
+
 namespace {
 constexpr quint32 Crc32Polynomial = 0xEDB88320u;
 
@@ -57,7 +59,7 @@ bool N64RomHash::toBigEndian(const QByteArray &romData,
     if (bigEndian) {
         *canonicalData = romData;
     } else {
-        QByteArray normalized(romData.size(), Qt::Uninitialized);
+        QByteArray normalized(romData.size(), '\\0');
         for (qsizetype offset = 0; offset < romData.size(); offset += 4) {
             if (byteSwapped) {
                 normalized[offset] = romData.at(offset + 1);
