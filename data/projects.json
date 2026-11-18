@@ -140,6 +140,236 @@
           "executablePath": "PerfectDarkRecompiled"
         }
       }
+    },
+    {
+      "id": "starfox-64-recompiled",
+      "name": "Star Fox 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Star Fox 64",
+        "Starfox 64",
+        "Star Fox 64: Recompiled",
+        "Starfox64Recompiled"
+      ],
+      "repositoryOwner": "sonicdcer",
+      "repositoryName": "Starfox64Recomp",
+      "romRequirements": "Requires the North American Star Fox 64 version 1.1 (Rev A) ROM. The project does not include game assets; the game prompts you to select your own supported ROM.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Starfox64Recompiled-v[0-9.]+-Linux-X64-Release\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Starfox64Recompiled"
+        },
+        "aarch64": {
+          "assetNameRegex": "^Starfox64Recompiled-v[0-9.]+-Linux-ARM64-Release\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Starfox64Recompiled"
+        }
+      }
+    },
+    {
+      "id": "donkey-kong-64-recompiled",
+      "name": "Donkey Kong 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Donkey Kong 64",
+        "Donkey Kong 64: Recompiled",
+        "DK64",
+        "DK64 Rekongpiled"
+      ],
+      "repositoryOwner": "Rainchus",
+      "repositoryName": "Donkey-Kong-64-Recompiled",
+      "romRequirements": "Requires the US Nintendo 64 version of Donkey Kong 64. Other games and arbitrary ROMs are not supported. The project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^DK64Recompiled-Linux-X64-Release-[0-9-]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DK64Recompiled"
+        },
+        "aarch64": {
+          "assetNameRegex": "^DK64Recompiled-Linux-ARM64-Release-[0-9-]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DK64Recompiled"
+        }
+      }
+    },
+    {
+      "id": "mario-kart-64-recompiled",
+      "name": "Mario Kart 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mario Kart 64",
+        "MarioKart 64",
+        "Mario Kart 64: Recompiled",
+        "MarioKart64Recompiled"
+      ],
+      "repositoryOwner": "sonicdcer",
+      "repositoryName": "MarioKart64Recomp",
+      "romRequirements": "Requires the North American Nintendo 64 version of Mario Kart 64. The project does not include game assets; you supply your own supported ROM.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MarioKart64Recompiled-v[0-9.]+-Linux-X64-Release\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MarioKart64Recompiled"
+        },
+        "aarch64": {
+          "assetNameRegex": "^MarioKart64Recompiled-v[0-9.]+-Linux-ARM64-Release\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MarioKart64Recompiled"
+        }
+      }
+    },
+    {
+      "id": "mario-party-recompiled",
+      "name": "Mario Party: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mario Party",
+        "Mario Party: Recompiled",
+        "MarioPartyRecompiled"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "mario-party-recomp",
+      "romRequirements": "Requires the USA Mario Party ROM as a big-endian .z64, 32 MiB, SHA-1 1159bd56730094bfc71be30113e1cfc8bacf34f3. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MarioPartyRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "MarioPartyRecompiled"
+        }
+      }
+    },
+    {
+      "id": "mario-party-2-recompiled",
+      "name": "Mario Party 2: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mario Party 2",
+        "Mario Party 2: Recompiled",
+        "MarioParty2Recompiled"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "mario-party-2-recomp",
+      "romRequirements": "Requires the USA Mario Party 2 ROM as a big-endian .z64, 32 MiB, SHA-1 166eda1c05670d337e2c3f15a5db528ae1e5d6e3. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MarioParty2Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "MarioParty2Recompiled"
+        }
+      }
+    },
+    {
+      "id": "mario-party-3-recompiled",
+      "name": "Mario Party 3: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mario Party 3",
+        "Mario Party 3: Recompiled",
+        "MarioParty3Recompiled"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "mario-party-3-recomp",
+      "romRequirements": "Requires the USA Mario Party 3 ROM as a big-endian .z64, 32 MiB, SHA-1 6beb80ff822b96bcf85dcdb512e8b2b7969d8259. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MarioParty3Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "MarioParty3Recompiled"
+        }
+      }
+    },
+    {
+      "id": "super-smash-bros-recompiled",
+      "name": "Super Smash Bros.: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Super Smash Bros.",
+        "Super Smash Bros: Recompiled",
+        "Super Smash Bros. Recompiled",
+        "Smash Bros."
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "super-smash-bros-recomp",
+      "romRequirements": "Requires the USA Super Smash Bros. ROM as a big-endian .z64, 16 MiB, SHA-1 e2929e10fccc0aa84e5776227e798abc07cedabf. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^SmashBrosRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "SmashBrosRecompiled"
+        }
+      }
+    },
+    {
+      "id": "ghostship-super-mario-64",
+      "name": "Ghostship (Super Mario 64)",
+      "platform": "N64",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Super Mario 64",
+        "Super Mario 64: Ghostship",
+        "Ghostship"
+      ],
+      "repositoryOwner": "HarbourMasters",
+      "repositoryName": "Ghostship",
+      "romRequirements": "Requires a supported USA or Japan Super Mario 64 ROM in big-endian .z64 format. USA SHA-1: 9bef1128717f958171a4afac3ed78ee2bb4e86ce; Japan SHA-1: 8a20a5c83d6ceb0f0506cfc9fa20d8f438cafe51. The Linux release is an AppImage distributed inside a ZIP archive.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^.+-Linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Ghostship.appimage"
+        }
+      }
+    },
+    {
+      "id": "banjo-tooie-recompiled",
+      "name": "Banjo-Tooie: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Banjo-Tooie",
+        "Banjo Tooie",
+        "Banjo-Tooie: Recompiled",
+        "Banjo Tooie Recompiled"
+      ],
+      "repositoryOwner": "Vidanox",
+      "repositoryName": "BanjoTooieRecompiled",
+      "romRequirements": "Requires the USA Banjo-Tooie ROM (SHA-1 AF1A89E12B638B8D82CC4C085C8E01D4CBA03FB3). The ROM is selected in the launcher on first run. The Linux x86-64 archive includes the executable, assets, and run.sh launcher script.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^BanjoTooieRecompiled-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "run.sh"
+        }
+      }
+    },
+    {
+      "id": "paper-mario-64-recompiled",
+      "name": "PaperBoat (Paper Mario)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Paper Mario",
+        "Paper Mario 64",
+        "PaperBoat"
+      ],
+      "repositoryOwner": "HarbourMasters",
+      "repositoryName": "PaperBoat",
+      "romRequirements": "Requires the supported USA Paper Mario 64 ROM in big-endian .z64 format (SHA-1 3837f44cda784b466c9a2d99df70d77c322b97a0). The Linux release distributes paperboat.appimage inside a ZIP archive.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Paperboat-.*-Linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "paperboat.appimage"
+        }
+      }
     }
   ]
 }
