@@ -67,7 +67,8 @@ ApplicationWindow {
             { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
             { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
             { icon: "", key: "Esc", label: "Back", color: "#A9B7CA", round: false },
-            { icon: "", key: "F11", label: "Fullscreen", color: "#A9B7CA", round: false }
+            { icon: "", key: "F11", label: "Fullscreen", color: "#A9B7CA", round: false },
+            { icon: "", key: "Ctrl+Q", label: "Quit", color: "#A9B7CA", round: false }
         ]
     }
 
@@ -343,6 +344,19 @@ ApplicationWindow {
         sequence: "F11"
         context: Qt.ApplicationShortcut
         onActivated: window.toggleFullscreen()
+    }
+
+    // Ctrl+Q opens the in-app quit confirmation, so keyboard users can exit
+    // without relying on the terminal or the window manager close button.
+    Shortcut {
+        sequence: "Ctrl+Q"
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            window.systemMenuClosing = false
+            window.quitConfirmationVisible = true
+            window.systemMenuVisible = true
+            Qt.callLater(function() { cancelQuitButton.forceActiveFocus() })
+        }
     }
 
     function applyPreferredPresentationSize() {
