@@ -1,18 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" fill="none">
   <defs>
-    <linearGradient id="controllerSpectrum" x1="3" y1="8" x2="45" y2="40" gradientUnits="userSpaceOnUse">
+    <linearGradient id="controllerSpectrum" x1="5" y1="5" x2="59" y2="44" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#39C6FF"/>
       <stop offset=".5" stop-color="#9274FF"/>
       <stop offset="1" stop-color="#FF72B6"/>
     </linearGradient>
   </defs>
-  <path d="M13.2 12.5h21.6c5.5 0 8.4 4 9.6 10.3l1.1 6.2c.8 4.5-3.9 7.5-7.3 4.6l-6.4-5.4H16.2l-6.4 5.4c-3.4 2.9-8.1-.1-7.3-4.6l1.1-6.2c1.2-6.3 4.1-10.3 9.6-10.3Z"
-        stroke="url(#controllerSpectrum)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M12 20.5v9M7.5 25h9" stroke="#39C6FF" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M17 9.5h30c6.5 0 10.1 4.6 11.7 12l1.4 8.1c1 5.3-4.6 8.7-8.7 5.2l-8.1-6.6H20.7l-8.1 6.6c-4.1 3.5-9.7.1-8.7-5.2l1.4-8.1c1.6-7.4 5.2-12 11.7-12Z"
+        stroke="url(#controllerSpectrum)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18 17.5v13M11.5 24h13" stroke="#39C6FF" stroke-width="2.8" stroke-linecap="round"/>
   <g fill="#FF72B6">
-    <circle cx="34" cy="20.5" r="1.8"/>
-    <circle cx="38.5" cy="25" r="1.8"/>
-    <circle cx="34" cy="29.5" r="1.8"/>
-    <circle cx="29.5" cy="25" r="1.8"/>
+    <circle cx="44.5" cy="17.5" r="2.1"/>
+    <circle cx="50.5" cy="23.5" r="2.1"/>
+    <circle cx="44.5" cy="29.5" r="2.1"/>
+    <circle cx="38.5" cy="23.5" r="2.1"/>
   </g>
 </svg>
