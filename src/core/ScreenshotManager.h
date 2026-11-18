@@ -22,6 +22,7 @@ public:
     bool isBusy() const;
     QString status() const;
     Q_INVOKABLE void refreshLibraryScreenshots();
+    void setProviderEnabled(bool enabled);
 
 signals:
     void busyChanged();
@@ -46,5 +47,6 @@ private:
     int m_withoutScreenshots = 0;
     int m_failed = 0;
     bool m_busy = false;
+    bool m_providerEnabled = true;
     QString m_status;
 };
