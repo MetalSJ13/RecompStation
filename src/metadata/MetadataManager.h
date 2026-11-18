@@ -20,7 +20,8 @@ class MetadataManager : public QObject
     Q_PROPERTY(bool platformsLoading READ platformsLoading NOTIFY platformsLoadingChanged)
 
 public:
-    explicit MetadataManager(MetadataProvider *provider, QObject *parent = nullptr);
+    explicit MetadataManager(MetadataProvider *provider, QObject *parent = nullptr,
+                             bool providerEnabled = true);
 
     bool isConfigured() const;
     bool isProviderEnabled() const;
