@@ -20,7 +20,8 @@ private slots:
     void emitsInputEnabledChangeOnlyWhenStateChanges();
     void resolvesActionsFromCustomMappings();
     void resolvesNavigationFromCustomMappings();
-    void supportsMultipleInputsForOneAction();\n    void detectsOnlyNewlyPressedInputs();
+    void supportsMultipleInputsForOneAction();
+    void detectsOnlyNewlyPressedInputs();
 };
 
 void ControllerInputRouterTest::mapsAnalogStickDirections()
