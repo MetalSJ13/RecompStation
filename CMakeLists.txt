@@ -72,6 +72,8 @@ qt_add_qml_module(RecompStationApp
     QML_FILES
         qml/Main.qml
         qml/Theme.qml
+    RESOURCES
+        assets/library-waves.svg
 )
 
 target_link_libraries(RecompStationApp PRIVATE
