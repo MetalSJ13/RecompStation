@@ -173,9 +173,9 @@ void ControllerManager::pollController()
     m_inputRouter.processFrame(
         direction,
         pressed(SDL_CONTROLLER_BUTTON_A),
-        pressed(SDL_CONTROLLER_BUTTON_B),
-        pressed(SDL_CONTROLLER_BUTTON_START)
-            || pressed(SDL_CONTROLLER_BUTTON_BACK),
+        pressed(SDL_CONTROLLER_BUTTON_B)
+            || pressed(SDL_CONTROLLER_BUTTON_GUIDE),
+        pressed(SDL_CONTROLLER_BUTTON_START),
         pressed(SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
         pressed(SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
         m_elapsedTimer.elapsed());
