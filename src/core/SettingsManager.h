@@ -9,6 +9,7 @@ class SettingsManager : public QObject
     Q_OBJECT
     Q_PROPERTY(QString themeName READ themeName WRITE setThemeName NOTIFY themeNameChanged)
     Q_PROPERTY(bool scanOnStartup READ scanOnStartup WRITE setScanOnStartup NOTIFY scanOnStartupChanged)
+    Q_PROPERTY(bool theGamesDbEnabled READ theGamesDbEnabled NOTIFY theGamesDbEnabledChanged)
     Q_PROPERTY(QString preferredPresentationSize READ preferredPresentationSize WRITE setPreferredPresentationSize NOTIFY preferredPresentationSizeChanged)
     Q_PROPERTY(QString displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged)
     Q_PROPERTY(QString restoreDisplayMode READ restoreDisplayMode WRITE setRestoreDisplayMode NOTIFY restoreDisplayModeChanged)
@@ -28,6 +29,9 @@ public:
 
     bool scanOnStartup() const;
     Q_INVOKABLE void setScanOnStartup(bool enabled);
+
+    bool theGamesDbEnabled() const;
+    Q_INVOKABLE void setTheGamesDbEnabled(bool enabled);
 
     QString preferredPresentationSize() const;
     Q_INVOKABLE void setPreferredPresentationSize(const QString &size);
@@ -56,6 +60,7 @@ public:
 signals:
     void themeNameChanged();
     void scanOnStartupChanged();
+    void theGamesDbEnabledChanged();
     void preferredPresentationSizeChanged();
     void displayModeChanged();
     void restoreDisplayModeChanged();
@@ -79,6 +84,7 @@ private:
     QString m_libraryBackgroundType = QStringLiteral("static");
     QString m_customLibraryBackground;
     bool m_scanOnStartup = true;
+    bool m_theGamesDbEnabled = true;
     static bool isSupportedTheme(const QString &themeName);
     static bool isSupportedPresentationSize(const QString &size);
     static bool isSupportedDisplayMode(const QString &mode);
