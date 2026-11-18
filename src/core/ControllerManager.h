@@ -24,6 +24,7 @@ class ControllerManager final : public QObject
     Q_PROPERTY(bool inputEnabled READ inputEnabled WRITE setInputEnabled NOTIFY inputEnabledChanged)
     Q_PROPERTY(bool mappingCaptureActive READ mappingCaptureActive NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(QString mappingCaptureAction READ mappingCaptureAction NOTIFY mappingCaptureStateChanged)
+    Q_PROPERTY(int profileRevision READ profileRevision NOTIFY controllerProfileChanged)
 
 public:
     explicit ControllerManager(QObject *parent = nullptr);
@@ -37,6 +38,7 @@ public:
     bool inputEnabled() const;
     bool mappingCaptureActive() const;
     QString mappingCaptureAction() const;
+    int profileRevision() const;
 
 public slots:
     void setInputEnabled(bool enabled);
@@ -56,6 +58,7 @@ signals:
     void nextSectionRequested();
     void rightStickScrollRequested(qreal amount);
     void mappingCaptureStateChanged();
+    void controllerProfileChanged();
     void mappingCaptured(const QString &action, const QString &input);
 
 private slots:
@@ -77,6 +80,7 @@ private:
     QStringList m_previousActiveInputs;
     bool m_mappingCaptureActive = false;
     bool m_captureAwaitingRelease = false;
+    int m_profileRevision = 0;
     QString m_controllerName;
     QString m_controllerType = QStringLiteral("generic");
     QString m_controllerGuid;
