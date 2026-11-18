@@ -99,8 +99,6 @@ ApplicationWindow {
     }
 
     function controllerNavigate(direction) {
-        activeInputDevice = "controller"
-
         if (systemMenuVisible) {
             window.moveDirectionalFocus(systemMenuPanel, direction)
             return
@@ -380,9 +378,16 @@ ApplicationWindow {
         target: controllerManager
 
         function onConnectedChanged() {
-            window.activeInputDevice = controllerManager.connected ? "controller" : "keyboard"
+            if (controllerManager.connected) {
+                window.activeInputDevice = "controller"
+                console.info("[Input] Controller available:", controllerManager.controllerName)
+            } else {
+                window.activeInputDevice = "keyboard"
+                console.info("[Input] No controller connected; using keyboard hints")
+            }
         }
         function onNavigationRequested(direction) {
+            window.activeInputDevice = "controller"
             window.controllerNavigate(direction)
         }
         function onSelectRequested() {
@@ -411,6 +416,49 @@ ApplicationWindow {
             window.activeInputDevice = "controller"
             if (!gameDetailsPopup.visible)
                 window.navigateToPage("Settings")
+        }
+    }
+
+    // Window-scoped shortcuts keep library navigation working even when
+    // the pointer is over a card or no QML item currently owns keyboard focus.
+    Shortcut {
+        sequence: Qt.Key_Left
+        context: Qt.WindowShortcut
+        enabled: currentPage === "Library" && !systemMenuVisible
+            && !gameDetailsPopup.visible && settingsManager.libraryView !== "list"
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.controllerNavigate("left")
+        }
+    }
+    Shortcut {
+        sequence: Qt.Key_Right
+        context: Qt.WindowShortcut
+        enabled: currentPage === "Library" && !systemMenuVisible
+            && !gameDetailsPopup.visible && settingsManager.libraryView !== "list"
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.controllerNavigate("right")
+        }
+    }
+    Shortcut {
+        sequence: Qt.Key_Up
+        context: Qt.WindowShortcut
+        enabled: currentPage === "Library" && !systemMenuVisible
+            && !gameDetailsPopup.visible
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.controllerNavigate("up")
+        }
+    }
+    Shortcut {
+        sequence: Qt.Key_Down
+        context: Qt.WindowShortcut
+        enabled: currentPage === "Library" && !systemMenuVisible
+            && !gameDetailsPopup.visible
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.controllerNavigate("down")
         }
     }
 
@@ -3961,9 +4009,9 @@ ApplicationWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 14
-            width: Math.min(parent.width - 48, inputHintLabel.implicitWidth + 34)
-            height: 36
-            radius: 18
+            width: Math.min(parent.width - 48, inputHintLabel.implicitWidth + 48)
+            height: 42
+            radius: 21
             color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g,
                            theme.sidebarBackground.b, 0.88)
             border.color: theme.divider
@@ -3974,7 +4022,8 @@ ApplicationWindow {
                 anchors.centerIn: parent
                 text: window.inputHintText()
                 color: theme.textSecondary
-                font.pixelSize: 10 * theme.fontScale
+                font.pixelSize: 12 * theme.fontScale
+                font.weight: Font.Medium
             }
         }
     }
