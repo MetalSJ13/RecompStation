@@ -4479,7 +4479,7 @@ ApplicationWindow {
                                             anchors.right: parent.right
                                             anchors.top: parent.top
                                             anchors.margins: 14
-                                            spacing: 6
+                                            spacing: 8
                                             RowLayout {
                                                 Layout.fillWidth: true
                                                 Label {
@@ -4491,19 +4491,22 @@ ApplicationWindow {
                                                     Layout.fillWidth: true
                                                     elide: Text.ElideRight
                                                 }
-                                                Label {
-                                                    text: "DEFAULT"
-                                                    color: theme.accent
-                                                    font.pixelSize: 9 * theme.fontScale
-                                                    font.bold: true
-                                                    font.letterSpacing: 1
+                                                Button {
+                                                    text: "Reset"
+                                                    enabled: controllerManager.connected
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    onClicked: {
+                                                        settingsManager.resetControllerProfile(controllerManager.controllerGuid)
+                                                        controllerManager.reloadControllerProfile()
+                                                    }
                                                 }
                                             }
                                             Label {
                                                 Layout.fillWidth: true
                                                 text: controllerManager.connected
-                                                    ? "Using the built-in layout for this connected device. Device-specific profiles and saved remaps are the next controller milestone."
-                                                    : "Connect a controller to see its active device. Independent profiles will be saved for each controller once remapping is introduced."
+                                                    ? "Mappings are saved separately for this controller. Add another button or stick direction to any action."
+                                                    : "Connect a controller to configure its device-specific mappings."
                                                 color: theme.textSecondary
                                                 font.pixelSize: 11 * theme.fontScale
                                                 wrapMode: Text.Wrap
@@ -4512,7 +4515,7 @@ ApplicationWindow {
                                     }
 
                                     Label {
-                                        text: "DEFAULT BUTTON LAYOUT"
+                                        text: "BUTTON MAPPINGS"
                                         color: theme.textMuted
                                         font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
@@ -4520,59 +4523,87 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Current navigation bindings. These are read-only for now; remapping will be added with per-controller profiles."
-                                        color: theme.textSecondary
+                                        text: controllerManager.mappingCaptureActive
+                                            ? "Press the controller input you want to add. Release the button used to start capture first."
+                                            : "Choose Add binding, then press a button, D-pad direction, or left-stick direction. Existing bindings are kept."
+                                        color: controllerManager.mappingCaptureActive ? theme.accent : theme.textSecondary
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                    GridLayout {
-                                        Layout.fillWidth: true
-                                        columns: 2
-                                        columnSpacing: 10
-                                        rowSpacing: 10
-
-                                        Repeater {
-                                            model: [
-                                                { button: "D-pad / Left stick", action: "Navigate menus" },
-                                                { button: "A", action: "Select / Confirm" },
-                                                { button: "B / Guide", action: "Back" },
-                                                { button: "Start", action: "Open menu" },
-                                                { button: "Left shoulder", action: "Previous section" },
-                                                { button: "Right shoulder", action: "Next section" }
-                                            ]
-                                            delegate: Rectangle {
-                                                Layout.fillWidth: true
-                                                implicitHeight: bindingColumn.implicitHeight + 22
-                                                radius: theme.radiusSmall
-                                                color: theme.sidebarBackground
-                                                border.color: theme.divider
+                                    Repeater {
+                                        model: [
+                                            { key: "navigateUp", label: "Navigate up" },
+                                            { key: "navigateDown", label: "Navigate down" },
+                                            { key: "navigateLeft", label: "Navigate left" },
+                                            { key: "navigateRight", label: "Navigate right" },
+                                            { key: "select", label: "Select / confirm" },
+                                            { key: "back", label: "Back" },
+                                            { key: "menu", label: "Open menu" },
+                                            { key: "previousSection", label: "Previous section" },
+                                            { key: "nextSection", label: "Next section" }
+                                        ]
+                                        delegate: Rectangle {
+                                            Layout.fillWidth: true
+                                            implicitHeight: actionRow.implicitHeight + 20
+                                            radius: theme.radiusSmall
+                                            color: theme.sidebarBackground
+                                            border.color: controllerManager.mappingCaptureActive
+                                                && controllerManager.mappingCaptureAction === modelData.key
+                                                ? theme.accent : theme.divider
+                                            RowLayout {
+                                                id: actionRow
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                anchors.leftMargin: 12
+                                                anchors.rightMargin: 12
+                                                spacing: 12
                                                 ColumnLayout {
-                                                    id: bindingColumn
-                                                    anchors.left: parent.left
-                                                    anchors.right: parent.right
-                                                    anchors.top: parent.top
-                                                    anchors.margins: 11
-                                                    spacing: 4
+                                                    Layout.fillWidth: true
+                                                    spacing: 3
                                                     Label {
-                                                        text: modelData.button
+                                                        text: modelData.label
                                                         color: theme.textPrimary
-                                                        font.pixelSize: 11 * theme.fontScale
+                                                        font.pixelSize: 12 * theme.fontScale
                                                         font.bold: true
-                                                        wrapMode: Text.Wrap
-                                                        Layout.fillWidth: true
                                                     }
                                                     Label {
-                                                        text: modelData.action
+                                                        Layout.fillWidth: true
+                                                        text: {
+                                                            const captureActive = controllerManager.mappingCaptureActive
+                                                            const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
+                                                            const values = profile[modelData.key] || []
+                                                            return values.length ? values.join("  /  ") : "No bindings"
+                                                        }
                                                         color: theme.textSecondary
                                                         font.pixelSize: 10 * theme.fontScale
                                                         wrapMode: Text.Wrap
-                                                        Layout.fillWidth: true
                                                     }
+                                                }
+                                                Button {
+                                                    text: controllerManager.mappingCaptureActive
+                                                        && controllerManager.mappingCaptureAction === modelData.key
+                                                        ? "Listening…" : "Add binding"
+                                                    enabled: controllerManager.connected
+                                                        && (!controllerManager.mappingCaptureActive
+                                                            || controllerManager.mappingCaptureAction === modelData.key)
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    onClicked: controllerManager.startMappingCapture(modelData.key)
                                                 }
                                             }
                                         }
                                     }
-
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        visible: controllerManager.mappingCaptureActive
+                                        Button {
+                                            text: "Cancel capture"
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            onClicked: controllerManager.cancelMappingCapture()
+                                        }
+                                    }
                                 }
                             }
                         }
