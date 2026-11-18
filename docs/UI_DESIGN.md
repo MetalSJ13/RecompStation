@@ -21,8 +21,8 @@ Platforms are filters or navigation choices inside the Game Library, not a separ
    - Persistent compact primary navigation: Game Library and Settings.
    - A global system menu is an overlay for application-level actions such as fullscreen and quit; it is not a third content destination.
 2. **Game Library** (default)
-   - Collection header and platform filter.
-   - Curated Grid/List presentation; grid density is configured in Settings → Library.
+   - Collection header with an always-available game-title search field and platform filter. Search applies to the current platform selection, or the entire collection when All Platforms is selected.
+   - Curated Grid/List presentation and Grid density controls (Compact, Comfortable, Spacious) live together in the Library header so users can adjust the collection and immediately see the result. Persist both preferences.
    - Game selection opens the immersive Game Details experience.
 3. **Game Details** (full-window modal experience over the Library)
    - Back to Library is always visible.
@@ -42,11 +42,11 @@ Legacy Metadata Search, Platforms, and Launchers page implementations may remain
 The library should support:
 
 - Browsing all games and filtering by platform.
-- Optional text search for a specific game.
+- A prominent, responsive title-search field that filters the current collection as the user types, respects the selected platform filter, and provides a clear no-results state.
 - Sorting options appropriate to a personal collection (for example title, platform, and recently added).
 - Two curated presentation modes: a cover-art-forward Grid View (the signature default) and a compact, readable List View. Avoid arbitrary layout editors or unrestricted card resizing.
 - Three curated Grid View density presets (Compact, Comfortable, Spacious) that adapt card sizing to available window width. Comfortable is the default.
-- A small, immediate Grid/List selector in the library header; density remains in Settings → Library. Persist both preferences.
+- Grid/List and Grid density selectors in the Library header; do not duplicate browsing/presentation controls in Settings → Library. Persist both preferences.
 - A library-only background selector in Settings → Library: static theme-coordinated background (default), subtle optional animated ambience, or a user-selected custom still image (PNG/JPEG/WebP). Keep the background dark enough for legibility and preserve the active theme's accent and surface language.
 - Animated ambience must pause when the window is hidden or minimized and be disabled when Reduced Motion is enabled.
 - Custom backgrounds are still images only; do not turn this into a wallpaper editor or allow unrestricted colors/layout rearrangement.
@@ -126,7 +126,7 @@ Current categories:
 
 - **Appearance:** built-in theme, background treatment, accent preset, motion preferences.
 - **Display:** implemented Windowed/Maximized/Fullscreen modes, current-screen information, and preferred application window-size presets. Explicit monitor selection and borderless mode are deferred.
-- **Library:** configurable library/platform folders, startup scan preference, manual scan action, Grid/List preference, grid density, and library background selection.
+- **Library:** configurable library/platform folders, startup scan preference, manual scan action, and library background selection. Grid/List and grid-density controls are exclusive to the Game Library page.
 - **Metadata:** provider configuration/status and metadata refresh behavior. Additional providers, field selection, and independent artwork-source management remain future work.
 - **Controller:** connected-device status, controller-input enablement, active/default profile presentation, and navigation binding summary. Interactive remapping and per-device application remain future work.
 - **Application:** application-level preferences and diagnostics/logging where implemented.
@@ -165,6 +165,6 @@ The current implementation was reviewed against this specification. This is a de
 | Dialogs and popups | First-run library setup, folder/background pickers, uninstall confirmation, project install prompt, ComboBox popups, and global system/quit overlay | Contextual overlays; must preserve parent context and close in Escape order |
 | Display modes | Windowed, Maximized, Fullscreen; F11 restores prior non-fullscreen mode | Documented accurately |
 | Monitor handling | Current screen is informational; no explicit monitor selector or monitor-mode changes | Safe compositor-respecting baseline; additional selection deferred |
-| Library presentation | Platform filter, Grid/List, configurable density and backgrounds | Core direction aligned; search/sorting and remaining library states tracked in later milestones |
+| Library presentation | Title search, platform filter, Grid/List, configurable density and backgrounds | Search and browsing controls are grouped in the Library; sorting and remaining library states tracked in later milestones |
 
 Audit follow-up: remove obsolete unreachable Metadata Search/Platforms/Launchers presentation code only after checking dependencies; finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.
