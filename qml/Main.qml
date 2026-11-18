@@ -4203,6 +4203,16 @@ ApplicationWindow {
                                                     font.pixelSize: 10 * theme.fontScale
                                                     wrapMode: Text.WrapAnywhere
                                                 }
+                                                Button {
+                                                    Layout.alignment: Qt.AlignRight
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: "Uninstall"
+                                                    onClicked: {
+                                                        window.pendingUninstallProjectId = modelData.projectId
+                                                        uninstallDialog.open()
+                                                    }
+                                                }
                                             }
                                         }
                                     }
