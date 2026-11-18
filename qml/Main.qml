@@ -1614,6 +1614,17 @@ ApplicationWindow {
                                                 : "")
                                     color: theme.accentHover
                                 }
+                                ProgressBar {
+                                    Layout.fillWidth: true
+                                    visible: !!gameDetailsPopup.downloadState.loading
+                                    from: 0
+                                    to: 1
+                                    value: gameDetailsPopup.downloadState.bytesTotal > 0
+                                        ? Math.max(0, Math.min(1,
+                                            (gameDetailsPopup.downloadState.bytesReceived || 0)
+                                            / gameDetailsPopup.downloadState.bytesTotal))
+                                        : 0
+                                }
                                                             RowLayout {
                                     Layout.fillWidth: true
                                     spacing: 8
@@ -1632,6 +1643,20 @@ ApplicationWindow {
                                         }
                                     }
 
+                                    Button {
+                                        visible: !!gameDetailsPopup.downloadState.loading
+                                        text: "Cancel Download"
+                                        icon.source: "qrc:/icons/close.svg"
+                                        icon.width: 16
+                                        icon.height: 16
+                                        icon.color: theme.textPrimary
+                                        implicitHeight: 48
+                                        Layout.minimumWidth: 150
+                                        Layout.preferredWidth: 150
+                                        onClicked: window.cancelAssetDownload(
+                                            gameDetailsPopup.primaryProject.id,
+                                            gameDetailsPopup.selectedAsset.name)
+                                    }
                                     Button {
                                         visible: gameDetailsPopup.installedProject !== null
                                         highlighted: true
