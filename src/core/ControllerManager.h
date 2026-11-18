@@ -42,6 +42,7 @@ signals:
     void menuRequested();
     void previousSectionRequested();
     void nextSectionRequested();
+    void rightStickScrollRequested(qreal amount);
 
 private slots:
     void pollController();
