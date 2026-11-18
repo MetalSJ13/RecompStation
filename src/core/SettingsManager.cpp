@@ -4,6 +4,10 @@
 #include "Logging.h"
 
 #include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QUrl>
 #include <QStringList>
 
 namespace {
@@ -346,14 +350,54 @@ void SettingsManager::setCustomLibraryBackground(const QString &path)
 {
     if (m_customLibraryBackground == path)
         return;
+
+    QString savedPath;
+    if (!path.isEmpty()) {
+        const QUrl sourceUrl(path);
+        const QString sourcePath = sourceUrl.isLocalFile() ? sourceUrl.toLocalFile() : path;
+        const QFileInfo sourceInfo(sourcePath);
+        const QString extension = sourceInfo.suffix().toLower();
+        static const QStringList supportedExtensions = {
+            QStringLiteral("png"), QStringLiteral("jpg"),
+            QStringLiteral("jpeg"), QStringLiteral("webp")
+        };
+        if (!sourceInfo.isFile() || !supportedExtensions.contains(extension)) {
+            qCWarning(lcSettings) << "Rejected invalid custom library background:" << path;
+            return;
+        }
+
+        const QString dataDirectory = QFileInfo(m_settingsFilePath).absolutePath();
+        const QString backgroundDirectory = QDir(dataDirectory).filePath(
+            QStringLiteral("../backgrounds"));
+        if (!QDir().mkpath(backgroundDirectory)) {
+            qCCritical(lcSettings) << "Could not create custom background directory:"
+                                   << backgroundDirectory;
+            return;
+        }
+
+        const QString destinationPath = QDir::cleanPath(QDir(backgroundDirectory).filePath(
+            QStringLiteral("library-background.") + extension));
+        if (QFileInfo(sourcePath).absoluteFilePath() != QFileInfo(destinationPath).absoluteFilePath()) {
+            if (QFileInfo::exists(destinationPath) && !QFile::remove(destinationPath)) {
+                qCCritical(lcSettings) << "Could not replace previous custom library background.";
+                return;
+            }
+            if (!QFile::copy(sourcePath, destinationPath)) {
+                qCCritical(lcSettings) << "Could not copy custom library background:" << sourcePath;
+                return;
+            }
+        }
+        savedPath = QUrl::fromLocalFile(destinationPath).toString();
+    }
+
     QSettings settings(m_settingsFilePath, QSettings::IniFormat);
-    settings.setValue(QStringLiteral("appearance/customLibraryBackground"), path);
+    settings.setValue(QStringLiteral("appearance/customLibraryBackground"), savedPath);
     settings.sync();
     if (settings.status() != QSettings::NoError) {
         qCCritical(lcSettings) << "Failed to persist custom library background.";
         return;
     }
-    m_customLibraryBackground = path;
+    m_customLibraryBackground = savedPath;
     emit customLibraryBackgroundChanged();
 }
 
