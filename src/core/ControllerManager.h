@@ -16,6 +16,7 @@ class ControllerManager final : public QObject
     Q_PROPERTY(bool connected READ connected NOTIFY connectedChanged)
     Q_PROPERTY(QString controllerName READ controllerName NOTIFY connectedChanged)
     Q_PROPERTY(QString controllerType READ controllerType NOTIFY connectedChanged)
+    Q_PROPERTY(QString controllerGuid READ controllerGuid NOTIFY connectedChanged)
     Q_PROPERTY(bool inputEnabled READ inputEnabled WRITE setInputEnabled NOTIFY inputEnabledChanged)
 
 public:
@@ -26,6 +27,7 @@ public:
     bool connected() const;
     QString controllerName() const;
     QString controllerType() const;
+    QString controllerGuid() const;
     bool inputEnabled() const;
 
 public slots:
@@ -46,7 +48,8 @@ private slots:
 
 private:
     void setConnected(bool connected, const QString &name = {},
-                      const QString &type = QStringLiteral("generic"));
+                      const QString &type = QStringLiteral("generic"),
+                      const QString &guid = {});
 
     QTimer m_pollTimer;
     QElapsedTimer m_elapsedTimer;
@@ -54,6 +57,7 @@ private:
     ControllerInputRouter m_inputRouter;
     QString m_controllerName;
     QString m_controllerType = QStringLiteral("generic");
+    QString m_controllerGuid;
     bool m_connected = false;
     bool m_sdlInitialized = false;
 };
