@@ -3712,10 +3712,10 @@ ApplicationWindow {
                     spacing: 10
                     Image {
                         source: "qrc:/icons/gamepad.svg"
-                        sourceSize.width: 28
-                        sourceSize.height: 28
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
+                        sourceSize.width: 36
+                        sourceSize.height: 30
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 30
                         smooth: true
                     }
                     Label {
