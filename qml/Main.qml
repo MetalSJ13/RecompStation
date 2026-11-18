@@ -2030,8 +2030,8 @@ ApplicationWindow {
                                                 gameGrid.currentIndex = 0
                                             }
                                             background: Rectangle {
-                                                radius: 7
-                                                color: theme.background
+                                                radius: 8
+                                                color: theme.surface
                                                 border.color: parent.activeFocus ? theme.accent : theme.divider
                                                 border.width: parent.activeFocus ? 2 : 1
                                             }
