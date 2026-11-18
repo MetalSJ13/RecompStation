@@ -6,7 +6,7 @@ This document is the authoritative development status and implementation order f
 
 **Current implementation focus:** The Settings navigation has been widened and given category-specific SVG icons; Appearance, Display, Library, Controller, and Application categories are now represented. The new Controller overview reports connected/disconnected state, controller name/type, and whether controller support is available. Per-device profiles and button remapping remain planned, not implemented. This UI change is awaiting local build and runtime verification.
 
- The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is being connected to the existing library scan flow. The first pass uses conservative exact-title matching within the mapped platform, records completed lookups to avoid repeated provider requests, and downloads artwork for accepted matches. This work still requires a local build and regression-test verification.
+ The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is being connected to the existing library scan flow. The first pass uses conservative title matching within the mapped platform, records completed lookups and provider failures to avoid repeated requests during automatic scans, and downloads artwork for accepted matches. Explicit Refresh Metadata retries previously checked games. Provider failures remain distinct from definitive no-match and ambiguous results. Local build and regression-test verification are pending.
 
 **Current development branch:** `ui/interface-redesign`  
 **Base:** The existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.  
@@ -97,9 +97,10 @@ These confirmations cover the specific interactions the user tested; they do not
 - [ ] Use one shared discovery/matching pipeline for manual and automatic scans
 - [x] Add recursive filesystem monitoring for configured platform folders, with a 750 ms debounce and automatic full-library reconciliation (implementation and regression tests committed; local build/runtime validation pending)
 - [x] Detect added and removed games, including newly created nested folders; preserve unavailable database records and avoid duplicate registration (local validation pending)
-- [ ] Automatically identify metadata using title and platform context (initial exact-title matcher implemented; validation pending)
+- [x] Automatically identify metadata using conservative title and platform matching (initial implementation; local build/runtime validation pending)
 - [ ] Define and test conservative match-confidence rules; keep ambiguous matches unresolved
-- [ ] Cache metadata and artwork, avoid redundant API requests, and respect provider limits (persistent lookup-attempt tracking implemented; validation pending)
+- [x] Persist completed lookup outcomes and provider failures to avoid repeated automatic requests; explicit refresh can retry checked games (local validation pending)
+- [ ] Further validate artwork cache behavior, provider rate-limit handling, and retry/backoff policy
 - [ ] Surface scan status and exceptional review in the affected game/library context, not a separate Metadata Search page
 - [ ] Add regression tests for matching, monitoring, duplicate events, API failures, and cache behavior
 
