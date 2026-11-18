@@ -1571,6 +1571,23 @@ ApplicationWindow {
                 }
             }
 
+            // Fill the entire canvas with a subdued crop, then show the complete
+            // wallpaper above it. This avoids empty bars without cropping the
+            // image the user actually wants to see.
+            Image {
+                anchors.fill: parent
+                visible: currentPage === "Library"
+                    && settingsManager.libraryBackgroundType === "custom"
+                    && settingsManager.customLibraryBackground.length > 0
+                source: settingsManager.customLibraryBackground
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                opacity: 0.30
+                smooth: true
+                mipmap: true
+            }
+
             Image {
                 anchors.fill: parent
                 visible: currentPage === "Library"
@@ -1580,6 +1597,8 @@ ApplicationWindow {
                 fillMode: Image.PreserveAspectFit
                 asynchronous: true
                 cache: true
+                smooth: true
+                mipmap: true
             }
 
             Rectangle {
@@ -1588,7 +1607,7 @@ ApplicationWindow {
                     && settingsManager.libraryBackgroundType === "custom"
                     && settingsManager.customLibraryBackground.length > 0
                 color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
-                               theme.windowBackground.b, 0.38)
+                               theme.windowBackground.b, 0.18)
             }
 
             Rectangle {
@@ -1612,34 +1631,60 @@ ApplicationWindow {
                 onPaint: {
                     const ctx = getContext("2d")
                     ctx.clearRect(0, 0, width, height)
-                    const waveGradient = ctx.createLinearGradient(0, 0, width, height * 0.18)
-                    waveGradient.addColorStop(0.0, "rgba(45, 118, 235, 0.05)")
-                    waveGradient.addColorStop(0.35, "rgba(77, 164, 255, 0.72)")
-                    waveGradient.addColorStop(0.7, "rgba(65, 126, 245, 0.48)")
-                    waveGradient.addColorStop(1.0, "rgba(45, 118, 235, 0.06)")
+
+                    const waveGradient = ctx.createLinearGradient(0, 0, width, height * 0.12)
+                    waveGradient.addColorStop(0.0, "rgba(25, 86, 220, 0.16)")
+                    waveGradient.addColorStop(0.32, "rgba(62, 151, 255, 0.96)")
+                    waveGradient.addColorStop(0.68, "rgba(93, 184, 255, 0.82)")
+                    waveGradient.addColorStop(1.0, "rgba(30, 91, 235, 0.18)")
 
                     ctx.lineCap = "round"
                     ctx.lineJoin = "round"
                     ctx.strokeStyle = waveGradient
-                    ctx.shadowColor = "rgba(62, 145, 255, 0.62)"
-                    ctx.shadowBlur = 9
+                    ctx.shadowColor = "rgba(50, 133, 255, 0.82)"
+                    ctx.shadowBlur = 16
 
-                    // Layered, slow-moving sine curves create the calm blue hub-wave effect.
-                    for (let band = 0; band < 8; ++band) {
+                    // Broad, gently drifting ribbons evoke the flowing blue console-hub waves.
+                    for (let band = 0; band < 7; ++band) {
                         ctx.beginPath()
-                        ctx.globalAlpha = 0.34 - band * 0.022
-                        ctx.lineWidth = band % 3 === 0 ? 2.0 : 1.15
-                        const baseY = height * (0.24 + band * 0.075)
-                        for (let x = -12; x <= width + 12; x += 10) {
-                            const broadWave = Math.sin(x * 0.0028 + phase + band * 0.48) * 31
-                            const fineWave = Math.sin(x * 0.006 + phase * 0.72 + band * 0.7) * 8
-                            const y = baseY + broadWave + fineWave
+                        ctx.globalAlpha = 0.62 - band * 0.045
+                        ctx.lineWidth = band % 2 === 0 ? 2.8 : 1.8
+                        const baseY = height * (0.20 + band * 0.10)
+                        for (let x = -12; x <= width + 12; x += 7) {
+                            const broadWave = Math.sin(x * 0.0024 + phase + band * 0.52) * 48
+                            const fineWave = Math.sin(x * 0.0052 + phase * 0.68 + band * 0.83) * 13
+                            const drift = Math.sin(phase * 0.42 + band * 0.9) * 15
+                            const y = baseY + broadWave + fineWave + drift
                             if (x === -12)
                                 ctx.moveTo(x, y)
                             else
                                 ctx.lineTo(x, y)
                         }
                         ctx.stroke()
+                    }
+
+                    // A few soft, translucent ribbons add depth without obscuring the library.
+                    ctx.shadowBlur = 0
+                    for (let band = 0; band < 3; ++band) {
+                        ctx.beginPath()
+                        const baseY = height * (0.31 + band * 0.19)
+                        ctx.moveTo(0, baseY)
+                        for (let x = 0; x <= width; x += 9) {
+                            const y = baseY
+                                + Math.sin(x * 0.002 + phase * 0.72 + band * 1.1) * 36
+                                + Math.sin(x * 0.004 + phase * 0.48) * 12
+                            ctx.lineTo(x, y)
+                        }
+                        ctx.lineTo(width, baseY + 72)
+                        ctx.lineTo(0, baseY + 72)
+                        ctx.closePath()
+                        const fill = ctx.createLinearGradient(0, baseY - 50, 0, baseY + 75)
+                        fill.addColorStop(0.0, "rgba(39, 111, 255, 0.015)")
+                        fill.addColorStop(0.5, "rgba(43, 124, 255, 0.075)")
+                        fill.addColorStop(1.0, "rgba(39, 111, 255, 0.005)")
+                        ctx.fillStyle = fill
+                        ctx.globalAlpha = 1.0
+                        ctx.fill()
                     }
                     ctx.globalAlpha = 1.0
                     ctx.shadowBlur = 0
