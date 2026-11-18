@@ -3677,7 +3677,7 @@ ApplicationWindow {
                     spacing: 22
 
                     Button {
-                        id: libraryNavigationButton
+                        id: headerLibraryNavigationButton
                         Layout.preferredHeight: 42
                         Layout.preferredWidth: libraryNavigationContent.implicitWidth + 18
                         padding: 4
@@ -3704,12 +3704,12 @@ ApplicationWindow {
                                 sourceSize: Qt.size(19, 19)
                                 Layout.preferredWidth: 19
                                 Layout.preferredHeight: 19
-                                opacity: libraryNavigationButton.hovered
+                                opacity: headerLibraryNavigationButton.hovered
                                     || currentPage === "Library" ? 1 : 0.76
                             }
                             Label {
                                 text: "Library"
-                                color: libraryNavigationButton.hovered
+                                color: headerLibraryNavigationButton.hovered
                                     || currentPage === "Library" ? theme.textPrimary
                                     : theme.textSecondary
                                 font.pixelSize: 12 * theme.fontScale
