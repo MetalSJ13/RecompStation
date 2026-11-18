@@ -249,6 +249,11 @@ void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForNewProjects()
         "Nautilus-Alfa-Linux.zip"));
     QVERIFY(accepts("banjo-tooie-recompiled", "x86_64",
         "BanjoTooieRecompiled-linux-x64.tar.gz"));
+    const QVariantMap banjoTooie = catalog.project(QStringLiteral("banjo-tooie-recompiled"));
+    const QVariantMap banjoTooieRule = banjoTooie.value(QStringLiteral("architectures"))
+        .toMap().value(QStringLiteral("x86_64")).toMap();
+    QCOMPARE(banjoTooieRule.value(QStringLiteral("executablePath")).toString(),
+             QStringLiteral("BanjoTooieRecompiled"));
     QVERIFY(accepts("paper-mario-64-recompiled", "x86_64",
         "Paperboat-Mulberry-Delta-Linux.zip"));
 
