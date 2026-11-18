@@ -2159,12 +2159,26 @@ ApplicationWindow {
                             onCountChanged: {
                                 if (count > 0 && window.initialGridRevealPending) {
                                     window.initialGridRevealPending = false
-                                    if (settingsManager.libraryView === "grid") {
-                                        Qt.callLater(function() {
-                                            if (settingsManager.libraryView === "grid")
-                                                window.gridRevealToken += 1
-                                        })
+                                    if (settingsManager.libraryView === "grid")
+                                        startupGridRevealTimer.start()
+                                }
+                            }
+                            // Wait until the first delegates have been created and
+                            // the windowed/fullscreen layout has a real viewport.
+                            // Firing directly from countChanged can happen before
+                            // delegates exist, causing them to miss the reveal signal.
+                            Timer {
+                                id: startupGridRevealTimer
+                                interval: 250
+                                repeat: false
+                                onTriggered: {
+                                    if (settingsManager.libraryView !== "grid" || !window.visible)
+                                        return
+                                    if (gameGrid.width <= 0 || gameGrid.height <= 0) {
+                                        restart()
+                                        return
                                     }
+                                    window.gridRevealToken += 1
                                 }
                             }
                             visible: settingsManager.libraryView === "grid" || opacity > 0
