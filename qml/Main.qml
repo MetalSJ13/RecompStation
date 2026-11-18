@@ -167,9 +167,16 @@ ApplicationWindow {
             return
         }
         if (currentPage === "Library" && gameGrid.count > 0) {
-            const tile = gameGrid.itemAtIndex(gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex)
-            if (tile && tile.openDetails)
-                tile.openDetails()
+            const index = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
+            if (settingsManager.libraryView === "list") {
+                const tile = gameList.itemAtIndex(index)
+                if (tile && tile.openDetails)
+                    tile.openDetails()
+            } else {
+                const tile = gameGrid.itemAtIndex(index)
+                if (tile && tile.openDetails)
+                    tile.openDetails()
+            }
         } else if (currentPage === "Settings") {
             const focused = window.activeFocusItem
             if (focused && focused.popup) {
@@ -1949,6 +1956,19 @@ ApplicationWindow {
                                 required property int index
                                 width: gameList.width
                                 height: 112
+                                focus: ListView.isCurrentItem
+                                function openDetails() {
+                                    window.selectedGame = { id: listTile.id, title: listTile.title,
+                                        platform: listTile.platform, path: listTile.path,
+                                        artworkPath: listTile.artworkPath, screenshots: listTile.screenshots,
+                                        metadataTitle: listTile.metadataTitle,
+                                        metadataOverview: listTile.metadataOverview,
+                                        metadataReleaseDate: listTile.metadataReleaseDate,
+                                        metadataRating: listTile.metadataRating }
+                                    gameDetailsPopup.open()
+                                }
+                                Keys.onReturnPressed: openDetails()
+                                Keys.onEnterPressed: openDetails()
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: theme.radiusCard
@@ -1986,14 +2006,7 @@ ApplicationWindow {
                                     anchors.fill: parent
                                     onClicked: {
                                         gameGrid.currentIndex = listTile.index
-                                        window.selectedGame = { id: listTile.id, title: listTile.title,
-                                            platform: listTile.platform, path: listTile.path,
-                                            artworkPath: listTile.artworkPath, screenshots: listTile.screenshots,
-                                            metadataTitle: listTile.metadataTitle,
-                                            metadataOverview: listTile.metadataOverview,
-                                            metadataReleaseDate: listTile.metadataReleaseDate,
-                                            metadataRating: listTile.metadataRating }
-                                        gameDetailsPopup.open()
+                                        listTile.openDetails()
                                     }
                                 }
                             }
