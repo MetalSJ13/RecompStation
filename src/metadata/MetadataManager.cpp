@@ -96,7 +96,20 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
 
 bool MetadataManager::isConfigured() const
 {
-    return m_provider && m_provider->isConfigured();
+    return m_providerEnabled && m_provider && m_provider->isConfigured();
+}
+
+bool MetadataManager::isProviderEnabled() const
+{
+    return m_providerEnabled;
+}
+
+void MetadataManager::setProviderEnabled(bool enabled)
+{
+    if (m_providerEnabled == enabled)
+        return;
+    m_providerEnabled = enabled;
+    emit configurationChanged();
 }
 
 bool MetadataManager::isSearching() const
@@ -133,6 +146,11 @@ void MetadataManager::searchGames(const QString &searchTerm, int platformId)
 {
     qCInfo(lcMetadata) << "Metadata search requested. Term:" << searchTerm
                        << "platform ID:" << platformId;
+    if (!m_providerEnabled) {
+        setErrorString(QStringLiteral("TheGamesDB provider is disabled in Metadata Settings."));
+        emit searchFailed(m_errorString);
+        return;
+    }
     if (!m_provider) {
         qCCritical(lcMetadata) << "Search aborted: no metadata provider is available.";
         setErrorString(QStringLiteral("No metadata provider is available."));
