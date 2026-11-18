@@ -189,7 +189,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             }
         };
         recordProviderFailure(m_currentGame);
-        for (const QVariantMap &queuedGame : std::as_const(m_queue))
+        for (const QVariantMap &queuedGame : m_queue)
             recordProviderFailure(queuedGame);
 
         m_unresolvedCount += 1 + m_queue.size();
