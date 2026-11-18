@@ -6,9 +6,11 @@
 #include <QPair>
 #include <QVariantMap>
 
-MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
+MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent,
+                                 bool providerEnabled)
     : QObject(parent),
-      m_provider(provider)
+      m_provider(provider),
+      m_providerEnabled(providerEnabled)
 {
     if (!m_provider)
         return;
@@ -55,7 +57,10 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent)
         // platform catalog instead of silently waiting forever.
         emit platformOptionsChanged();
     });
-    m_provider->fetchPlatforms();
+    if (m_providerEnabled)
+        m_provider->fetchPlatforms();
+    else
+        m_platformsLoading = false;
 
     connect(m_provider, &MetadataProvider::searchCompleted,
             this, [this](int, const QList<GameMetadata> &games) {
@@ -109,6 +114,14 @@ void MetadataManager::setProviderEnabled(bool enabled)
     if (m_providerEnabled == enabled)
         return;
     m_providerEnabled = enabled;
+    if (m_providerEnabled && m_provider) {
+        m_platformsLoading = true;
+        emit platformsLoadingChanged();
+        m_provider->fetchPlatforms();
+    } else {
+        m_platformsLoading = false;
+        emit platformsLoadingChanged();
+    }
     emit configurationChanged();
 }
 
