@@ -3389,6 +3389,12 @@ ApplicationWindow {
                                         }
                                     }
                                     ComboBox {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         id: fontSizeSelector
@@ -3430,6 +3436,13 @@ ApplicationWindow {
                                         }
                                     }
                                     Switch {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+                                            border.color: parent.activeFocus ? theme.accent : "transparent"
+                                            border.width: parent.activeFocus ? 2 : 0
+                                            anchors.margins: -6
+                                        }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         checked: settingsManager.reducedMotion
