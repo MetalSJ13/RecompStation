@@ -3862,6 +3862,58 @@ ApplicationWindow {
                                         text: "Your library location is selected during first-time setup. RecompStation organizes supported games into platform subfolders beneath that location."
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: theme.divider
+                                        implicitHeight: libraryRootColumn.implicitHeight + 28
+                                        ColumnLayout {
+                                            id: libraryRootColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 9
+                                            Label {
+                                                text: "Current library folder"
+                                                color: theme.textPrimary
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.bold: true
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: platformManager.libraryConfigured
+                                                    ? platformManager.libraryDirectory
+                                                    : "No library folder selected"
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.WrapAnywhere
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Changing this location does not move or delete game files. Choose an existing folder; RecompStation will create its supported platform subfolders and scan it."
+                                                color: theme.textMuted
+                                                font.pixelSize: 10 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                            Button {
+                                                Layout.alignment: Qt.AlignRight
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                text: "Change Library Folder"
+                                                enabled: platformManager.libraryConfigured
+                                                onClicked: libraryFolderDialog.open()
+                                                background: Rectangle {
+                                                    radius: 8
+                                                    color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                        : (parent.highlighted ? theme.accent : theme.surface)
+                                                    border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                    border.width: parent.activeFocus ? 2 : 1
+                                                }
+                                            }
+                                        }
+                                    }
                                     Flow {
                                         Layout.fillWidth: true
                                         spacing: 8
@@ -4062,6 +4114,107 @@ ApplicationWindow {
                                         }
                                     }
                                 }
+                                Label {
+                                    text: "DIAGNOSTICS"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10 * theme.fontScale
+                                    font.bold: true
+                                    font.letterSpacing: 1
+                                }
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    radius: theme.radiusCard
+                                    color: theme.sidebarBackground
+                                    border.color: theme.divider
+                                    implicitHeight: diagnosticsColumn.implicitHeight + 28
+                                    ColumnLayout {
+                                        id: diagnosticsColumn
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: 14
+                                        spacing: 7
+                                        Label {
+                                            text: "Runtime log"
+                                            color: theme.textPrimary
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: platformManager.dataDirectory + "/logs/runtime.log"
+                                            color: theme.textSecondary
+                                            font.pixelSize: 11 * theme.fontScale
+                                            wrapMode: Text.WrapAnywhere
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "The log records application, library, metadata, controller, and launcher activity. It rotates at 5 MiB and retains three archived logs."
+                                            color: theme.textMuted
+                                            font.pixelSize: 10 * theme.fontScale
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
+                                }
+                                Label {
+                                    text: "MANAGED LAUNCHERS"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10 * theme.fontScale
+                                    font.bold: true
+                                    font.letterSpacing: 1
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "These are Linux launchers installed and managed by RecompStation. Removing one here only removes its managed installation; game files and saves are not affected."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 11 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Repeater {
+                                        model: window.launcherRevision >= 0
+                                            ? launcherDownloadManager.installedLaunchers() : []
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            Layout.fillWidth: true
+                                            radius: theme.radiusCard
+                                            color: theme.sidebarBackground
+                                            border.color: theme.divider
+                                            implicitHeight: launcherEntryColumn.implicitHeight + 24
+                                            ColumnLayout {
+                                                id: launcherEntryColumn
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                anchors.top: parent.top
+                                                anchors.margins: 12
+                                                spacing: 5
+                                                Label {
+                                                    text: modelData.projectId
+                                                    color: theme.textPrimary
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: modelData.executablePath
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                    wrapMode: Text.WrapAnywhere
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        visible: launcherDownloadManager.installedLaunchers().length === 0
+                                        text: "No managed launchers are currently installed."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
                                 Item { Layout.fillHeight: true }
                                 Label {
                                     text: "RecompStation  •  Version 0.1.0"
@@ -4163,131 +4316,8 @@ ApplicationWindow {
                                     }
 
                                     Label {
-                                        text: "PLANNED PROVIDERS"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
-                                    Rectangle {
                                         Layout.fillWidth: true
-                                        implicitHeight: plannedProvidersColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: theme.divider
-                                        ColumnLayout {
-                                            id: plannedProvidersColumn
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 12
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                CheckBox {
-
-                                                    background: Rectangle {
-
-                                                        radius: 8
-
-                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-
-                                                        border.width: parent.activeFocus ? 2 : 0
-
-                                                        anchors.margins: -6
-
-                                                    }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                                    text: "ScreenScraper"
-                                                    enabled: false
-                                                    checked: false
-                                                }
-                                                Item { Layout.fillWidth: true }
-                                                Label { text: "Not integrated"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: "ROM-focused identification using file hashes, with extensive game information and media."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                CheckBox {
-
-                                                    background: Rectangle {
-
-                                                        radius: 8
-
-                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-
-                                                        border.width: parent.activeFocus ? 2 : 0
-
-                                                        anchors.margins: -6
-
-                                                    }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                                    text: "Hasheous"
-                                                    enabled: false
-                                                    checked: false
-                                                }
-                                                Item { Layout.fillWidth: true }
-                                                Label { text: "Under evaluation"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: "Potential hash-based identification and metadata enrichment provider."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                CheckBox {
-
-                                                    background: Rectangle {
-
-                                                        radius: 8
-
-                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-
-                                                        border.width: parent.activeFocus ? 2 : 0
-
-                                                        anchors.margins: -6
-
-                                                    }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                                    text: "IGDB"
-                                                    enabled: false
-                                                    checked: false
-                                                }
-                                                Item { Layout.fillWidth: true }
-                                                Label { text: "Under evaluation"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale }
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: "Potential source for supplementary game descriptions, genres, and release information."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                        }
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "Only integrated providers can be enabled. Additional providers, provider priority, fallback behavior, and separate artwork sources will become configurable as integrations are added."
+                                        text: "TheGamesDB is the currently integrated metadata provider. Additional services will appear here when their integrations are ready."
                                         color: theme.textMuted
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
