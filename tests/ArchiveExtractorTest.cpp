@@ -21,6 +21,7 @@ private:
 private slots:
     void extractsTarGzAndPreservesStructure();
     void extractsZipAndPreservesStructure();
+    void extractsZipContainingNestedTarGz();
     void findsExecutableInsideSingleTopLevelDirectory();
     void stagesStandaloneAppImage();
     void rejectsAppImageWithUnsafeFilename();
@@ -159,6 +160,47 @@ void ArchiveExtractorTest::extractsZipAndPreservesStructure()
         QStringLiteral("SpaghettiKart/resources/data.bin")));
     QVERIFY(companion.open(QIODevice::ReadOnly));
     QCOMPARE(companion.readAll(), QByteArray("companion-data"));
+}
+
+void ArchiveExtractorTest::extractsZipContainingNestedTarGz()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString innerArchivePath = QDir(temp.path()).filePath("starfox.tar.gz");
+    const QString outerArchivePath = QDir(temp.path()).filePath("starfox-release.zip");
+    const QString destination = QDir(temp.path()).filePath("installed");
+
+    QVERIFY(createArchive(innerArchivePath, {
+        {{QStringLiteral("name"), QStringLiteral("Starfox64Recompiled")},
+         {QStringLiteral("data"), QByteArray("#!/bin/sh\\necho starfox\\n")},
+         {QStringLiteral("mode"), 0755}},
+        {{QStringLiteral("name"), QStringLiteral("assets/")}, {QStringLiteral("type"), QStringLiteral("directory")}},
+        {{QStringLiteral("name"), QStringLiteral("assets/launcher.rml")},
+         {QStringLiteral("data"), QByteArray("launcher-ui")}},
+        {{QStringLiteral("name"), QStringLiteral("recompcontrollerdb.txt")},
+         {QStringLiteral("data"), QByteArray("controller-db")}}
+    }));
+
+    QFile innerArchive(innerArchivePath);
+    QVERIFY(innerArchive.open(QIODevice::ReadOnly));
+    const QByteArray innerArchiveBytes = innerArchive.readAll();
+    innerArchive.close();
+
+    QVERIFY(createArchive(outerArchivePath, {
+        {{QStringLiteral("name"), QStringLiteral("Starfox64Recompiled.tar.gz")},
+         {QStringLiteral("data"), innerArchiveBytes}}
+    }, true, true));
+
+    const auto result = ArchiveExtractor::extractArchive(
+        outerArchivePath, destination, QStringLiteral("Starfox64Recompiled"));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QCOMPARE(QFileInfo(result.executablePath).fileName(), QStringLiteral("Starfox64Recompiled"));
+    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
+        QStringLiteral("assets/launcher.rml"))).isFile());
+    QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
+        QStringLiteral("recompcontrollerdb.txt"))).isFile());
+    QVERIFY(!QFileInfo(destination).exists());
 }
 
 void ArchiveExtractorTest::findsExecutableInsideSingleTopLevelDirectory()
