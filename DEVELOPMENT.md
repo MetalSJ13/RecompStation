@@ -4,7 +4,7 @@ This document is the authoritative development status and implementation order f
 
 ## Project status
 
-**Current implementation focus:** The Settings navigation has been widened and given category-specific SVG icons; Appearance, Display, Library, Metadata, Controller, and Application categories are now represented. Appearance and Application now use the same scrollable content pattern as the other settings pages. The Metadata page exposes the integrated TheGamesDB provider as a persistent checkbox, reports its configuration state, and lists ScreenScraper, Hasheous, and IGDB as future integrations. The provider preference is applied before metadata initialization, so a disabled TheGamesDB provider does not issue its initial platform-catalog request, later game searches, or new gameplay-screenshot refreshes. The Controller page now presents connected/disconnected state, controller name/type, input enablement, the active default profile, and a read-only summary of current navigation bindings. Per-device profiles and button remapping remain planned, not implemented. This UI change is awaiting local build and runtime verification.
+**Current implementation focus:** The Settings navigation has been widened and given category-specific SVG icons; Appearance, Display, Library, Metadata, Controller, and Application categories are now represented. Appearance and Application now use the same scrollable content pattern as the other settings pages. The Metadata page exposes the integrated TheGamesDB provider as a persistent checkbox, reports its configuration state, and lists ScreenScraper, Hasheous, and IGDB as future integrations. The provider preference is applied before metadata initialization, so a disabled TheGamesDB provider does not issue its initial platform-catalog request, later game searches, or new gameplay-screenshot refreshes. The Controller page now presents connected/disconnected state, controller name/type, input enablement, the active default profile, and a read-only summary of current navigation bindings. Per-device profiles and button remapping remain planned, not implemented. The Settings controller-focus work has since been built and exercised: category navigation and visible focus styling are in place across the settings categories and their interactive controls.
 
  The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is connected to the library scan flow. The first pass uses conservative title matching within the mapped platform, records completed lookups and provider failures to avoid repeated requests during automatic scans, and downloads artwork for accepted matches. Explicit Refresh Metadata retries previously checked games. Re-adding a previously unavailable ROM now clears its stale failed lookup attempt when no metadata association exists, so it can be retried automatically. New diagnostic logging records why automatic metadata scans are skipped or how many games they queue. Provider failures remain distinct from definitive no-match and ambiguous results. The latest database change and regression test are committed; local build and regression-test verification are pending. A first N64 ROM hash utility has now been added: it detects .z64/.n64/.v64 byte order from the ROM magic, normalizes bytes to canonical big-endian order, and calculates MD5 and CRC32. Unit tests cover all three byte orders and invalid inputs. The TheGamesDB ByGameHash endpoint contract has been confirmed in a maintained API client (hash, filter[type]=md5|crc, filter[platform], fields, and includes); the public Swagger remains incomplete. API request integration and local test verification are the next steps.
 
@@ -21,6 +21,7 @@ Keep the application buildable after each focused change. Preserve working backe
 - [x] Document the actual current navigation bindings without presenting read-only mappings as editable.
 - [x] Expose stable SDL controller GUIDs and persist validated logical-action profiles independently per GUID.
 - [ ] Apply saved profile mappings in the input router; implement button capture/remapping and per-device reset controls.
+- [x] Build and verify Settings category navigation and visible focus styling across Appearance, Display, Library, Metadata, and Controller controls.
 - [ ] Build and visually verify the revised Controller page with connected and disconnected controller states.
 
 ### Settings foundation update (2026-11-18)
@@ -55,7 +56,18 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Record project-specific ROM requirements, including documented revision and SHA-1 requirements where available.
 - [x] Allow multiple projects to match one game and provide a project selector in Game Details (notably Super Mario 64).
 - [x] Add catalog regression coverage for new game-title matching, multiple Super Mario 64 projects, and Linux asset filtering.
-- [ ] Build and run locally; verify archive extraction, expected executable paths, install, launch, and uninstall for representative projects.
+- [x] Build and run locally; verify Linux archive extraction, expected executable paths, installation, and launch for representative projects (Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat).
+- [ ] Complete install/launch/uninstall checks for every remaining catalog project.
+
+### Linux launcher execution and archive handling (2026-11-18)
+
+- [x] Support release ZIPs that wrap a single TAR.GZ/TGZ payload; safely extract the nested archive into the requested staging destination.
+- [x] Add regression coverage confirming nested archive contents (executable and supporting assets) land in the expected destination.
+- [x] Launch shell startup scripts from their installation directory using a relative invocation such as `./run.sh`, preserving scripts' expected relative asset paths.
+- [x] Add regression coverage that checks the shell script is invoked as `./run.sh`.
+- [x] Correct the PaperBoat catalog executable filename to the archive's exact case-sensitive name, `Paperboat.AppImage`.
+- [x] User-confirmed launch success for Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat.
+- [ ] Continue testing remaining catalog projects and verify uninstall preserves ROM files.
 
 ## Completed foundation
 
@@ -167,7 +179,8 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Add adaptive mouse, keyboard, and controller navigation hints with bundled icons
 - [x] Detect controllers connected after application startup; switch hints when controller input is used
 - [ ] Ensure keyboard navigation and visible focus across all screens (Library keyboard navigation works; Settings category focus/navigation remains deferred)
-- [ ] Establish controller-friendly navigation across all settings and dialogs
+- [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
+- [ ] Complete controller-only navigation across every settings control, dialog, dropdown, and long scrolling page.
 - [ ] Persist independent controller profiles keyed by stable SDL hardware GUID (backend foundation complete); apply assignments to the input router and implement interactive remapping/reset
 - [ ] Ensure Xbox/PlayStation defaults and launcher/game-session input ownership remain correct
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
