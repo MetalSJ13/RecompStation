@@ -164,6 +164,50 @@ private slots:
         QCOMPARE(spy.takeFirst().at(0).toInt(), 4);
     }
 
+    void automaticallyDiscoversFilesInNewNestedDirectories()
+    {
+        QSignalSpy spy(m_scanner.get(), &LibraryScanner::scanCompleted);
+        QVERIFY(spy.isValid());
+        QVERIFY(m_scanner->monitoringActive());
+
+        QVERIFY(writeGameFile("N64", "NewFolder/FirstGame.z64"));
+        QTRY_COMPARE_WITH_TIMEOUT(m_databaseManager->games("N64").size(), 1, 5000);
+
+        QVERIFY(writeGameFile("N64", "NewFolder/Deeper/SecondGame.n64"));
+        QTRY_COMPARE_WITH_TIMEOUT(m_databaseManager->games("N64").size(), 2, 5000);
+        QVERIFY(spy.count() >= 2);
+    }
+
+    void automaticallyMarksRemovedFilesUnavailable()
+    {
+        QVERIFY(writeGameFile("N64", "RemoveMe.z64"));
+        QCOMPARE(m_scanner->scanPlatform("N64"), 1);
+        QCOMPARE(m_databaseManager->games("N64").size(), 1);
+
+        const QString gamePath =
+            m_platformManager->platformDirectory("N64") + "/RemoveMe.z64";
+        QVERIFY(QFile::remove(gamePath));
+
+        QTRY_VERIFY_WITH_TIMEOUT(m_databaseManager->games("N64").isEmpty(), 5000);
+        // The database keeps the record, but unavailable games are omitted from the library view.
+        QVERIFY(m_databaseManager->games().isEmpty());
+    }
+
+    void automaticMonitoringCanBeStoppedAndRestarted()
+    {
+        QVERIFY(m_scanner->monitoringActive());
+        m_scanner->stopMonitoring();
+        QVERIFY(!m_scanner->monitoringActive());
+
+        QVERIFY(writeGameFile("N64", "WhileStopped.z64"));
+        QTest::qWait(1000);
+        QVERIFY(m_databaseManager->games("N64").isEmpty());
+
+        QVERIFY(m_scanner->startMonitoring());
+        QVERIFY(writeGameFile("N64", "AfterRestart.z64"));
+        QTRY_COMPARE_WITH_TIMEOUT(m_databaseManager->games("N64").size(), 2, 5000);
+    }
+
     void unknownPlatformReportsErrorAndCompletion()
     {
         QSignalSpy spy(m_scanner.get(), &LibraryScanner::scanCompleted);
