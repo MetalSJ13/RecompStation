@@ -179,7 +179,7 @@ ApplicationWindow {
             gameGrid.forceActiveFocus()
         } else if (currentPage === "Settings") {
             if (!moveDirectionalFocus(settingsPage, direction)) {
-                const sections = ["Appearance", "Display", "Library", "Application"]
+                const sections = ["Appearance", "Display", "Library", "Controller", "Application"]
                 let index = sections.indexOf(settingsPage.section)
                 if (direction === "up") index = Math.max(0, index - 1)
                 if (direction === "down") index = Math.min(sections.length - 1, index + 1)
@@ -2772,9 +2772,9 @@ ApplicationWindow {
 
                         Rectangle {
                             id: settingsNavigationPanel
-                            Layout.minimumWidth: 224
-                            Layout.maximumWidth: 224
-                            Layout.preferredWidth: 224
+                            Layout.minimumWidth: 248
+                            Layout.maximumWidth: 248
+                            Layout.preferredWidth: 248
                             Layout.fillHeight: true
                             radius: theme.radiusLarge
                             color: theme.sidebarBackground
@@ -2783,8 +2783,8 @@ ApplicationWindow {
                             ColumnLayout {
                                 id: settingsNavigationColumn
                                 anchors.fill: parent
-                                anchors.margins: 16
-                                spacing: 12
+                                anchors.margins: 18
+                                spacing: 14
 
                                 Label {
                                     text: "PREFERENCES"
@@ -2811,7 +2811,7 @@ ApplicationWindow {
                                     focusPolicy: Qt.StrongFocus
                                     id: appearanceNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 48
+                                    Layout.preferredHeight: 52
                                     padding: 10
                                     highlighted: settingsPage.section === "Appearance"
                                     onClicked: settingsPage.section = "Appearance"
@@ -2834,12 +2834,20 @@ ApplicationWindow {
                                             color: appearanceNavigationButton.highlighted
                                                 ? theme.accent : "transparent"
                                         }
+                                        Image {
+                                            source: "qrc:/icons/appearance.svg"
+                                            sourceSize.width: 20
+                                            sourceSize.height: 20
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            opacity: appearanceNavigationButton.highlighted ? 1.0 : 0.78
+                                        }
                                         Label {
                                             Layout.fillWidth: true
                                             text: "Appearance"
                                             color: appearanceNavigationButton.highlighted
                                                 ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 13 * theme.fontScale
+                                            font.pixelSize: 14 * theme.fontScale
                                             font.bold: appearanceNavigationButton.highlighted
                                         }
                                     }
@@ -2849,7 +2857,7 @@ ApplicationWindow {
                                     focusPolicy: Qt.StrongFocus
                                     id: displayNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 48
+                                    Layout.preferredHeight: 52
                                     padding: 10
                                     highlighted: settingsPage.section === "Display"
                                     onClicked: settingsPage.section = "Display"
@@ -2872,12 +2880,20 @@ ApplicationWindow {
                                             color: displayNavigationButton.highlighted
                                                 ? theme.accent : "transparent"
                                         }
+                                        Image {
+                                            source: "qrc:/icons/display.svg"
+                                            sourceSize.width: 20
+                                            sourceSize.height: 20
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            opacity: displayNavigationButton.highlighted ? 1.0 : 0.78
+                                        }
                                         Label {
                                             Layout.fillWidth: true
                                             text: "Display"
                                             color: displayNavigationButton.highlighted
                                                 ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 13 * theme.fontScale
+                                            font.pixelSize: 14 * theme.fontScale
                                             font.bold: displayNavigationButton.highlighted
                                         }
                                     }
@@ -2887,7 +2903,7 @@ ApplicationWindow {
                                     focusPolicy: Qt.StrongFocus
                                     id: libraryNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 48
+                                    Layout.preferredHeight: 52
                                     padding: 10
                                     highlighted: settingsPage.section === "Library"
                                     onClicked: settingsPage.section = "Library"
@@ -2910,13 +2926,67 @@ ApplicationWindow {
                                             color: libraryNavigationButton.highlighted
                                                 ? theme.accent : "transparent"
                                         }
+                                        Image {
+                                            source: "qrc:/icons/library.svg"
+                                            sourceSize.width: 20
+                                            sourceSize.height: 20
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            opacity: libraryNavigationButton.highlighted ? 1.0 : 0.78
+                                        }
                                         Label {
                                             Layout.fillWidth: true
                                             text: "Library"
                                             color: libraryNavigationButton.highlighted
                                                 ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 13 * theme.fontScale
+                                            font.pixelSize: 14 * theme.fontScale
                                             font.bold: libraryNavigationButton.highlighted
+                                        }
+                                    }
+                                }
+                                Button {
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
+                                    id: controllerNavigationButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 52
+                                    padding: 10
+                                    highlighted: settingsPage.section === "Controller"
+                                    onClicked: settingsPage.section = "Controller"
+                                    background: Rectangle {
+                                        radius: theme.radiusCard
+                                        color: controllerNavigationButton.highlighted
+                                            ? theme.elevatedSurface
+                                            : controllerNavigationButton.hovered
+                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
+                                                : "transparent"
+                                        border.width: controllerNavigationButton.highlighted ? 1 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.fillHeight: true
+                                            radius: 2
+                                            color: controllerNavigationButton.highlighted
+                                                ? theme.accent : "transparent"
+                                        }
+                                        Image {
+                                            source: "qrc:/icons/gamepad.svg"
+                                            sourceSize.width: 20
+                                            sourceSize.height: 20
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            opacity: controllerNavigationButton.highlighted ? 1.0 : 0.78
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Controller"
+                                            color: controllerNavigationButton.highlighted
+                                                ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 14 * theme.fontScale
+                                            font.bold: controllerNavigationButton.highlighted
                                         }
                                     }
                                 }
@@ -2925,7 +2995,7 @@ ApplicationWindow {
                                     focusPolicy: Qt.StrongFocus
                                     id: applicationNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 48
+                                    Layout.preferredHeight: 52
                                     padding: 10
                                     highlighted: settingsPage.section === "Application"
                                     onClicked: settingsPage.section = "Application"
@@ -2948,12 +3018,20 @@ ApplicationWindow {
                                             color: applicationNavigationButton.highlighted
                                                 ? theme.accent : "transparent"
                                         }
+                                        Image {
+                                            source: "qrc:/icons/application.svg"
+                                            sourceSize.width: 20
+                                            sourceSize.height: 20
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            opacity: applicationNavigationButton.highlighted ? 1.0 : 0.78
+                                        }
                                         Label {
                                             Layout.fillWidth: true
                                             text: "Application"
                                             color: applicationNavigationButton.highlighted
                                                 ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 13 * theme.fontScale
+                                            font.pixelSize: 14 * theme.fontScale
                                             font.bold: applicationNavigationButton.highlighted
                                         }
                                     }
@@ -3701,6 +3779,185 @@ ApplicationWindow {
                                     text: "RecompStation  •  Version 0.1.0"
                                     color: theme.textMuted
                                     font.pixelSize: 11 * theme.fontScale
+                                }
+                            }
+
+                            ScrollView {
+                                anchors.fill: parent
+                                anchors.margins: 30
+                                clip: true
+                                visible: settingsPage.section === "Controller"
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                                ColumnLayout {
+                                    width: parent.width
+                                    spacing: 18
+
+                                    Label {
+                                        text: "Controller"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 27 * theme.fontScale
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "View connected controller information and configure controller support."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 13 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+
+                                    Label {
+                                        text: "CONNECTED DEVICE"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: controllerInfoColumn.implicitHeight + 30
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: controllerManager.connected ? theme.accent : theme.divider
+
+                                        RowLayout {
+                                            id: controllerInfoColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 16
+                                            spacing: 14
+
+                                            Image {
+                                                source: "qrc:/icons/gamepad.svg"
+                                                sourceSize.width: 42
+                                                sourceSize.height: 34
+                                                Layout.preferredWidth: 42
+                                                Layout.preferredHeight: 34
+                                            }
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 5
+                                                Label {
+                                                    text: controllerManager.connected
+                                                        ? controllerManager.controllerName : "No controller connected"
+                                                    color: theme.textPrimary
+                                                    font.pixelSize: 14 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                                Label {
+                                                    text: controllerManager.connected
+                                                        ? controllerManager.controllerType.toUpperCase() + " controller"
+                                                        : controllerManager.available
+                                                            ? "Connect a supported gamepad to use controller navigation."
+                                                            : "Controller support is unavailable in this build."
+                                                    color: theme.textSecondary
+                                                    font.pixelSize: 11 * theme.fontScale
+                                                    wrapMode: Text.Wrap
+                                                    Layout.fillWidth: true
+                                                }
+                                            }
+                                            Rectangle {
+                                                radius: 10
+                                                color: controllerManager.connected
+                                                    ? Qt.rgba(0.25, 0.75, 0.48, 0.14)
+                                                    : Qt.rgba(0.55, 0.60, 0.68, 0.12)
+                                                border.color: controllerManager.connected ? "#48C78E" : theme.divider
+                                                implicitWidth: controllerStatusLabel.implicitWidth + 20
+                                                implicitHeight: 28
+                                                Label {
+                                                    id: controllerStatusLabel
+                                                    anchors.centerIn: parent
+                                                    text: controllerManager.connected ? "Connected" : "Disconnected"
+                                                    color: controllerManager.connected ? "#48C78E" : theme.textMuted
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Label {
+                                        text: "INPUT"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: controllerInputColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: theme.divider
+                                        ColumnLayout {
+                                            id: controllerInputColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 6
+                                            Label {
+                                                text: "Controller navigation"
+                                                color: theme.textPrimary
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.bold: true
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: controllerManager.connected
+                                                    ? "Use the D-pad or left analog stick to navigate. The navigation guide updates when controller input is used."
+                                                    : "Keyboard and mouse remain available. Connect a controller at any time; RecompStation detects it without restarting."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
+
+                                    Label {
+                                        text: "BUTTON MAPPING"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: mappingColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: theme.divider
+                                        ColumnLayout {
+                                            id: mappingColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 6
+                                            Label {
+                                                text: "Custom button mapping"
+                                                color: theme.textPrimary
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.bold: true
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Per-controller profiles and button remapping are planned for a later input milestone. Your controller's existing default mapping remains active."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                            Label {
+                                                text: "Not available yet"
+                                                color: theme.textMuted
+                                                font.pixelSize: 10 * theme.fontScale
+                                                font.italic: true
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
