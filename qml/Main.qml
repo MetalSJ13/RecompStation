@@ -282,7 +282,7 @@ ApplicationWindow {
         }
     }
 
-    onVisibilityChanged: {
+    onVisibilityChanged: function(visibility) {
         if (visibility === Window.FullScreen) {
             // Preserve the last non-fullscreen preference when fullscreen is
             // entered by the compositor or another window-manager action.
@@ -1607,83 +1607,57 @@ ApplicationWindow {
                 }
             }
 
-            Canvas {
-                id: libraryWaveCanvas
+            // The wave artwork is rasterized once by Qt and then animated as
+            // a textured scene-graph item. No JavaScript painting or frame timer.
+            Item {
+                id: libraryWaveLayer
                 anchors.fill: parent
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "animated"
-                property real phase: 0
+                clip: true
 
-                onPaint: {
-                    const ctx = getContext("2d")
-                    ctx.clearRect(0, 0, width, height)
+                Image {
+                    id: libraryWaveImage
+                    anchors.centerIn: parent
+                    width: parent.width * 1.12
+                    height: parent.height * 1.08
+                    source: "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    cache: true
+                    smooth: true
+                    mipmap: true
+                    opacity: 0.78
 
-                    const waveGradient = ctx.createLinearGradient(0, 0, width, height * 0.12)
-                    waveGradient.addColorStop(0.0, "rgba(25, 86, 220, 0.16)")
-                    waveGradient.addColorStop(0.32, "rgba(62, 151, 255, 0.96)")
-                    waveGradient.addColorStop(0.68, "rgba(93, 184, 255, 0.82)")
-                    waveGradient.addColorStop(1.0, "rgba(30, 91, 235, 0.18)")
-
-                    ctx.lineCap = "round"
-                    ctx.lineJoin = "round"
-                    ctx.strokeStyle = waveGradient
-                    ctx.shadowColor = "rgba(50, 133, 255, 0.82)"
-                    ctx.shadowBlur = 16
-
-                    // Broad, gently drifting ribbons evoke the flowing blue console-hub waves.
-                    for (let band = 0; band < 7; ++band) {
-                        ctx.beginPath()
-                        ctx.globalAlpha = 0.62 - band * 0.045
-                        ctx.lineWidth = band % 2 === 0 ? 2.8 : 1.8
-                        const baseY = height * (0.20 + band * 0.10)
-                        for (let x = -12; x <= width + 12; x += 7) {
-                            const broadWave = Math.sin(x * 0.0024 + phase + band * 0.52) * 48
-                            const fineWave = Math.sin(x * 0.0052 + phase * 0.68 + band * 0.83) * 13
-                            const drift = Math.sin(phase * 0.42 + band * 0.9) * 15
-                            const y = baseY + broadWave + fineWave + drift
-                            if (x === -12)
-                                ctx.moveTo(x, y)
-                            else
-                                ctx.lineTo(x, y)
-                        }
-                        ctx.stroke()
+                    SequentialAnimation on x {
+                        running: libraryWaveLayer.visible && !settingsManager.reducedMotion
+                            && window.active && window.visibility !== Window.Minimized
+                        loops: Animation.Infinite
+                        NumberAnimation { to: libraryWaveLayer.width * -0.035; duration: 26000; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: libraryWaveLayer.width * -0.065; duration: 26000; easing.type: Easing.InOutSine }
                     }
-
-                    // A few soft, translucent ribbons add depth without obscuring the library.
-                    ctx.shadowBlur = 0
-                    for (let band = 0; band < 3; ++band) {
-                        ctx.beginPath()
-                        const baseY = height * (0.31 + band * 0.19)
-                        ctx.moveTo(0, baseY)
-                        for (let x = 0; x <= width; x += 9) {
-                            const y = baseY
-                                + Math.sin(x * 0.002 + phase * 0.72 + band * 1.1) * 36
-                                + Math.sin(x * 0.004 + phase * 0.48) * 12
-                            ctx.lineTo(x, y)
-                        }
-                        ctx.lineTo(width, baseY + 72)
-                        ctx.lineTo(0, baseY + 72)
-                        ctx.closePath()
-                        const fill = ctx.createLinearGradient(0, baseY - 50, 0, baseY + 75)
-                        fill.addColorStop(0.0, "rgba(39, 111, 255, 0.015)")
-                        fill.addColorStop(0.5, "rgba(43, 124, 255, 0.075)")
-                        fill.addColorStop(1.0, "rgba(39, 111, 255, 0.005)")
-                        ctx.fillStyle = fill
-                        ctx.globalAlpha = 1.0
-                        ctx.fill()
-                    }
-                    ctx.globalAlpha = 1.0
-                    ctx.shadowBlur = 0
                 }
 
-                Timer {
-                    interval: 40
-                    repeat: true
-                    running: libraryWaveCanvas.visible && !settingsManager.reducedMotion
-                        && window.active && window.visibility !== Window.Minimized
-                    onTriggered: {
-                        libraryWaveCanvas.phase += 0.018
-                        libraryWaveCanvas.requestPaint()
+                Image {
+                    id: libraryWaveImageSecondary
+                    anchors.centerIn: parent
+                    width: parent.width * 1.18
+                    height: parent.height * 1.10
+                    source: "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    cache: true
+                    smooth: true
+                    mipmap: true
+                    opacity: 0.24
+                    rotation: 180
+
+                    SequentialAnimation on x {
+                        running: libraryWaveLayer.visible && !settingsManager.reducedMotion
+                            && window.active && window.visibility !== Window.Minimized
+                        loops: Animation.Infinite
+                        NumberAnimation { to: libraryWaveLayer.width * -0.055; duration: 34000; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: libraryWaveLayer.width * -0.025; duration: 34000; easing.type: Easing.InOutSine }
                     }
                 }
             }
@@ -2007,11 +1981,21 @@ ApplicationWindow {
                             clip: true
                             spacing: 9
                             model: gameGrid.model
-                            currentIndex: gameGrid.currentIndex >= 0
-                                ? gameGrid.currentIndex : (gameGrid.count > 0 ? 0 : -1)
+                            currentIndex: -1
+                            Component.onCompleted: {
+                                currentIndex = gameGrid.currentIndex >= 0
+                                    ? gameGrid.currentIndex : (count > 0 ? 0 : -1)
+                            }
                             onCurrentIndexChanged: {
                                 if (currentIndex !== gameGrid.currentIndex)
                                     gameGrid.currentIndex = currentIndex
+                            }
+                            Connections {
+                                target: gameGrid
+                                function onCurrentIndexChanged() {
+                                    if (gameList.currentIndex !== gameGrid.currentIndex)
+                                        gameList.currentIndex = gameGrid.currentIndex
+                                }
                             }
                             keyNavigationEnabled: true
                             delegate: Item {
