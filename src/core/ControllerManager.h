@@ -4,8 +4,11 @@
 #include <QString>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QVariantMap>
 
 #include "ControllerInputRouter.h"
+
+class SettingsManager;
 
 struct _SDL_GameController;
 
@@ -32,6 +35,7 @@ public:
 
 public slots:
     void setInputEnabled(bool enabled);
+    void setSettingsManager(SettingsManager *settingsManager);
 
 signals:
     void connectedChanged();
@@ -48,6 +52,7 @@ private slots:
     void pollController();
 
 private:
+    void loadControllerProfile();
     void setConnected(bool connected, const QString &name = {},
                       const QString &type = QStringLiteral("generic"),
                       const QString &guid = {});
@@ -56,6 +61,8 @@ private:
     QElapsedTimer m_elapsedTimer;
     _SDL_GameController *m_controller = nullptr;
     ControllerInputRouter m_inputRouter;
+    SettingsManager *m_settingsManager = nullptr;
+    QVariantMap m_controllerProfile;
     QString m_controllerName;
     QString m_controllerType = QStringLiteral("generic");
     QString m_controllerGuid;
