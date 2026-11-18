@@ -66,12 +66,12 @@ bool LibraryScanner::startMonitoring()
         return false;
     }
 
+    const bool wasActive = m_monitoringActive;
     m_monitoringActive = true;
     refreshDirectoryWatches();
-    if (!m_monitoringActive)
-        return false;
 
-    emit monitoringActiveChanged();
+    if (!wasActive)
+        emit monitoringActiveChanged();
     qCInfo(lcLibrary) << "Filesystem monitoring enabled for"
                       << m_fileWatcher.directories().size() << "directories.";
     return true;
@@ -121,7 +121,10 @@ void LibraryScanner::refreshDirectoryWatches()
     }
 
     directories.removeDuplicates();
-    const QSet<QString> desired(directories.cbegin(), directories.cend());
+    QSet<QString> desired;
+    for (const QString &path : directories)
+        desired.insert(path);
+
     QStringList stale;
     for (const QString &path : m_fileWatcher.directories()) {
         if (!desired.contains(path))
@@ -130,8 +133,10 @@ void LibraryScanner::refreshDirectoryWatches()
     if (!stale.isEmpty())
         m_fileWatcher.removePaths(stale);
 
-    const QSet<QString> existing(m_fileWatcher.directories().cbegin(),
-                                 m_fileWatcher.directories().cend());
+    QSet<QString> existing;
+    for (const QString &path : m_fileWatcher.directories())
+        existing.insert(path);
+
     QStringList missing;
     for (const QString &path : directories) {
         if (!existing.contains(path))
