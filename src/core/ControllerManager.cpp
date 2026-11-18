@@ -180,6 +180,17 @@ void ControllerManager::pollController()
         direction = ControllerInputRouter::directionFromAxes(x, y);
     }
 
+    // The right stick is reserved for smooth scrolling in long UI panels.
+    // SDL reports positive Y when the stick is pushed down. Ignore small
+    // movements to prevent drift from slowly moving the page.
+    const Sint16 rightY = SDL_GameControllerGetAxis(
+        m_controller, SDL_CONTROLLER_AXIS_RIGHTY);
+    constexpr int rightStickDeadZone = 8000;
+    if (qAbs(static_cast<int>(rightY)) > rightStickDeadZone) {
+        const qreal scrollAmount = static_cast<qreal>(rightY) / 32767.0;
+        emit rightStickScrollRequested(scrollAmount);
+    }
+
     m_inputRouter.processFrame(
         direction,
         pressed(SDL_CONTROLLER_BUTTON_A),
