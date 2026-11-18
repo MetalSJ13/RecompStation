@@ -4,7 +4,7 @@ This document is the authoritative development status and implementation order f
 
 ## Project status
 
-**Current implementation focus:** The Settings navigation has been widened and given category-specific SVG icons; Appearance, Display, Library, Metadata, Controller, and Application categories are now represented. Appearance and Application now use the same scrollable content pattern as the other settings pages. The Metadata page exposes the integrated TheGamesDB provider as a persistent checkbox, reports its configuration state, and lists ScreenScraper, Hasheous, and IGDB as future integrations. The provider preference is applied before metadata initialization, so a disabled TheGamesDB provider does not issue its initial platform-catalog request, later game searches, or new gameplay-screenshot refreshes. The new Controller overview reports connected/disconnected state, controller name/type, and whether controller support is available. Per-device profiles and button remapping remain planned, not implemented. This UI change is awaiting local build and runtime verification.
+**Current implementation focus:** The Settings navigation has been widened and given category-specific SVG icons; Appearance, Display, Library, Metadata, Controller, and Application categories are now represented. Appearance and Application now use the same scrollable content pattern as the other settings pages. The Metadata page exposes the integrated TheGamesDB provider as a persistent checkbox, reports its configuration state, and lists ScreenScraper, Hasheous, and IGDB as future integrations. The provider preference is applied before metadata initialization, so a disabled TheGamesDB provider does not issue its initial platform-catalog request, later game searches, or new gameplay-screenshot refreshes. The Controller page now presents connected/disconnected state, controller name/type, input enablement, the active default profile, and a read-only summary of current navigation bindings. Per-device profiles and button remapping remain planned, not implemented. This UI change is awaiting local build and runtime verification.
 
  The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is connected to the library scan flow. The first pass uses conservative title matching within the mapped platform, records completed lookups and provider failures to avoid repeated requests during automatic scans, and downloads artwork for accepted matches. Explicit Refresh Metadata retries previously checked games. Re-adding a previously unavailable ROM now clears its stale failed lookup attempt when no metadata association exists, so it can be retried automatically. New diagnostic logging records why automatic metadata scans are skipped or how many games they queue. Provider failures remain distinct from definitive no-match and ambiguous results. The latest database change and regression test are committed; local build and regression-test verification are pending. A first N64 ROM hash utility has now been added: it detects .z64/.n64/.v64 byte order from the ROM magic, normalizes bytes to canonical big-endian order, and calculates MD5 and CRC32. Unit tests cover all three byte orders and invalid inputs. The TheGamesDB ByGameHash endpoint contract has been confirmed in a maintained API client (hash, filter[type]=md5|crc, filter[platform], fields, and includes); the public Swagger remains incomplete. API request integration and local test verification are the next steps.
 
@@ -13,6 +13,14 @@ This document is the authoritative development status and implementation order f
 **Merge policy:** This work remains unmerged into `main` until reviewed and explicitly approved.
 
 Keep the application buildable after each focused change. Preserve working backend behavior while the user-facing workflows are redesigned.
+
+### Controller settings presentation update (2026-11-18)
+
+- [x] Redesign the Controller settings page with separate device, controller-options, active-profile, and default-button-layout sections.
+- [x] Expose the existing controller-input enable/disable setting in the page.
+- [x] Document the actual current navigation bindings without presenting read-only mappings as editable.
+- [ ] Implement stable controller GUID detection, persistent per-device profiles, button capture/remapping, and per-device reset-to-default behavior.
+- [ ] Build and visually verify the revised Controller page with connected and disconnected controller states.
 
 ### Settings foundation update (2026-11-18)
 
