@@ -1101,7 +1101,7 @@ ApplicationWindow {
                 Layout.preferredHeight: 306
                 Layout.fillHeight: false
                 Layout.alignment: Qt.AlignTop
-                radius: theme.radiusMedium
+                radius: theme.radiusCard
                 color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.12)
                 border.color: theme.textPrimary
                 border.width: 2
