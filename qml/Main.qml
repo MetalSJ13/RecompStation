@@ -14,6 +14,8 @@ ApplicationWindow {
     title: "RecompStation"
 
     property string activeInputDevice: controllerManager.connected ? "controller" : "keyboard"
+    property bool systemMenuVisible: false
+    property bool quitConfirmationVisible: false
 
     function inputHintText() {
         if (activeInputDevice === "controller" && controllerManager.connected) {
@@ -84,6 +86,11 @@ ApplicationWindow {
     function controllerNavigate(direction) {
         activeInputDevice = "controller"
 
+        if (systemMenuVisible) {
+            window.moveDirectionalFocus(systemMenuPanel, direction)
+            return
+        }
+
         if (gameDetailsPopup.visible) {
             if (window.moveDirectionalFocus(detailsContentFrame, direction))
                 return
@@ -119,6 +126,12 @@ ApplicationWindow {
 
     function controllerSelect() {
         activeInputDevice = "controller"
+        if (systemMenuVisible) {
+            const focused = window.activeFocusItem
+            if (focused && typeof focused.click === "function")
+                focused.click()
+            return
+        }
         if (gameDetailsPopup.visible) {
             const focused = window.activeFocusItem
             if (focused && typeof focused.click === "function")
@@ -140,6 +153,14 @@ ApplicationWindow {
 
     function controllerBack() {
         activeInputDevice = "controller"
+        if (quitConfirmationVisible) {
+            quitConfirmationVisible = false
+            return
+        }
+        if (systemMenuVisible) {
+            systemMenuVisible = false
+            return
+        }
         if (gameDetailsPopup.visible)
             gameDetailsPopup.close()
         else if (currentPage !== "Library")
@@ -294,9 +315,10 @@ ApplicationWindow {
         }
         function onMenuRequested() {
             window.activeInputDevice = "controller"
-            if (gameDetailsPopup.visible)
-                gameDetailsPopup.close()
-            window.navigateToPage("Settings")
+            window.systemMenuVisible = !window.systemMenuVisible
+            window.quitConfirmationVisible = false
+            if (window.systemMenuVisible)
+                Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
         }
         function onPreviousSectionRequested() {
             window.activeInputDevice = "controller"
@@ -3169,6 +3191,123 @@ ApplicationWindow {
                             window.navigateToPage("Settings")
                         }
                     }
+                }
+            }
+        }
+
+        Item {
+            id: systemMenuOverlay
+            anchors.fill: parent
+            z: 100
+            visible: window.systemMenuVisible
+
+            Rectangle {
+                anchors.fill: parent
+                color: Qt.rgba(0, 0, 0, 0.62)
+            }
+
+            Rectangle {
+                id: systemMenuPanel
+                anchors.centerIn: parent
+                width: Math.min(parent.width - 48, 440)
+                height: systemMenuContent.implicitHeight + 64
+                radius: theme.radiusCard
+                color: theme.panelBackground
+                border.color: theme.divider
+                border.width: 1
+
+                ColumnLayout {
+                    id: systemMenuContent
+                    anchors.fill: parent
+                    anchors.margins: 30
+                    spacing: 14
+
+                    Label {
+                        Layout.fillWidth: true
+                        text: window.quitConfirmationVisible ? "Quit RecompStation?" : "RecompStation Menu"
+                        color: theme.textPrimary
+                        font.pixelSize: 23 * theme.fontScale
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: window.quitConfirmationVisible
+                              ? "Are you sure you want to close RecompStation?"
+                              : "Pause your session or manage the application."
+                        color: theme.textSecondary
+                        font.pixelSize: 12 * theme.fontScale
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.Wrap
+                    }
+
+                    Button {
+                        id: resumeMenuButton
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 48
+                        text: "Resume"
+                        highlighted: true
+                        onClicked: {
+                            window.quitConfirmationVisible = false
+                            window.systemMenuVisible = false
+                        }
+                        visible: !window.quitConfirmationVisible
+                    }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 48
+                        text: "Settings"
+                        onClicked: {
+                            window.systemMenuVisible = false
+                            window.navigateToPage("Settings")
+                        }
+                        visible: !window.quitConfirmationVisible
+                    }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 48
+                        text: "Quit RecompStation"
+                        onClicked: {
+                            window.quitConfirmationVisible = true
+                            Qt.callLater(function() { confirmQuitButton.forceActiveFocus() })
+                        }
+                        visible: !window.quitConfirmationVisible
+                    }
+                    Button {
+                        id: confirmQuitButton
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 48
+                        text: "Yes, Quit"
+                        highlighted: true
+                        onClicked: Qt.quit()
+                        visible: window.quitConfirmationVisible
+                    }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 48
+                        text: "Cancel"
+                        onClicked: {
+                            window.quitConfirmationVisible = false
+                            Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
+                        }
+                        visible: window.quitConfirmationVisible
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: controllerManager.connected
+                              ? "A  Select     B  Back"
+                              : "Enter  Select     Esc  Back"
+                        color: theme.textMuted
+                        font.pixelSize: 10 * theme.fontScale
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
+            }
+
+            Keys.onPressed: function(event) {
+                if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
+                    window.controllerBack()
+                    event.accepted = true
                 }
             }
         }
