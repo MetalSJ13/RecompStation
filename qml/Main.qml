@@ -15,6 +15,7 @@ ApplicationWindow {
 
     property string activeInputDevice: controllerManager.connected ? "controller" : "keyboard"
     property bool systemMenuVisible: false
+    property bool systemMenuClosing: false
     property bool quitConfirmationVisible: false
 
     function inputHintText() {
@@ -151,6 +152,13 @@ ApplicationWindow {
         }
     }
 
+    function closeSystemMenu() {
+        if (!systemMenuVisible)
+            return
+        systemMenuClosing = true
+        systemMenuVisible = false
+    }
+
     function controllerBack() {
         activeInputDevice = "controller"
         if (quitConfirmationVisible) {
@@ -158,7 +166,7 @@ ApplicationWindow {
             return
         }
         if (systemMenuVisible) {
-            systemMenuVisible = false
+            closeSystemMenu()
             return
         }
         if (gameDetailsPopup.visible)
@@ -175,6 +183,11 @@ ApplicationWindow {
     }
 
     Component.onCompleted: window.applyDisplayMode(settingsManager.displayMode)
+
+    onCurrentPageChanged: {
+        if (currentPage === "Settings")
+            Qt.callLater(function() { appearanceNavigationButton.forceActiveFocus() })
+    }
 
     onWidthChanged: console.info("[Settings Geometry] window width:", width)
     onHeightChanged: console.info("[Settings Geometry] window height:", height)
@@ -315,7 +328,11 @@ ApplicationWindow {
         }
         function onMenuRequested() {
             window.activeInputDevice = "controller"
-            window.systemMenuVisible = !window.systemMenuVisible
+            if (window.systemMenuVisible)
+                window.closeSystemMenu()
+            else
+                window.systemMenuVisible = true
+            window.systemMenuClosing = false
             window.quitConfirmationVisible = false
             if (window.systemMenuVisible)
                 Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
@@ -2350,6 +2367,8 @@ ApplicationWindow {
                                 }
 
                                 Button {
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
                                     id: appearanceNavigationButton
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 48
@@ -2386,6 +2405,8 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
                                     id: displayNavigationButton
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 48
@@ -2422,6 +2443,8 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
                                     id: libraryNavigationButton
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 48
@@ -2458,6 +2481,8 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
                                     id: applicationNavigationButton
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 48
@@ -2652,6 +2677,8 @@ ApplicationWindow {
                                         font.pixelSize: 11 * theme.fontScale
                                     }
                                     Button {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 180
                                         Layout.preferredHeight: 44
                                         text: "Apply Theme"
@@ -2690,6 +2717,8 @@ ApplicationWindow {
                                         }
                                     }
                                     ComboBox {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         id: fontSizeSelector
                                         Layout.preferredWidth: 170
                                         Layout.preferredHeight: 44
@@ -2729,6 +2758,8 @@ ApplicationWindow {
                                         }
                                     }
                                     Switch {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         checked: settingsManager.reducedMotion
                                         onToggled: settingsManager.reducedMotion = checked
                                         Accessible.name: "Reduced motion"
@@ -2815,6 +2846,8 @@ ApplicationWindow {
                                         font.letterSpacing: 1
                                     }
                                     ComboBox {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         id: displayModeSelector
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 46
@@ -2857,6 +2890,8 @@ ApplicationWindow {
                                         font.letterSpacing: 1
                                     }
                                     ComboBox {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         id: presentationSizeSelector
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 46
@@ -2880,6 +2915,8 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Item { Layout.fillWidth: true }
                                         Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 190
                                             Layout.preferredHeight: 44
                                             text: "Apply Window Size"
@@ -2959,12 +2996,16 @@ ApplicationWindow {
                                                 }
                                             }
                                             Switch {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
                                                 checked: settingsManager.scanOnStartup
                                                 onToggled: settingsManager.setScanOnStartup(checked)
                                             }
                                         }
                                     }
                                     Button {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
                                         Layout.preferredHeight: 44
                                         text: "Scan Library Now"; highlighted: true
@@ -2982,6 +3023,8 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
                                         Layout.preferredHeight: 44
                                         text: metadataMatcher.busy ? "Refreshing Metadata…" : "Refresh Metadata"
@@ -3003,6 +3046,8 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
                                         Layout.preferredHeight: 44
                                         text: screenshotManager.busy ? "Refreshing Screenshots…" : "Refresh Screenshots"
@@ -3199,8 +3244,23 @@ ApplicationWindow {
             id: systemMenuOverlay
             anchors.fill: parent
             z: 100
-            visible: window.systemMenuVisible
-            focus: visible
+            visible: window.systemMenuVisible || window.systemMenuClosing
+            opacity: window.systemMenuVisible ? 1 : 0
+            scale: window.systemMenuVisible ? 1 : 0.94
+            focus: window.systemMenuVisible
+            enabled: window.systemMenuVisible
+            Behavior on opacity {
+                enabled: !settingsManager.reducedMotion
+                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                enabled: !settingsManager.reducedMotion
+                NumberAnimation { duration: 220; easing.type: Easing.OutBack }
+            }
+            onOpacityChanged: {
+                if (!window.systemMenuVisible && opacity <= 0.001)
+                    window.systemMenuClosing = false
+            }
 
             Rectangle {
                 anchors.fill: parent
@@ -3290,7 +3350,7 @@ ApplicationWindow {
                         visible: !window.quitConfirmationVisible
                         onClicked: {
                             window.quitConfirmationVisible = false
-                            window.systemMenuVisible = false
+                            window.closeSystemMenu()
                         }
                     }
                     MenuChoice {
@@ -3298,7 +3358,7 @@ ApplicationWindow {
                         text: "Settings"
                         visible: !window.quitConfirmationVisible
                         onClicked: {
-                            window.systemMenuVisible = false
+                            window.closeSystemMenu()
                             window.navigateToPage("Settings")
                         }
                     }
