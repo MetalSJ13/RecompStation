@@ -4252,7 +4252,7 @@ ApplicationWindow {
                                             delegate: Rectangle {
                                                 Layout.fillWidth: true
                                                 implicitHeight: bindingColumn.implicitHeight + 22
-                                                radius: theme.radiusMedium
+                                                radius: theme.radiusSmall
                                                 color: theme.sidebarBackground
                                                 border.color: theme.divider
                                                 ColumnLayout {
