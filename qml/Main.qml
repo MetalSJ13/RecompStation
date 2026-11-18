@@ -1058,6 +1058,7 @@ ApplicationWindow {
                   window.selectedGame.platform)
             : []
         property string selectedProjectId: ""
+        property bool resettingProjectSelection: false
         property var selectedProject: {
             for (let i = 0; i < supportedProjects.length; ++i) {
                 if (supportedProjects[i].id === selectedProjectId)
@@ -1094,7 +1095,9 @@ ApplicationWindow {
                  bytesReceived: 0, bytesTotal: 0 })
 
         onOpened: {
+            resettingProjectSelection = true
             selectedProjectId = supportedProjects.length > 0 ? supportedProjects[0].id : ""
+            resettingProjectSelection = false
             detailsBackButton.forceActiveFocus()
             screenshotIndex = 0
             previousScreenshotIndex = -1
@@ -1114,7 +1117,7 @@ ApplicationWindow {
 
         onSelectedProjectIdChanged: {
             installPromptVisible = false
-            if (opened && selectedProject)
+            if (opened && !resettingProjectSelection && selectedProject)
                 window.checkProjectRelease(selectedProject)
         }
 
