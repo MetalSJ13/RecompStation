@@ -14,6 +14,14 @@ ApplicationWindow {
     visible: true
     title: "RecompStation"
 
+    // Explicitly terminate the Qt event loop when the desktop window's close
+    // button is used. This ensures scripts/run.sh returns to the shell prompt.
+    onClosing: function(close) {
+        console.info("[Application] Main window close requested; quitting.")
+        close.accepted = true
+        Qt.quit()
+    }
+
     property string activeInputDevice: controllerManager.connected ? "controller" : "keyboard"
     property bool systemMenuVisible: false
     property bool systemMenuClosing: false
