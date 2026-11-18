@@ -33,6 +33,16 @@ QString ControllerInputRouter::directionFromAxes(qint16 x, qint16 y, int deadZon
 }
 
 
+QString ControllerInputRouter::firstNewInput(const QStringList &activeInputs,
+                                                const QStringList &previousInputs)
+{
+    for (const QString &input : activeInputs) {
+        if (!previousInputs.contains(input))
+            return input;
+    }
+    return {};
+}
+
 bool ControllerInputRouter::actionPressed(const QVariantMap &profile,
                                           const QString &action,
                                           const QStringList &activeInputs)
