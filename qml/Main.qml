@@ -1057,9 +1057,16 @@ ApplicationWindow {
                   window.selectedGame.metadataTitle || window.selectedGame.title,
                   window.selectedGame.platform)
             : []
-        property var primaryProject: supportedProjects.length > 0 ? supportedProjects[0] : null
-        property var installedProject: primaryProject
-            ? window.installedLauncher(primaryProject.id) : null
+        property string selectedProjectId: ""
+        property var selectedProject: {
+            for (let i = 0; i < supportedProjects.length; ++i) {
+                if (supportedProjects[i].id === selectedProjectId)
+                    return supportedProjects[i]
+            }
+            return supportedProjects.length > 0 ? supportedProjects[0] : null
+        }
+        property var installedProject: selectedProject
+            ? window.installedLauncher(selectedProject.id) : null
         property bool installPromptVisible: false
         property int screenshotIndex: 0
         property int previousScreenshotIndex: -1
@@ -1087,6 +1094,7 @@ ApplicationWindow {
                  bytesReceived: 0, bytesTotal: 0 })
 
         onOpened: {
+            selectedProjectId = supportedProjects.length > 0 ? supportedProjects[0].id : ""
             detailsBackButton.forceActiveFocus()
             screenshotIndex = 0
             previousScreenshotIndex = -1
@@ -1099,9 +1107,15 @@ ApplicationWindow {
                 "count:", screenshotCount,
                 "reduced motion:", settingsManager.reducedMotion,
                 "window active:", window.active)
-            if (primaryProject && !releaseState.loading
+            if (selectedProject && !releaseState.loading
                     && !releaseState.release && releaseState.error.length === 0)
-                window.checkProjectRelease(primaryProject)
+                window.checkProjectRelease(selectedProject)
+        }
+
+        onSelectedProjectIdChanged: {
+            installPromptVisible = false
+            if (opened && selectedProject)
+                window.checkProjectRelease(selectedProject)
         }
 
         background: Rectangle {
@@ -1479,9 +1493,28 @@ ApplicationWindow {
                                     font.pixelSize: 10 * theme.fontScale
                                     font.bold: true
                                 }
+                                ComboBox {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.supportedProjects.length > 1
+                                    textRole: "name"
+                                    model: gameDetailsPopup.supportedProjects
+                                    currentIndex: {
+                                        for (let i = 0; i < gameDetailsPopup.supportedProjects.length; ++i) {
+                                            if (gameDetailsPopup.supportedProjects[i].id
+                                                    === gameDetailsPopup.selectedProjectId)
+                                                return i
+                                        }
+                                        return 0
+                                    }
+                                    onActivated: function(index) {
+                                        const project = gameDetailsPopup.supportedProjects[index]
+                                        if (project)
+                                            gameDetailsPopup.selectedProjectId = project.id
+                                    }
+                                }
                                 Label {
                                     Layout.fillWidth: true
-                                    text: gameDetailsPopup.primaryProject
+                                    text: gameDetailsPopup.selectedProject
                                         ? gameDetailsPopup.primaryProject.name
                                         : "No supported recompilation project is currently listed for this game."
                                     color: gameDetailsPopup.primaryProject ? theme.success : theme.textSecondary
