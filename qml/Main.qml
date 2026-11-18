@@ -3172,6 +3172,104 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 13 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "LIBRARY PRESENTATION"
+                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true; font.letterSpacing: 1
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 16
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 4
+                                            Label { text: "Layout"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
+                                            Label { text: "Choose how your collection is presented."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
+                                        }
+                                        ComboBox {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            Layout.preferredWidth: 190
+                                            textRole: "label"; valueRole: "value"
+                                            model: [{ label: "Grid View", value: "grid" }, { label: "List View", value: "list" }]
+                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
+                                            onActivated: settingsManager.libraryView = currentValue
+                                        }
+                                    }
+                                    RowLayout {
+                                        visible: settingsManager.libraryView === "grid"
+                                        Layout.fillWidth: true
+                                        spacing: 16
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 4
+                                            Label { text: "Grid density"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
+                                            Label { text: "Curated sizes adapt to your available screen width."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
+                                        }
+                                        ComboBox {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            Layout.preferredWidth: 190
+                                            textRole: "label"; valueRole: "value"
+                                            model: [{ label: "Compact", value: "compact" }, { label: "Comfortable", value: "comfortable" }, { label: "Spacious", value: "spacious" }]
+                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
+                                            onActivated: settingsManager.libraryDensity = currentValue
+                                        }
+                                    }
+                                    Label {
+                                        text: "LIBRARY BACKGROUND"
+                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true; font.letterSpacing: 1
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 16
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 4
+                                            Label { text: "Background treatment"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
+                                            Label { text: "Keep the collection backdrop coordinated with your active theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
+                                        }
+                                        ComboBox {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            Layout.preferredWidth: 210
+                                            textRole: "label"; valueRole: "value"
+                                            model: [
+                                                { label: "Static theme", value: "static" },
+                                                { label: "Animated ambience", value: "animated" },
+                                                { label: "Custom image", value: "custom" }
+                                            ]
+                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryBackgroundType))
+                                            onActivated: settingsManager.libraryBackgroundType = currentValue
+                                        }
+                                    }
+                                    RowLayout {
+                                        visible: settingsManager.libraryBackgroundType === "custom"
+                                        Layout.fillWidth: true
+                                        spacing: 10
+                                        Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: settingsManager.customLibraryBackground.length > 0
+                                                ? "Choose another image" : "Choose image"
+                                            onClicked: libraryBackgroundFileDialog.open()
+                                        }
+                                        Button {
+                                            visible: settingsManager.customLibraryBackground.length > 0
+                                            text: "Clear"
+                                            onClicked: settingsManager.setCustomLibraryBackground("")
+                                        }
+                                    }
+                                    Label {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        Layout.fillWidth: true
+                                        text: settingsManager.reducedMotion
+                                            ? "Reduced Motion is enabled, so animated ambience is currently paused."
+                                            : "Subtle ambient lighting is enabled. It pauses when motion is reduced or the window is hidden."
+                                        color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                     Label { text: "SUPPORTED PLATFORM FOLDERS"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1 }
                                     Label {
                                         Layout.fillWidth: true
@@ -3355,6 +3453,13 @@ ApplicationWindow {
                         }
                     }
                 }
+            }
+
+            FileDialog {
+                id: libraryBackgroundFileDialog
+                title: "Choose a Library Background"
+                nameFilters: ["Images (*.png *.jpg *.jpeg *.webp)"]
+                onAccepted: settingsManager.setCustomLibraryBackground(selectedFile.toString())
             }
 
             ShaderEffectSource {
