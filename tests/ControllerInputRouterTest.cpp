@@ -18,6 +18,9 @@ private slots:
     void suspendedInputDoesNotEmitActions();
     void heldButtonsDoNotFireWhenInputResumes();
     void emitsInputEnabledChangeOnlyWhenStateChanges();
+    void resolvesActionsFromCustomMappings();
+    void resolvesNavigationFromCustomMappings();
+    void supportsMultipleInputsForOneAction();
 };
 
 void ControllerInputRouterTest::mapsAnalogStickDirections()
@@ -154,6 +157,51 @@ void ControllerInputRouterTest::emitsInputEnabledChangeOnlyWhenStateChanges()
     router.setInputEnabled(false);
     router.setInputEnabled(true);
     QCOMPARE(changed.count(), 2);
+}
+
+
+void ControllerInputRouterTest::resolvesActionsFromCustomMappings()
+{
+    const QVariantMap profile{
+        {QStringLiteral("select"), QVariantList{QStringLiteral("x")}},
+        {QStringLiteral("back"), QVariantList{QStringLiteral("y")}}
+    };
+
+    QVERIFY(ControllerInputRouter::actionPressed(
+        profile, QStringLiteral("select"), {QStringLiteral("x")}));
+    QVERIFY(!ControllerInputRouter::actionPressed(
+        profile, QStringLiteral("select"), {QStringLiteral("a")}));
+    QVERIFY(ControllerInputRouter::actionPressed(
+        profile, QStringLiteral("back"), {QStringLiteral("y")}));
+}
+
+void ControllerInputRouterTest::resolvesNavigationFromCustomMappings()
+{
+    const QVariantMap profile{
+        {QStringLiteral("navigateUp"), QVariantList{QStringLiteral("x")}},
+        {QStringLiteral("navigateDown"), QVariantList{QStringLiteral("b")}},
+        {QStringLiteral("navigateLeft"), QVariantList{QStringLiteral("leftstick-left")}},
+        {QStringLiteral("navigateRight"), QVariantList{QStringLiteral("dpad-right")}}
+    };
+
+    QCOMPARE(ControllerInputRouter::directionFromProfile(
+                 profile, {QStringLiteral("x")}), QStringLiteral("up"));
+    QCOMPARE(ControllerInputRouter::directionFromProfile(
+                 profile, {QStringLiteral("leftstick-left")}), QStringLiteral("left"));
+    QCOMPARE(ControllerInputRouter::directionFromProfile(
+                 profile, {QStringLiteral("dpad-right")}), QStringLiteral("right"));
+    QVERIFY(ControllerInputRouter::directionFromProfile(profile, {}).isEmpty());
+}
+
+void ControllerInputRouterTest::supportsMultipleInputsForOneAction()
+{
+    const QVariantMap profile{
+        {QStringLiteral("select"), QVariantList{
+             QStringLiteral("a"), QStringLiteral("rightshoulder")}}
+    };
+
+    QVERIFY(ControllerInputRouter::actionPressed(
+        profile, QStringLiteral("select"), {QStringLiteral("rightshoulder")}));
 }
 
 QTEST_GUILESS_MAIN(ControllerInputRouterTest)
