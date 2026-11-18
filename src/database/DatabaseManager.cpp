@@ -470,7 +470,8 @@ bool DatabaseManager::markMetadataLookupAttempt(int gameId, const QString &statu
     const QStringList allowedStatuses{
         QStringLiteral("matched"),
         QStringLiteral("no_match"),
-        QStringLiteral("ambiguous")
+        QStringLiteral("ambiguous"),
+        QStringLiteral("provider_error")
     };
     if (!m_database.isOpen() || gameId <= 0 || !allowedStatuses.contains(status)) {
         m_lastError = QStringLiteral("A valid game and metadata lookup status are required.");
