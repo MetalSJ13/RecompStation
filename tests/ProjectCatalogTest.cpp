@@ -14,6 +14,8 @@ private slots:
     void rejectsUnknownDevelopmentStatus();
     void rejectsMalformedCatalog();
     void matchesGameByTitleAndPlatform();
+    void matchesNewN64ProjectsAndMultiplePorts();
+    void selectsOnlyPublishedLinuxPackagesForNewProjects();
     void selectsOnlyCompatibleLinuxAssets();
     void normalizesArchitectures();
     void filtersReleaseAssetsForCurrentArchitecture();
@@ -174,15 +176,86 @@ void ProjectCatalogTest::matchesGameByTitleAndPlatform()
 
     const QVariantList marioMatches = catalog.projectsForGame(
         QStringLiteral("Super Mario 64"), QStringLiteral("N64"));
-    QCOMPARE(marioMatches.size(), 1);
-    QCOMPARE(marioMatches.first().toMap().value("id").toString(),
-             QStringLiteral("super-mario-64-recompiled"));
+    QCOMPARE(marioMatches.size(), 2);
+    QStringList marioProjectIds;
+    for (const QVariant &entry : marioMatches)
+        marioProjectIds.append(entry.toMap().value("id").toString());
+    QVERIFY(marioProjectIds.contains(QStringLiteral("super-mario-64-recompiled")));
+    QVERIFY(marioProjectIds.contains(QStringLiteral("ghostship-super-mario-64")));
 
     const QVariantList perfectDarkMatches = catalog.projectsForGame(
         QStringLiteral("Perfect Dark"), QStringLiteral("N64"));
     QCOMPARE(perfectDarkMatches.size(), 1);
     QCOMPARE(perfectDarkMatches.first().toMap().value("id").toString(),
              QStringLiteral("perfect-dark-recompiled"));
+}
+
+void ProjectCatalogTest::matchesNewN64ProjectsAndMultiplePorts()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.isLoaded());
+
+    const QList<QPair<QString, QString>> expected = {
+        {QStringLiteral("Star Fox 64"), QStringLiteral("starfox-64-recompiled")},
+        {QStringLiteral("Donkey Kong 64"), QStringLiteral("donkey-kong-64-recompiled")},
+        {QStringLiteral("Mario Kart 64"), QStringLiteral("mario-kart-64-recompiled")},
+        {QStringLiteral("Mario Party"), QStringLiteral("mario-party-recompiled")},
+        {QStringLiteral("Mario Party 2"), QStringLiteral("mario-party-2-recompiled")},
+        {QStringLiteral("Mario Party 3"), QStringLiteral("mario-party-3-recompiled")},
+        {QStringLiteral("Super Smash Bros."), QStringLiteral("super-smash-bros-recompiled")},
+        {QStringLiteral("Banjo-Tooie"), QStringLiteral("banjo-tooie-recompiled")},
+        {QStringLiteral("Paper Mario"), QStringLiteral("paper-mario-64-recompiled")}
+    };
+
+    for (const auto &item : expected) {
+        const QVariantList matches = catalog.projectsForGame(item.first, QStringLiteral("N64"));
+        QVERIFY2(matches.size() == 1, qPrintable(item.first));
+        QCOMPARE(matches.first().toMap().value(QStringLiteral("id")).toString(), item.second);
+    }
+}
+
+void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForNewProjects()
+{
+    ProjectCatalog catalog;
+    const auto accepts = [&catalog](const QString &id, const QString &arch,
+                                    const QString &asset) {
+        return catalog.isAssetCompatible(id, arch, asset);
+    };
+
+    QVERIFY(accepts("starfox-64-recompiled", "x86_64",
+        "Starfox64Recompiled-v1.0.3-Linux-X64-Release.zip"));
+    QVERIFY(accepts("starfox-64-recompiled", "aarch64",
+        "Starfox64Recompiled-v1.0.3-Linux-ARM64-Release.zip"));
+    QVERIFY(!accepts("starfox-64-recompiled", "x86_64",
+        "Starfox64Recompiled-v1.0.3-Flatpak-X64-Release.zip"));
+    QVERIFY(accepts("donkey-kong-64-recompiled", "x86_64",
+        "DK64Recompiled-Linux-X64-Release-1-0-3.zip"));
+    QVERIFY(accepts("donkey-kong-64-recompiled", "aarch64",
+        "DK64Recompiled-Linux-ARM64-Release-1-0-3.zip"));
+    QVERIFY(accepts("mario-kart-64-recompiled", "x86_64",
+        "MarioKart64Recompiled-v0.9.2-Linux-X64-Release.zip"));
+    QVERIFY(accepts("mario-kart-64-recompiled", "aarch64",
+        "MarioKart64Recompiled-v0.9.2-Linux-ARM64-Release.zip"));
+
+    QVERIFY(accepts("mario-party-recompiled", "x86_64",
+        "MarioPartyRecompiled-v0.2.14-linux-x64.tar.gz"));
+    QVERIFY(accepts("mario-party-2-recompiled", "x86_64",
+        "MarioParty2Recompiled-v0.2.17-linux-x64.tar.gz"));
+    QVERIFY(accepts("mario-party-3-recompiled", "x86_64",
+        "MarioParty3Recompiled-v0.2.26-linux-x64.tar.gz"));
+    QVERIFY(accepts("super-smash-bros-recompiled", "x86_64",
+        "SmashBrosRecompiled-v0.1.14-linux-x64.tar.gz"));
+    QVERIFY(accepts("ghostship-super-mario-64", "x86_64",
+        "Nautilus-Alfa-Linux.zip"));
+    QVERIFY(accepts("banjo-tooie-recompiled", "x86_64",
+        "BanjoTooieRecompiled-linux-x64.tar.gz"));
+    QVERIFY(accepts("paper-mario-64-recompiled", "x86_64",
+        "Paperboat-Mulberry-Delta-Linux.zip"));
+
+    QVERIFY(!accepts("mario-party-recompiled", "x86_64",
+        "MarioPartyRecompiled-v0.2.14-windows-x64.zip"));
+    QVERIFY(!accepts("super-smash-bros-recompiled", "x86_64",
+        "SmashBrosRecompiled-v0.1.14-windows-x64.zip"));
 }
 
 void ProjectCatalogTest::selectsOnlyCompatibleLinuxAssets()
