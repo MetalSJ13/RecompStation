@@ -346,7 +346,7 @@
         "x86_64": {
           "assetNameRegex": "^BanjoTooieRecompiled-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
-          "executablePath": "run.sh"
+          "executablePath": "BanjoTooieRecompiled"
         }
       }
     },
