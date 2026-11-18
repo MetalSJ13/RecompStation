@@ -64,6 +64,8 @@ qt_add_executable(RecompStationApp
     src/metadata/TheGamesDbClient.cpp
     src/metadata/MetadataManager.h
     src/metadata/MetadataManager.cpp
+    src/metadata/N64RomHash.h
+    src/metadata/N64RomHash.cpp
 )
 
 qt_add_qml_module(RecompStationApp
@@ -312,6 +314,22 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME MetadataProviderTests COMMAND MetadataProviderTests)
+
+    qt_add_executable(N64RomHashTests
+        tests/N64RomHashTest.cpp
+        src/metadata/N64RomHash.h
+        src/metadata/N64RomHash.cpp
+    )
+
+    target_include_directories(N64RomHashTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(N64RomHashTests PRIVATE
+        Qt6::Core Qt6::Test
+    )
+
+    add_test(NAME N64RomHashTests COMMAND N64RomHashTests)
 
     qt_add_executable(LibraryMetadataMatcherTests
         src/core/Logging.h
