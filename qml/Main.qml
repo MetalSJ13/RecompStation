@@ -25,19 +25,50 @@ ApplicationWindow {
         property string wavePalette: "ocean"
     }
 
-    function inputHintText() {
+    function inputHintItems() {
         if (activeInputDevice === "controller" && controllerManager.connected) {
-            if (controllerManager.controllerType === "playstation")
-                return "D-pad / Left Stick  Navigate     ✕  Select     ○  Back     L1 / R1  Switch"
-            if (controllerManager.controllerType === "xbox")
-                return "D-pad / Left Stick  Navigate     A  Select     B  Back     LB / RB  Switch"
-            if (controllerManager.controllerType === "nintendo")
-                return "D-pad / Left Stick  Navigate     B  Select     A  Back     L / R  Switch"
-            return "D-pad / Left Stick  Navigate     South  Select     East  Back     L / R  Switch"
+            let selectButton = "A"
+            let backButton = "B"
+            let switchButtons = "LB / RB"
+            let selectColor = "#48C78E"
+            let backColor = "#E58B78"
+            if (controllerManager.controllerType === "playstation") {
+                selectButton = "✕"
+                backButton = "○"
+                switchButtons = "L1 / R1"
+                selectColor = "#55A9F4"
+                backColor = "#F06B8B"
+            } else if (controllerManager.controllerType === "nintendo") {
+                selectButton = "B"
+                backButton = "A"
+                switchButtons = "L / R"
+                selectColor = "#E58B78"
+                backColor = "#48A8E8"
+            } else if (controllerManager.controllerType !== "xbox") {
+                selectButton = "S"
+                backButton = "E"
+                switchButtons = "L / R"
+            }
+            return [
+                { icon: "qrc:/icons/dpad.svg", key: "", label: "Navigate", color: "#B8C7D9", round: false },
+                { icon: "", key: selectButton, label: "Select", color: selectColor, round: true },
+                { icon: "", key: backButton, label: "Back", color: backColor, round: true },
+                { icon: "", key: switchButtons, label: "Switch", color: "#A9B7CA", round: false }
+            ]
         }
-        if (activeInputDevice === "mouse")
-            return "Mouse  Select     Scroll  Navigate     Keyboard shortcuts available"
-        return "Arrow Keys  Navigate     Enter  Select     Esc  Back     F11  Fullscreen"
+        if (activeInputDevice === "mouse") {
+            return [
+                { icon: "qrc:/icons/mouse.svg", key: "", label: "Select", color: "#B8C7D9", round: false },
+                { icon: "", key: "↕", label: "Navigate", color: "#A9B7CA", round: false },
+                { icon: "", key: "Esc", label: "Back", color: "#A9B7CA", round: false }
+            ]
+        }
+        return [
+            { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
+            { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
+            { icon: "", key: "Esc", label: "Back", color: "#A9B7CA", round: false },
+            { icon: "", key: "F11", label: "Fullscreen", color: "#A9B7CA", round: false }
+        ]
     }
 
     function collectFocusableItems(item, output, visited) {
@@ -4030,21 +4061,65 @@ ApplicationWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 14
-            width: Math.min(parent.width - 48, inputHintLabel.implicitWidth + 48)
-            height: 42
-            radius: 21
+            width: Math.min(parent.width - 48, inputHintRow.implicitWidth + 40)
+            height: 46
+            radius: 23
             color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g,
-                           theme.sidebarBackground.b, 0.88)
+                           theme.sidebarBackground.b, 0.90)
             border.color: theme.divider
             z: 30
             visible: !gameDetailsPopup.visible && currentPage !== ""
-            Label {
-                id: inputHintLabel
+
+            Row {
+                id: inputHintRow
                 anchors.centerIn: parent
-                text: window.inputHintText()
-                color: theme.textSecondary
-                font.pixelSize: 12 * theme.fontScale
-                font.weight: Font.Medium
+                spacing: 16
+
+                Repeater {
+                    model: window.inputHintItems()
+                    delegate: Row {
+                        required property var modelData
+                        spacing: 5
+                        anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+
+                        Image {
+                            visible: modelData.icon !== ""
+                            source: modelData.icon
+                            width: 17
+                            height: 17
+                            fillMode: Image.PreserveAspectFit
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Rectangle {
+                            visible: modelData.key !== ""
+                            width: Math.max(22, hintKeyLabel.implicitWidth + 12)
+                            height: 23
+                            radius: modelData.round ? 12 : 5
+                            color: Qt.rgba(modelData.color.r || 0, modelData.color.g || 0,
+                                           modelData.color.b || 0, 0.16)
+                            border.color: modelData.color
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Label {
+                                id: hintKeyLabel
+                                anchors.centerIn: parent
+                                text: modelData.key
+                                color: modelData.color
+                                font.pixelSize: 10 * theme.fontScale
+                                font.weight: Font.Bold
+                            }
+                        }
+
+                        Label {
+                            text: modelData.label
+                            color: theme.textSecondary
+                            font.pixelSize: 11 * theme.fontScale
+                            font.weight: Font.Medium
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
             }
         }
     }
