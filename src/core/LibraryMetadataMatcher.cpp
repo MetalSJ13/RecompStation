@@ -179,14 +179,19 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         // should not be retried on every filesystem event. Persist the failure
         // so automatic scans skip it; the explicit Refresh Metadata action
         // can still retry previously checked games.
-        const int failedGameId =
-            m_currentGame.value(QStringLiteral("id")).toInt();
-        if (m_database && failedGameId > 0
-            && !m_database->markMetadataLookupAttempt(
-                failedGameId, QStringLiteral("provider_error"))) {
-            qCWarning(lcMetadata) << "Could not record provider failure for game"
-                                  << failedGameId << m_database->lastError();
-        }
+        auto recordProviderFailure = [this](const QVariantMap &game) {
+            const int gameId = game.value(QStringLiteral("id")).toInt();
+            if (m_database && gameId > 0
+                && !m_database->markMetadataLookupAttempt(
+                    gameId, QStringLiteral("provider_error"))) {
+                qCWarning(lcMetadata) << "Could not record provider failure for game"
+                                      << gameId << m_database->lastError();
+            }
+        };
+        recordProviderFailure(m_currentGame);
+        for (const QVariantMap &queuedGame : std::as_const(m_queue))
+            recordProviderFailure(queuedGame);
+
         m_unresolvedCount += 1 + m_queue.size();
         m_completedCount += 1 + m_queue.size();
         m_queue.clear();
