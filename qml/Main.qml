@@ -1571,9 +1571,8 @@ ApplicationWindow {
                 }
             }
 
-            // Fill the entire canvas with a subdued crop, then show the complete
-            // wallpaper above it. This avoids empty bars without cropping the
-            // image the user actually wants to see.
+            // A single full-window image avoids the mismatched crop visible
+            // around the edges when separate fit/crop layers are combined.
             Image {
                 anchors.fill: parent
                 visible: currentPage === "Library"
@@ -1583,31 +1582,18 @@ ApplicationWindow {
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: true
-                opacity: 0.30
                 smooth: true
                 mipmap: true
             }
 
-            Image {
-                anchors.fill: parent
-                visible: currentPage === "Library"
-                    && settingsManager.libraryBackgroundType === "custom"
-                    && settingsManager.customLibraryBackground.length > 0
-                source: settingsManager.customLibraryBackground
-                fillMode: Image.PreserveAspectFit
-                asynchronous: true
-                cache: true
-                smooth: true
-                mipmap: true
-            }
-
+            // Keep the wallpaper vivid while gently separating it from cards and text.
             Rectangle {
                 anchors.fill: parent
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "custom"
                     && settingsManager.customLibraryBackground.length > 0
                 color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
-                               theme.windowBackground.b, 0.18)
+                               theme.windowBackground.b, 0.14)
             }
 
             Rectangle {
