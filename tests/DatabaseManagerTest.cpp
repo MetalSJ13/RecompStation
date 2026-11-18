@@ -142,6 +142,32 @@ private slots:
         QVERIFY(database.gamesNeedingMetadata().isEmpty());
     }
 
+    void providerFailuresAreSkippedByAutomaticScansButCanBeRetriedManually()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY2(database.initialize(
+                     temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+        QVERIFY(database.registerGame(
+            QStringLiteral("New Game"), QStringLiteral("N64"),
+            temporaryDirectory.path() + "/New Game.z64"));
+
+        const QVariantList pending = database.gamesNeedingMetadata();
+        QCOMPARE(pending.size(), 1);
+        const int gameId = pending.first().toMap().value("id").toInt();
+
+        QVERIFY(database.markMetadataLookupAttempt(
+            gameId, QStringLiteral("provider_error")));
+        QVERIFY(database.gamesNeedingMetadata().isEmpty());
+
+        const QVariantList manualRetry = database.gamesNeedingMetadata(true);
+        QCOMPARE(manualRetry.size(), 1);
+        QCOMPARE(manualRetry.first().toMap().value("id").toInt(), gameId);
+    }
+
     void storesAndClearsGameplayScreenshots()
     {
         QTemporaryDir temporaryDirectory;
