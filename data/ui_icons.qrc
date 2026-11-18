@@ -1,6 +1,8 @@
 <RCC>
   <qresource prefix="/icons">
     <file alias="gamepad.svg">../assets/icons/gamepad.svg</file>
+    <file alias="mouse.svg">../assets/icons/mouse.svg</file>
+    <file alias="dpad.svg">../assets/icons/dpad.svg</file>
     <file alias="artwork-placeholder.svg">../assets/icons/artwork-placeholder.svg</file>
     <file alias="library.svg">../assets/icons/library.svg</file>
     <file alias="settings.svg">../assets/icons/settings.svg</file>
