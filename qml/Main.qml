@@ -157,8 +157,8 @@ ApplicationWindow {
         }
     }
 
-    function controllerSelect() {
-        activeInputDevice = "controller"
+    function controllerSelect(inputDevice) {
+        activeInputDevice = inputDevice || "controller"
         if (systemMenuVisible) {
             const focused = window.activeFocusItem
             if (focused && typeof focused.click === "function")
@@ -421,45 +421,64 @@ ApplicationWindow {
 
     // Window-scoped shortcuts keep library navigation working even when
     // the pointer is over a card or no QML item currently owns keyboard focus.
+    // Application-scoped shortcuts are intentional here: the library is
+    // composed of nested visual items and card MouseAreas, none of which
+    // should be required to own keyboard focus for navigation to work.
     Shortcut {
-        sequence: Qt.Key_Left
-        context: Qt.WindowShortcut
-        enabled: currentPage === "Library" && !systemMenuVisible
-            && !gameDetailsPopup.visible && settingsManager.libraryView !== "list"
+        sequence: "Left"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Library"
+            && !systemMenuVisible && !gameDetailsPopup.visible
+            && settingsManager.libraryView !== "list"
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("left")
         }
     }
     Shortcut {
-        sequence: Qt.Key_Right
-        context: Qt.WindowShortcut
-        enabled: currentPage === "Library" && !systemMenuVisible
-            && !gameDetailsPopup.visible && settingsManager.libraryView !== "list"
+        sequence: "Right"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Library"
+            && !systemMenuVisible && !gameDetailsPopup.visible
+            && settingsManager.libraryView !== "list"
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("right")
         }
     }
     Shortcut {
-        sequence: Qt.Key_Up
-        context: Qt.WindowShortcut
-        enabled: currentPage === "Library" && !systemMenuVisible
-            && !gameDetailsPopup.visible
+        sequence: "Up"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Library"
+            && !systemMenuVisible && !gameDetailsPopup.visible
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("up")
         }
     }
     Shortcut {
-        sequence: Qt.Key_Down
-        context: Qt.WindowShortcut
-        enabled: currentPage === "Library" && !systemMenuVisible
-            && !gameDetailsPopup.visible
+        sequence: "Down"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Library"
+            && !systemMenuVisible && !gameDetailsPopup.visible
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("down")
         }
+    }
+    Shortcut {
+        sequence: "Return"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Library"
+            && !systemMenuVisible && !gameDetailsPopup.visible
+        onActivated: window.controllerSelect("keyboard")
+    }
+    Shortcut {
+        sequence: "Enter"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Library"
+            && !systemMenuVisible && !gameDetailsPopup.visible
+        onActivated: window.controllerSelect("keyboard")
     }
 
     Connections {
