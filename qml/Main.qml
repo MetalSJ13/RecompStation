@@ -4096,8 +4096,9 @@ ApplicationWindow {
                             width: Math.max(22, hintKeyLabel.implicitWidth + 12)
                             height: 23
                             radius: modelData.round ? 12 : 5
-                            color: Qt.rgba(modelData.color.r || 0, modelData.color.g || 0,
-                                           modelData.color.b || 0, 0.16)
+                            color: modelData.round
+                                   ? Qt.rgba(0.22, 0.68, 0.50, 0.16)
+                                   : Qt.rgba(0.58, 0.68, 0.82, 0.12)
                             border.color: modelData.color
                             anchors.verticalCenter: parent.verticalCenter
 
