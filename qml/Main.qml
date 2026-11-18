@@ -2972,52 +2972,6 @@ ApplicationWindow {
                                 Button {
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
-                                    id: controllerNavigationButton
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 52
-                                    padding: 10
-                                    highlighted: settingsPage.section === "Controller"
-                                    onClicked: settingsPage.section = "Controller"
-                                    background: Rectangle {
-                                        radius: theme.radiusCard
-                                        color: controllerNavigationButton.highlighted
-                                            ? theme.elevatedSurface
-                                            : controllerNavigationButton.hovered
-                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
-                                                : "transparent"
-                                        border.width: controllerNavigationButton.highlighted ? 1 : 0
-                                        border.color: theme.accent
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 10
-                                        Rectangle {
-                                            Layout.preferredWidth: 3
-                                            Layout.fillHeight: true
-                                            radius: 2
-                                            color: controllerNavigationButton.highlighted
-                                                ? theme.accent : "transparent"
-                                        }
-                                        Image {
-                                            source: "qrc:/icons/gamepad.svg"
-                                            sourceSize.width: 20
-                                            sourceSize.height: 20
-                                            Layout.preferredWidth: 20
-                                            Layout.preferredHeight: 20
-                                            opacity: controllerNavigationButton.highlighted ? 1.0 : 0.78
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Controller"
-                                            color: controllerNavigationButton.highlighted
-                                                ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: controllerNavigationButton.highlighted
-                                        }
-                                    }
-                                }
-                                Button {
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
                                     id: metadataNavigationButton
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 52
@@ -3061,6 +3015,53 @@ ApplicationWindow {
                                         }
                                     }
                                 }
+                                Button {
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
+                                    id: controllerNavigationButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 52
+                                    padding: 10
+                                    highlighted: settingsPage.section === "Controller"
+                                    onClicked: settingsPage.section = "Controller"
+                                    background: Rectangle {
+                                        radius: theme.radiusCard
+                                        color: controllerNavigationButton.highlighted
+                                            ? theme.elevatedSurface
+                                            : controllerNavigationButton.hovered
+                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
+                                                : "transparent"
+                                        border.width: controllerNavigationButton.highlighted ? 1 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.fillHeight: true
+                                            radius: 2
+                                            color: controllerNavigationButton.highlighted
+                                                ? theme.accent : "transparent"
+                                        }
+                                        Image {
+                                            source: "qrc:/icons/gamepad.svg"
+                                            sourceSize.width: 20
+                                            sourceSize.height: 20
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            opacity: controllerNavigationButton.highlighted ? 1.0 : 0.78
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Controller"
+                                            color: controllerNavigationButton.highlighted
+                                                ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 14 * theme.fontScale
+                                            font.bold: controllerNavigationButton.highlighted
+                                        }
+                                    }
+                                }
+
                                 Button {
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
@@ -3923,8 +3924,10 @@ ApplicationWindow {
                                                 }
                                                 Item { Layout.fillWidth: true }
                                                 Label {
-                                                    text: metadataManager.configured ? "Configured" : "API key required"
-                                                    color: metadataManager.configured ? "#48C78E" : theme.textMuted
+                                                    text: !settingsManager.theGamesDbEnabled ? "Disabled"
+                                                        : metadataManager.configured ? "Configured" : "API key required"
+                                                    color: !settingsManager.theGamesDbEnabled ? theme.textMuted
+                                                        : metadataManager.configured ? "#48C78E" : theme.textMuted
                                                     font.pixelSize: 10 * theme.fontScale
                                                     font.bold: true
                                                 }
