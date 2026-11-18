@@ -10,6 +10,7 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
+#include <QUuid>
 #include <QStringList>
 
 #include <sys/stat.h>
@@ -279,15 +280,26 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
         }
 
         if (nestedArchives.size() == 1) {
-            const QString nestedDestination = extractionRoot + QStringLiteral(".nested");
+            const QString nestedDestination = QDir(canonicalParent).filePath(
+                QStringLiteral(".recompstation-nested-%1").arg(
+                    QUuid::createUuid().toString(QUuid::WithoutBraces)));
             Result nestedResult = extractArchive(
                 nestedArchives.constFirst(), nestedDestination, expectedExecutable);
             if (nestedResult.success) {
+                const QString nestedExecutableRelative =
+                    QDir(nestedResult.extractedDirectory).relativeFilePath(nestedResult.executablePath);
                 QDir(extractionRoot).removeRecursively();
-                return nestedResult;
+                if (QDir().rename(nestedResult.extractedDirectory, extractionRoot)) {
+                    nestedResult.extractedDirectory = extractionRoot;
+                    nestedResult.executablePath = QDir(extractionRoot).filePath(nestedExecutableRelative);
+                    return nestedResult;
+                }
+                QDir(nestedResult.extractedDirectory).removeRecursively();
+                failure = QStringLiteral("The nested launcher package was extracted, but could not be moved into the requested installation directory.");
+            } else {
+                failure = QStringLiteral("The ZIP contains a nested TAR.GZ package, but it could not be installed: %1")
+                              .arg(nestedResult.error);
             }
-            failure = QStringLiteral("The ZIP contains a nested TAR.GZ package, but it could not be installed: %1")
-                          .arg(nestedResult.error);
         } else if (nestedArchives.size() > 1) {
             failure = QStringLiteral("The ZIP contains multiple nested TAR.GZ packages; refusing to guess which one is the launcher.");
         }
