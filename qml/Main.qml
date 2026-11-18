@@ -4113,7 +4113,7 @@ ApplicationWindow {
                                     }
 
                                     Label {
-                                        text: "INPUT"
+                                        text: "CONTROLLER OPTIONS"
                                         color: theme.textMuted
                                         font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
@@ -4121,28 +4121,99 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        implicitHeight: controllerInputColumn.implicitHeight + 28
+                                        implicitHeight: controllerOptionsColumn.implicitHeight + 28
                                         radius: theme.radiusCard
                                         color: theme.sidebarBackground
                                         border.color: theme.divider
                                         ColumnLayout {
-                                            id: controllerInputColumn
+                                            id: controllerOptionsColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 10
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 3
+                                                    Label {
+                                                        text: "Controller navigation"
+                                                        color: theme.textPrimary
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.bold: true
+                                                    }
+                                                    Label {
+                                                        Layout.fillWidth: true
+                                                        text: "Allow a connected gamepad to navigate RecompStation menus."
+                                                        color: theme.textSecondary
+                                                        font.pixelSize: 11 * theme.fontScale
+                                                        wrapMode: Text.Wrap
+                                                    }
+                                                }
+                                                Switch {
+                                                    checked: controllerManager.inputEnabled
+                                                    onToggled: controllerManager.inputEnabled = checked
+                                                    accessibleName: "Enable controller navigation"
+                                                }
+                                            }
+                                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: controllerManager.connected
+                                                    ? "Controller input is active. You can connect or disconnect a gamepad while RecompStation is running."
+                                                    : "Keyboard and mouse remain available. Controller hot-plug detection is active."
+                                                color: theme.textMuted
+                                                font.pixelSize: 10 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
+
+                                    Label {
+                                        text: "ACTIVE PROFILE"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: profileColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: controllerManager.connected ? theme.accent : theme.divider
+                                        ColumnLayout {
+                                            id: profileColumn
                                             anchors.left: parent.left
                                             anchors.right: parent.right
                                             anchors.top: parent.top
                                             anchors.margins: 14
                                             spacing: 6
-                                            Label {
-                                                text: "Controller navigation"
-                                                color: theme.textPrimary
-                                                font.pixelSize: 13 * theme.fontScale
-                                                font.bold: true
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                Label {
+                                                    text: controllerManager.connected
+                                                        ? controllerManager.controllerName : "Default controller profile"
+                                                    color: theme.textPrimary
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                    font.bold: true
+                                                    Layout.fillWidth: true
+                                                    elide: Text.ElideRight
+                                                }
+                                                Label {
+                                                    text: "DEFAULT"
+                                                    color: theme.accent
+                                                    font.pixelSize: 9 * theme.fontScale
+                                                    font.bold: true
+                                                    font.letterSpacing: 1
+                                                }
                                             }
                                             Label {
                                                 Layout.fillWidth: true
                                                 text: controllerManager.connected
-                                                    ? "Use the D-pad or left analog stick to navigate. The navigation guide updates when controller input is used."
-                                                    : "Keyboard and mouse remain available. Connect a controller at any time; RecompStation detects it without restarting."
+                                                    ? "Using the built-in layout for this connected device. Device-specific profiles and saved remaps are the next controller milestone."
+                                                    : "Connect a controller to see its active device. Independent profiles will be saved for each controller once remapping is introduced."
                                                 color: theme.textSecondary
                                                 font.pixelSize: 11 * theme.fontScale
                                                 wrapMode: Text.Wrap
@@ -4151,46 +4222,67 @@ ApplicationWindow {
                                     }
 
                                     Label {
-                                        text: "BUTTON MAPPING"
+                                        text: "DEFAULT BUTTON LAYOUT"
                                         color: theme.textMuted
                                         font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
                                         font.letterSpacing: 1
                                     }
-                                    Rectangle {
+                                    Label {
                                         Layout.fillWidth: true
-                                        implicitHeight: mappingColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: theme.divider
-                                        ColumnLayout {
-                                            id: mappingColumn
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 6
-                                            Label {
-                                                text: "Custom button mapping"
-                                                color: theme.textPrimary
-                                                font.pixelSize: 13 * theme.fontScale
-                                                font.bold: true
-                                            }
-                                            Label {
+                                        text: "Current navigation bindings. These are read-only for now; remapping will be added with per-controller profiles."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 11 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        columns: 2
+                                        columnSpacing: 10
+                                        rowSpacing: 10
+
+                                        Repeater {
+                                            model: [
+                                                { button: "D-pad / Left stick", action: "Navigate menus" },
+                                                { button: "A", action: "Select / Confirm" },
+                                                { button: "B / Guide", action: "Back" },
+                                                { button: "Start", action: "Open menu" },
+                                                { button: "Left shoulder", action: "Previous section" },
+                                                { button: "Right shoulder", action: "Next section" }
+                                            ]
+                                            delegate: Rectangle {
                                                 Layout.fillWidth: true
-                                                text: "Per-controller profiles and button remapping are planned for a later input milestone. Your controller's existing default mapping remains active."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                            Label {
-                                                text: "Not available yet"
-                                                color: theme.textMuted
-                                                font.pixelSize: 10 * theme.fontScale
-                                                font.italic: true
+                                                implicitHeight: bindingColumn.implicitHeight + 22
+                                                radius: theme.radiusMedium
+                                                color: theme.sidebarBackground
+                                                border.color: theme.divider
+                                                ColumnLayout {
+                                                    id: bindingColumn
+                                                    anchors.left: parent.left
+                                                    anchors.right: parent.right
+                                                    anchors.top: parent.top
+                                                    anchors.margins: 11
+                                                    spacing: 4
+                                                    Label {
+                                                        text: modelData.button
+                                                        color: theme.textPrimary
+                                                        font.pixelSize: 11 * theme.fontScale
+                                                        font.bold: true
+                                                        wrapMode: Text.Wrap
+                                                        Layout.fillWidth: true
+                                                    }
+                                                    Label {
+                                                        text: modelData.action
+                                                        color: theme.textSecondary
+                                                        font.pixelSize: 10 * theme.fontScale
+                                                        wrapMode: Text.Wrap
+                                                        Layout.fillWidth: true
+                                                    }
+                                                }
                                             }
                                         }
                                     }
+
                                 }
                             }
                         }
