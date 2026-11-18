@@ -37,7 +37,7 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Recently completed and user-verified UI work (2026-11-18)
 
 - The Library and Settings primary navigation has been simplified to compact icon-led controls; the user approved the current appearance.
-- The Game Library uses a curated artwork grid with configurable density and a restrained Grid/List choice, preserving the collection-first identity.
+- The Game Library uses a curated artwork grid with configurable density and a restrained Grid/List choice, preserving the collection-first identity. Title search is available in the Library header and combines with the platform filter.
 - Library backgrounds support the coordinated static theme treatment, optional animated wave ambience, and custom still images. Custom images have been adjusted to scale more appropriately across the library.
 - The animated wave background is a lightweight QML effect. A more detailed pre-rendered 1080p/30fps ambient-video treatment was discussed and deliberately deferred until the final polish phase; it is not a current priority.
 - Game-card selection styling, artwork presentation, theme switching, and the adaptive navigation-hint panel have received iterative visual polish.
@@ -118,7 +118,9 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Replace the width-reserving sidebar with an integrated horizontal Library and Settings navigation bar; main content uses the available window area (local validation pending)
 - [x] Add a dedicated Back to Library control to immersive game details; Escape also closes the details view (local validation pending)
 - [ ] Remove Metadata Search and Platforms as top-level navigation destinations
-- [ ] Move platform selection/filtering into the Game Library
+- [x] Keep platform selection/filtering inside the Game Library; combine it with title search
+- [x] Add live game-title search in the Library; search respects the selected platform and shows a no-results state
+- [x] Consolidate Grid/List and grid-density controls in the Library header; remove duplicate presentation controls from Settings → Library
 - [ ] Rehome launcher discovery and management contextually without removing existing capabilities
 - [ ] Establish shared page headers, actions, spacing, scroll behavior, and focus styling
 - [ ] Keep existing pages and backend connections functional during the transition
