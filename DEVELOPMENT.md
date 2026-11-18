@@ -124,10 +124,10 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Constrain List View to approximately half the content width, preserving a large visible area for custom/animated backgrounds; add reduced-motion-aware selected/hover zoom.
 - [x] Rehome launcher discovery and management contextually in Game Details, preserving the existing download, install, launch, and uninstall capabilities.
 - [x] Add the bottom-up, staggered Grid card entrance for application startup, List-to-Grid switching, and return from Settings; respect Reduced Motion. User has visually validated the timing and behavior across these entry points.
-- [ ] Establish consistent shared page headers, actions, spacing, scroll behavior, and focus styling across all pages.
+- [x] Normalize the Settings category content gutters, title/description/divider hierarchy, section spacing, and horizontal-scroll behavior; retain the shared focus treatment and on-demand vertical scrolling.
 - [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition.
 
-**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, and card entrance behavior are implemented and user-verified. Remaining work is shared-layout consistency and the full regression pass; obsolete Metadata Search, Platforms, and standalone Launcher Discovery page code has now been removed while retaining the underlying backend workflows. Do not close the milestone until remaining work and the relevant build/test workflow are confirmed.
+**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, and card entrance behavior are implemented and user-verified. Remaining work is the full navigation/backend regression pass; obsolete Metadata Search, Platforms, and standalone Launcher Discovery page code has now been removed while retaining the underlying backend workflows. Do not close the milestone until remaining work and the relevant build/test workflow are confirmed.
 
 ### Milestone 3: Game Library experience
 
