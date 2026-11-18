@@ -22,6 +22,8 @@ private slots:
     void persistsDisplayMode();
     void rejectsUnsupportedDisplayMode();
     void persistsScanOnStartupPreference();
+    void defaultsToTheGamesDbEnabled();
+    void persistsTheGamesDbEnabledPreference();
     void persistsPreferencesInExplicitConfigFile();
     void rejectsUnsupportedTheme();
     void rejectsUnsupportedPresentationSize();
@@ -118,6 +120,42 @@ void SettingsManagerTest::persistsScanOnStartupPreference()
     QVERIFY(reloaded.scanOnStartup());
     QCOMPARE(QSettings().value(QStringLiteral("library/scanOnStartup")).toBool(), true);
     QSettings().clear();
+}
+
+
+void SettingsManagerTest::defaultsToTheGamesDbEnabled()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QVERIFY(manager.theGamesDbEnabled());
+}
+
+void SettingsManagerTest::persistsTheGamesDbEnabledPreference()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy changed(&manager, &SettingsManager::theGamesDbEnabledChanged);
+        manager.setTheGamesDbEnabled(false);
+        QVERIFY(!manager.theGamesDbEnabled());
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QVERIFY(!reloaded.theGamesDbEnabled());
+    QSignalSpy changed(&reloaded, &SettingsManager::theGamesDbEnabledChanged);
+    reloaded.setTheGamesDbEnabled(false);
+    QCOMPARE(changed.count(), 0);
+    reloaded.setTheGamesDbEnabled(true);
+    QVERIFY(reloaded.theGamesDbEnabled());
+    QCOMPARE(changed.count(), 1);
 }
 
 void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
