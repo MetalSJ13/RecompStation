@@ -16,6 +16,32 @@ LibraryScanner::LibraryScanner(PlatformManager *platformManager,
       m_platformManager(platformManager),
       m_databaseManager(databaseManager)
 {
+    m_watchDebounceTimer.setSingleShot(true);
+    m_watchDebounceTimer.setInterval(WatchDebounceMs);
+
+    connect(&m_fileWatcher, &QFileSystemWatcher::directoryChanged,
+            this, [this](const QString &path) {
+        scheduleAutomaticScan(path);
+    });
+    connect(&m_watchDebounceTimer, &QTimer::timeout, this, [this]() {
+        if (!m_monitoringActive)
+            return;
+
+        qCInfo(lcLibrary) << "Filesystem changes settled; starting automatic library scan.";
+        scanAll();
+    });
+
+    if (m_platformManager) {
+        connect(m_platformManager, &PlatformManager::libraryDirectoryChanged,
+                this, [this]() {
+            if (m_monitoringActive)
+                refreshDirectoryWatches();
+            else
+                startMonitoring();
+        });
+        if (m_platformManager->libraryConfigured())
+            startMonitoring();
+    }
 }
 
 int LibraryScanner::lastScanCount() const
@@ -26,6 +52,97 @@ int LibraryScanner::lastScanCount() const
 QString LibraryScanner::lastError() const
 {
     return m_lastError;
+}
+
+bool LibraryScanner::monitoringActive() const
+{
+    return m_monitoringActive;
+}
+
+bool LibraryScanner::startMonitoring()
+{
+    if (!m_platformManager || !m_platformManager->libraryConfigured()) {
+        qCWarning(lcLibrary) << "Filesystem monitoring requires a configured library folder.";
+        return false;
+    }
+
+    m_monitoringActive = true;
+    refreshDirectoryWatches();
+    if (!m_monitoringActive)
+        return false;
+
+    emit monitoringActiveChanged();
+    qCInfo(lcLibrary) << "Filesystem monitoring enabled for"
+                      << m_fileWatcher.directories().size() << "directories.";
+    return true;
+}
+
+void LibraryScanner::stopMonitoring()
+{
+    m_watchDebounceTimer.stop();
+    const QStringList watched = m_fileWatcher.directories();
+    if (!watched.isEmpty())
+        m_fileWatcher.removePaths(watched);
+
+    if (m_monitoringActive) {
+        m_monitoringActive = false;
+        emit monitoringActiveChanged();
+        qCInfo(lcLibrary) << "Filesystem monitoring disabled.";
+    }
+}
+
+void LibraryScanner::scheduleAutomaticScan(const QString &changedPath)
+{
+    if (!m_monitoringActive)
+        return;
+
+    qCDebug(lcLibrary) << "Library folder changed:" << changedPath;
+    // Restarting the timer coalesces copy/extract bursts into one scan.
+    m_watchDebounceTimer.start();
+}
+
+void LibraryScanner::refreshDirectoryWatches()
+{
+    if (!m_monitoringActive || !m_platformManager)
+        return;
+
+    QStringList directories;
+    for (const QString &platform : m_platformManager->platforms()) {
+        const QString root = m_platformManager->platformDirectory(platform);
+        if (root.isEmpty() || !QDir(root).exists())
+            continue;
+
+        directories.append(QDir(root).absolutePath());
+        QDirIterator iterator(root, QDir::Dirs | QDir::NoDotAndDotDot
+                                      | QDir::Readable | QDir::NoSymLinks,
+                              QDirIterator::Subdirectories);
+        while (iterator.hasNext())
+            directories.append(QDir(iterator.next()).absolutePath());
+    }
+
+    directories.removeDuplicates();
+    const QSet<QString> desired(directories.cbegin(), directories.cend());
+    QStringList stale;
+    for (const QString &path : m_fileWatcher.directories()) {
+        if (!desired.contains(path))
+            stale.append(path);
+    }
+    if (!stale.isEmpty())
+        m_fileWatcher.removePaths(stale);
+
+    const QSet<QString> existing(m_fileWatcher.directories().cbegin(),
+                                 m_fileWatcher.directories().cend());
+    QStringList missing;
+    for (const QString &path : directories) {
+        if (!existing.contains(path))
+            missing.append(path);
+    }
+
+    if (!missing.isEmpty()) {
+        const QStringList failed = m_fileWatcher.addPaths(missing);
+        if (!failed.isEmpty())
+            qCWarning(lcLibrary) << "Could not watch some library directories:" << failed;
+    }
 }
 
 QStringList LibraryScanner::supportedExtensions(const QString &platform) const
@@ -78,11 +195,13 @@ int LibraryScanner::scanAll()
 
     m_scanningAll = false;
     m_lastScanCount = totalFound;
-    m_lastError = errors.join("\n");
+    m_lastError = errors.join("\\n");
 
     qCInfo(lcLibrary) << "Full library scan finished. Registered games:" << m_lastScanCount;
     if (!m_lastError.isEmpty())
         qCWarning(lcLibrary) << "Full library scan reported errors:" << m_lastError;
+
+    refreshDirectoryWatches();
     emit scanCompleted(m_lastScanCount);
     return m_lastScanCount;
 }
