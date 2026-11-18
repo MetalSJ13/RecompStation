@@ -22,7 +22,13 @@ The library should support:
 - Browsing all games and filtering by platform.
 - Optional text search for a specific game.
 - Sorting options appropriate to a personal collection (for example title, platform, and recently added).
-- Cover-art-forward browsing with clear keyboard/controller focus and selection states.
+- Two curated presentation modes: a cover-art-forward Grid View (the signature default) and a compact, readable List View. Avoid arbitrary layout editors or unrestricted card resizing.
+- Three curated Grid View density presets (Compact, Comfortable, Spacious) that adapt card sizing to available window width. Comfortable is the default.
+- A small, immediate Grid/List selector in the library header; density remains in Settings → Library. Persist both preferences.
+- A library-only background selector in Settings → Library: static theme-coordinated background (default), subtle optional animated ambience, or a user-selected custom still image (PNG/JPEG/WebP). Keep the background dark enough for legibility and preserve the active theme's accent and surface language.
+- Animated ambience must pause when the window is hidden or minimized and be disabled when Reduced Motion is enabled.
+- Custom backgrounds are still images only; do not turn this into a wallpaper editor or allow unrestricted colors/layout rearrangement.
+- Cover-art-forward browsing with clear keyboard/controller focus and selection states in both presentation modes.
 - A dedicated game-details experience with available metadata, artwork, platform, supported recompilation project information, launcher installation state, and launch action.
 - Useful empty, loading, scanning, missing-artwork, metadata-unavailable, unsupported-project, and launch-error states.
 - A single platform selector for narrowing the collection; library scanning remains in Settings rather than duplicating maintenance controls on the browsing page.
