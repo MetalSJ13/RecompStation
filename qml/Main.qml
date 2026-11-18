@@ -1989,22 +1989,65 @@ ApplicationWindow {
                             }
 
                             RowLayout {
+                                Layout.minimumWidth: 0
                                 spacing: 8
+
+                                TextField {
+                                    Layout.preferredWidth: 230
+                                    Layout.minimumWidth: 150
+                                    Layout.preferredHeight: 42
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
+                                    placeholderText: "Search games..."
+                                    selectByMouse: true
+                                    color: theme.textPrimary
+                                    font.pixelSize: 13 * theme.fontScale
+                                    leftPadding: 13
+                                    rightPadding: 13
+                                    onTextChanged: {
+                                        window.librarySearchText = text
+                                        gameGrid.currentIndex = 0
+                                    }
+                                    background: Rectangle {
+                                        radius: 8
+                                        color: theme.surface
+                                        border.color: parent.activeFocus ? theme.accent : theme.divider
+                                        border.width: parent.activeFocus ? 2 : 1
+                                    }
+                                }
+
                                 ComboBox {
-                                    Layout.preferredWidth: 190
+                                    Layout.preferredWidth: 180
                                     Layout.preferredHeight: 42
                                     model: ["All Platforms"].concat(platformManager.platforms())
                                     currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
-                                    onActivated: window.selectedPlatform = currentText
+                                    onActivated: {
+                                        window.selectedPlatform = currentText
+                                        gameGrid.currentIndex = 0
+                                    }
                                 }
                                 ComboBox {
-                                    Layout.preferredWidth: 132
+                                    Layout.preferredWidth: 126
                                     Layout.preferredHeight: 42
                                     textRole: "label"
                                     valueRole: "value"
-                                    model: [{ label: "Grid View", value: "grid" }, { label: "List View", value: "list" }]
+                                    model: [{ label: "Grid", value: "grid" }, { label: "List", value: "list" }]
                                     currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
                                     onActivated: settingsManager.libraryView = currentValue
+                                }
+                                ComboBox {
+                                    visible: settingsManager.libraryView === "grid"
+                                    Layout.preferredWidth: 142
+                                    Layout.preferredHeight: 42
+                                    textRole: "label"
+                                    valueRole: "value"
+                                    model: [
+                                        { label: "Compact", value: "compact" },
+                                        { label: "Comfortable", value: "comfortable" },
+                                        { label: "Spacious", value: "spacious" }
+                                    ]
+                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
+                                    onActivated: settingsManager.libraryDensity = currentValue
                                 }
                             }
                         }
@@ -3739,60 +3782,9 @@ ApplicationWindow {
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                     Label {
-                                        text: "LIBRARY PRESENTATION"
+                                        text: "LIBRARY LOCATION & SCANNING"
                                         color: theme.textMuted; font.pixelSize: 10 * theme.fontScale
                                         font.bold: true; font.letterSpacing: 1
-                                    }
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 16
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 4
-                                            Label { text: "Layout"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
-                                            Label { text: "Choose how your collection is presented."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
-                                        }
-                                        ComboBox {
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.preferredWidth: 190
-                                            textRole: "label"; valueRole: "value"
-                                            model: [{ label: "Grid View", value: "grid" }, { label: "List View", value: "list" }]
-                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
-                                            onActivated: settingsManager.libraryView = currentValue
-                                        }
-                                    }
-                                    RowLayout {
-                                        visible: settingsManager.libraryView === "grid"
-                                        Layout.fillWidth: true
-                                        spacing: 16
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 4
-                                            Label { text: "Grid density"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
-                                            Label { text: "Curated sizes adapt to your available screen width."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
-                                        }
-                                        ComboBox {
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.preferredWidth: 190
-                                            textRole: "label"; valueRole: "value"
-                                            model: [{ label: "Compact", value: "compact" }, { label: "Comfortable", value: "comfortable" }, { label: "Spacious", value: "spacious" }]
-                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
-                                            onActivated: settingsManager.libraryDensity = currentValue
-                                        }
                                     }
                                     Label {
                                         text: "LIBRARY BACKGROUND"
