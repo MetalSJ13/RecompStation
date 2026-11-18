@@ -1,6 +1,7 @@
 #include "ControllerManager.h"
 
 #include "Logging.h"
+#include "SettingsManager.h"
 
 #ifdef RECOMPSTATION_HAS_SDL2
 #include <SDL.h>
@@ -71,6 +72,20 @@ QString ControllerManager::controllerType() const { return m_controllerType; }
 QString ControllerManager::controllerGuid() const { return m_controllerGuid; }
 bool ControllerManager::inputEnabled() const { return m_inputRouter.inputEnabled(); }
 
+void ControllerManager::setSettingsManager(SettingsManager *settingsManager)
+{
+    m_settingsManager = settingsManager;
+    loadControllerProfile();
+}
+
+void ControllerManager::loadControllerProfile()
+{
+    m_controllerProfile = (m_settingsManager && !m_controllerGuid.isEmpty())
+        ? m_settingsManager->controllerProfile(m_controllerGuid) : QVariantMap{};
+    if (!m_controllerProfile.isEmpty())
+        qCInfo(lcApplication) << "Loaded controller mappings for GUID:" << m_controllerGuid;
+}
+
 void ControllerManager::setInputEnabled(bool enabled)
 {
     m_inputRouter.setInputEnabled(enabled);
@@ -89,6 +104,7 @@ void ControllerManager::setConnected(bool connected, const QString &name,
     m_controllerName = connected ? name : QString();
     m_controllerType = connected ? type : QStringLiteral("generic");
     m_controllerGuid = connected ? guid : QString();
+    loadControllerProfile();
     emit connectedChanged();
 
     if (connected)
@@ -163,22 +179,41 @@ void ControllerManager::pollController()
         return SDL_GameControllerGetButton(m_controller, button) != 0;
     };
 
-    QString direction;
-    if (pressed(SDL_CONTROLLER_BUTTON_DPAD_UP))
-        direction = QStringLiteral("up");
-    else if (pressed(SDL_CONTROLLER_BUTTON_DPAD_DOWN))
-        direction = QStringLiteral("down");
-    else if (pressed(SDL_CONTROLLER_BUTTON_DPAD_LEFT))
-        direction = QStringLiteral("left");
-    else if (pressed(SDL_CONTROLLER_BUTTON_DPAD_RIGHT))
-        direction = QStringLiteral("right");
-    else {
-        const Sint16 x = SDL_GameControllerGetAxis(
-            m_controller, SDL_CONTROLLER_AXIS_LEFTX);
-        const Sint16 y = SDL_GameControllerGetAxis(
-            m_controller, SDL_CONTROLLER_AXIS_LEFTY);
-        direction = ControllerInputRouter::directionFromAxes(x, y);
-    }
+    // Normalize the physical SDL state into stable tokens. Profiles map
+    // logical RecompStation actions to these tokens, independent of layout.
+    QStringList activeInputs;
+    const auto addButton = [&activeInputs, &pressed](SDL_GameControllerButton button,
+                                                      const QString &token) {
+        if (pressed(button))
+            activeInputs.append(token);
+    };
+    addButton(SDL_CONTROLLER_BUTTON_A, QStringLiteral("a"));
+    addButton(SDL_CONTROLLER_BUTTON_B, QStringLiteral("b"));
+    addButton(SDL_CONTROLLER_BUTTON_X, QStringLiteral("x"));
+    addButton(SDL_CONTROLLER_BUTTON_Y, QStringLiteral("y"));
+    addButton(SDL_CONTROLLER_BUTTON_BACK, QStringLiteral("back"));
+    addButton(SDL_CONTROLLER_BUTTON_GUIDE, QStringLiteral("guide"));
+    addButton(SDL_CONTROLLER_BUTTON_START, QStringLiteral("start"));
+    addButton(SDL_CONTROLLER_BUTTON_LEFTSTICK, QStringLiteral("leftstick"));
+    addButton(SDL_CONTROLLER_BUTTON_RIGHTSTICK, QStringLiteral("rightstick"));
+    addButton(SDL_CONTROLLER_BUTTON_LEFTSHOULDER, QStringLiteral("leftshoulder"));
+    addButton(SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, QStringLiteral("rightshoulder"));
+    addButton(SDL_CONTROLLER_BUTTON_DPAD_UP, QStringLiteral("dpad-up"));
+    addButton(SDL_CONTROLLER_BUTTON_DPAD_DOWN, QStringLiteral("dpad-down"));
+    addButton(SDL_CONTROLLER_BUTTON_DPAD_LEFT, QStringLiteral("dpad-left"));
+    addButton(SDL_CONTROLLER_BUTTON_DPAD_RIGHT, QStringLiteral("dpad-right"));
+
+    const Sint16 leftX = SDL_GameControllerGetAxis(
+        m_controller, SDL_CONTROLLER_AXIS_LEFTX);
+    const Sint16 leftY = SDL_GameControllerGetAxis(
+        m_controller, SDL_CONTROLLER_AXIS_LEFTY);
+    const QString leftStickDirection =
+        ControllerInputRouter::directionFromAxes(leftX, leftY);
+    if (!leftStickDirection.isEmpty())
+        activeInputs.append(QStringLiteral("leftstick-") + leftStickDirection);
+
+    const QString direction = ControllerInputRouter::directionFromProfile(
+        m_controllerProfile, activeInputs);
 
     // The right stick is reserved for smooth scrolling in long UI panels.
     // SDL reports positive Y when the stick is pushed down. Ignore small
@@ -193,12 +228,16 @@ void ControllerManager::pollController()
 
     m_inputRouter.processFrame(
         direction,
-        pressed(SDL_CONTROLLER_BUTTON_A),
-        pressed(SDL_CONTROLLER_BUTTON_B)
-            || pressed(SDL_CONTROLLER_BUTTON_GUIDE),
-        pressed(SDL_CONTROLLER_BUTTON_START),
-        pressed(SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
-        pressed(SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
+        ControllerInputRouter::actionPressed(m_controllerProfile,
+                                             QStringLiteral("select"), activeInputs),
+        ControllerInputRouter::actionPressed(m_controllerProfile,
+                                             QStringLiteral("back"), activeInputs),
+        ControllerInputRouter::actionPressed(m_controllerProfile,
+                                             QStringLiteral("menu"), activeInputs),
+        ControllerInputRouter::actionPressed(m_controllerProfile,
+                                             QStringLiteral("previousSection"), activeInputs),
+        ControllerInputRouter::actionPressed(m_controllerProfile,
+                                             QStringLiteral("nextSection"), activeInputs),
         m_elapsedTimer.elapsed());
 #endif
 }
