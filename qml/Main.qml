@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
 import QtQuick.Dialogs
+import QtCore
 
 ApplicationWindow {
     id: window
@@ -17,6 +18,12 @@ ApplicationWindow {
     property bool systemMenuVisible: false
     property bool systemMenuClosing: false
     property bool quitConfirmationVisible: false
+
+    Settings {
+        id: libraryVisualSettings
+        category: "LibraryVisuals"
+        property string wavePalette: "ocean"
+    }
 
     function inputHintText() {
         if (activeInputDevice === "controller" && controllerManager.connected) {
@@ -1622,7 +1629,13 @@ ApplicationWindow {
                     height: parent.height * 1.05
                     x: (parent.width - width) / 2 + parent.width * 0.07
                     y: (parent.height - height) / 2
-                    source: "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                    source: libraryVisualSettings.wavePalette === "violet"
+                        ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
+                        : libraryVisualSettings.wavePalette === "emerald"
+                            ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
+                            : libraryVisualSettings.wavePalette === "ember"
+                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-ember.svg"
+                                : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     cache: true
@@ -1645,7 +1658,13 @@ ApplicationWindow {
                     height: parent.height * 1.05
                     x: (parent.width - width) / 2 - parent.width * 0.07
                     y: (parent.height - height) / 2
-                    source: "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                    source: libraryVisualSettings.wavePalette === "violet"
+                        ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
+                        : libraryVisualSettings.wavePalette === "emerald"
+                            ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
+                            : libraryVisualSettings.wavePalette === "ember"
+                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-ember.svg"
+                                : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     cache: true
@@ -3317,6 +3336,31 @@ ApplicationWindow {
                                         }
                                     }
                                     RowLayout {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        Layout.fillWidth: true
+                                        spacing: 16
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 4
+                                            Label { text: "Wave color"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
+                                            Label { text: "Choose the ambient color independently of your application theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
+                                        }
+                                        ComboBox {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            Layout.preferredWidth: 210
+                                            textRole: "label"; valueRole: "value"
+                                            model: [
+                                                { label: "Ocean Blue", value: "ocean" },
+                                                { label: "Violet", value: "violet" },
+                                                { label: "Emerald", value: "emerald" },
+                                                { label: "Ember", value: "ember" }
+                                            ]
+                                            currentIndex: Math.max(0, indexOfValue(libraryVisualSettings.wavePalette))
+                                            onActivated: libraryVisualSettings.wavePalette = currentValue
+                                        }
+                                    }
+                                    RowLayout {
                                         visible: settingsManager.libraryBackgroundType === "custom"
                                         Layout.fillWidth: true
                                         spacing: 10
@@ -3337,8 +3381,8 @@ ApplicationWindow {
                                         visible: settingsManager.libraryBackgroundType === "animated"
                                         Layout.fillWidth: true
                                         text: settingsManager.reducedMotion
-                                            ? "Blue ambient wave lines are paused while Reduced Motion is enabled."
-                                            : "Slow, layered blue waves create a calm console-hub atmosphere. Animation pauses when the app is inactive or minimized."
+                                            ? "Ambient wave motion is paused while Reduced Motion is enabled."
+                                            : "Layered, flowing light ribbons create a console-hub atmosphere. Animation pauses when the app is inactive or minimized."
                                         color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
