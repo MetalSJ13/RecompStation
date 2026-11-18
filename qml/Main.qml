@@ -2882,8 +2882,6 @@ ApplicationWindow {
                                 }
 
                                 Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
                                     id: appearanceNavigationButton
@@ -2930,8 +2928,6 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
                                     id: displayNavigationButton
@@ -2978,8 +2974,6 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
                                     id: libraryNavigationButton
@@ -3026,8 +3020,6 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
                                     id: metadataNavigationButton
@@ -3074,8 +3066,6 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
                                     id: controllerNavigationButton
@@ -3123,8 +3113,6 @@ ApplicationWindow {
                                 }
 
                                 Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                     activeFocusOnTab: true
                                     focusPolicy: Qt.StrongFocus
                                     id: applicationNavigationButton
@@ -3238,8 +3226,6 @@ ApplicationWindow {
                                         { id: "ember", title: "Ember", description: "Warm charcoal surfaces with copper and amber accents", accent: "#d58b59", accentSoft: "#e6a875", background: "#191411", surface: "#30231c", elevated: "#3b2b22" }
                                     ]
                                     delegate: Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         id: themePresetButton
                                         required property var modelData
                                         activeFocusOnTab: true
@@ -3340,8 +3326,6 @@ ApplicationWindow {
                                         font.pixelSize: 11 * theme.fontScale
                                     }
                                     Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         id: applyThemeButton
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
@@ -3407,8 +3391,6 @@ ApplicationWindow {
                                     ComboBox {
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         id: fontSizeSelector
                                         Layout.preferredWidth: 170
                                         Layout.preferredHeight: 44
@@ -3448,8 +3430,6 @@ ApplicationWindow {
                                         }
                                     }
                                     Switch {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         checked: settingsManager.reducedMotion
@@ -3542,8 +3522,6 @@ ApplicationWindow {
                                     ComboBox {
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         id: displayModeSelector
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 46
@@ -3588,8 +3566,6 @@ ApplicationWindow {
                                     ComboBox {
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         id: presentationSizeSelector
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 46
@@ -3613,8 +3589,6 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Item { Layout.fillWidth: true }
                                         Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 190
@@ -3673,8 +3647,6 @@ ApplicationWindow {
                                             Label { text: "Choose how your collection is presented."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 190
@@ -3695,8 +3667,6 @@ ApplicationWindow {
                                             Label { text: "Curated sizes adapt to your available screen width."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 190
@@ -3721,8 +3691,6 @@ ApplicationWindow {
                                             Label { text: "Keep the collection backdrop coordinated with your active theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 210
@@ -3747,8 +3715,6 @@ ApplicationWindow {
                                             Label { text: "Choose the ambient color independently of your application theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
                                         }
                                         ComboBox {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.preferredWidth: 210
@@ -3768,8 +3734,6 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         spacing: 10
                                         Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             text: settingsManager.customLibraryBackground.length > 0
@@ -3831,8 +3795,6 @@ ApplicationWindow {
                                                 }
                                             }
                                             Switch {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                                 activeFocusOnTab: true
                                                 focusPolicy: Qt.StrongFocus
                                                 checked: settingsManager.scanOnStartup
@@ -3841,8 +3803,6 @@ ApplicationWindow {
                                         }
                                     }
                                     Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
@@ -3862,8 +3822,6 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
@@ -3887,8 +3845,6 @@ ApplicationWindow {
                                         color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
                                     }
                                     Button {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                         Layout.preferredWidth: 210
