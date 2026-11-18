@@ -4581,17 +4581,75 @@ ApplicationWindow {
                                                         font.pixelSize: 12 * theme.fontScale
                                                         font.bold: true
                                                     }
-                                                    Label {
+                                                    property string actionKey: modelData.key
+                                                    Flow {
                                                         Layout.fillWidth: true
-                                                        text: {
-                                                            const revision = controllerManager.profileRevision
-                                                            const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
-                                                            const values = profile[modelData.key] || []
-                                                            return revision >= 0 && values.length ? values.join("  /  ") : "No bindings"
+                                                        spacing: 6
+                                                        Repeater {
+                                                            id: bindingRepeater
+                                                            model: {
+                                                                const revision = controllerManager.profileRevision
+                                                                const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
+                                                                return profile[actionKey] || []
+                                                            }
+                                                            delegate: Rectangle {
+                                                                required property var modelData
+                                                                implicitWidth: bindingChipRow.implicitWidth + 12
+                                                                implicitHeight: 30
+                                                                radius: theme.radiusSmall
+                                                                color: theme.surface
+                                                                border.color: theme.divider
+                                                                RowLayout {
+                                                                    id: bindingChipRow
+                                                                    anchors.fill: parent
+                                                                    anchors.leftMargin: 6
+                                                                    anchors.rightMargin: 4
+                                                                    spacing: 5
+                                                                    Label {
+                                                                        text: modelData
+                                                                        color: theme.textSecondary
+                                                                        font.pixelSize: 10 * theme.fontScale
+                                                                    }
+                                                                    Button {
+                                                                        id: removeBindingButton
+                                                                        text: "×"
+                                                                        enabled: bindingRepeater.count > 1 && controllerManager.connected
+                                                                        activeFocusOnTab: true
+                                                                        focusPolicy: Qt.StrongFocus
+                                                                        implicitWidth: 24
+                                                                        implicitHeight: 24
+                                                                        padding: 0
+                                                                        font.pixelSize: 14
+                                                                        background: Rectangle {
+                                                                            radius: 5
+                                                                            color: removeBindingButton.activeFocus
+                                                                                ? theme.elevatedSurface : "transparent"
+                                                                            border.color: removeBindingButton.activeFocus
+                                                                                ? theme.accent : "transparent"
+                                                                            border.width: removeBindingButton.activeFocus ? 2 : 0
+                                                                        }
+                                                                        onClicked: {
+                                                                            const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
+                                                                            const bindings = profile[actionKey] || []
+                                                                            if (bindings.length <= 1)
+                                                                                return
+                                                                            const updated = bindings.filter(function(value) {
+                                                                                return value !== modelData
+                                                                            })
+                                                                            profile[actionKey] = updated
+                                                                            if (settingsManager.saveControllerProfile(controllerManager.controllerGuid, profile))
+                                                                                controllerManager.reloadControllerProfile()
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
                                                         }
+                                                    }
+                                                    Label {
+                                                        visible: bindingRepeater.count === 0
+                                                        text: "No bindings"
                                                         color: theme.textSecondary
                                                         font.pixelSize: 10 * theme.fontScale
-                                                        wrapMode: Text.Wrap
                                                     }
                                                 }
                                                 Button {
