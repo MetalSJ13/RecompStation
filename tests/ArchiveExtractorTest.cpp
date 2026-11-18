@@ -200,7 +200,8 @@ void ArchiveExtractorTest::extractsZipContainingNestedTarGz()
         QStringLiteral("assets/launcher.rml"))).isFile());
     QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
         QStringLiteral("recompcontrollerdb.txt"))).isFile());
-    QVERIFY(!QFileInfo(destination).exists());
+    QCOMPARE(QFileInfo(result.extractedDirectory).absoluteFilePath(),
+             QFileInfo(destination).absoluteFilePath());
 }
 
 void ArchiveExtractorTest::findsExecutableInsideSingleTopLevelDirectory()
