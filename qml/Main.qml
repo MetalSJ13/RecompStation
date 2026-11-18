@@ -1706,8 +1706,31 @@ ApplicationWindow {
 
                                 Rectangle {
                                     anchors.fill: parent
+                                    anchors.margins: -4
+                                    radius: theme.radiusCard + 4
+                                    color: theme.accent
+                                    opacity: gameTile.GridView.isCurrentItem ? 0.16
+                                        : tileMouse.containsMouse ? 0.07 : 0
+                                    Behavior on opacity {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
                                     radius: theme.radiusCard
-                                    color: theme.surface
+                                    gradient: Gradient {
+                                        GradientStop {
+                                            position: 0.0
+                                            color: gameTile.GridView.isCurrentItem
+                                                ? theme.elevatedSurface : theme.surface
+                                        }
+                                        GradientStop {
+                                            position: 1.0
+                                            color: theme.surface
+                                        }
+                                    }
                                     border.width: tileMouse.containsMouse || gameTile.GridView.isCurrentItem ? 2 : 1
                                     border.color: tileMouse.containsMouse || gameTile.GridView.isCurrentItem
                                         ? theme.accent : theme.divider
@@ -1731,6 +1754,10 @@ ApplicationWindow {
                                             Layout.minimumHeight: 210
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
+                                            border.width: 1
+                                            border.color: gameTile.GridView.isCurrentItem
+                                                ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.48)
+                                                : theme.divider
                                             clip: true
 
                                             Image {
@@ -1804,11 +1831,26 @@ ApplicationWindow {
                                                 font.pixelSize: 12 * theme.fontScale
                                                 elide: Text.ElideRight
                                             }
-                                            Label {
-                                                text: gameTile.metadataTitle.length > 0 ? "METADATA" : ""
-                                                color: theme.success
-                                                font.pixelSize: 9 * theme.fontScale
-                                                font.bold: true
+                                            Rectangle {
+                                                visible: gameTile.metadataTitle.length > 0
+                                                radius: 5
+                                                color: Qt.rgba(theme.success.r, theme.success.g,
+                                                               theme.success.b, 0.12)
+                                                border.width: 1
+                                                border.color: Qt.rgba(theme.success.r, theme.success.g,
+                                                                      theme.success.b, 0.24)
+                                                implicitWidth: metadataTagLabel.implicitWidth + 14
+                                                implicitHeight: 22
+
+                                                Label {
+                                                    id: metadataTagLabel
+                                                    anchors.centerIn: parent
+                                                    text: "METADATA"
+                                                    color: theme.success
+                                                    font.pixelSize: 9 * theme.fontScale
+                                                    font.bold: true
+                                                    font.letterSpacing: 0.5
+                                                }
                                             }
                                         }
                                     }
