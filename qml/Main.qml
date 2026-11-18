@@ -1076,7 +1076,10 @@ ApplicationWindow {
                 Label {
                     id: detailsHintLabel
                     anchors.centerIn: parent
-                    text: window.inputHintText()
+                    text: window.inputHintItems().map(function(item) {
+                        return item.key.length > 0
+                            ? item.key + "  " + item.label : item.label
+                    }).join("     ")
                     color: theme.textSecondary
                     font.pixelSize: 10 * theme.fontScale
                 }
