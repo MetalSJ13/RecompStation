@@ -4492,10 +4492,19 @@ ApplicationWindow {
                                                     elide: Text.ElideRight
                                                 }
                                                 Button {
-                                                    text: "Reset"
+                                                    id: resetControllerProfileButton
+                                                    text: "Reset to defaults"
                                                     enabled: controllerManager.connected
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
+                                                    background: Rectangle {
+                                                        radius: theme.radiusSmall
+                                                        color: resetControllerProfileButton.activeFocus
+                                                            ? theme.elevatedSurface : theme.surface
+                                                        border.color: resetControllerProfileButton.activeFocus
+                                                            ? theme.accent : theme.divider
+                                                        border.width: resetControllerProfileButton.activeFocus ? 2 : 1
+                                                    }
                                                     onClicked: {
                                                         settingsManager.resetControllerProfile(controllerManager.controllerGuid)
                                                         controllerManager.reloadControllerProfile()
@@ -4547,9 +4556,14 @@ ApplicationWindow {
                                             implicitHeight: actionRow.implicitHeight + 20
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
-                                            border.color: controllerManager.mappingCaptureActive
-                                                && controllerManager.mappingCaptureAction === modelData.key
+                                            border.color: actionBindingButton.activeFocus
+                                                || (controllerManager.mappingCaptureActive
+                                                    && controllerManager.mappingCaptureAction === modelData.key)
                                                 ? theme.accent : theme.divider
+                                            border.width: actionBindingButton.activeFocus
+                                                || (controllerManager.mappingCaptureActive
+                                                    && controllerManager.mappingCaptureAction === modelData.key)
+                                                ? 2 : 1
                                             RowLayout {
                                                 id: actionRow
                                                 anchors.left: parent.left
@@ -4581,6 +4595,7 @@ ApplicationWindow {
                                                     }
                                                 }
                                                 Button {
+                                                    id: actionBindingButton
                                                     text: controllerManager.mappingCaptureActive
                                                         && controllerManager.mappingCaptureAction === modelData.key
                                                         ? "Listening…" : "Add binding"
@@ -4589,6 +4604,14 @@ ApplicationWindow {
                                                             || controllerManager.mappingCaptureAction === modelData.key)
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
+                                                    background: Rectangle {
+                                                        radius: theme.radiusSmall
+                                                        color: actionBindingButton.activeFocus
+                                                            ? theme.elevatedSurface : theme.surface
+                                                        border.color: actionBindingButton.activeFocus
+                                                            ? theme.accent : theme.divider
+                                                        border.width: actionBindingButton.activeFocus ? 2 : 1
+                                                    }
                                                     onClicked: controllerManager.startMappingCapture(modelData.key)
                                                 }
                                             }
@@ -4598,9 +4621,18 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         visible: controllerManager.mappingCaptureActive
                                         Button {
+                                            id: cancelMappingCaptureButton
                                             text: "Cancel capture"
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
+                                            background: Rectangle {
+                                                radius: theme.radiusSmall
+                                                color: cancelMappingCaptureButton.activeFocus
+                                                    ? theme.elevatedSurface : theme.surface
+                                                border.color: cancelMappingCaptureButton.activeFocus
+                                                    ? theme.accent : theme.divider
+                                                border.width: cancelMappingCaptureButton.activeFocus ? 2 : 1
+                                            }
                                             onClicked: controllerManager.cancelMappingCapture()
                                         }
                                     }
