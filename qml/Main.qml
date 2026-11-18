@@ -164,10 +164,23 @@ ApplicationWindow {
         } else if (currentPage === "Settings") {
             const focused = window.activeFocusItem
             if (focused && focused.popup) {
-                if (focused.popup.visible)
+                if (focused.popup.visible) {
                     focused.popup.close()
-                else
+                    if (focused === displayModeSelector) {
+                        if (focused.currentValue === "fullscreen"
+                                && window.visibility !== Window.FullScreen) {
+                            window.preFullscreenMode = window.visibility === Window.Maximized
+                                ? "maximized" : "windowed"
+                            settingsManager.setRestoreDisplayMode(window.preFullscreenMode)
+                        }
+                        settingsManager.setDisplayMode(focused.currentValue)
+                        window.applyDisplayMode(focused.currentValue)
+                    } else if (focused === fontSizeSelector) {
+                        settingsManager.fontSize = focused.currentValue
+                    }
+                } else {
                     focused.popup.open()
+                }
             } else if (focused && typeof focused.click === "function") {
                 focused.click()
             } else {
@@ -187,6 +200,11 @@ ApplicationWindow {
         activeInputDevice = "controller"
         if (quitConfirmationVisible) {
             quitConfirmationVisible = false
+            return
+        }
+        if (currentPage === "Settings" && window.activeFocusItem
+                && window.activeFocusItem.popup && window.activeFocusItem.popup.visible) {
+            window.activeFocusItem.popup.close()
             return
         }
         if (systemMenuVisible) {
@@ -3272,16 +3290,11 @@ ApplicationWindow {
             z: 100
             visible: window.systemMenuVisible || window.systemMenuClosing
             opacity: window.systemMenuVisible ? 1 : 0
-            scale: window.systemMenuVisible ? 1 : 0.94
             focus: window.systemMenuVisible
             enabled: window.systemMenuVisible
             Behavior on opacity {
                 enabled: !settingsManager.reducedMotion
                 NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
-            }
-            Behavior on scale {
-                enabled: !settingsManager.reducedMotion
-                NumberAnimation { duration: 220; easing.type: Easing.OutBack }
             }
             onOpacityChanged: {
                 if (!window.systemMenuVisible && opacity <= 0.001)
@@ -3297,6 +3310,11 @@ ApplicationWindow {
             Rectangle {
                 id: systemMenuPanel
                 anchors.centerIn: parent
+                scale: window.systemMenuVisible ? 1 : 0.94
+                Behavior on scale {
+                    enabled: !settingsManager.reducedMotion
+                    NumberAnimation { duration: 220; easing.type: Easing.OutBack }
+                }
                 width: Math.min(parent.width - 48, 480)
                 height: systemMenuContent.implicitHeight + 60
                 radius: theme.radiusLarge
