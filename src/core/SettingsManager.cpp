@@ -36,6 +36,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         ? storedTheme
         : kDefaultTheme;
     m_scanOnStartup = settings.value(QStringLiteral("library/scanOnStartup"), true).toBool();
+    m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
 
     const QString storedPresentationSize = settings.value(
         QStringLiteral("display/preferredPresentationSize"),
@@ -114,6 +115,30 @@ void SettingsManager::setScanOnStartup(bool enabled)
 
     m_scanOnStartup = enabled;
     emit scanOnStartupChanged();
+}
+
+
+bool SettingsManager::theGamesDbEnabled() const
+{
+    return m_theGamesDbEnabled;
+}
+
+void SettingsManager::setTheGamesDbEnabled(bool enabled)
+{
+    if (m_theGamesDbEnabled == enabled)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("metadata/theGamesDbEnabled"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist TheGamesDB provider preference.";
+        return;
+    }
+
+    m_theGamesDbEnabled = enabled;
+    emit theGamesDbEnabledChanged();
+    qCInfo(lcSettings) << "TheGamesDB provider enabled:" << m_theGamesDbEnabled;
 }
 
 QString SettingsManager::themeName() const
