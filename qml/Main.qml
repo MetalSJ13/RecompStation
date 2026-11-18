@@ -1846,18 +1846,25 @@ ApplicationWindow {
                                     gradient: Gradient {
                                         GradientStop {
                                             position: 0.0
-                                            color: gameTile.GridView.isCurrentItem
-                                                ? theme.elevatedSurface : theme.surface
+                                            color: gameTile.highlighted ? theme.elevatedSurface
+                                                : Qt.rgba(theme.surface.r, theme.surface.g,
+                                                          theme.surface.b, 0.46)
                                         }
                                         GradientStop {
                                             position: 1.0
-                                            color: theme.surface
+                                            color: gameTile.highlighted ? theme.surface
+                                                : Qt.rgba(theme.surface.r, theme.surface.g,
+                                                          theme.surface.b, 0.38)
                                         }
+                                    }
+                                    Behavior on opacity {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
                                     }
                                     border.width: gameTile.highlighted ? 2 : 1
                                     border.color: gameTile.highlighted ? theme.accent
                                         : Qt.rgba(theme.divider.r, theme.divider.g,
-                                                  theme.divider.b, 0.42)
+                                                  theme.divider.b, 0.24)
                                     Behavior on border.color {
                                         enabled: !settingsManager.reducedMotion
                                         ColorAnimation { duration: 140 }
