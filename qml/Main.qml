@@ -122,8 +122,17 @@ ApplicationWindow {
         }
 
         if (currentPage === "Library" && gameGrid.count > 0) {
-            const columns = Math.max(1, Math.floor(gameGrid.width / gameGrid.cellWidth))
             let next = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
+            if (settingsManager.libraryView === "list") {
+                if (direction === "up") next--
+                else if (direction === "down") next++
+                next = Math.max(0, Math.min(gameGrid.count - 1, next))
+                gameGrid.currentIndex = next
+                gameList.positionViewAtIndex(next, ListView.Contain)
+                gameList.forceActiveFocus()
+                return
+            }
+            const columns = Math.max(1, Math.floor(gameGrid.width / gameGrid.cellWidth))
             if (direction === "left") next--
             else if (direction === "right") next++
             else if (direction === "up") next -= columns
@@ -1550,12 +1559,28 @@ ApplicationWindow {
                 visible: currentPage === "Library"
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: theme.backgroundTop }
-                    GradientStop {
-                        position: 0.52
-                        color: Qt.lighter(theme.windowBackground, 1.12)
-                    }
+                    GradientStop { position: 0.52; color: Qt.lighter(theme.windowBackground, 1.12) }
                     GradientStop { position: 1.0; color: theme.backgroundBottom }
                 }
+            }
+
+            Image {
+                anchors.fill: parent
+                visible: currentPage === "Library"
+                    && settingsManager.libraryBackgroundType === "custom"
+                    && settingsManager.customLibraryBackground.length > 0
+                source: settingsManager.customLibraryBackground
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                visible: currentPage === "Library"
+                    && settingsManager.libraryBackgroundType === "custom"
+                color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
+                               theme.windowBackground.b, 0.76)
             }
 
             Rectangle {
@@ -1563,17 +1588,28 @@ ApplicationWindow {
                 visible: currentPage === "Library"
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop {
-                        position: 0.0
-                        color: Qt.rgba(theme.accent.r, theme.accent.g,
-                                       theme.accent.b, 0.055)
-                    }
+                    GradientStop { position: 0.0; color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.055) }
                     GradientStop { position: 0.42; color: "transparent" }
-                    GradientStop {
-                        position: 1.0
-                        color: Qt.rgba(theme.accent.r, theme.accent.g,
-                                       theme.accent.b, 0.035)
-                    }
+                    GradientStop { position: 1.0; color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.035) }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                visible: currentPage === "Library"
+                    && settingsManager.libraryBackgroundType === "animated"
+                opacity: 0.035
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: theme.accent }
+                    GradientStop { position: 0.55; color: "transparent" }
+                    GradientStop { position: 1.0; color: theme.accentHover }
+                }
+                SequentialAnimation on opacity {
+                    running: visible && !settingsManager.reducedMotion
+                        && window.visibility !== Window.Hidden
+                    loops: Animation.Infinite
+                    NumberAnimation { to: 0.12; duration: 9000; easing.type: Easing.InOutSine }
+                    NumberAnimation { to: 0.035; duration: 9000; easing.type: Easing.InOutSine }
                 }
             }
 
@@ -1637,23 +1673,38 @@ ApplicationWindow {
                                 }
                             }
 
-                            ComboBox {
-                                Layout.preferredWidth: 190
-                                Layout.preferredHeight: 42
-                                model: ["All Platforms"].concat(platformManager.platforms())
-                                currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
-                                onActivated: window.selectedPlatform = currentText
+                            RowLayout {
+                                spacing: 8
+                                ComboBox {
+                                    Layout.preferredWidth: 190
+                                    Layout.preferredHeight: 42
+                                    model: ["All Platforms"].concat(platformManager.platforms())
+                                    currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
+                                    onActivated: window.selectedPlatform = currentText
+                                }
+                                ComboBox {
+                                    Layout.preferredWidth: 132
+                                    Layout.preferredHeight: 42
+                                    textRole: "label"
+                                    valueRole: "value"
+                                    model: [{ label: "Grid View", value: "grid" }, { label: "List View", value: "list" }]
+                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
+                                    onActivated: settingsManager.libraryView = currentValue
+                                }
                             }
                         }
 
                         GridView {
                             id: gameGrid
+                            visible: settingsManager.libraryView === "grid"
                             Layout.fillWidth: true
-                            Layout.fillHeight: gameGrid.count > 0
-                            Layout.preferredHeight: gameGrid.count > 0 ? 760 : 0
+                            Layout.fillHeight: gameGrid.count > 0 && settingsManager.libraryView === "grid"
+                            Layout.preferredHeight: gameGrid.count > 0 && settingsManager.libraryView === "grid" ? 760 : 0
                             clip: true
-                            cellWidth: Math.max(260, Math.min(320,
-                                Math.floor(width / Math.max(1, Math.floor(width / 300)))))
+                            readonly property int preferredColumns: settingsManager.libraryDensity === "compact" ? 10
+                                : settingsManager.libraryDensity === "spacious" ? 6 : 8
+                            cellWidth: Math.max(180, Math.min(480,
+                                Math.floor(width / Math.max(1, preferredColumns))))
                             cellHeight: Math.round(cellWidth * 1.35)
                             keyNavigationEnabled: true
                             model: {
@@ -1868,6 +1919,83 @@ ApplicationWindow {
 
                                 Keys.onReturnPressed: gameTile.openDetails()
                                 Keys.onEnterPressed: gameTile.openDetails()
+                            }
+                            ScrollBar.vertical: ScrollBar {}
+                        }
+
+                        ListView {
+                            id: gameList
+                            Layout.fillWidth: true
+                            Layout.fillHeight: settingsManager.libraryView === "list" && gameGrid.count > 0
+                            Layout.preferredHeight: settingsManager.libraryView === "list" && gameGrid.count > 0 ? 760 : 0
+                            visible: settingsManager.libraryView === "list"
+                            clip: true
+                            spacing: 9
+                            model: gameGrid.model
+                            currentIndex: gameGrid.currentIndex
+                            keyNavigationEnabled: true
+                            delegate: Item {
+                                id: listTile
+                                required property string title
+                                required property string platform
+                                required property string artworkPath
+                                required property string metadataTitle
+                                required property string metadataOverview
+                                required property string metadataReleaseDate
+                                required property string metadataRating
+                                required property var screenshots
+                                required property string path
+                                required property int id
+                                required property int index
+                                width: gameList.width
+                                height: 112
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: theme.radiusCard
+                                    color: gameList.currentIndex === listTile.index ? theme.elevatedSurface : theme.surface
+                                    border.width: gameList.currentIndex === listTile.index ? 2 : 1
+                                    border.color: gameList.currentIndex === listTile.index ? theme.accent : theme.divider
+                                }
+                                Image {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 76
+                                    height: 88
+                                    source: listTile.artworkPath
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    cache: true
+                                }
+                                ColumnLayout {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 104
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 18
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 5
+                                    Label { Layout.fillWidth: true; text: listTile.title; color: theme.textPrimary; font.pixelSize: 15 * theme.fontScale; font.bold: true; elide: Text.ElideRight }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Label { text: listTile.platform; color: theme.textSecondary; font.pixelSize: 11 * theme.fontScale }
+                                        Rectangle { width: 5; height: 5; radius: 3; color: theme.textMuted }
+                                        Label { text: listTile.metadataTitle.length > 0 ? "Metadata available" : "Metadata pending"; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale }
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        gameGrid.currentIndex = listTile.index
+                                        window.selectedGame = { id: listTile.id, title: listTile.title,
+                                            platform: listTile.platform, path: listTile.path,
+                                            artworkPath: listTile.artworkPath, screenshots: listTile.screenshots,
+                                            metadataTitle: listTile.metadataTitle,
+                                            metadataOverview: listTile.metadataOverview,
+                                            metadataReleaseDate: listTile.metadataReleaseDate,
+                                            metadataRating: listTile.metadataRating }
+                                        gameDetailsPopup.open()
+                                    }
+                                }
                             }
                             ScrollBar.vertical: ScrollBar {}
                         }
