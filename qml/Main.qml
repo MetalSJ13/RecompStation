@@ -1586,6 +1586,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "custom"
+                    && settingsManager.customLibraryBackground.length > 0
                 color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
                                theme.windowBackground.b, 0.76)
             }
@@ -1613,7 +1614,7 @@ ApplicationWindow {
                 }
                 SequentialAnimation on opacity {
                     running: visible && !settingsManager.reducedMotion
-                        && window.visibility !== Window.Hidden
+                        && window.active && window.visibility !== Window.Minimized
                     loops: Animation.Infinite
                     NumberAnimation { to: 0.12; duration: 9000; easing.type: Easing.InOutSine }
                     NumberAnimation { to: 0.035; duration: 9000; easing.type: Easing.InOutSine }
