@@ -1988,112 +1988,131 @@ ApplicationWindow {
                                 }
                             }
 
-                            RowLayout {
-                                Layout.minimumWidth: 0
-                                spacing: 8
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 520
+                                Layout.preferredWidth: 700
+                                Layout.preferredHeight: 76
+                                radius: 10
+                                color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.82)
+                                border.color: theme.divider
+                                border.width: 1
 
-                                TextField {
-                                    Layout.preferredWidth: 230
-                                    Layout.minimumWidth: 150
-                                    Layout.preferredHeight: 42
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
-                                    placeholderText: "Search games..."
-                                    selectByMouse: true
-                                    color: theme.textPrimary
-                                    font.pixelSize: 13 * theme.fontScale
-                                    leftPadding: 13
-                                    rightPadding: 13
-                                    onTextChanged: {
-                                        window.librarySearchText = text
-                                        gameGrid.currentIndex = 0
-                                    }
-                                    background: Rectangle {
-                                        radius: 8
-                                        color: theme.surface
-                                        border.color: parent.activeFocus ? theme.accent : theme.divider
-                                        border.width: parent.activeFocus ? 2 : 1
-                                    }
-                                }
-
-                                ComboBox {
-                                    Layout.preferredWidth: 180
-                                    Layout.preferredHeight: 42
-                                    model: ["All Platforms"].concat(platformManager.platforms())
-                                    currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
-                                    onActivated: {
-                                        window.selectedPlatform = currentText
-                                        gameGrid.currentIndex = 0
-                                    }
-                                }
-                                Rectangle {
-                                    Layout.preferredWidth: 326
-                                    Layout.minimumWidth: 326
-                                    Layout.preferredHeight: 76
-                                    radius: 10
-                                    color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.82)
-                                    border.color: theme.divider
-                                    border.width: 1
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 9
+                                    spacing: 9
 
                                     ColumnLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 9
-                                        spacing: 5
-
+                                        Layout.fillWidth: true
+                                        Layout.minimumWidth: 130
+                                        spacing: 3
                                         Label {
-                                            text: "LIBRARY DISPLAY"
+                                            text: "SEARCH GAMES"
                                             color: theme.textMuted
                                             font.pixelSize: 9 * theme.fontScale
                                             font.bold: true
-                                            font.letterSpacing: 1.1
+                                            font.letterSpacing: 0.8
                                         }
-
-                                        RowLayout {
+                                        TextField {
                                             Layout.fillWidth: true
-                                            spacing: 8
-
-                                            ColumnLayout {
-                                                Layout.fillWidth: true
-                                                spacing: 3
-                                                Label {
-                                                    text: "View"
-                                                    color: theme.textSecondary
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                }
-                                                ComboBox {
-                                                    Layout.fillWidth: true
-                                                    Layout.preferredHeight: 34
-                                                    textRole: "label"
-                                                    valueRole: "value"
-                                                    model: [{ label: "Grid", value: "grid" }, { label: "List", value: "list" }]
-                                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
-                                                    onActivated: settingsManager.libraryView = currentValue
-                                                }
+                                            Layout.preferredHeight: 34
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            placeholderText: "Enter a game title"
+                                            selectByMouse: true
+                                            color: theme.textPrimary
+                                            font.pixelSize: 12 * theme.fontScale
+                                            leftPadding: 10
+                                            rightPadding: 10
+                                            onTextChanged: {
+                                                window.librarySearchText = text
+                                                gameGrid.currentIndex = 0
                                             }
-
-                                            ColumnLayout {
-                                                Layout.fillWidth: true
-                                                spacing: 3
-                                                Label {
-                                                    text: "Card size"
-                                                    color: theme.textSecondary
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                }
-                                                ComboBox {
-                                                    Layout.fillWidth: true
-                                                    Layout.preferredHeight: 34
-                                                    textRole: "label"
-                                                    valueRole: "value"
-                                                    model: [
-                                                        { label: "Compact", value: "compact" },
-                                                        { label: "Comfortable", value: "comfortable" },
-                                                        { label: "Spacious", value: "spacious" }
-                                                    ]
-                                                    currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
-                                                    enabled: settingsManager.libraryView === "grid"
-                                                    onActivated: settingsManager.libraryDensity = currentValue
-                                                }
+                                            background: Rectangle {
+                                                radius: 7
+                                                color: theme.background
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
                                             }
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.preferredWidth: 154
+                                        Layout.minimumWidth: 125
+                                        spacing: 3
+                                        Label {
+                                            text: "PLATFORM"
+                                            color: theme.textMuted
+                                            font.pixelSize: 9 * theme.fontScale
+                                            font.bold: true
+                                            font.letterSpacing: 0.8
+                                        }
+                                        ComboBox {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 34
+                                            model: ["All Platforms"].concat(platformManager.platforms())
+                                            currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
+                                            onActivated: {
+                                                window.selectedPlatform = currentText
+                                                gameGrid.currentIndex = 0
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillHeight: true
+                                        Layout.preferredWidth: 1
+                                        color: theme.divider
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.preferredWidth: 104
+                                        Layout.minimumWidth: 88
+                                        spacing: 3
+                                        Label {
+                                            text: "VIEW"
+                                            color: theme.textMuted
+                                            font.pixelSize: 9 * theme.fontScale
+                                            font.bold: true
+                                            font.letterSpacing: 0.8
+                                        }
+                                        ComboBox {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 34
+                                            textRole: "label"
+                                            valueRole: "value"
+                                            model: [{ label: "Grid", value: "grid" }, { label: "List", value: "list" }]
+                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
+                                            onActivated: settingsManager.libraryView = currentValue
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.preferredWidth: 132
+                                        Layout.minimumWidth: 116
+                                        spacing: 3
+                                        Label {
+                                            text: "CARD SIZE"
+                                            color: theme.textMuted
+                                            font.pixelSize: 9 * theme.fontScale
+                                            font.bold: true
+                                            font.letterSpacing: 0.8
+                                        }
+                                        ComboBox {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 34
+                                            textRole: "label"
+                                            valueRole: "value"
+                                            model: [
+                                                { label: "Compact", value: "compact" },
+                                                { label: "Comfortable", value: "comfortable" },
+                                                { label: "Spacious", value: "spacious" }
+                                            ]
+                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryDensity))
+                                            enabled: settingsManager.libraryView === "grid"
+                                            onActivated: settingsManager.libraryDensity = currentValue
                                         }
                                     }
                                 }
