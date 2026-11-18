@@ -268,8 +268,9 @@ void ControllerManager::pollController()
             if (activeInputs.isEmpty())
                 m_captureAwaitingRelease = false;
         } else {
-            for (const QString &input : activeInputs) {
-                if (!m_previousActiveInputs.contains(input)) {
+            const QString input = ControllerInputRouter::firstNewInput(
+                activeInputs, m_previousActiveInputs);
+            if (!input.isEmpty()) {
                     QVariantMap updatedProfile = m_controllerProfile;
                     QVariantList bindings = updatedProfile.value(m_mappingCaptureAction).toList();
                     if (!bindings.contains(input))
@@ -289,8 +290,6 @@ void ControllerManager::pollController()
                     } else {
                         cancelMappingCapture();
                     }
-                    break;
-                }
             }
         }
         m_previousActiveInputs = activeInputs;
