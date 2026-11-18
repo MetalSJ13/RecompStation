@@ -2,6 +2,8 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
+#include <QVariantMap>
 
 // Hardware-independent controller input state machine. SDL (or another input
 // backend) supplies normalized button states; this class owns edge detection,
@@ -15,6 +17,10 @@ public:
     explicit ControllerInputRouter(QObject *parent = nullptr);
 
     static QString directionFromAxes(qint16 x, qint16 y, int deadZone = 16000);
+    static bool actionPressed(const QVariantMap &profile, const QString &action,
+                              const QStringList &activeInputs);
+    static QString directionFromProfile(const QVariantMap &profile,
+                                         const QStringList &activeInputs);
 
     void processFrame(const QString &direction,
                       bool selectPressed,
