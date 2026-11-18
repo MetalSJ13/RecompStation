@@ -2389,8 +2389,9 @@ ApplicationWindow {
 
                         ListView {
                             id: gameList
-                            anchors.fill: parent
-                            LayoutMirroring.enabled: false
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
                             width: Math.min(parent.width,
                                 Math.max(300, Math.min(parent.width * 0.52, 760)))
                             visible: settingsManager.libraryView === "list" || opacity > 0
