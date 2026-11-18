@@ -8,6 +8,7 @@
     <file alias="application.svg">../assets/icons/application.svg</file>
     <file alias="artwork-placeholder.svg">../assets/icons/artwork-placeholder.svg</file>
     <file alias="library.svg">../assets/icons/library.svg</file>
+    <file alias="metadata.svg">../assets/icons/metadata.svg</file>
     <file alias="settings.svg">../assets/icons/settings.svg</file>
     <file alias="back.svg">../assets/icons/back.svg</file>
     <file alias="play.svg">../assets/icons/play.svg</file>
