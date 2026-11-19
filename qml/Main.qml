@@ -1645,7 +1645,7 @@ ApplicationWindow {
                 Image {
                     anchors.fill: parent
                     anchors.margins: 5
-                    source: "qrc:/icons/artwork-placeholder.svg"
+                    source: "qrc:/icons/game-artwork-unavailable.png"
                     fillMode: Image.PreserveAspectFit
                     visible: !window.selectedGame
                         || !window.selectedGame.artworkPath
@@ -2751,33 +2751,23 @@ ApplicationWindow {
                                                 visible: gameTile.artworkPath.length > 0
                                             }
                                             Image {
+                                                id: gameTileCover
                                                 anchors.fill: parent
                                                 anchors.margins: 5
                                                 source: gameTile.artworkPath
                                                 fillMode: Image.PreserveAspectFit
                                                 asynchronous: true
                                                 cache: true
-                                                visible: gameTile.artworkPath.length > 0
+                                                visible: status === Image.Ready
                                             }
-                                            Column {
-                                                anchors.centerIn: parent
-                                                spacing: 5
-                                                visible: gameTile.artworkPath.length === 0
-                                                Image {
-                                                    anchors.horizontalCenter: parent.horizontalCenter
-                                                    source: "qrc:/icons/artwork-placeholder.svg"
-                                                    sourceSize.width: 38
-                                                    sourceSize.height: 38
-                                                    width: 38
-                                                    height: 38
-                                                    opacity: 0.65
-                                                }
-                                                Label {
-                                                    anchors.horizontalCenter: parent.horizontalCenter
-                                                    text: "Artwork unavailable"
-                                                    color: theme.textMuted
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                }
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 5
+                                                source: "qrc:/icons/game-artwork-unavailable.png"
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                                cache: true
+                                                visible: gameTileCover.status !== Image.Ready
                                             }
                                         }
 
@@ -2939,7 +2929,8 @@ ApplicationWindow {
                                         NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
                                     }
                                 }
-                                Image {
+                                Item {
+                                    id: listArtworkFrame
                                     anchors.left: parent.left
                                     anchors.leftMargin: 12
                                     anchors.verticalCenter: parent.verticalCenter
@@ -2947,10 +2938,23 @@ ApplicationWindow {
                                         : settingsManager.libraryListDensity === "spacious" ? 94 : 76
                                     height: settingsManager.libraryListDensity === "compact" ? 62
                                         : settingsManager.libraryListDensity === "spacious" ? 116 : 88
-                                    source: listTile.artworkPath
-                                    fillMode: Image.PreserveAspectFit
-                                    asynchronous: true
-                                    cache: true
+                                    Image {
+                                        id: listCoverImage
+                                        anchors.fill: parent
+                                        source: listTile.artworkPath
+                                        fillMode: Image.PreserveAspectFit
+                                        asynchronous: true
+                                        cache: true
+                                        visible: status === Image.Ready
+                                    }
+                                    Image {
+                                        anchors.fill: parent
+                                        source: "qrc:/icons/game-artwork-unavailable.png"
+                                        fillMode: Image.PreserveAspectFit
+                                        asynchronous: true
+                                        cache: true
+                                        visible: listCoverImage.status !== Image.Ready
+                                    }
                                 }
                                 ColumnLayout {
                                     anchors.left: parent.left
