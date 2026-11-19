@@ -16,7 +16,7 @@ RecompStation is a native desktop environment for browsing and launching the use
 
 ## Initial platform coverage and expansion plan
 
-Current library platforms include Nintendo 64, PlayStation 1, Nintendo GameCube, and Nintendo Wii. GameCube and Wii scanner foundations exist, but dedicated folder creation and end-to-end detection must be verified explicitly.
+Current library platforms are Nintendo 64, PlayStation 1, Nintendo GameCube, and Nintendo Wii. Startup previously passed the recompilation project's supported-platform list into PlatformManager, which limited library scanning to N64 because the current native project catalog is N64-only. Startup now initializes the independent library platform defaults instead. The fix is committed on `ui/interface-redesign`; local build/runtime verification is still required.
 
 The next platform-expansion work is to make library platform discovery/folder creation independent of the curated recompilation-project catalog, verify GameCube and Wii detection, and add original Xbox support with clearly defined disc-image formats. Xbox 360 is a later investigation: establish the correct supported disc/container format and reliable detection rules before implementing it. Library detection support does not imply that a native recompilation project or launcher exists for a game; those remain separate capabilities.
 
