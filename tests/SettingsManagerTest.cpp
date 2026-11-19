@@ -77,6 +77,15 @@ void SettingsManagerTest::persistsDisplayMode()
     const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
     QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
 
+    // Start from a saved non-fullscreen mode so this test exercises an
+    // actual transition to fullscreen with the new fullscreen default.
+    {
+        QSettings settings(settingsPath, QSettings::IniFormat);
+        settings.setValue(QStringLiteral("display/windowMode"), QStringLiteral("windowed"));
+        settings.sync();
+        QCOMPARE(settings.status(), QSettings::NoError);
+    }
+
     {
         SettingsManager manager(settingsPath);
         QSignalSpy changed(&manager, &SettingsManager::displayModeChanged);
