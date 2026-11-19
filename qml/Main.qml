@@ -13,7 +13,12 @@ ApplicationWindow {
     minimumHeight: 550
     // Set the initial native window state before the Wayland surface is mapped.
     // This avoids showing a windowed frame and switching to fullscreen afterward.
-    visibility: Window.FullScreen
+    // Restore the user's saved window state before the native surface is shown.
+    // Fullscreen remains the first-run default, but windowed/maximized choices
+    // survive a restart instead of being overwritten by a hard-coded startup mode.
+    visibility: settingsManager.displayMode === "maximized" ? Window.Maximized
+        : settingsManager.displayMode === "windowed" ? Window.Windowed
+        : Window.FullScreen
     visible: true
     title: "RecompStation"
 
@@ -160,6 +165,18 @@ ApplicationWindow {
         case "Application": return applicationNavigationButton
         default: return appearanceNavigationButton
         }
+    }
+
+    function keyboardDirectionalNavigationAllowed() {
+        if (!window.visible)
+            return false
+        const focused = window.activeFocusItem
+        if (focused && focused.popup && focused.popup.visible)
+            return false
+        // Preserve normal caret movement while editing text fields.
+        if (focused && (focused instanceof TextInput || focused instanceof TextArea))
+            return false
+        return true
     }
 
     function controllerNavigate(direction) {
@@ -570,9 +587,10 @@ ApplicationWindow {
     Shortcut {
         sequence: "Left"
         context: Qt.ApplicationShortcut
-        enabled: window.visible && currentPage === "Library"
-            && !systemMenuVisible && !gameDetailsPopup.visible
-            && settingsManager.libraryView !== "list"
+        enabled: window.keyboardDirectionalNavigationAllowed()
+            && (systemMenuVisible || currentPage === "Settings" || gameDetailsPopup.visible
+                || (currentPage === "Library" && !gameDetailsPopup.visible
+                    && settingsManager.libraryView !== "list"))
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("left")
@@ -581,9 +599,10 @@ ApplicationWindow {
     Shortcut {
         sequence: "Right"
         context: Qt.ApplicationShortcut
-        enabled: window.visible && currentPage === "Library"
-            && !systemMenuVisible && !gameDetailsPopup.visible
-            && settingsManager.libraryView !== "list"
+        enabled: window.keyboardDirectionalNavigationAllowed()
+            && (systemMenuVisible || currentPage === "Settings" || gameDetailsPopup.visible
+                || (currentPage === "Library" && !gameDetailsPopup.visible
+                    && settingsManager.libraryView !== "list"))
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("right")
@@ -592,8 +611,9 @@ ApplicationWindow {
     Shortcut {
         sequence: "Up"
         context: Qt.ApplicationShortcut
-        enabled: window.visible && currentPage === "Library"
-            && !systemMenuVisible && !gameDetailsPopup.visible
+        enabled: window.keyboardDirectionalNavigationAllowed()
+            && (systemMenuVisible || currentPage === "Settings"
+                || gameDetailsPopup.visible || currentPage === "Library")
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("up")
@@ -602,8 +622,9 @@ ApplicationWindow {
     Shortcut {
         sequence: "Down"
         context: Qt.ApplicationShortcut
-        enabled: window.visible && currentPage === "Library"
-            && !systemMenuVisible && !gameDetailsPopup.visible
+        enabled: window.keyboardDirectionalNavigationAllowed()
+            && (systemMenuVisible || currentPage === "Settings"
+                || gameDetailsPopup.visible || currentPage === "Library")
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.controllerNavigate("down")
@@ -2188,6 +2209,12 @@ ApplicationWindow {
                                 NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
                             }
                             clip: true
+                            // Keep scaled cards and their focus glow inside the viewport,
+                            // including the first and last rows.
+                            topMargin: 10
+                            bottomMargin: 10
+                            leftMargin: 8
+                            rightMargin: 8
                             readonly property int preferredColumns: settingsManager.libraryDensity === "compact" ? 10
                                 : settingsManager.libraryDensity === "spacious" ? 6 : 8
                             cellWidth: Math.max(180, Math.min(480,
@@ -2383,7 +2410,9 @@ ApplicationWindow {
                                         Rectangle {
                                             Layout.fillWidth: true
                                             Layout.fillHeight: true
-                                            Layout.minimumHeight: 210
+                                            // Artwork flexes with the card instead of
+                                            // forcing the footer outside short cards.
+                                            Layout.minimumHeight: 96
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
                                             border.width: 1
