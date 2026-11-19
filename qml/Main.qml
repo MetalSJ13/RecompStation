@@ -161,6 +161,16 @@ ApplicationWindow {
         return false
     }
 
+    function focusedActionItem(item) {
+        let current = item
+        while (current) {
+            if (typeof current.click === "function" || current.popup)
+                return current
+            current = current.parent
+        }
+        return null
+    }
+
     function scrollSettingsContent(direction, amount) {
         const scrollView = settingsPage.section === "Appearance" ? appearanceContent
             : settingsPage.section === "Display" ? displayContent
@@ -303,13 +313,13 @@ ApplicationWindow {
     function controllerSelect(inputDevice) {
         activeInputDevice = inputDevice || "controller"
         if (systemMenuVisible) {
-            const focused = window.activeFocusItem
+            const focused = window.focusedActionItem(window.activeFocusItem)
             if (focused && typeof focused.click === "function")
                 focused.click()
             return
         }
         if (gameDetailsPopup.visible) {
-            const focused = window.activeFocusItem
+            const focused = window.focusedActionItem(window.activeFocusItem)
             if (focused && typeof focused.click === "function")
                 focused.click()
             return
@@ -326,7 +336,7 @@ ApplicationWindow {
                     tile.openDetails()
             }
         } else if (currentPage === "Settings") {
-            const focused = window.activeFocusItem
+            const focused = window.focusedActionItem(window.activeFocusItem)
             if (focused && focused.popup) {
                 if (focused.popup.visible) {
                     focused.popup.close()
@@ -455,6 +465,26 @@ ApplicationWindow {
         onActivated: window.toggleFullscreen()
     }
 
+    Shortcut {
+        sequence: "PageDown"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Settings"
+            && !systemMenuVisible && !uninstallDialog.visible
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.scrollSettingsContent("down", Math.max(120, settingsContentCard.height * 0.72))
+        }
+    }
+    Shortcut {
+        sequence: "PageUp"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Settings"
+            && !systemMenuVisible && !uninstallDialog.visible
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.scrollSettingsContent("up", Math.max(120, settingsContentCard.height * 0.72))
+        }
+    }
     Shortcut {
         sequence: "Escape"
         context: Qt.ApplicationShortcut
