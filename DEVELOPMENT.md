@@ -161,6 +161,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Define and test conservative match-confidence rules; keep ambiguous matches unresolved
 - [x] Add an isolated N64 ROM hashing utility with byte-order detection and MD5/CRC32 calculation (unit tests added; local build/test pending)
 - [ ] Integrate TheGamesDB Games/ByGameHash requests (MD5 then CRC fallback) and preserve title search as the final fallback
+- [ ] Replace the development-only environment-variable API-key workflow for production: review TheGamesDB licensing, shared-key policy, rate limits, attribution, and distribution terms; then choose an application-managed key/backend proxy or a secure user-key option
 - [ ] Verify provider hash conventions against known-good N64 ROMs before enabling automatic hash association
 - [x] Persist completed lookup outcomes and provider failures to avoid repeated automatic requests; explicit refresh can retry checked games (local validation pending)
 - [ ] Further validate artwork cache behavior, provider rate-limit handling, and retry/backoff policy
