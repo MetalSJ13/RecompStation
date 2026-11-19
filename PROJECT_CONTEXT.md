@@ -14,14 +14,11 @@ RecompStation is a native desktop environment for browsing and launching the use
 - Qt Network and QProcess
 - Primary development environment: Arch Linux / KDE Plasma
 
-## Initial platform coverage
+## Initial platform coverage and expansion plan
 
-- Nintendo 64
-- PlayStation 1
-- Nintendo GameCube
-- Nintendo Wii
+Current library platforms include Nintendo 64, PlayStation 1, Nintendo GameCube, and Nintendo Wii. GameCube and Wii scanner foundations exist, but dedicated folder creation and end-to-end detection must be verified explicitly.
 
-Platform folders are derived from the platforms represented in the curated recompilation project catalog. Scanner support does not imply every game has a compatible recompilation project. Launchability depends on the catalog and project-specific ROM requirements.
+The next platform-expansion work is to make library platform discovery/folder creation independent of the curated recompilation-project catalog, verify GameCube and Wii detection, and add original Xbox support with clearly defined disc-image formats. Xbox 360 is a later investigation: establish the correct supported disc/container format and reliable detection rules before implementing it. Library detection support does not imply that a native recompilation project or launcher exists for a game; those remain separate capabilities.
 
 ## Current development state
 
@@ -44,7 +41,7 @@ Implemented capabilities include:
 
 The project catalog now includes ten additional N64 projects. Linux release discovery is filtered to verified Linux archive assets for the detected CPU architecture; Windows and Flatpak packages are excluded. ROM revision/hash requirements are documented per project, and Super Mario 64 exposes both the existing n64hub recompile and HarbourMasters Ghostship as separate choices in Game Details.
 
-The library Settings page uses one local root folder. RecompStation creates one subfolder per platform represented in the supported project catalog, and the scanner searches those subfolders. First-run setup asks the user to choose the root before scanning; changing it triggers a full library scan. The startup scan preference remains persistent. The single-root setup implementation is awaiting local build and regression-test verification.
+The library Settings page uses one local root folder. RecompStation currently creates platform subfolders from the platforms represented in the supported project catalog, and the scanner searches those subfolders. First-run setup asks the user to choose the root before scanning; changing it triggers a full library scan. The startup scan preference remains persistent. Planned platform expansion must decouple folder creation from the recompilation-project catalog so GameCube, Wii, and original Xbox folders are reliably created even without compatible projects. Xbox 360 support remains conditional on identifying and validating the correct game format(s).
 
 Current scanning otherwise remains user-invoked; The active UI branch now connects the Scan Library action to a sequential automatic metadata matcher. Its initial policy accepts only a strong normalized-title match within the mapped platform; ambiguous and missing results remain unassociated. Lookup outcomes and provider failures are persisted to prevent repeated requests during automatic scans. Explicit Refresh Metadata retries previously checked games. Accepted metadata triggers the existing artwork cache. Local build and regression-test verification are pending.
 
