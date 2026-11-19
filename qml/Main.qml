@@ -1195,6 +1195,7 @@ ApplicationWindow {
         property bool installPromptVisible: false
         property bool switchAnimating: false
         property int switchDirection: 1
+        property int switchTargetIndex: -1
         property var switchTargetGame: null
 
         function switchToAdjacentGame(direction) {
@@ -1218,6 +1219,7 @@ ApplicationWindow {
                 return
 
             const game = games[nextIndex]
+            switchTargetIndex = nextIndex
             switchTargetGame = {
                 id: game.id,
                 title: game.title,
@@ -1275,7 +1277,7 @@ ApplicationWindow {
             ScriptAction {
                 script: {
                     window.selectedGame = gameDetailsPopup.switchTargetGame
-                    gameGrid.currentIndex += gameDetailsPopup.switchDirection
+                    gameGrid.currentIndex = gameDetailsPopup.switchTargetIndex
                     if (settingsManager.libraryView === "list")
                         gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
                     else
