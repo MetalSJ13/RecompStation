@@ -1317,7 +1317,7 @@ ApplicationWindow {
                         color: "#FFFFFF"
                         font.pixelSize: 12 * theme.fontScale
                         font.bold: true
-                        font.underline: detailsBackButton.hovered || detailsBackButton.activeFocus
+                        font.underline: detailsBackButton.hovered
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
