@@ -2,86 +2,125 @@
 
 ## Objective
 
-RecompStation is a native desktop environment for browsing and launching the user's own collection of games with supported native recompilation projects. It manages game libraries and recompilation launchers rather than emulators or a storefront.
+RecompStation is a native desktop environment for browsing and launching the user's own game collection through supported native recompilation projects. It manages game libraries and launchers; it is not an emulator frontend or a storefront.
 
-## Technology
+## Technology and development environment
 
-- C++20
-- Qt 6.5+
-- Qt Quick / QML
-- CMake and Ninja
-- SQLite
-- Qt Network and QProcess
-- Primary development environment: Arch Linux / KDE Plasma
+- **Language:** C++20
+- **UI:** Qt 6.5+, Qt Quick / QML
+- **Build:** CMake and Ninja
+- **Data:** SQLite
+- **System integration:** Qt Network and QProcess
+- **Primary development environment:** Arch Linux / KDE Plasma
 
-## Initial platform coverage
+## Supported library platforms
 
 - Nintendo 64
 - PlayStation 1
 - Nintendo GameCube
 - Nintendo Wii
 
-Platform folders are derived from the platforms represented in the curated recompilation project catalog. Scanner support does not imply every game has a compatible recompilation project. Launchability depends on the catalog and project-specific ROM requirements.
+Platform folders are derived from platforms represented in the curated recompilation project catalog. Scanner support does not imply that every game has a compatible recompilation project. Launchability depends on catalog coverage and project-specific ROM requirements.
 
-## Current development state
+## Current project status
 
-**Active branch:** `ui/interface-redesign`  
-**Merge policy:** Keep this branch separate from `main` until the user explicitly approves a merge. The preceding `feature/launcher-download-staging` branch is retained as a backup.
+### Branch and merge policy
 
-Implemented capabilities include:
-- One configurable library root, catalog-derived platform subfolders, first-run setup, and recursive game scanning
-- Persistent startup library scan preference and recursive filesystem monitoring with debounced automatic reconciliation
-- Automatic metadata matching after library scans, with persistent lookup outcomes, explicit retry support, and stale failed-lookup reset when an unassociated ROM reappears (latest changes await local build/runtime verification)
-- SQLite game-library records
-- TheGamesDB asynchronous search and runtime platform mapping, with a persistent provider enable/disable preference
-- Metadata association to local ROM records
-- Artwork retrieval, local caching, and library thumbnails
-- Curated N64 recompilation/native-port catalog covering 16 projects, including Star Fox 64, Donkey Kong 64, Mario Kart 64, the three Mario Party titles, Super Smash Bros., Ghostship, Banjo-Tooie, and Paper Mario
-- GitHub release discovery and architecture-aware Linux asset filtering
-- Staged launcher downloads, safe archive extraction, installation validation, managed launcher discovery, and uninstall
-- Native process launch with running/finished/error state
-- Regression tests for scanner, database, metadata, artwork, GitHub, catalog, archive, launcher management, and process launching
+- **Active branch:** \`ui/interface-redesign\`
+- **Backup branch:** \`feature/launcher-download-staging\`
+- **Merge policy:** Keep the active branch separate from \`main\` until the user explicitly approves a merge.
 
-The project catalog now includes ten additional N64 projects. Linux release discovery is filtered to verified Linux archive assets for the detected CPU architecture; Windows and Flatpak packages are excluded. ROM revision/hash requirements are documented per project, and Super Mario 64 exposes both the existing n64hub recompile and HarbourMasters Ghostship as separate choices in Game Details. The library Settings page uses one local root folder. RecompStation creates one subfolder per platform represented in the supported project catalog, and the scanner searches those subfolders. First-run setup asks the user to choose the root before scanning; changing it triggers a full library scan. The startup scan preference remains persistent. The single-root setup implementation is awaiting local build and regression-test verification. Current scanning otherwise remains user-invoked; The active UI branch now connects the Scan Library action to a sequential automatic metadata matcher. Its initial policy accepts only a strong normalized-title match within the mapped platform; ambiguous and missing results remain unassociated. Lookup outcomes and provider failures are persisted to prevent repeated requests during automatic scans. Explicit Refresh Metadata retries previously checked games. Accepted metadata triggers the existing artwork cache. Local build and regression-test verification are pending. Continuous filesystem monitoring now has an initial implementation: LibraryScanner watches the configured platform directories and their existing subdirectories, debounces directory changes, rescans the library, and refreshes watches so newly created nested folders are included. The initial regression tests cover nested-folder additions, file removals, and stopping/restarting monitoring. This implementation is committed on the active branch but still requires local build, test, and runtime validation.
+### Current milestone
+
+**Milestone 2 — Application shell and navigation.** The core navigation, Library browsing controls, contextual launcher workflow, Settings layout consistency, and Grid card entrance behavior are implemented. The remaining milestone exit task is a full navigation/backend regression pass. See \`DEVELOPMENT.md\` for the authoritative checklist and milestone status.
+
+### Implemented capabilities
+
+- **Library:** One configurable library root, catalog-derived platform subfolders, first-run setup, recursive scanning, persistent startup-scan preference, and debounced filesystem monitoring/reconciliation.
+- **Metadata:** TheGamesDB asynchronous search and platform mapping, persistent provider enablement, local game-metadata associations, automatic conservative title/platform matching, persisted lookup outcomes, explicit retry support, and artwork caching.
+- **Artwork:** Cover-art retrieval, local caching, and library thumbnails. Gameplay screenshots have a separate refresh/cache workflow under Settings → Metadata.
+- **Game browsing:** Curated Grid/List presentation, title search, platform filtering, independent view sizing, theme-aware backgrounds, and keyboard/controller navigation hints.
+- **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories. TheGamesDB provider state and metadata/screenshot refresh actions are grouped in Metadata settings.
+- **Controller:** Live connection state, device name/type, input enablement, and read-only navigation-binding presentation. Stable SDL GUIDs and per-device profile persistence have backend foundations; applying mappings and interactive remapping are not complete.
+- **Recompilation catalog:** Curated N64 project catalog, including Star Fox 64, Donkey Kong 64, Mario Kart 64, the Mario Party titles, Super Smash Bros., Ghostship, Banjo-Tooie, and PaperBoat (Paper Mario). Multiple projects can be offered for one game where applicable.
+- **Linux launchers:** GitHub release discovery, architecture-aware Linux asset filtering, staged downloads, safe archive extraction, installation validation, installed-launcher discovery, managed uninstall, and native process launch/state reporting.
+- **Tests:** Regression coverage exists for scanner, database, metadata, artwork, GitHub, catalog, archive, launcher-management, and process-launch components.
+
+### Validation notes and known limitations
+
+- Recent filesystem-monitoring, automatic metadata-matching, Settings, and database work has implementation and regression-test coverage in the repository, but local build/runtime validation must be confirmed by the user before being described as complete.
+- Representative Linux launcher workflows have been user-tested successfully for Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat.
+- Controller remapping is not yet implemented; current navigation mappings are informational/read-only.
+- Full accessibility/controller-only validation and the Milestone 2 navigation/backend regression pass remain outstanding.
+- The TheGamesDB API key is currently read from the development process environment variable \`RECOMPSTATION_TGDB_API_KEY\`. This is a temporary development mechanism, not the intended production experience. Production authentication must be designed after reviewing TheGamesDB licensing, shared-key rules, rate limits, attribution, and distribution requirements. A backend proxy/application-managed key or secure user-provided key are candidates; no production approach has been selected.
 
 ## Product and UI direction
 
-The product experience is defined in `docs/UI_DESIGN.md`.
+The detailed visual and interaction specification is maintained in \`docs/UI_DESIGN.md\`.
 
-Primary navigation is limited to:
-1. **Game Library** — default landing view; browse all games, filter by platform, optionally search/sort, open game details, and initiate a manual scan/scrape.
-2. **Settings** — appearance, display, library, metadata, launcher, and application configuration.
+### Primary navigation
 
-Metadata Search is removed as a standalone destination. Platform selection becomes part of the Game Library. Launcher discovery/installation should be surfaced contextually from game details or supported-project state rather than as a separate primary destination.
+1. **Game Library** — default landing view for browsing, title search, platform filtering, Grid/List presentation, game details, and game-context actions.
+2. **Settings** — application configuration.
 
-The visual direction is a polished, dark, immersive personal collection experience. It must not resemble a storefront or directly copy Steam Big Picture or another launcher. Use restrained blue-violet/electric-blue accents, strong artwork presentation, consistent typography and spacing, smooth purposeful transitions, and visible selection/focus states.
-The Settings navigation has been refined with a wider, more readable category panel and bundled SVG icons for Appearance, Display, Library, Metadata, Controller, and Application. The Metadata page now exposes a persistent TheGamesDB enable/disable checkbox and clearly labels ScreenScraper, Hasheous, and IGDB as not yet integrated or still under evaluation. Disabling TheGamesDB prevents initial platform-catalog requests, subsequent game-search requests, and new gameplay-screenshot refreshes; provider selection is initialized from the saved preference. Provider priority, fallback, and separate artwork-source selection remain future work. The Controller category currently provides live connected/disconnected status, controller name/type, and SDL support availability. Per-device profiles and button remapping are still planned and must not be represented as available functionality. This Settings pass is awaiting local build and runtime verification.
-The current Library UI has a curated Grid/List presentation, adjustable grid density, a compact Library/Settings header, and a device-adaptive navigation hint panel with mouse, keyboard, and controller icons. The user has confirmed arrow-key grid navigation, Enter/Return selection, Escape back from game details, and controller hot-plug detection. The latest tested UI still needs broader accessibility and Settings navigation validation. Controller remapping is planned as per-device profiles keyed by hardware GUID; it has not yet been implemented.
-The library presentation now offers curated Grid and List modes, three responsive grid-density presets, and a library-specific background treatment: static theme-coordinated (default), optional animated ambience, or a user-selected still image copied into application data. The signature Grid View remains the default; animation respects Reduced Motion and pauses while the window is inactive or minimized.
+Metadata Search, Platforms, and standalone Launcher Discovery are not primary destinations. Platform filtering belongs in the Library; launcher discovery and management are contextual to Game Details.
 
-Display behavior must remain under the desktop compositor; the initial compatibility target is KDE Plasma on Wayland, with X11/Xlibre and other desktop environments investigated later. The Display settings now detect the current screen and persist preferred window-size presets (including ultrawide and 4:3 options), constrained to the available desktop area. These are application window dimensions only, never monitor-wide mode changes. The saved preset is applied on startup when the window is windowed; the system option leaves the current window size unchanged. Appearance will offer curated static, optional animated, and user-selected custom-image backgrounds, plus scalable font sizes and reduced-motion support.
+### Visual language and interaction
 
-Mouse and keyboard remain supported. Controller support will include Xbox and PlayStation defaults with user remapping. RecompStation must relinquish controller input while a launched game session is active and resume only after the actual game process/session exits.
+- Dark, immersive personal-collection presentation; do not imitate a storefront or Steam Big Picture.
+- Restrained blue-violet/electric-blue accents, strong artwork presentation, consistent typography and spacing.
+- Smooth, purposeful transitions and clear focus/selection states.
+- Grid is the default Library view; List remains available with independent row sizing.
+- Library backgrounds support a coordinated static theme treatment, optional animated ambience, and a user-selected still image. Reduced Motion must be respected.
+- Grid cards use a staggered bottom-up entrance on startup, List-to-Grid switching, and return from Settings. Do not replay it for ordinary search/filter changes or opening/closing Game Details.
+- Keyboard and controller navigation should remain clear and consistent. Controller input must be relinquished while a launched game session is active and restored after that process/session exits.
+
+### Settings structure
+
+Settings categories are Appearance, Display, Library, Metadata, Controller, and Application. Keep category pages visually consistent, scrollable when needed, and equipped with visible focus styling.
+
+- **Library:** Library root, platform folders, scanning, and monitoring configuration.
+- **Metadata:** TheGamesDB enablement/configuration state, metadata refresh, and gameplay-screenshot refresh.
+- **Controller:** Device state and current input settings; do not present planned remapping as implemented.
+- **Display:** Window sizing only. Respect the desktop compositor; preferred window-size presets must never change monitor-wide display modes.
+
+### Display and desktop compatibility
+
+The initial compatibility target is KDE Plasma on Wayland. Display settings detect the current screen and persist preferred window-size presets constrained to available desktop space. These are application-window dimensions, not monitor resolution changes. The system preset leaves the current window size unchanged. X11/Xlibre and other desktop environments can be investigated later.
 
 ## Metadata automation direction
 
-Metadata is a background library service, not a user-facing manual chore. Manual scanning/scraping and automatic folder monitoring should share one discovery/matching pipeline. N64 hash groundwork is now present in `N64RomHash`: detect ROM byte order from magic, canonicalize to big-endian, and calculate MD5/CRC32. TheGamesDB `Games/ByGameHash` request integration remains the next step; hash results must be verified against known-good ROMs before they can override conservative title matching:
-- Discover a ROM and platform.
-- Search the provider using title and platform context.
-- Automatically associate only sufficiently confident matches.
-- Keep ambiguous/low-confidence matches unresolved rather than silently associating incorrect metadata.
-- Cache results and artwork, avoid redundant provider calls, and respect API limits.
-- Present exceptional review in the context of the affected game.
+Metadata is a background library service, not a manual chore. Manual scans and automatic folder monitoring should use a shared discovery/matching pipeline.
+
+Current matching behavior uses conservative normalized-title matching within the mapped platform. Ambiguous and missing results remain unresolved. Lookup outcomes and provider failures are persisted to avoid redundant automatic requests; explicit refresh can retry previously checked games.
+
+N64 hash groundwork exists in \`N64RomHash\`:
+- Detect ROM byte order from magic.
+- Normalize ROM data to canonical big-endian order.
+- Calculate MD5 and CRC32.
+
+The next hash-related work is to integrate TheGamesDB \`Games/ByGameHash\` requests, verify provider hash conventions against known-good ROMs, and preserve title search as a fallback. Hash-based association must not override conservative matching until verified.
+
+The metadata workflow should:
+1. Discover a ROM and platform.
+2. Search using hash/title and platform context as supported.
+3. Associate only sufficiently confident matches.
+4. Leave ambiguous or low-confidence results unresolved.
+5. Cache metadata and artwork, avoid redundant calls, and respect provider limits.
+6. Surface exceptional review in the context of the affected game.
+
+Provider priority/fallback and independent artwork-source selection remain future work.
 
 ## Development workflow
 
 From the repository root:
 
-```bash
+\`\`\`bash
 ./scripts/build.sh
 ./scripts/build.sh --test
-```
+./scripts/run.sh
+\`\`\`
 
 The build script reuses the existing build directory and generator. Prefer incremental builds; do not routinely delete or recreate the local build directory.
 
-Keep business logic in C++ and presentation/navigation in QML. Make small, buildable changes, preserve existing backend workflows, and add regression tests for backend changes. The detailed roadmap is maintained in `DEVELOPMENT.md`.
+Keep business logic in C++ and presentation/navigation in QML. Make small, buildable changes, preserve existing backend workflows, and add regression tests for backend changes. Keep \`DEVELOPMENT.md\` as the detailed implementation roadmap and authoritative checklist.
