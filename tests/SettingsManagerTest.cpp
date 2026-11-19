@@ -18,7 +18,7 @@ private slots:
     void init();
     void defaultsToScanningOnStartup();
     void defaultsToSystemPresentationSize();
-    void defaultsToWindowedDisplayMode();
+    void defaultsToFullscreenDisplayMode();
     void persistsDisplayMode();
     void rejectsUnsupportedDisplayMode();
     void persistsScanOnStartupPreference();
@@ -60,14 +60,14 @@ void SettingsManagerTest::defaultsToSystemPresentationSize()
     QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("system"));
 }
 
-void SettingsManagerTest::defaultsToWindowedDisplayMode()
+void SettingsManagerTest::defaultsToFullscreenDisplayMode()
 {
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
     const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
 
     SettingsManager manager(settingsPath);
-    QCOMPARE(manager.displayMode(), QStringLiteral("windowed"));
+    QCOMPARE(manager.displayMode(), QStringLiteral("fullscreen"));
 }
 
 void SettingsManagerTest::persistsDisplayMode()
@@ -102,7 +102,7 @@ void SettingsManagerTest::rejectsUnsupportedDisplayMode()
     SettingsManager manager(settingsPath);
     QSignalSpy changed(&manager, &SettingsManager::displayModeChanged);
     manager.setDisplayMode(QStringLiteral("exclusive"));
-    QCOMPARE(manager.displayMode(), QStringLiteral("windowed"));
+    QCOMPARE(manager.displayMode(), QStringLiteral("fullscreen"));
     QCOMPARE(changed.count(), 0);
 }
 
