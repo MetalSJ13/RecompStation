@@ -108,8 +108,13 @@ ApplicationWindow {
     function moveDirectionalFocus(container, direction) {
         const candidates = []
         collectFocusableItems(container, candidates, [])
-        const current = window.activeFocusItem
-        if (!current || candidates.indexOf(current) < 0) {
+        const focusedItem = window.activeFocusItem
+        let current = focusedItem
+        // Controls such as ComboBox and TextField may give active focus to an
+        // internal content item. Resolve that item back to its focusable control.
+        while (current && candidates.indexOf(current) < 0)
+            current = current.parent
+        if (!current) {
             if (candidates.length > 0)
                 candidates[0].forceActiveFocus()
             return candidates.length > 0
@@ -174,7 +179,8 @@ ApplicationWindow {
         if (focused && focused.popup && focused.popup.visible)
             return false
         // Preserve normal caret movement while editing text fields.
-        if (focused && (focused instanceof TextInput || focused instanceof TextArea))
+        if (focused && !focused.readOnly
+                && (focused instanceof TextInput || focused instanceof TextArea))
             return false
         return true
     }
@@ -3853,12 +3859,20 @@ ApplicationWindow {
                                             font.pixelSize: 13 * theme.fontScale
                                             font.bold: true
                                         }
-                                        Label {
+                                        TextField {
                                             Layout.fillWidth: true
                                             text: platformManager.dataDirectory
+                                            readOnly: true
+                                            selectByMouse: true
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
                                             color: theme.textSecondary
                                             font.pixelSize: 12 * theme.fontScale
-                                            wrapMode: Text.WrapAnywhere
+                                            background: Rectangle {
+                                                radius: 6
+                                                color: parent.activeFocus ? theme.elevatedSurface : theme.surface
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            }
                                         }
                                         Label {
                                             Layout.fillWidth: true
@@ -3895,12 +3909,20 @@ ApplicationWindow {
                                             font.pixelSize: 13 * theme.fontScale
                                             font.bold: true
                                         }
-                                        Label {
+                                        TextField {
                                             Layout.fillWidth: true
                                             text: platformManager.dataDirectory + "/logs/runtime.log"
+                                            readOnly: true
+                                            selectByMouse: true
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
                                             color: theme.textSecondary
                                             font.pixelSize: 11 * theme.fontScale
-                                            wrapMode: Text.WrapAnywhere
+                                            background: Rectangle {
+                                                radius: 6
+                                                color: parent.activeFocus ? theme.elevatedSurface : theme.surface
+                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            }
                                         }
                                         Label {
                                             Layout.fillWidth: true
