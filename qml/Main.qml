@@ -1295,11 +1295,32 @@ ApplicationWindow {
                 anchors.top: parent.top
                 anchors.leftMargin: 28
                 anchors.topMargin: 24
-                text: "Back to Library"
-                icon.source: "qrc:/icons/back.svg"
-                icon.width: 18
-                icon.height: 18
-                icon.color: theme.textPrimary
+                width: detailsBackContent.implicitWidth
+                height: 28
+                padding: 0
+                focusPolicy: Qt.StrongFocus
+                background: Item { }
+                contentItem: RowLayout {
+                    id: detailsBackContent
+                    spacing: 8
+
+                    Image {
+                        source: "qrc:/icons/back.svg"
+                        sourceSize: Qt.size(18, 18)
+                        Layout.preferredWidth: 18
+                        Layout.preferredHeight: 18
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Label {
+                        text: "Back to Library"
+                        color: "#FFFFFF"
+                        font.pixelSize: 12 * theme.fontScale
+                        font.bold: true
+                        font.underline: detailsBackButton.hovered || detailsBackButton.activeFocus
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
                 onClicked: gameDetailsPopup.close()
             }
 
