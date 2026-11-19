@@ -160,6 +160,8 @@ QStringList LibraryScanner::supportedExtensions(const QString &platform) const
         return {"iso", "gcm", "rvz", "ciso"};
     if (platform == "Wii")
         return {"iso", "wbfs", "rvz", "wud", "wux"};
+    if (platform == "Xbox")
+        return {"iso", "xiso"};
 
     return {};
 }
