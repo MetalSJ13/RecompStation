@@ -4,68 +4,77 @@ This document is the authoritative development status and implementation order f
 
 ## Project status
 
-**Current implementation focus:** The Settings navigation has been widened and given category-specific SVG icons; Appearance, Display, Library, Metadata, Controller, and Application categories are now represented. Appearance and Application now use the same scrollable content pattern as the other settings pages. The Metadata page exposes the integrated TheGamesDB provider as a persistent checkbox, reports its configuration state, and lists ScreenScraper, Hasheous, and IGDB as future integrations. The provider preference is applied before metadata initialization, so a disabled TheGamesDB provider does not issue its initial platform-catalog request, later game searches, or new gameplay-screenshot refreshes. The Controller page now presents connected/disconnected state, controller name/type, input enablement, the active default profile, and a read-only summary of current navigation bindings. Per-device profiles and button remapping remain planned, not implemented. The Settings controller-focus work has since been built and exercised: category navigation and visible focus styling are in place across the settings categories and their interactive controls.
+### Current focus
+- **Active milestone:** Milestone 2 — Application shell and navigation. Core navigation and browsing behavior are implemented; the remaining exit task is a full navigation/backend regression pass.
+- **Current UI work:** Settings categories share consistent content gutters, heading hierarchy, section spacing, and scrolling behavior. Metadata provider configuration and refresh actions are grouped under Settings → Metadata.
+- **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
 
- The Settings foundation now persists preferred window-size presets and applies them on startup without changing monitor modes; this needs local build and KDE Wayland validation. Automatic metadata matching is connected to the library scan flow. The first pass uses conservative title matching within the mapped platform, records completed lookups and provider failures to avoid repeated requests during automatic scans, and downloads artwork for accepted matches. Explicit Refresh Metadata retries previously checked games. Re-adding a previously unavailable ROM now clears its stale failed lookup attempt when no metadata association exists, so it can be retried automatically. New diagnostic logging records why automatic metadata scans are skipped or how many games they queue. Provider failures remain distinct from definitive no-match and ambiguous results. The latest database change and regression test are committed; local build and regression-test verification are pending. A first N64 ROM hash utility has now been added: it detects .z64/.n64/.v64 byte order from the ROM magic, normalizes bytes to canonical big-endian order, and calculates MD5 and CRC32. Unit tests cover all three byte orders and invalid inputs. The TheGamesDB ByGameHash endpoint contract has been confirmed in a maintained API client (hash, filter[type]=md5|crc, filter[platform], fields, and includes); the public Swagger remains incomplete. API request integration and local test verification are the next steps.
+### Implemented foundations
+- **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
+- **Metadata:** Provider preference is applied before metadata initialization. Automatic matching uses conservative title/platform matching, records lookup outcomes to avoid repeated requests, and downloads artwork for accepted matches. Explicit refresh can retry previously checked games.
+- **Controller:** Connected-device state, input enablement, active default profile, and read-only navigation bindings are displayed. Stable SDL GUIDs and per-device profile persistence have backend foundations; applying mappings and interactive remapping remain unfinished.
+- **Library:** Filesystem monitoring, automatic metadata scan integration, and diagnostic logging are implemented. Re-added ROMs can retry after stale failed lookup state is cleared.
+- **N64 identification:** A ROM hash utility detects \`.z64\`, \`.n64\`, and \`.v64\` byte order, normalizes data, and calculates MD5 and CRC32. Unit tests cover all supported byte orders and invalid input.
 
-**Current development branch:** `ui/interface-redesign`  
-**Base:** The existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.  
-**Merge policy:** This work remains unmerged into `main` until reviewed and explicitly approved.
+### Pending validation and follow-up
+- Local build/runtime validation remains outstanding for recent Settings, metadata, and database changes unless explicitly confirmed in the relevant milestone notes.
+- The TheGamesDB ByGameHash request contract has been investigated, but application integration and validation against known-good ROMs remain outstanding.
+- The environment-variable API key is a development-time mechanism only. Production authentication/distribution must be investigated and designed separately; see Milestone 4.
+
+### Branch and merge policy
+- **Current development branch:** \`ui/interface-redesign\`
+- **Base:** Existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.
+- **Merge policy:** Keep this work unmerged into \`main\` until reviewed and explicitly approved.
 
 Keep the application buildable after each focused change. Preserve working backend behavior while the user-facing workflows are redesigned.
 
-### Controller settings presentation update (2026-11-18)
+## Recent implementation notes (2026-11-18)
 
+The following notes record focused implementation and user-validation updates. The milestone checklists below remain the authoritative task/status tracker.
+
+### Controller settings
 - [x] Redesign the Controller settings page with separate device, controller-options, active-profile, and default-button-layout sections.
-- [x] Expose the existing controller-input enable/disable setting in the page.
-- [x] Document the actual current navigation bindings without presenting read-only mappings as editable.
+- [x] Expose the existing controller-input enable/disable setting.
+- [x] Document current navigation bindings as read-only rather than presenting them as editable.
 - [x] Expose stable SDL controller GUIDs and persist validated logical-action profiles independently per GUID.
 - [ ] Apply saved profile mappings in the input router; implement button capture/remapping and per-device reset controls.
-- [x] Build and verify Settings category navigation and visible focus styling across Appearance, Display, Library, Metadata, and Controller controls.
+- [x] Build and verify Settings category navigation and visible focus styling across the tested categories and controls.
 - [ ] Build and visually verify the revised Controller page with connected and disconnected controller states.
 
-### Settings foundation update (2026-11-18)
-
-- [x] Normalize Appearance and Application settings content into scrollable panels consistent with Display, Library, and Controller.
-- [x] Add a dedicated Metadata category to Settings, ordered after Library and before Controller.
+### Settings foundation
+- [x] Normalize Appearance and Application settings content into scrollable panels consistent with the other Settings categories.
+- [x] Add a dedicated Metadata category, ordered after Library and before Controller.
 - [x] Add a persistent TheGamesDB provider checkbox and configured/disabled/API-key-required status.
 - [x] Gate TheGamesDB platform-catalog and search requests using the saved provider preference.
 - [x] Add regression coverage for provider preference persistence and disabled-provider search behavior.
-- [ ] Build and run the application locally; visually verify Settings scrolling, category navigation, provider toggle persistence, and metadata refresh behavior.
+- [ ] Build and run locally; verify Settings scrolling, category navigation, provider-toggle persistence, and metadata refresh behavior.
 - [ ] Add provider priority/fallback and independent artwork-source controls as additional providers are integrated.
 
-### Recently completed and user-verified UI work (2026-11-18)
+### Library and navigation polish
+- [x] Simplify primary Library/Settings navigation to compact icon-led controls; user approved the appearance.
+- [x] Add configurable Grid/List browsing, title search, platform filtering, and independent view sizing.
+- [x] Add coordinated static/animated/custom library background treatments.
+- [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
+- [x] Confirm Library keyboard navigation: arrow keys move through the grid, Enter/Return selects a game, and Escape returns from game details.
+- [x] Confirm controller hot-plug detection and adaptive input hints when controller input is used.
+- [ ] Complete accessibility and controller-only validation across all screens and controls.
 
-- The Library and Settings primary navigation has been simplified to compact icon-led controls; the user approved the current appearance.
-- The Game Library uses a curated artwork grid with configurable density and a restrained Grid/List choice, preserving the collection-first identity. Title search is available in the Library header and combines with the platform filter.
-- Library backgrounds support the coordinated static theme treatment, optional animated wave ambience, and custom still images. Custom images have been adjusted to scale more appropriately across the library.
-- The animated wave background is a lightweight QML effect. A more detailed pre-rendered 1080p/30fps ambient-video treatment was discussed and deliberately deferred until the final polish phase; it is not a current priority.
-- Game-card selection styling, artwork presentation, theme switching, and the adaptive navigation-hint panel have received iterative visual polish.
-- The navigation-hint panel now uses device-appropriate icons and labels for mouse, keyboard, and controller input.
-- Library keyboard navigation is confirmed working: arrow keys move through the grid, Enter/Return selects a game, and Escape returns from game details to the library.
-- Controller hot-plug detection is confirmed working when a controller is connected after the application starts. Controller navigation updates the active input hints when controller input is used.
-- The user approved the current Library/Settings button treatment and the icon-based navigation hints.
-
-These confirmations cover the specific interactions the user tested; they do not mean every screen, settings category, display configuration, or controller workflow has completed accessibility validation.
-
-### N64 project catalog expansion (2026-11-18)
-
+### N64 project catalog
 - [x] Add Star Fox 64, Donkey Kong 64, Mario Kart 64, Mario Party, Mario Party 2, Mario Party 3, and Super Smash Bros. projects.
 - [x] Add HarbourMasters Ghostship, Banjo-Tooie: Recompiled, and PaperBoat (Paper Mario).
 - [x] Restrict release matching to published Linux ZIP/TAR.GZ packages and supported CPU architectures; exclude Windows and Flatpak assets.
 - [x] Record project-specific ROM requirements, including documented revision and SHA-1 requirements where available.
 - [x] Allow multiple projects to match one game and provide a project selector in Game Details (notably Super Mario 64).
-- [x] Add catalog regression coverage for new game-title matching, multiple Super Mario 64 projects, and Linux asset filtering.
-- [x] Build and run locally; verify Linux archive extraction, expected executable paths, installation, and launch for representative projects (Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat).
+- [x] Add catalog regression coverage for title matching, multiple Super Mario 64 projects, and Linux asset filtering.
+- [x] User-confirmed build/run and launch checks for representative projects: Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat.
 - [ ] Complete install/launch/uninstall checks for every remaining catalog project.
 
-### Linux launcher execution and archive handling (2026-11-18)
-
+### Linux launcher execution and archive handling
 - [x] Support release ZIPs that wrap a single TAR.GZ/TGZ payload; safely extract the nested archive into the requested staging destination.
-- [x] Add regression coverage confirming nested archive contents (executable and supporting assets) land in the expected destination.
-- [x] Launch shell startup scripts from their installation directory using a relative invocation such as `./run.sh`, preserving scripts' expected relative asset paths.
-- [x] Add regression coverage that checks the shell script is invoked as `./run.sh`.
-- [x] Correct the PaperBoat catalog executable filename to the archive's exact case-sensitive name, `Paperboat.AppImage`.
+- [x] Add regression coverage confirming nested archive contents land in the expected destination.
+- [x] Launch shell startup scripts from their installation directory using a relative invocation such as \`./run.sh\`.
+- [x] Add regression coverage confirming the shell script is invoked as \`./run.sh\`.
+- [x] Correct the PaperBoat executable filename to the archive's exact case-sensitive name, \`Paperboat.AppImage\`.
 - [x] User-confirmed launch success for Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat.
 - [ ] Continue testing remaining catalog projects and verify uninstall preserves ROM files.
 
