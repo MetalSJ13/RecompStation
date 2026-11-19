@@ -1234,8 +1234,7 @@ ApplicationWindow {
             }
             switchDirection = direction < 0 ? -1 : 1
             switchAnimating = true
-            detailsContentFrame.enabled = false
-            detailsGameSwitchAnimation.start()
+            beginAdjacentGameSwitch()
         }
 
         property int screenshotIndex: 0
@@ -1263,57 +1262,65 @@ ApplicationWindow {
             : ({ loading: false, installing: false, error: "",
                  bytesReceived: 0, bytesTotal: 0 })
 
-        SequentialAnimation {
+        function beginAdjacentGameSwitch() {
+            detailsContentFrame.grabToImage(function(result) {
+                detailsOutgoingSnapshot.source = result.url
+                detailsOutgoingSnapshot.x = 0
+                detailsOutgoingSnapshot.visible = true
+
+                window.selectedGame = gameDetailsPopup.switchTargetGame
+                gameGrid.currentIndex = gameDetailsPopup.switchTargetIndex
+                if (settingsManager.libraryView === "list")
+                    gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+                else
+                    gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
+
+                gameDetailsPopup.screenshotIndex = 0
+                gameDetailsPopup.previousScreenshotIndex = -1
+                gameDetailsPopup.screenshotLayerA = true
+                gameDetailsPopup.installPromptVisible = false
+                gameDetailsPopup.resettingProjectSelection = true
+                gameDetailsPopup.selectedProjectId =
+                    gameDetailsPopup.supportedProjects.length > 0
+                        ? gameDetailsPopup.supportedProjects[0].id : ""
+                gameDetailsPopup.resettingProjectSelection = false
+
+                detailsContentFrame.x =
+                    gameDetailsPopup.switchDirection * window.width
+                detailsContentFrame.enabled = false
+                detailsGameSwitchAnimation.start()
+
+                if (gameDetailsPopup.selectedProject)
+                    window.checkProjectRelease(gameDetailsPopup.selectedProject)
+            })
+        }
+
+        ParallelAnimation {
             id: detailsGameSwitchAnimation
 
             NumberAnimation {
-                target: detailsContentFrame
+                target: detailsOutgoingSnapshot
                 property: "x"
                 to: -gameDetailsPopup.switchDirection * window.width
-                duration: settingsManager.reducedMotion ? 0 : 280
-                easing.type: Easing.OutCubic
-            }
-
-            ScriptAction {
-                script: {
-                    window.selectedGame = gameDetailsPopup.switchTargetGame
-                    gameGrid.currentIndex = gameDetailsPopup.switchTargetIndex
-                    if (settingsManager.libraryView === "list")
-                        gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
-                    else
-                        gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
-
-                    gameDetailsPopup.screenshotIndex = 0
-                    gameDetailsPopup.previousScreenshotIndex = -1
-                    gameDetailsPopup.screenshotLayerA = true
-                    gameDetailsPopup.installPromptVisible = false
-                    gameDetailsPopup.resettingProjectSelection = true
-                    gameDetailsPopup.selectedProjectId =
-                        gameDetailsPopup.supportedProjects.length > 0
-                            ? gameDetailsPopup.supportedProjects[0].id : ""
-                    gameDetailsPopup.resettingProjectSelection = false
-                    detailsContentFrame.x =
-                        gameDetailsPopup.switchDirection * window.width
-
-                    if (gameDetailsPopup.selectedProject)
-                        window.checkProjectRelease(gameDetailsPopup.selectedProject)
-                }
+                duration: settingsManager.reducedMotion ? 0 : 420
+                easing.type: Easing.InOutCubic
             }
 
             NumberAnimation {
                 target: detailsContentFrame
                 property: "x"
                 to: 0
-                duration: settingsManager.reducedMotion ? 0 : 340
-                easing.type: Easing.OutCubic
+                duration: settingsManager.reducedMotion ? 0 : 420
+                easing.type: Easing.InOutCubic
             }
 
-            ScriptAction {
-                script: {
-                    detailsContentFrame.enabled = true
-                    gameDetailsPopup.switchAnimating = false
-                    detailsBackButton.forceActiveFocus()
-                }
+            onFinished: {
+                detailsOutgoingSnapshot.visible = false
+                detailsOutgoingSnapshot.source = ""
+                detailsOutgoingSnapshot.x = 0
+                detailsContentFrame.enabled = true
+                gameDetailsPopup.switchAnimating = false
+                detailsBackButton.forceActiveFocus()
             }
         }
 
@@ -1357,6 +1364,17 @@ ApplicationWindow {
             width: window.width
             height: window.height
             clip: true
+
+            Image {
+                id: detailsOutgoingSnapshot
+                z: 100
+                width: window.width
+                height: window.height
+                visible: false
+                asynchronous: false
+                fillMode: Image.Stretch
+                cache: false
+            }
 
             Keys.onPressed: function(event) {
                 if (!event.isAutoRepeat)
