@@ -19,7 +19,8 @@ PlatformManager::PlatformManager(const QString &dataDirectory, QObject *parent)
         "N64",
         "PS1",
         "GameCube",
-        "Wii"
+        "Wii",
+        "Xbox"
     };
 
     m_dataDirectory = dataDirectory.isEmpty()
