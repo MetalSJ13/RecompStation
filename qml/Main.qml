@@ -335,7 +335,25 @@ ApplicationWindow {
         }
     }
 
-    Component.onCompleted: window.applyDisplayMode(settingsManager.displayMode)
+    property bool startupDisplayModeApplied: false
+
+    // Wait until the native window has been exposed before requesting
+    // fullscreen. This gives Wayland compositors a mapped surface to apply
+    // the xdg_toplevel fullscreen state to, including on first launch.
+    Timer {
+        id: startupFullscreenTimer
+        interval: 180
+        repeat: false
+        onTriggered: {
+            window.startupDisplayModeApplied = true
+            if (window.visible && window.visibility !== Window.FullScreen) {
+                console.info("[Display] Requesting fullscreen after initial window exposure.")
+                window.applyDisplayMode("fullscreen")
+            }
+        }
+    }
+
+    Component.onCompleted: startupFullscreenTimer.start()
 
     onCurrentPageChanged: {
         if (currentPage === "Settings")
@@ -378,6 +396,11 @@ ApplicationWindow {
     }
 
     onVisibilityChanged: function(visibility) {
+        // Ignore the initial compositor mapping state. Startup applies its
+        // fullscreen request after the native surface has been exposed.
+        if (!startupDisplayModeApplied)
+            return
+
         if (visibility === Window.FullScreen) {
             // Preserve the last non-fullscreen preference when fullscreen is
             // entered by the compositor or another window-manager action.
