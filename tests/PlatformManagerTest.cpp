@@ -57,6 +57,9 @@ void PlatformManagerTest::initializeCreatesStagingDirectory()
     QVERIFY(manager.platformDirectory("N64").isEmpty());
     QVERIFY(QFileInfo(QDir(temporaryDirectory.path())
                           .filePath("launchers/N64")).isDir());
+    QVERIFY(manager.platforms().contains(QStringLiteral("Xbox")));
+    QVERIFY(QFileInfo(QDir(temporaryDirectory.path())
+                          .filePath("launchers/Xbox")).isDir());
 }
 
 void PlatformManagerTest::providesProjectSpecificLauncherDirectory()
