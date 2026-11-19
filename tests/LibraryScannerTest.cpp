@@ -84,7 +84,8 @@ private slots:
                      "Standalone/Standalone.bin", "Standalone/Standalone.img"}},
             {"GameCube", {"Mario.iso", "Luigi.gcm", "Metroid.rvz", "Zelda.ciso"}},
             {"Wii", {"Galaxy.iso", "Kart.wbfs", "Zelda.rvz", "Sports.wud",
-                     "Adventure.wux"}}
+                     "Adventure.wux"}},
+            {"Xbox", {"Halo.iso", "Fable.xiso"}}
         };
 
         int expectedTotal = 0;
