@@ -14,7 +14,7 @@ This document is the authoritative development status and implementation order f
 - **Metadata:** Provider preference is applied before metadata initialization. Automatic matching uses conservative title/platform matching, records lookup outcomes to avoid repeated requests, and downloads artwork for accepted matches. Explicit refresh can retry previously checked games.
 - **Controller:** Connected-device state, input enablement, active default profile, and read-only navigation bindings are displayed. Stable SDL GUIDs and per-device profile persistence have backend foundations; applying mappings and interactive remapping remain unfinished.
 - **Library:** Filesystem monitoring, automatic metadata scan integration, and diagnostic logging are implemented. Re-added ROMs can retry after stale failed lookup state is cleared.
-- **N64 identification:** A ROM hash utility detects \`.z64\`, \`.n64\`, and \`.v64\` byte order, normalizes data, and calculates MD5 and CRC32. Unit tests cover all supported byte orders and invalid input.
+- **N64 identification:** A ROM hash utility detects `.z64`, `.n64`, and `.v64` byte order, normalizes data, and calculates MD5 and CRC32. Unit tests cover all supported byte orders and invalid input.
 
 ### Pending validation and follow-up
 - Local build/runtime validation remains outstanding for recent Settings, metadata, and database changes unless explicitly confirmed in the relevant milestone notes.
@@ -22,9 +22,9 @@ This document is the authoritative development status and implementation order f
 - The environment-variable API key is a development-time mechanism only. Production authentication/distribution must be investigated and designed separately; see Milestone 4.
 
 ### Branch and merge policy
-- **Current development branch:** \`ui/interface-redesign\`
+- **Current development branch:** `ui/interface-redesign`
 - **Base:** Existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.
-- **Merge policy:** Keep this work unmerged into \`main\` until reviewed and explicitly approved.
+- **Merge policy:** Keep this work unmerged into `main` until reviewed and explicitly approved.
 
 Keep the application buildable after each focused change. Preserve working backend behavior while the user-facing workflows are redesigned.
 
@@ -72,9 +72,9 @@ The following notes record focused implementation and user-validation updates. T
 ### Linux launcher execution and archive handling
 - [x] Support release ZIPs that wrap a single TAR.GZ/TGZ payload; safely extract the nested archive into the requested staging destination.
 - [x] Add regression coverage confirming nested archive contents land in the expected destination.
-- [x] Launch shell startup scripts from their installation directory using a relative invocation such as \`./run.sh\`.
-- [x] Add regression coverage confirming the shell script is invoked as \`./run.sh\`.
-- [x] Correct the PaperBoat executable filename to the archive's exact case-sensitive name, \`Paperboat.AppImage\`.
+- [x] Launch shell startup scripts from their installation directory using a relative invocation such as `./run.sh`.
+- [x] Add regression coverage confirming the shell script is invoked as `./run.sh`.
+- [x] Correct the PaperBoat executable filename to the archive's exact case-sensitive name, `Paperboat.AppImage`.
 - [x] User-confirmed launch success for Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat.
 - [ ] Continue testing remaining catalog projects and verify uninstall preserves ROM files.
 
