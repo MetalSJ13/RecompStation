@@ -15,7 +15,7 @@
 namespace {
 const QString kDefaultTheme = QStringLiteral("midnight-violet");
 const QString kDefaultPresentationSize = QStringLiteral("system");
-const QString kDefaultDisplayMode = QStringLiteral("windowed");
+const QString kDefaultDisplayMode = QStringLiteral("fullscreen");
 const QString kDefaultFontSize = QStringLiteral("medium");
 }
 
@@ -57,7 +57,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         : kDefaultDisplayMode;
     const QString storedRestoreDisplayMode = settings.value(
         QStringLiteral("display/restoreWindowMode"),
-        kDefaultDisplayMode
+        QStringLiteral("windowed")
     ).toString();
     m_restoreDisplayMode = storedRestoreDisplayMode == QStringLiteral("maximized")
         ? QStringLiteral("maximized") : QStringLiteral("windowed");
