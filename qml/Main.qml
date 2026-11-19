@@ -1634,6 +1634,7 @@ ApplicationWindow {
                 }
 
                 Image {
+                    id: gameCoverImage
                     anchors.fill: parent
                     anchors.margins: 5
                     source: window.selectedGame ? window.selectedGame.artworkPath : ""
@@ -1641,24 +1642,17 @@ ApplicationWindow {
                     asynchronous: true
                     smooth: true
                 }
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    visible: !window.selectedGame || window.selectedGame.artworkPath.length === 0
-                    spacing: 8
-                    Image {
-                        Layout.alignment: Qt.AlignHCenter
-                        source: "qrc:/icons/artwork-placeholder.svg"
-                        sourceSize.width: 42
-                        sourceSize.height: 42
-                        Layout.preferredWidth: 42
-                        Layout.preferredHeight: 42
-                        opacity: 0.65
-                    }
-                    Label {
-                        text: "Artwork unavailable"
-                        color: theme.textMuted
-                        font.pixelSize: 12 * theme.fontScale
-                    }
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 5
+                    source: "qrc:/icons/artwork-placeholder.svg"
+                    fillMode: Image.PreserveAspectFit
+                    visible: !window.selectedGame
+                        || !window.selectedGame.artworkPath
+                        || window.selectedGame.artworkPath.length === 0
+                        || gameCoverImage.status === Image.Error
+                    asynchronous: true
+                    smooth: true
                 }
                 Rectangle {
                     anchors.left: parent.left
@@ -1746,21 +1740,47 @@ ApplicationWindow {
                                 visible: !!window.selectedGame
                                     && (!window.selectedGame.metadataTitle
                                         || window.selectedGame.metadataTitle.length === 0)
-                                text: "METADATA NOT FOUND"
-                                color: theme.textMuted
-                                font.pixelSize: 10 * theme.fontScale
+                                text: "GAME INFORMATION NOT FOUND"
+                                color: theme.warningText
+                                font.pixelSize: 11 * theme.fontScale
                                 font.bold: true
                             }
                             Label {
                                 Layout.fillWidth: true
                                 text: window.selectedGame && window.selectedGame.metadataOverview.length > 0
                                     ? window.selectedGame.metadataOverview
-                                    : "No description is available yet. RecompStation will add game information when matching metadata is found."
+                                    : "We couldn't find matching game information. Try a different metadata provider in Settings → Metadata, then retry the lookup. Your local game entry is safe, and compatible launchers can still be installed and played."
                                 color: theme.textSecondary
-                                font.pixelSize: 19 * theme.fontScale
+                                font.pixelSize: 17 * theme.fontScale
                                 wrapMode: Text.Wrap
                                 lineHeight: 1.18
                                 lineHeightMode: Text.ProportionalHeight
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                visible: !!window.selectedGame
+                                    && (!window.selectedGame.metadataTitle
+                                        || window.selectedGame.metadataTitle.length === 0)
+                                spacing: 10
+                                Button {
+                                    text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
+                                    enabled: metadataManager.configured && !metadataMatcher.busy
+                                    onClicked: {
+                                        console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
+                                        metadataMatcher.scrapeGame(window.selectedGame.id)
+                                    }
+                                }
+                                Button {
+                                    text: "View Metadata Settings"
+                                    onClicked: {
+                                        gameDetailsPopup.close()
+                                        currentPage = "Settings"
+                                        settingsPage.section = "Metadata"
+                                        Qt.callLater(function() {
+                                            metadataNavigationButton.forceActiveFocus()
+                                        })
+                                    }
+                                }
                             }
                             Label {
                                 Layout.fillWidth: true
@@ -1967,20 +1987,6 @@ ApplicationWindow {
                                                             RowLayout {
                                     Layout.fillWidth: true
                                     spacing: 8
-
-                                    Button {
-                                        visible: !!window.selectedGame
-                                            && (!window.selectedGame.metadataTitle
-                                                || window.selectedGame.metadataTitle.length === 0
-                                                || !window.selectedGame.artworkPath
-                                                || window.selectedGame.artworkPath.length === 0)
-                                        enabled: metadataManager.configured && !metadataMatcher.busy
-                                        text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
-                                        onClicked: {
-                                            console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
-                                            metadataMatcher.scrapeGame(window.selectedGame.id)
-                                        }
-                                    }
 
                                     Button {
                                         visible: gameDetailsPopup.installedProject !== null
