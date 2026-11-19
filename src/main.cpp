@@ -36,10 +36,13 @@ int main(int argc, char *argv[])
         qWarning() << "Project catalog unavailable:" << projectCatalog.errorString();
 
     PlatformManager platformManager;
-    if (!platformManager.initialize(projectCatalog.supportedPlatforms())) {
+    // Library platforms are independent of the curated recompilation catalog.
+    // A platform must remain scannable even when no native project exists for it.
+    if (!platformManager.initialize()) {
         qCritical() << "Failed to initialize application directories.";
         return 1;
     }
+    qInfo() << "Configured library platforms:" << platformManager.platforms();
 
     const QString logDirectory = platformManager.dataDirectory() + "/logs";
     if (!RecompLogging::initialize(logDirectory))
