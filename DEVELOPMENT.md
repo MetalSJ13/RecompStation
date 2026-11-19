@@ -168,7 +168,7 @@ These confirmations cover the specific interactions the user tested; they do not
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
 - [x] Add automatic filesystem monitoring for configured folders (initial implementation; local build/runtime validation pending)
 - [x] Add a separate gameplay screenshot refresh control for games with saved TheGamesDB associations; cache screenshots independently of cover art (local build/API validation pending)
-- [ ] Add metadata provider status, provider enablement, field selection, and cache/refresh controls
+- [x] Expose TheGamesDB provider status/enablement plus manual metadata and gameplay-screenshot refresh controls in Settings → Metadata; field selection and independent cache controls remain planned
 - [ ] Add launcher installation/update preferences as supported
 - [ ] Add application preferences and useful first-run guidance
 - [ ] Expose only settings backed by real functionality
