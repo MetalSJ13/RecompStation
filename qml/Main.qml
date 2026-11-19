@@ -1735,52 +1735,89 @@ ApplicationWindow {
                                 font.pixelSize: 10 * theme.fontScale
                                 font.bold: true
                             }
-                            Label {
+                            Rectangle {
                                 Layout.fillWidth: true
                                 visible: !!window.selectedGame
                                     && (!window.selectedGame.metadataTitle
                                         || window.selectedGame.metadataTitle.length === 0)
-                                text: "GAME INFORMATION NOT FOUND"
-                                color: theme.warningText
-                                font.pixelSize: 11 * theme.fontScale
-                                font.bold: true
+                                radius: theme.radiusCard
+                                color: theme.surface
+                                border.color: theme.divider
+                                border.width: 1
+                                implicitHeight: metadataEmptyContent.implicitHeight + 32
+
+                                ColumnLayout {
+                                    id: metadataEmptyContent
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.margins: 16
+                                    spacing: 10
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
+                                        Image {
+                                            source: "qrc:/icons/metadata.svg"
+                                            sourceSize.width: 24
+                                            sourceSize.height: 24
+                                            Layout.preferredWidth: 24
+                                            Layout.preferredHeight: 24
+                                            opacity: 0.8
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "GAME INFORMATION NOT FOUND"
+                                            color: theme.textPrimary
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "We couldn't find matching game information. Try a different metadata provider in Settings → Metadata, then retry the lookup. Your local game entry is safe, and compatible launchers can still be installed and played."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 15 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                        lineHeight: 1.18
+                                        lineHeightMode: Text.ProportionalHeight
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
+                                        Button {
+                                            text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
+                                            enabled: metadataManager.configured && !metadataMatcher.busy
+                                            onClicked: {
+                                                console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
+                                                metadataMatcher.scrapeGame(window.selectedGame.id)
+                                            }
+                                        }
+                                        Button {
+                                            text: "View Metadata Settings"
+                                            onClicked: {
+                                                gameDetailsPopup.close()
+                                                currentPage = "Settings"
+                                                settingsPage.section = "Metadata"
+                                                Qt.callLater(function() {
+                                                    metadataNavigationButton.forceActiveFocus()
+                                                })
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             Label {
                                 Layout.fillWidth: true
-                                text: window.selectedGame && window.selectedGame.metadataOverview.length > 0
-                                    ? window.selectedGame.metadataOverview
-                                    : "We couldn't find matching game information. Try a different metadata provider in Settings → Metadata, then retry the lookup. Your local game entry is safe, and compatible launchers can still be installed and played."
+                                visible: !!window.selectedGame
+                                    && !!window.selectedGame.metadataTitle
+                                    && window.selectedGame.metadataTitle.length > 0
+                                text: window.selectedGame ? window.selectedGame.metadataOverview : ""
                                 color: theme.textSecondary
                                 font.pixelSize: 17 * theme.fontScale
                                 wrapMode: Text.Wrap
                                 lineHeight: 1.18
                                 lineHeightMode: Text.ProportionalHeight
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                visible: !!window.selectedGame
-                                    && (!window.selectedGame.metadataTitle
-                                        || window.selectedGame.metadataTitle.length === 0)
-                                spacing: 10
-                                Button {
-                                    text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
-                                    enabled: metadataManager.configured && !metadataMatcher.busy
-                                    onClicked: {
-                                        console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
-                                        metadataMatcher.scrapeGame(window.selectedGame.id)
-                                    }
-                                }
-                                Button {
-                                    text: "View Metadata Settings"
-                                    onClicked: {
-                                        gameDetailsPopup.close()
-                                        currentPage = "Settings"
-                                        settingsPage.section = "Metadata"
-                                        Qt.callLater(function() {
-                                            metadataNavigationButton.forceActiveFocus()
-                                        })
-                                    }
-                                }
                             }
                             Label {
                                 Layout.fillWidth: true
