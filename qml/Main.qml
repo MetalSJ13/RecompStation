@@ -618,12 +618,16 @@ ApplicationWindow {
         }
         function onPreviousSectionRequested() {
             window.activeInputDevice = "controller"
-            if (!gameDetailsPopup.visible)
+            if (gameDetailsPopup.visible)
+                gameDetailsPopup.switchToAdjacentGame(-1)
+            else
                 window.navigateToPage("Library")
         }
         function onNextSectionRequested() {
             window.activeInputDevice = "controller"
-            if (!gameDetailsPopup.visible)
+            if (gameDetailsPopup.visible)
+                gameDetailsPopup.switchToAdjacentGame(1)
+            else
                 window.navigateToPage("Settings")
         }
         function onRightStickScrollRequested(amount) {
@@ -1189,6 +1193,49 @@ ApplicationWindow {
         property var installedProject: selectedProject
             ? window.installedLauncher(selectedProject.id) : null
         property bool installPromptVisible: false
+        property bool switchAnimating: false
+        property int switchDirection: 1
+        property var switchTargetGame: null
+
+        function switchToAdjacentGame(direction) {
+            if (!visible || switchAnimating || !window.selectedGame)
+                return
+
+            const games = gameGrid.model || []
+            let currentIndex = -1
+            for (let i = 0; i < games.length; ++i) {
+                if (Number(games[i].id) === Number(window.selectedGame.id)) {
+                    currentIndex = i
+                    break
+                }
+            }
+
+            if (currentIndex < 0)
+                return
+
+            const nextIndex = currentIndex + (direction < 0 ? -1 : 1)
+            if (nextIndex < 0 || nextIndex >= games.length)
+                return
+
+            const game = games[nextIndex]
+            switchTargetGame = {
+                id: game.id,
+                title: game.title,
+                platform: game.platform,
+                path: game.path,
+                artworkPath: game.artworkPath,
+                screenshots: game.screenshots,
+                metadataTitle: game.metadataTitle,
+                metadataOverview: game.metadataOverview,
+                metadataReleaseDate: game.metadataReleaseDate,
+                metadataRating: game.metadataRating
+            }
+            switchDirection = direction < 0 ? -1 : 1
+            switchAnimating = true
+            detailsContentFrame.enabled = false
+            detailsGameSwitchAnimation.start()
+        }
+
         property int screenshotIndex: 0
         property int previousScreenshotIndex: -1
         property bool screenshotLayerA: true
@@ -1213,6 +1260,60 @@ ApplicationWindow {
                       bytesReceived: 0, bytesTotal: selectedAsset.size }))
             : ({ loading: false, installing: false, error: "",
                  bytesReceived: 0, bytesTotal: 0 })
+
+        SequentialAnimation {
+            id: detailsGameSwitchAnimation
+
+            NumberAnimation {
+                target: detailsContentFrame
+                property: "x"
+                to: -gameDetailsPopup.switchDirection * window.width
+                duration: settingsManager.reducedMotion ? 0 : 280
+                easing.type: Easing.OutCubic
+            }
+
+            ScriptAction {
+                script: {
+                    window.selectedGame = gameDetailsPopup.switchTargetGame
+                    gameGrid.currentIndex += gameDetailsPopup.switchDirection
+                    if (settingsManager.libraryView === "list")
+                        gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+                    else
+                        gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
+
+                    gameDetailsPopup.screenshotIndex = 0
+                    gameDetailsPopup.previousScreenshotIndex = -1
+                    gameDetailsPopup.screenshotLayerA = true
+                    gameDetailsPopup.installPromptVisible = false
+                    gameDetailsPopup.resettingProjectSelection = true
+                    gameDetailsPopup.selectedProjectId =
+                        gameDetailsPopup.supportedProjects.length > 0
+                            ? gameDetailsPopup.supportedProjects[0].id : ""
+                    gameDetailsPopup.resettingProjectSelection = false
+                    detailsContentFrame.x =
+                        gameDetailsPopup.switchDirection * window.width
+
+                    if (gameDetailsPopup.selectedProject)
+                        window.checkProjectRelease(gameDetailsPopup.selectedProject)
+                }
+            }
+
+            NumberAnimation {
+                target: detailsContentFrame
+                property: "x"
+                to: 0
+                duration: settingsManager.reducedMotion ? 0 : 340
+                easing.type: Easing.OutCubic
+            }
+
+            ScriptAction {
+                script: {
+                    detailsContentFrame.enabled = true
+                    gameDetailsPopup.switchAnimating = false
+                    detailsBackButton.forceActiveFocus()
+                }
+            }
+        }
 
         onOpened: {
             resettingProjectSelection = true
