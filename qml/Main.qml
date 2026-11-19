@@ -1510,15 +1510,14 @@ ApplicationWindow {
                 onStatusChanged: {
                     if (status === Image.Error)
                         console.warn("[Details Screenshots] Image failed:", source)
-                    else if (status === Image.Ready)
+                    else if (status === Image.Ready) {
                         console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
+                        if (gameDetailsPopup.screenshotLayerA)
+                            gameDetailsPopup.revealSwitchedBackground()
+                    }
                 }
                 opacity: visible && gameDetailsPopup.screenshotLayerA
                     && status === Image.Ready ? gameDetailsPopup.gameBackgroundOpacity : 0
-                onStatusChanged: {
-                    if (status === Image.Ready && gameDetailsPopup.screenshotLayerA)
-                        gameDetailsPopup.revealSwitchedBackground()
-                }
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
@@ -1540,15 +1539,14 @@ ApplicationWindow {
                 onStatusChanged: {
                     if (status === Image.Error)
                         console.warn("[Details Screenshots] Image failed:", source)
-                    else if (status === Image.Ready)
+                    else if (status === Image.Ready) {
                         console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
+                        if (!gameDetailsPopup.screenshotLayerA)
+                            gameDetailsPopup.revealSwitchedBackground()
+                    }
                 }
                 opacity: visible && !gameDetailsPopup.screenshotLayerA
                     && status === Image.Ready ? gameDetailsPopup.gameBackgroundOpacity : 0
-                onStatusChanged: {
-                    if (status === Image.Ready && !gameDetailsPopup.screenshotLayerA)
-                        gameDetailsPopup.revealSwitchedBackground()
-                }
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
