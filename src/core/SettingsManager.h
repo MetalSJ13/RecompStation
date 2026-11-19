@@ -86,7 +86,7 @@ private:
     QString m_settingsFilePath;
     QString m_themeName;
     QString m_preferredPresentationSize = QStringLiteral("system");
-    QString m_displayMode = QStringLiteral("windowed");
+    QString m_displayMode = QStringLiteral("fullscreen");
     QString m_restoreDisplayMode = QStringLiteral("windowed");
     QString m_fontSize = QStringLiteral("medium");
     bool m_reducedMotion = false;
