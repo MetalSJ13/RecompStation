@@ -17,7 +17,7 @@ This document is the authoritative development status and implementation order f
 - **N64 identification:** A ROM hash utility detects `.z64`, `.n64`, and `.v64` byte order, normalizes data, and calculates MD5 and CRC32. Unit tests cover all supported byte orders and invalid input.
 
 ### Pending validation and follow-up
-- Expand first-class library platform coverage and platform-folder creation beyond the current catalog-driven set. GameCube and Wii scanner foundations are present, but their folder creation and end-to-end detection need explicit verification; add original Xbox support, and investigate Xbox 360 only after its supported disc/container format and detection rules are established.
+- Original Xbox library support has been added to the independent platform list, with a dedicated folder, recursive .iso/.xiso scanning, TheGamesDB platform-name mapping, and regression coverage. The .iso files must be XISO-format images; ordinary/redump full-disc ISO dumps are not necessarily usable by xemu. Implementation is committed but awaits local build/runtime verification. Investigate Xbox 360 only after its supported disc/container format and detection rules are established.
 - Local build/runtime validation remains outstanding for recent Settings, metadata, and database changes unless explicitly confirmed in the relevant milestone notes.
 - The TheGamesDB ByGameHash request contract has been investigated, but application integration and validation against known-good ROMs remain outstanding.
 - The environment-variable API key is a development-time mechanism only. Production authentication/distribution must be investigated and designed separately; see Milestone 4.
@@ -244,7 +244,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Decouple game-library platform discovery and folder creation from the recompilation-project catalog, so a platform can be scanned even when no native recompilation project exists for it
 - [ ] Verify end-to-end GameCube game detection and ensure a dedicated GameCube folder is created under the configured RecompStation library root
 - [ ] Verify end-to-end Wii game detection and ensure a dedicated Wii folder is created under the configured RecompStation library root
-- [ ] Add original Xbox as a first-class library platform, define its supported ROM/disc image formats, detect games recursively, and create its dedicated library folder
+- [x] Add original Xbox as a first-class library platform with a dedicated folder and recursive .iso/.xiso candidate detection; local build/runtime verification pending. .iso must contain an Xbox XISO image, not an arbitrary or unconverted full-disc dump.
 - [ ] Investigate Xbox 360 library support; first establish the correct supported disc/container format(s), naming/layout conventions, and reliable detection rules before implementing scanner support or creating the platform folder
 - [ ] Define and test platform-specific file extensions, directory naming, and duplicate-detection rules; do not classify an unknown or unsupported file as a game
 - [ ] Keep library detection support distinct from native recompilation-project availability and launcher compatibility
