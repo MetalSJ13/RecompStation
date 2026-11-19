@@ -5,8 +5,8 @@ This document is the authoritative development status and implementation order f
 ## Project status
 
 ### Current focus
-- **Active milestone:** Milestone 2 — Application shell and navigation. The build and 14-test suite pass; manual regression has confirmed startup, Library loading, and Game Details transitions, while keyboard/Settings navigation and responsive Grid/display-mode behavior are being corrected.
-- **Current UI work:** Settings categories share consistent content gutters, heading hierarchy, section spacing, and scrolling behavior. Metadata provider configuration and refresh actions are grouped under Settings → Metadata. The Application page's managed-launcher uninstall controls now have explicit focus styling; keyboard Escape, directional-scroll fallback, and shared pause-menu navigation hints have been added, pending local verification.
+- **Active milestone:** Milestone 3 — Game Library experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred; the latest local build succeeded and all 14 automated tests passed.
+- **Current UI work:** The shell, immersive Game Details transition, Library Grid/List browsing, fullscreen startup, and recent keyboard/controller navigation fixes have been locally exercised. Next, review the remaining Milestone 3 Game Library presentation, contextual details content, and artwork/empty/loading/error states.
 - **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
 
 ### Implemented foundations
@@ -138,7 +138,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Request fullscreen as the initial native window state on every application launch, including first-run and existing-library installations; gate the startup Grid card reveal until fullscreen is confirmed and initialize delegates in their hidden reveal state to prevent a visible pre-animation flash. User confirmed the startup behavior on Wayland, including the absence of the windowed flash and duplicate/late card reveal.
 - [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition.
 
-**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch behavior are implemented and visually validated. The user has confirmed startup, Library loading, and Game Details transitions. The manual regression pass has exposed outstanding issues: arrow-key navigation in Settings, Application-page controller focus, persistence of non-fullscreen display modes across restarts, Grid card clipping during scale/size changes, and Grid footer overlap in windowed mode. Targeted QML fixes have been committed and are awaiting local build/runtime verification. Continue validating the remaining Settings controls and backend workflows; keep this milestone open until the full pass is complete.
+**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch behavior are implemented and user-validated. The latest local build completed successfully and all 14 automated tests passed. Recent fixes for Application-page controller/keyboard navigation, Settings scrolling and Escape handling, and adaptive pause-menu hints were also confirmed by the user. The comprehensive manual navigation/backend regression pass remains intentionally open and deferred while work proceeds on Milestone 3; do not mark Milestone 2 complete until that pass is explicitly resumed and finished.
 
 ### Milestone 3: Game Library experience
 
