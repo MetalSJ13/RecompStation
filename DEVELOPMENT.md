@@ -6,7 +6,7 @@ This document is the authoritative development status and implementation order f
 
 ### Current focus
 - **Active milestone:** Milestone 2 — Application shell and navigation. The build and 14-test suite pass; manual regression has confirmed startup, Library loading, and Game Details transitions, while keyboard/Settings navigation and responsive Grid/display-mode behavior are being corrected.
-- **Current UI work:** Settings categories share consistent content gutters, heading hierarchy, section spacing, and scrolling behavior. Metadata provider configuration and refresh actions are grouped under Settings → Metadata.
+- **Current UI work:** Settings categories share consistent content gutters, heading hierarchy, section spacing, and scrolling behavior. Metadata provider configuration and refresh actions are grouped under Settings → Metadata. The Application page's managed-launcher uninstall controls now have explicit focus styling; keyboard Escape, directional-scroll fallback, and shared pause-menu navigation hints have been added, pending local verification.
 - **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
 
 ### Implemented foundations
