@@ -11,6 +11,9 @@ ApplicationWindow {
     height: 800
     minimumWidth: 850
     minimumHeight: 550
+    // Set the initial native window state before the Wayland surface is mapped.
+    // This avoids showing a windowed frame and switching to fullscreen afterward.
+    visibility: Window.FullScreen
     visible: true
     title: "RecompStation"
 
@@ -335,26 +338,6 @@ ApplicationWindow {
         }
     }
 
-    property bool startupDisplayModeApplied: false
-
-    // Wait until the native window has been exposed before requesting
-    // fullscreen. This gives Wayland compositors a mapped surface to apply
-    // the xdg_toplevel fullscreen state to, including on first launch.
-    Timer {
-        id: startupFullscreenTimer
-        interval: 180
-        repeat: false
-        onTriggered: {
-            window.startupDisplayModeApplied = true
-            if (window.visible && window.visibility !== Window.FullScreen) {
-                console.info("[Display] Requesting fullscreen after initial window exposure.")
-                window.applyDisplayMode("fullscreen")
-            }
-        }
-    }
-
-    Component.onCompleted: startupFullscreenTimer.start()
-
     onCurrentPageChanged: {
         if (currentPage === "Settings")
             Qt.callLater(function() { appearanceNavigationButton.forceActiveFocus() })
@@ -396,11 +379,6 @@ ApplicationWindow {
     }
 
     onVisibilityChanged: function(visibility) {
-        // Ignore the initial compositor mapping state. Startup applies its
-        // fullscreen request after the native surface has been exposed.
-        if (!startupDisplayModeApplied)
-            return
-
         if (visibility === Window.FullScreen) {
             // Preserve the last non-fullscreen preference when fullscreen is
             // entered by the compositor or another window-manager action.
@@ -2187,6 +2165,13 @@ ApplicationWindow {
                                 onTriggered: {
                                     if (settingsManager.libraryView !== "grid" || !window.visible)
                                         return
+                                    // Do not reveal cards against the temporary
+                                    // windowed geometry. Wait for the compositor's
+                                    // initial fullscreen state and reveal once.
+                                    if (window.visibility !== Window.FullScreen) {
+                                        restart()
+                                        return
+                                    }
                                     if (gameGrid.width <= 0 || gameGrid.height <= 0) {
                                         restart()
                                         return
