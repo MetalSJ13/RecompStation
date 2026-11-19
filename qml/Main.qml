@@ -1194,6 +1194,8 @@ ApplicationWindow {
             ? window.installedLauncher(selectedProject.id) : null
         property bool installPromptVisible: false
         property bool switchAnimating: false
+        property real gameBackgroundOpacity: 1.0
+        property bool backgroundFadePending: false
         property int switchDirection: 1
         property int switchTargetIndex: -1
         property var switchTargetGame: null
@@ -1262,8 +1264,26 @@ ApplicationWindow {
             : ({ loading: false, installing: false, error: "",
                  bytesReceived: 0, bytesTotal: 0 })
 
+        function revealSwitchedBackground() {
+            if (!backgroundFadePending)
+                return
+            backgroundFadePending = false
+            detailsBackgroundFade.restart()
+        }
+
+        NumberAnimation {
+            id: detailsBackgroundFade
+            target: gameDetailsPopup
+            property: "gameBackgroundOpacity"
+            to: 1.0
+            duration: settingsManager.reducedMotion ? 0 : 900
+            easing.type: Easing.OutCubic
+        }
+
         function beginAdjacentGameSwitch() {
             detailsContentFrame.grabToImage(function(result) {
+                gameBackgroundOpacity = 0.0
+                backgroundFadePending = true
                 detailsOutgoingSnapshot.source = result.url
                 detailsOutgoingSnapshot.x = 0
                 detailsOutgoingSnapshot.visible = true
@@ -1494,7 +1514,11 @@ ApplicationWindow {
                         console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
                 }
                 opacity: visible && gameDetailsPopup.screenshotLayerA
-                    && status === Image.Ready ? 1.0 : 0
+                    && status === Image.Ready ? gameDetailsPopup.gameBackgroundOpacity : 0
+                onStatusChanged: {
+                    if (status === Image.Ready && gameDetailsPopup.screenshotLayerA)
+                        gameDetailsPopup.revealSwitchedBackground()
+                }
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
@@ -1520,7 +1544,11 @@ ApplicationWindow {
                         console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
                 }
                 opacity: visible && !gameDetailsPopup.screenshotLayerA
-                    && status === Image.Ready ? 1.0 : 0
+                    && status === Image.Ready ? gameDetailsPopup.gameBackgroundOpacity : 0
+                onStatusChanged: {
+                    if (status === Image.Ready && !gameDetailsPopup.screenshotLayerA)
+                        gameDetailsPopup.revealSwitchedBackground()
+                }
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 1500; easing.type: Easing.InOutCubic }
@@ -1536,7 +1564,12 @@ ApplicationWindow {
                 asynchronous: true
                 cache: true
                 smooth: true
-                opacity: status === Image.Ready ? 0.62 : 0
+                opacity: status === Image.Ready
+                    ? 0.62 * gameDetailsPopup.gameBackgroundOpacity : 0
+                onStatusChanged: {
+                    if (status === Image.Ready && visible)
+                        gameDetailsPopup.revealSwitchedBackground()
+                }
                 Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 900; easing.type: Easing.OutCubic }
