@@ -8,6 +8,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QRegularExpression>
+#include <QSettings>
 #include <QUrl>
 
 namespace {
@@ -175,6 +176,19 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
             emit requestFailed(requestId, error);
             return;
         }
+        QSettings cache;
+        cache.beginGroup(QStringLiteral("GitHubReleaseCache"));
+        cache.setValue(cleanOwner + QLatin1Char('/') + cleanRepository,
+                       QJsonDocument(QJsonObject{
+                           {QStringLiteral("tagName"), release.tagName},
+                           {QStringLiteral("name"), release.name},
+                           {QStringLiteral("htmlUrl"), release.htmlUrl},
+                           {QStringLiteral("publishedAt"), release.publishedAt},
+                           {QStringLiteral("assets"), QJsonDocument::fromVariant(
+                                releaseToVariantMap(release)).object().value(QStringLiteral("assets"))}
+                       }).toJson(QJsonDocument::Compact));
+        cache.endGroup();
+
         qCInfo(lcGitHub) << "Latest release loaded for" << cleanOwner << "/" << cleanRepository
                          << "tag:" << release.tagName;
         emit releaseLoaded(requestId, release);
@@ -182,6 +196,23 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
     });
 
     return requestId;
+}
+
+QVariantMap GitHubManager::cachedLatestRelease(const QString &owner,
+                                                            const QString &repository) const
+{
+    QSettings cache;
+    cache.beginGroup(QStringLiteral("GitHubReleaseCache"));
+    const QByteArray json = cache.value(owner.trimmed() + QLatin1Char('/')
+                                        + repository.trimmed()).toByteArray();
+    cache.endGroup();
+    if (json.isEmpty())
+        return {};
+
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(json, &parseError);
+    return parseError.error == QJsonParseError::NoError && document.isObject()
+        ? document.object().toVariantMap() : QVariantMap{};
 }
 
 QVariantMap GitHubManager::releaseToVariantMap(const GitHubRelease &release)
