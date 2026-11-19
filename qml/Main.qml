@@ -460,6 +460,8 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         enabled: window.visible && currentPage === "Settings"
             && !systemMenuVisible && !uninstallDialog.visible
+            && !libraryFolderDialog.visible && !librarySetupDialog.visible
+            && !libraryBackgroundFileDialog.visible
             && !(window.activeFocusItem && window.activeFocusItem.popup
                 && window.activeFocusItem.popup.visible)
         onActivated: window.controllerBack("keyboard")
