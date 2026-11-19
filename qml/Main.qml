@@ -3746,69 +3746,6 @@ ApplicationWindow {
                                         enabled: platformManager.libraryConfigured
                                         onClicked: { window.scanMessage = "Scanning configured game folders..."; libraryScanner.scanAll() }
                                     }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label {
-                                        text: "METADATA"
-                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "Retry lookups for unmatched games using your enabled metadata providers. Existing matches are preserved, and previously checked games are not repeatedly queried during automatic scans."
-                                        color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
-                                    }
-                                    Button {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                : (parent.highlighted ? theme.accent : theme.surface)
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
-                                        }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        Layout.preferredWidth: 210
-                                        Layout.preferredHeight: 44
-                                        text: metadataMatcher.busy ? "Refreshing Metadata…" : "Refresh Metadata"
-                                        highlighted: true
-                                        enabled: metadataManager.configured && !metadataMatcher.busy
-                                        onClicked: {
-                                            window.scanMessage = "Refreshing metadata for unresolved games..."
-                                            metadataMatcher.scrapeLibrary(true)
-                                        }
-                                    }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label {
-                                        text: "GAMEPLAY SCREENSHOTS"
-                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "Download gameplay screenshots for games that already have saved TheGamesDB metadata. This does not repeat metadata matching or change cover artwork."
-                                        color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
-                                    }
-                                    Button {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                : (parent.highlighted ? theme.accent : theme.surface)
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
-                                        }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        Layout.preferredWidth: 210
-                                        Layout.preferredHeight: 44
-                                        text: screenshotManager.busy ? "Refreshing Screenshots…" : "Refresh Screenshots"
-                                        highlighted: true
-                                        enabled: metadataManager.configured && !screenshotManager.busy
-                                        onClicked: screenshotManager.refreshLibraryScreenshots()
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: screenshotManager.status
-                                        visible: screenshotManager.status.length > 0
-                                        color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
-                                    }
                                     Label {
                                         Layout.fillWidth: true
                                         text: "Place game files inside their matching platform folders. RecompStation monitors these folders and updates your library when games are added or removed."
@@ -4098,6 +4035,90 @@ ApplicationWindow {
                                     Label {
                                         Layout.fillWidth: true
                                         text: "TheGamesDB is the currently integrated metadata provider. Additional services will appear here when their integrations are ready."
+                                        color: theme.textMuted
+                                        font.pixelSize: 11 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "METADATA REFRESH"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Retry lookups for unmatched games using your enabled metadata providers. Existing matches are preserved, and previously checked games are not repeatedly queried during automatic scans."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 12 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Button {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                : (parent.highlighted ? theme.accent : theme.surface)
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
+                                        Layout.preferredWidth: 210
+                                        Layout.preferredHeight: 44
+                                        text: metadataMatcher.busy ? "Refreshing Metadata…" : "Refresh Metadata"
+                                        highlighted: true
+                                        enabled: metadataManager.configured && !metadataMatcher.busy
+                                        onClicked: {
+                                            window.scanMessage = "Refreshing metadata for unresolved games..."
+                                            metadataMatcher.scrapeLibrary(true)
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: metadataMatcher.status
+                                        visible: metadataMatcher.status.length > 0
+                                        color: theme.textMuted
+                                        font.pixelSize: 11 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    Label {
+                                        text: "GAMEPLAY SCREENSHOTS"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Download gameplay screenshots for games that already have saved TheGamesDB metadata. This does not repeat metadata matching or change cover artwork."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 12 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                    Button {
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                                : (parent.highlighted ? theme.accent : theme.surface)
+                                            border.color: parent.activeFocus ? theme.accent : theme.divider
+                                            border.width: parent.activeFocus ? 2 : 1
+                                        }
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
+                                        Layout.preferredWidth: 210
+                                        Layout.preferredHeight: 44
+                                        text: screenshotManager.busy ? "Refreshing Screenshots…" : "Refresh Screenshots"
+                                        highlighted: true
+                                        enabled: metadataManager.configured && !screenshotManager.busy
+                                        onClicked: screenshotManager.refreshLibraryScreenshots()
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: screenshotManager.status
+                                        visible: screenshotManager.status.length > 0
                                         color: theme.textMuted
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
