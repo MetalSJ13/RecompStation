@@ -1287,6 +1287,7 @@ ApplicationWindow {
 
                 detailsContentFrame.x =
                     gameDetailsPopup.switchDirection * window.width
+                detailsContentFrame.opacity = 0
                 detailsContentFrame.enabled = false
                 detailsGameSwitchAnimation.start()
 
@@ -1314,10 +1315,20 @@ ApplicationWindow {
                 easing.type: Easing.InOutCubic
             }
 
+            NumberAnimation {
+                target: detailsContentFrame
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: settingsManager.reducedMotion ? 0 : 360
+                easing.type: Easing.OutCubic
+            }
+
             onFinished: {
                 detailsOutgoingSnapshot.visible = false
                 detailsOutgoingSnapshot.source = ""
                 detailsOutgoingSnapshot.x = 0
+                detailsContentFrame.opacity = 1
                 detailsContentFrame.enabled = true
                 gameDetailsPopup.switchAnimating = false
                 detailsBackButton.forceActiveFocus()
