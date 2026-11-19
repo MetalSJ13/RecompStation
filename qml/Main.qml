@@ -2183,9 +2183,9 @@ ApplicationWindow {
                                 }
                             }
                             // Wait until the first delegates have been created and
-                            // the windowed/fullscreen layout has a real viewport.
-                            // Firing directly from countChanged can happen before
-                            // delegates exist, causing them to miss the reveal signal.
+                            // the active display mode has produced a usable viewport.
+                            // Windowed, maximized, and fullscreen modes all use the
+                            // same entrance reveal; none should block startup.
                             Timer {
                                 id: startupGridRevealTimer
                                 interval: 250
@@ -2193,13 +2193,6 @@ ApplicationWindow {
                                 onTriggered: {
                                     if (settingsManager.libraryView !== "grid" || !window.visible)
                                         return
-                                    // Do not reveal cards against the temporary
-                                    // windowed geometry. Wait for the compositor's
-                                    // initial fullscreen state and reveal once.
-                                    if (window.visibility !== Window.FullScreen) {
-                                        restart()
-                                        return
-                                    }
                                     if (gameGrid.width <= 0 || gameGrid.height <= 0) {
                                         restart()
                                         return
