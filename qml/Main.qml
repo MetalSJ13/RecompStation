@@ -466,8 +466,10 @@ ApplicationWindow {
     Connections {
         target: settingsManager
         function onLibraryViewChanged() {
-            if (settingsManager.libraryView === "grid")
+            if (settingsManager.libraryView === "grid") {
                 window.gridRevealToken += 1
+                window.initialGridRevealPending = false
+            }
         }
     }
     property int launcherRevision: 0
@@ -2148,10 +2150,9 @@ ApplicationWindow {
                             id: gameGrid
                             anchors.fill: parent
                             onCountChanged: {
-                                if (count > 0 && window.initialGridRevealPending) {
-                                    window.initialGridRevealPending = false
-                                    if (settingsManager.libraryView === "grid")
-                                        startupGridRevealTimer.start()
+                                if (count > 0 && window.initialGridRevealPending
+                                        && settingsManager.libraryView === "grid") {
+                                    startupGridRevealTimer.start()
                                 }
                             }
                             // Wait until the first delegates have been created and
@@ -2177,6 +2178,7 @@ ApplicationWindow {
                                         return
                                     }
                                     window.gridRevealToken += 1
+                                    window.initialGridRevealPending = false
                                 }
                             }
                             visible: settingsManager.libraryView === "grid" || opacity > 0
@@ -2217,9 +2219,18 @@ ApplicationWindow {
                                 required property int id
                                 required property int index
                                 property int gameId: id
-                                property real revealOpacity: 1
-                                property real revealScale: 1
-                                property real revealOffsetY: 0
+                                // Begin the initial Grid presentation hidden so
+                                // delegates cannot flash fully visible before the
+                                // startup reveal token triggers their animation.
+                                property real revealOpacity:
+                                    window.initialGridRevealPending
+                                        && settingsManager.libraryView === "grid" ? 0 : 1
+                                property real revealScale:
+                                    window.initialGridRevealPending
+                                        && settingsManager.libraryView === "grid" ? 0.94 : 1
+                                property real revealOffsetY:
+                                    window.initialGridRevealPending
+                                        && settingsManager.libraryView === "grid" ? 26 : 0
                                 readonly property int revealRow:
                                     Math.floor(gameTile.index / Math.max(1, gameGrid.preferredColumns))
                                 readonly property int revealColumn:
