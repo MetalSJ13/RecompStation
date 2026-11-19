@@ -90,6 +90,9 @@ public:
             accepted = {QStringLiteral("gamecube"), QStringLiteral("nintendogamecube")};
         else if (key == QStringLiteral("wii"))
             accepted = {QStringLiteral("wii"), QStringLiteral("nintendowii")};
+        else if (key == QStringLiteral("xbox"))
+            accepted = {QStringLiteral("xbox"), QStringLiteral("microsoftxbox"),
+                        QStringLiteral("originalxbox")};
         else
             return 0;
 
