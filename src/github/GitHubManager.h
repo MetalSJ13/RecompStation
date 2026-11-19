@@ -47,6 +47,8 @@ public:
                                     const QString &repository);
     Q_INVOKABLE int fetchLatestRelease(const QString &owner,
                                        const QString &repository);
+    Q_INVOKABLE QVariantMap cachedLatestRelease(const QString &owner,
+                                                const QString &repository) const;
 
     static QVariantMap releaseToVariantMap(const GitHubRelease &release);
 
