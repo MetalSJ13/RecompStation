@@ -142,14 +142,16 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 3: Game Library experience
 
+**Progress note (2026-11-19):** The dedicated immersive Game Details experience and its contextual metadata/project/installation/launch information are implemented and user-validated; the two corresponding checklist items are checked. The adjacent-game shoulder-button slide and incoming-page/background fade are implemented, with the fade accepted as adequate for now. The grouped empty/loading/scanning/missing-artwork/unsupported/error-state task and missing/unusual-aspect artwork verification remain open.
+
 - [x] Simplify the library header to one platform selector (All Platforms by default); remove the separate collection search and duplicate management panel
 - [x] Expand game tiles into a responsive multi-row grid with larger artwork, clearer title/platform typography, and stronger selected-game emphasis (local validation pending)
 - [x] Add a theme-aware, selected-game artwork atmosphere layer behind the library content, with contrast overlays and reduced-motion-aware fading (first visual pass; local validation pending)
 - [x] Add subtle focus depth to the current game tile, respecting reduced motion (local validation pending)
 - [x] Replace the compact game-details popup with a full-window immersive details experience, using the selected cover as a softly blurred, gradually fading background (local validation pending)
 - [x] Keep the library backdrop stable and theme-driven instead of changing it with game selection (local validation pending)
-- [ ] Add a dedicated game-details experience
-- [ ] Present metadata, supported project, installation state, and launch action in the game context
+- [x] Add a dedicated game-details experience; implemented as the immersive full-window Game Details view and user-validated with representative games.
+- [x] Present metadata, supported project, installation state, and launch action in the game context; metadata, project selection, installed location/ROM requirements, Play Game, and Uninstall are present and user-validated.
 - [ ] Add useful empty, loading, scanning, missing-artwork, unsupported, and error states
 - [x] Keep manual library scanning in Settings; remove duplicate scan and metadata-refresh controls from the Library page
 - [ ] Verify missing and differently proportioned artwork
