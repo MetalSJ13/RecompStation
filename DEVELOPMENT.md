@@ -5,7 +5,7 @@ This document is the authoritative development status and implementation order f
 ## Project status
 
 ### Current focus
-- **Active milestone:** Milestone 2 — Application shell and navigation. Core navigation and browsing behavior are implemented; the remaining exit task is a full navigation/backend regression pass.
+- **Active milestone:** Milestone 2 — Application shell and navigation. The build and 14-test suite pass; manual regression has confirmed startup, Library loading, and Game Details transitions, while keyboard/Settings navigation and responsive Grid/display-mode behavior are being corrected.
 - **Current UI work:** Settings categories share consistent content gutters, heading hierarchy, section spacing, and scrolling behavior. Metadata provider configuration and refresh actions are grouped under Settings → Metadata.
 - **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
 
@@ -138,7 +138,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Request fullscreen as the initial native window state on every application launch, including first-run and existing-library installations; gate the startup Grid card reveal until fullscreen is confirmed and initialize delegates in their hidden reveal state to prevent a visible pre-animation flash. User confirmed the startup behavior on Wayland, including the absence of the windowed flash and duplicate/late card reveal.
 - [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition.
 
-**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch behavior are implemented and visually validated, including startup on Wayland without a windowed flash or inconsistent card reveal. The only remaining milestone task is the full navigation/backend regression pass; obsolete Metadata Search, Platforms, and standalone Launcher Discovery page code has been removed while retaining the underlying backend workflows. Keep the milestone open until the regression pass and relevant build/test workflow are confirmed.
+**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch behavior are implemented and visually validated. The user has confirmed startup, Library loading, and Game Details transitions. The manual regression pass has exposed outstanding issues: arrow-key navigation in Settings, Application-page controller focus, persistence of non-fullscreen display modes across restarts, Grid card clipping during scale/size changes, and Grid footer overlap in windowed mode. Targeted QML fixes have been committed and are awaiting local build/runtime verification. Continue validating the remaining Settings controls and backend workflows; keep this milestone open until the full pass is complete.
 
 ### Milestone 3: Game Library experience
 
@@ -200,7 +200,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Support Escape to return from immersive game details to the Game Library
 - [x] Add adaptive mouse, keyboard, and controller navigation hints with bundled icons
 - [x] Detect controllers connected after application startup; switch hints when controller input is used
-- [ ] Ensure keyboard navigation and visible focus across all screens (Library keyboard navigation works; Settings category focus/navigation remains deferred)
+- [ ] Ensure keyboard navigation and visible focus across all screens (Library navigation works; Settings arrow-key routing and focus traversal have an initial fix committed, awaiting local verification)
 - [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
 - [ ] Complete controller-only navigation across every settings control, dialog, dropdown, and long scrolling page.
 - [ ] Persist independent controller profiles keyed by stable SDL hardware GUID (backend foundation complete); apply assignments to the input router and implement interactive remapping/reset
