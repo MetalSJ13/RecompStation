@@ -55,6 +55,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Add configurable Grid/List browsing, title search, platform filtering, and independent view sizing.
 - [x] Add coordinated static/animated/custom library background treatments.
 - [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
+- [x] Validate fullscreen startup and the coordinated startup Grid reveal on the user's Wayland desktop; no initial windowed flash or duplicate/late card animation remains.
 - [x] Confirm Library keyboard navigation: arrow keys move through the grid, Enter/Return selects a game, and Escape returns from game details.
 - [x] Confirm controller hot-plug detection and adaptive input hints when controller input is used.
 - [ ] Complete accessibility and controller-only validation across all screens and controls.
@@ -134,10 +135,10 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Rehome launcher discovery and management contextually in Game Details, preserving the existing download, install, launch, and uninstall capabilities.
 - [x] Add the bottom-up, staggered Grid card entrance for application startup, List-to-Grid switching, and return from Settings; respect Reduced Motion. User has visually validated the timing and behavior across these entry points.
 - [x] Normalize the Settings category content gutters, title/description/divider hierarchy, section spacing, and horizontal-scroll behavior; retain the shared focus treatment and on-demand vertical scrolling.
-- [x] Request fullscreen as the initial native window state on every application launch, including first-run and existing-library installations; gate the startup Grid card reveal until fullscreen is confirmed and initialize delegates in their hidden reveal state to prevent a visible pre-animation flash. Local Wayland validation pending.
+- [x] Request fullscreen as the initial native window state on every application launch, including first-run and existing-library installations; gate the startup Grid card reveal until fullscreen is confirmed and initialize delegates in their hidden reveal state to prevent a visible pre-animation flash. User confirmed the startup behavior on Wayland, including the absence of the windowed flash and duplicate/late card reveal.
 - [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition.
 
-**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch request are implemented; the new Wayland startup behavior still requires local validation. Remaining work is the full navigation/backend regression pass; obsolete Metadata Search, Platforms, and standalone Launcher Discovery page code has now been removed while retaining the underlying backend workflows. Do not close the milestone until remaining work and the relevant build/test workflow are confirmed.
+**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch behavior are implemented and visually validated, including startup on Wayland without a windowed flash or inconsistent card reveal. The only remaining milestone task is the full navigation/backend regression pass; obsolete Metadata Search, Platforms, and standalone Launcher Discovery page code has been removed while retaining the underlying backend workflows. Keep the milestone open until the regression pass and relevant build/test workflow are confirmed.
 
 ### Milestone 3: Game Library experience
 
