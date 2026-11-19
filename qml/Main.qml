@@ -161,6 +161,31 @@ ApplicationWindow {
         return false
     }
 
+    function scrollSettingsContent(direction, amount) {
+        const scrollView = settingsPage.section === "Appearance" ? appearanceContent
+            : settingsPage.section === "Display" ? displayContent
+            : settingsPage.section === "Library" ? libraryContent
+            : settingsPage.section === "Application" ? applicationContent
+            : settingsPage.section === "Metadata" ? metadataContent
+            : settingsPage.section === "Controller" ? controllerContent : null
+        if (!scrollView || !scrollView.visible || !scrollView.contentItem)
+            return false
+        const flickable = scrollView.contentItem
+        const maxY = Math.max(0, flickable.contentHeight - flickable.height)
+        if (maxY <= 0)
+            return false
+        const delta = amount || 84
+        flickable.contentY = Math.max(0, Math.min(maxY,
+            flickable.contentY + (direction === "down" ? delta : -delta)))
+        return true
+    }
+
+    function navigationHintSummary() {
+        return inputHintItems().map(function(item) {
+            return (item.key ? item.key + " " : "") + item.label
+        }).join("     ")
+    }
+
     function settingsNavigationButtonForSection(section) {
         switch (section) {
         case "Display": return displayNavigationButton
@@ -265,7 +290,9 @@ ApplicationWindow {
                     window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
                     return
                 }
-                window.moveDirectionalFocus(settingsContentCard, direction)
+                const moved = window.moveDirectionalFocus(settingsContentCard, direction)
+                if (!moved && (direction === "up" || direction === "down"))
+                    window.scrollSettingsContent(direction, 96)
                 return
             }
 
@@ -333,8 +360,8 @@ ApplicationWindow {
         systemMenuVisible = false
     }
 
-    function controllerBack() {
-        activeInputDevice = "controller"
+    function controllerBack(inputDevice) {
+        activeInputDevice = inputDevice || "controller"
         if (quitConfirmationVisible) {
             quitConfirmationVisible = false
             return
@@ -426,6 +453,16 @@ ApplicationWindow {
         sequence: "F11"
         context: Qt.ApplicationShortcut
         onActivated: window.toggleFullscreen()
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        context: Qt.ApplicationShortcut
+        enabled: window.visible && currentPage === "Settings"
+            && !systemMenuVisible && !uninstallDialog.visible
+            && !(window.activeFocusItem && window.activeFocusItem.popup
+                && window.activeFocusItem.popup.visible)
+        onActivated: window.controllerBack("keyboard")
     }
 
     // Ctrl+Q opens the in-app quit confirmation, so keyboard users can exit
@@ -3980,13 +4017,36 @@ ApplicationWindow {
                                                     wrapMode: Text.WrapAnywhere
                                                 }
                                                 Button {
+                                                    id: uninstallManagedLauncherButton
                                                     Layout.alignment: Qt.AlignRight
+                                                    Layout.minimumWidth: 132
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
                                                     text: "Uninstall"
+                                                    Accessible.name: "Uninstall " + modelData.projectId
+                                                    background: Rectangle {
+                                                        radius: 7
+                                                        color: uninstallManagedLauncherButton.activeFocus
+                                                            ? theme.controlHover : theme.surface
+                                                        border.width: uninstallManagedLauncherButton.activeFocus ? 2 : 1
+                                                        border.color: uninstallManagedLauncherButton.activeFocus
+                                                            ? theme.accent : theme.divider
+                                                    }
+                                                    contentItem: Label {
+                                                        text: uninstallManagedLauncherButton.text
+                                                        color: uninstallManagedLauncherButton.activeFocus
+                                                            ? theme.textPrimary : theme.textSecondary
+                                                        font.pixelSize: 12 * theme.fontScale
+                                                        font.bold: uninstallManagedLauncherButton.activeFocus
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
                                                     onClicked: {
                                                         window.pendingUninstallProjectId = modelData.projectId
                                                         uninstallDialog.open()
+                                                        Qt.callLater(function() {
+                                                            uninstallDialog.standardButton(Dialog.Ok).forceActiveFocus()
+                                                        })
                                                     }
                                                 }
                                             }
@@ -4909,7 +4969,7 @@ ApplicationWindow {
                     }
                     MenuChoice {
                         id: confirmQuitButton
-                        text: "Yes, Quit"
+                        text: "Yes, quit"
                         visible: window.quitConfirmationVisible
                         onClicked: Qt.quit()
                     }
@@ -4930,9 +4990,7 @@ ApplicationWindow {
                     }
                     Label {
                         Layout.fillWidth: true
-                        text: controllerManager.connected
-                              ? "A  Select     B  Back"
-                              : "Enter  Select     Esc  Back"
+                        text: window.navigationHintSummary()
                         color: theme.textMuted
                         font.pixelSize: 10 * theme.fontScale
                         horizontalAlignment: Text.AlignHCenter
@@ -4942,7 +5000,7 @@ ApplicationWindow {
 
             Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
-                    window.controllerBack()
+                    window.controllerBack("keyboard")
                     event.accepted = true
                 }
             }
