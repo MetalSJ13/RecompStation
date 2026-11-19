@@ -2257,12 +2257,18 @@ ApplicationWindow {
                                 property real revealOffsetY:
                                     window.initialGridRevealPending
                                         && settingsManager.libraryView === "grid" ? 26 : 0
+                                // Use the delegate's laid-out position rather than the
+                                // preferred density count: the actual column count changes
+                                // with window width and the GridView's minimum cell width.
                                 readonly property int revealRow:
-                                    Math.floor(gameTile.index / Math.max(1, gameGrid.preferredColumns))
+                                    Math.round((gameTile.y - gameGrid.topMargin)
+                                        / Math.max(1, gameGrid.cellHeight))
                                 readonly property int revealColumn:
-                                    gameTile.index % Math.max(1, gameGrid.preferredColumns)
+                                    Math.round((gameTile.x - gameGrid.leftMargin)
+                                        / Math.max(1, gameGrid.cellWidth))
                                 readonly property int revealBottomVisibleRow:
-                                    Math.floor((gameGrid.contentY + gameGrid.height) / Math.max(1, gameGrid.cellHeight))
+                                    Math.floor((gameGrid.contentY + gameGrid.height - gameGrid.topMargin)
+                                        / Math.max(1, gameGrid.cellHeight))
                                 opacity: revealOpacity
                                 transform: [
                                     Scale {
