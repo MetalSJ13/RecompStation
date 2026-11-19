@@ -856,15 +856,45 @@ ApplicationWindow {
         pendingDownloadRequests = pending
     }
 
-    function checkProjectRelease(project) {
+    function loadCachedProjectRelease(project) {
+        if (!project)
+            return
+        const cached = githubManager.cachedLatestRelease(
+            project.repositoryOwner, project.repositoryName)
+        if (!cached || !cached.tagName)
+            return
         let nextStates = Object.assign({}, releaseStates)
-        nextStates[project.id] = { loading: true, error: "", release: null, assets: [] }
+        nextStates[project.id] = {
+            loading: false,
+            error: "",
+            release: cached,
+            assets: projectCatalog.compatibleAssets(project.id, cached.assets || [])
+        }
+        releaseStates = nextStates
+    }
+
+    function checkProjectRelease(project) {
+        if (!project || pendingReleaseRequestsForProject(project.id))
+            return
+        let nextStates = Object.assign({}, releaseStates)
+        const previous = nextStates[project.id] || {}
+        nextStates[project.id] = {
+            loading: true,
+            error: "",
+            release: previous.release || null,
+            assets: previous.assets || []
+        }
         releaseStates = nextStates
         const requestId = githubManager.fetchLatestRelease(
             project.repositoryOwner, project.repositoryName)
         let pending = Object.assign({}, pendingReleaseRequests)
         pending[requestId] = project.id
         pendingReleaseRequests = pending
+    }
+
+    function pendingReleaseRequestsForProject(projectId) {
+        return Object.keys(pendingReleaseRequests).some(
+            requestId => pendingReleaseRequests[requestId] === projectId)
     }
 
     palette.window: theme.windowBackground
@@ -1311,8 +1341,6 @@ ApplicationWindow {
                 detailsContentFrame.enabled = false
                 detailsGameSwitchAnimation.start()
 
-                if (gameDetailsPopup.selectedProject)
-                    window.checkProjectRelease(gameDetailsPopup.selectedProject)
             })
         }
 
@@ -1371,15 +1399,14 @@ ApplicationWindow {
                 "count:", screenshotCount,
                 "reduced motion:", settingsManager.reducedMotion,
                 "window active:", window.active)
-            if (selectedProject && !releaseState.loading
-                    && !releaseState.release && releaseState.error.length === 0)
-                window.checkProjectRelease(selectedProject)
+            if (selectedProject)
+                window.loadCachedProjectRelease(selectedProject)
         }
 
         onSelectedProjectIdChanged: {
             installPromptVisible = false
             if (opened && !resettingProjectSelection && selectedProject)
-                window.checkProjectRelease(selectedProject)
+                window.loadCachedProjectRelease(selectedProject)
         }
 
         background: Rectangle {
@@ -1955,6 +1982,17 @@ ApplicationWindow {
                                     text: "Checking for the latest compatible Linux release…"
                                     color: theme.accentHover
                                     wrapMode: Text.Wrap
+                                }
+                                Button {
+                                    visible: gameDetailsPopup.selectedProject !== null
+                                    enabled: !gameDetailsPopup.releaseState.loading
+                                        && !window.pendingReleaseRequestsForProject(
+                                            gameDetailsPopup.selectedProject.id)
+                                    text: gameDetailsPopup.releaseState.loading
+                                        ? "Checking…" : "Check for Updates"
+                                    icon.source: "qrc:/icons/refresh.svg"
+                                    onClicked: window.checkProjectRelease(
+                                        gameDetailsPopup.selectedProject)
                                 }
                                 Label {
                                     Layout.fillWidth: true
