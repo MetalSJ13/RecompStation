@@ -941,11 +941,12 @@ ApplicationWindow {
             delete pending[requestId]
             window.pendingReleaseRequests = pending
             let states = Object.assign({}, window.releaseStates)
+            const previous = states[projectId] || {}
             states[projectId] = {
                 loading: false,
                 error: message,
-                release: null,
-                assets: []
+                release: previous.release || null,
+                assets: previous.assets || []
             }
             window.releaseStates = states
         }
@@ -1990,7 +1991,6 @@ ApplicationWindow {
                                             gameDetailsPopup.selectedProject.id)
                                     text: gameDetailsPopup.releaseState.loading
                                         ? "Checking…" : "Check for Updates"
-                                    icon.source: "qrc:/icons/refresh.svg"
                                     onClicked: window.checkProjectRelease(
                                         gameDetailsPopup.selectedProject)
                                 }
