@@ -132,6 +132,7 @@ Current categories:
 - **Display:** implemented Windowed/Maximized/Fullscreen modes, current-screen information, and preferred application window-size presets. Explicit monitor selection and borderless mode are deferred.
 - **Library:** configurable library/platform folders, startup scan preference, manual scan action, and library background selection. Grid/List and grid-density controls are exclusive to the Game Library page.
 - **Metadata:** provider configuration/status and metadata refresh behavior. Additional providers, field selection, and independent artwork-source management remain future work.
+  - Keep manual metadata refresh and gameplay-screenshot download actions in Settings → Metadata, alongside provider configuration. Settings → Library is limited to ROM folders and library scanning.
 - **Controller:** connected-device status, controller-input enablement, active/default profile presentation, and navigation binding summary. Interactive remapping and per-device application remain future work.
 - **Application:** application-level preferences and diagnostics/logging where implemented.
 
