@@ -259,6 +259,16 @@ ApplicationWindow {
                 gameList.forceActiveFocus()
                 return
             }
+            if (settingsManager.libraryView === "carousel") {
+                if (direction !== "left" && direction !== "right")
+                    return
+                next += direction === "left" ? -1 : 1
+                next = Math.max(0, Math.min(gameGrid.count - 1, next))
+                gameGrid.currentIndex = next
+                consoleView.currentIndex = next
+                consoleView.forceActiveFocus()
+                return
+            }
             const columns = gameGrid.responsiveColumns
             if (direction === "left") next--
             else if (direction === "right") next++
@@ -328,6 +338,10 @@ ApplicationWindow {
             const index = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
             if (settingsManager.libraryView === "list") {
                 const tile = gameList.itemAtIndex(index)
+                if (tile && tile.openDetails)
+                    tile.openDetails()
+            } else if (settingsManager.libraryView === "carousel") {
+                const tile = consoleView.itemAtIndex(index)
                 if (tile && tile.openDetails)
                     tile.openDetails()
             } else {
@@ -1348,6 +1362,8 @@ ApplicationWindow {
                 gameGrid.currentIndex = gameDetailsPopup.switchTargetIndex
                 if (settingsManager.libraryView === "list")
                     gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+                else if (settingsManager.libraryView === "carousel")
+                    consoleView.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
                 else
                     gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
 
@@ -2486,7 +2502,11 @@ ApplicationWindow {
                                             Layout.preferredHeight: 34
                                             textRole: "label"
                                             valueRole: "value"
-                                            model: [{ label: "Grid", value: "grid" }, { label: "List", value: "list" }]
+                                            model: [
+                                                { label: "Grid", value: "grid" },
+                                                { label: "List", value: "list" },
+                                                { label: "Console", value: "carousel" }
+                                            ]
                                             currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
                                             onActivated: settingsManager.libraryView = currentValue
                                         }
@@ -2497,7 +2517,7 @@ ApplicationWindow {
                                         Layout.minimumWidth: 125
                                         spacing: 3
                                         Label {
-                                            text: settingsManager.libraryView === "grid" ? "CARD SIZE" : "ROW SIZE"
+                                            text: settingsManager.libraryView === "list" ? "ROW SIZE" : "CARD SIZE"
                                             color: theme.textMuted
                                             font.pixelSize: 9 * theme.fontScale
                                             font.bold: true
@@ -2514,14 +2534,14 @@ ApplicationWindow {
                                                 { label: "Spacious", value: "spacious" }
                                             ]
                                             currentIndex: Math.max(0, indexOfValue(
-                                                settingsManager.libraryView === "grid"
-                                                    ? settingsManager.libraryDensity
-                                                    : settingsManager.libraryListDensity))
+                                                settingsManager.libraryView === "list"
+                                                    ? settingsManager.libraryListDensity
+                                                    : settingsManager.libraryDensity))
                                             onActivated: {
-                                                if (settingsManager.libraryView === "grid")
-                                                    settingsManager.libraryDensity = currentValue
-                                                else
+                                                if (settingsManager.libraryView === "list")
                                                     settingsManager.libraryListDensity = currentValue
+                                                else
+                                                    settingsManager.libraryDensity = currentValue
                                             }
                                         }
                                     }
@@ -3146,6 +3166,164 @@ ApplicationWindow {
                                 policy: ScrollBar.AlwaysOff
                             }
                         }
+                        }
+
+                        ListView {
+                            id: consoleView
+                            anchors.fill: parent
+                            visible: settingsManager.libraryView === "carousel" || opacity > 0
+                            opacity: settingsManager.libraryView === "carousel" ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 210; easing.type: Easing.OutCubic }
+                            }
+                            orientation: ListView.Horizontal
+                            clip: true
+                            model: gameGrid.model
+                            keyNavigationEnabled: false
+                            spacing: 24
+                            readonly property real cardWidth:
+                                settingsManager.libraryDensity === "compact" ? 210
+                                : settingsManager.libraryDensity === "spacious" ? 270 : 240
+                            readonly property real cardHeight:
+                                Math.min(Math.max(240, height - 36), cardWidth * 1.55)
+                            leftMargin: Math.max(24, (width - cardWidth) / 2)
+                            rightMargin: leftMargin
+                            preferredHighlightBegin: (width - cardWidth) / 2
+                            preferredHighlightEnd: preferredHighlightBegin + cardWidth
+                            highlightRangeMode: ListView.StrictlyEnforceRange
+                            highlightMoveDuration: settingsManager.reducedMotion ? 0 : 230
+                            snapMode: ListView.NoSnap
+                            currentIndex: gameGrid.currentIndex
+                            onCurrentIndexChanged: {
+                                if (currentIndex !== gameGrid.currentIndex)
+                                    gameGrid.currentIndex = currentIndex
+                            }
+                            Connections {
+                                target: gameGrid
+                                function onCurrentIndexChanged() {
+                                    if (consoleView.currentIndex !== gameGrid.currentIndex)
+                                        consoleView.currentIndex = gameGrid.currentIndex
+                                }
+                            }
+                            delegate: Item {
+                                id: consoleTile
+                                required property string title
+                                required property string platform
+                                required property string artworkPath
+                                required property string metadataTitle
+                                required property string metadataOverview
+                                required property string metadataReleaseDate
+                                required property string metadataRating
+                                required property var screenshots
+                                required property string path
+                                required property int id
+                                required property int index
+                                width: consoleView.cardWidth
+                                height: consoleView.cardHeight
+                                readonly property bool highlighted:
+                                    ListView.isCurrentItem || consoleTileMouse.containsMouse
+                                readonly property real edgeDistance: Math.min(
+                                    consoleTile.x + consoleTile.width / 2 - consoleView.contentX,
+                                    consoleView.contentX + consoleView.width
+                                        - (consoleTile.x + consoleTile.width / 2))
+                                readonly property real edgeProgress: settingsManager.reducedMotion
+                                    ? 1 : Math.max(0, Math.min(1, edgeDistance / 190))
+                                readonly property real edgeEase:
+                                    edgeProgress * edgeProgress * (3 - 2 * edgeProgress)
+                                opacity: settingsManager.reducedMotion ? 1 : 0.18 + 0.82 * edgeEase
+                                scale: highlighted ? 1.045 : 1
+                                z: highlighted ? 2 : 1
+                                Behavior on scale {
+                                    enabled: !settingsManager.reducedMotion
+                                    NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                                }
+                                function openDetails() {
+                                    window.selectedGame = {
+                                        id: consoleTile.id, title: consoleTile.title,
+                                        platform: consoleTile.platform, path: consoleTile.path,
+                                        artworkPath: consoleTile.artworkPath,
+                                        screenshots: consoleTile.screenshots,
+                                        metadataTitle: consoleTile.metadataTitle,
+                                        metadataOverview: consoleTile.metadataOverview,
+                                        metadataReleaseDate: consoleTile.metadataReleaseDate,
+                                        metadataRating: consoleTile.metadataRating
+                                    }
+                                    gameDetailsPopup.open()
+                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: theme.radiusCard + 3
+                                    color: consoleTile.highlighted ? theme.elevatedSurface : theme.surface
+                                    opacity: consoleTile.highlighted ? 0.96 : 0.72
+                                    border.width: consoleTile.highlighted ? 2 : 1
+                                    border.color: consoleTile.highlighted ? theme.accent : theme.divider
+                                    Behavior on border.color {
+                                        enabled: !settingsManager.reducedMotion
+                                        ColorAnimation { duration: 170 }
+                                    }
+                                }
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 11
+                                    spacing: 9
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        radius: theme.radiusSmall
+                                        color: theme.sidebarBackground
+                                        clip: true
+                                        Image {
+                                            id: consoleCover
+                                            anchors.fill: parent
+                                            anchors.margins: 5
+                                            source: consoleTile.artworkPath
+                                            fillMode: Image.PreserveAspectFit
+                                            asynchronous: true
+                                            cache: true
+                                            visible: status === Image.Ready
+                                        }
+                                        Image {
+                                            anchors.fill: parent
+                                            anchors.margins: 5
+                                            source: "qrc:/icons/game-artwork-unavailable.png"
+                                            fillMode: Image.PreserveAspectFit
+                                            asynchronous: true
+                                            cache: true
+                                            visible: consoleCover.status !== Image.Ready
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: consoleTile.title
+                                        color: theme.textPrimary
+                                        font.pixelSize: 15 * theme.fontScale
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: consoleTile.platform
+                                        color: theme.textSecondary
+                                        font.pixelSize: 11 * theme.fontScale
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                                MouseArea {
+                                    id: consoleTileMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onEntered: {
+                                        consoleView.currentIndex = consoleTile.index
+                                        window.activeInputDevice = "mouse"
+                                    }
+                                    onClicked: {
+                                        gameGrid.currentIndex = consoleTile.index
+                                        consoleTile.openDetails()
+                                    }
+                                }
+                            }
+                            ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
                         }
 
                         Rectangle {
