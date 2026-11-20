@@ -4522,7 +4522,7 @@ ApplicationWindow {
                                             }
                                             Label {
                                                 Layout.fillWidth: true
-                                                text: "Optional local metadata fallback. TheGamesDB remains the primary provider. Enabling LaunchBox does not download anything automatically."
+                                                text: "Optional local catalog for LaunchBox metadata matching. TheGamesDB remains the primary provider. Enabling LaunchBox does not download anything automatically."
                                                 color: theme.textSecondary
                                                 font.pixelSize: 11 * theme.fontScale
                                                 wrapMode: Text.Wrap
@@ -4538,7 +4538,7 @@ ApplicationWindow {
                                             Label {
                                                 Layout.fillWidth: true
                                                 text: settingsManager.launchBoxLastUpdated.length > 0
-                                                    ? "Last updated: " + settingsManager.launchBoxLastUpdated
+                                                    ? "Last successful update: " + settingsManager.launchBoxLastUpdated
                                                     : "Last updated: never"
                                                 color: theme.textMuted
                                                 font.pixelSize: 11 * theme.fontScale
