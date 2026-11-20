@@ -30,6 +30,16 @@ QString titleWithoutExtension(const QString &value)
     return info.fileName();
 }
 
+QString normalizedTitleWithoutRevision(const QString &title)
+{
+    static const QRegularExpression revisionTag(
+        QStringLiteral(R"(\s*[\(\[]\s*(?:Rev(?:ision)?|v)\s*[A-Z0-9.]+\s*[\)\]])"),
+        QRegularExpression::CaseInsensitiveOption);
+    QString value = title;
+    value.remove(revisionTag);
+    return LaunchBoxCatalogMatcher::normalizedTitle(value);
+}
+
 LaunchBoxMatchResult resultForCandidates(const QList<int> &matches,
                                         const QString &description)
 {
@@ -159,6 +169,23 @@ LaunchBoxMatchResult LaunchBoxCatalogMatcher::matchByFileAssociation(
         if (normalizedTitle(game.name) == wantedGame)
             metadataMatches.append(i);
     }
+
+    // Some LaunchBox Files.xml GameName values retain a ROM revision suffix
+    // while Metadata.xml Name stores only the canonical title. Use a
+    // revision-insensitive association only as a secondary fallback, and
+    // accept it only when exactly one record exists on the mapped platform.
+    if (metadataMatches.isEmpty()) {
+        const QString wantedBase = normalizedTitleWithoutRevision(
+            associatedGameNames.first());
+        for (int i = 0; i < games.size(); ++i) {
+            const LaunchBoxGameRecord &game = games.at(i);
+            if (normalizedPlatform(game.platform) == normalizedPlatform(canonical)
+                && normalizedTitleWithoutRevision(game.name) == wantedBase) {
+                metadataMatches.append(i);
+            }
+        }
+    }
+
     return resultForCandidates(metadataMatches,
                                QStringLiteral("platform-specific metadata"));
 }
