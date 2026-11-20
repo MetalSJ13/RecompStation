@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
+#include <atomic>
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -69,6 +70,7 @@ private slots:
     void rejectsUnsafeArchivePaths();
     void rejectsDuplicateCatalogFiles();
     void preservesExistingDestination();
+    void cancellationRemovesPartialExtraction();
 };
 
 void LaunchBoxArchiveExtractorTest::extractsOnlyRequiredCatalogFiles()
@@ -160,6 +162,22 @@ void LaunchBoxArchiveExtractorTest::preservesExistingDestination()
         LaunchBoxArchiveExtractor::extractMetadataArchive(archivePath, destination);
     QVERIFY(!result.success);
     QVERIFY(QFileInfo::exists(sentinel.fileName()));
+}
+
+void LaunchBoxArchiveExtractorTest::cancellationRemovesPartialExtraction()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString archivePath = directory.filePath("Metadata.zip");
+    QVERIFY(createZip(archivePath, validEntries()));
+
+    std::atomic_bool cancelled{true};
+    const QString destination = directory.filePath("cancelled-extraction");
+    const auto result = LaunchBoxArchiveExtractor::extractMetadataArchive(
+        archivePath, destination, &cancelled);
+    QVERIFY(!result.success);
+    QVERIFY(result.error.contains(QStringLiteral("cancelled")));
+    QVERIFY(!QFileInfo::exists(destination));
 }
 
 QTEST_GUILESS_MAIN(LaunchBoxArchiveExtractorTest)
