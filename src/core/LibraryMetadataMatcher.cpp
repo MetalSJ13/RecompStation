@@ -53,6 +53,15 @@ QString normalizedTitle(QString title)
     }
     return result.simplified();
 }
+
+QString normalizedTitleWithoutRevision(QString title)
+{
+    static const QRegularExpression revisionTag(
+        QStringLiteral(R"(\s*[\(\[]\s*(?:Rev(?:ision)?|v)\s*[A-Z0-9.]+\s*[\)\]])"),
+        QRegularExpression::CaseInsensitiveOption);
+    title.remove(revisionTag);
+    return normalizedTitle(title);
+}
 }
 
 LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
@@ -276,6 +285,11 @@ int LibraryMetadataMatcher::bestMatchIndex(const QString &localTitle,
         const QString normalizedCandidate = normalizedTitle(candidateTitle);
         int titleRank = 0;
         if (normalizedCandidate == wanted) {
+            titleRank = 3;
+        } else if (normalizedTitleWithoutRevision(candidateTitle)
+                   == normalizedTitleWithoutRevision(localTitle)) {
+            // A unique canonical provider title may omit a ROM's revision
+            // suffix. Keep exact revision matches higher priority.
             titleRank = 2;
         } else {
             const QString prefix = trimmedTitle;
