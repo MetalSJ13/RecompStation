@@ -214,6 +214,38 @@ private slots:
                      QStringLiteral("Metroid Prime 3"), 9, results), 0);
     }
 
+    void matchesUniquePrimaryCandidateWithoutRomRevisionSuffix()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Banjo-Kazooie"}, {"platformId", 3},
+                        {"artworkPixelCount", 0}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
+                     QStringLiteral("Banjo-Kazooie (USA) (Rev A)"), 3, results), 0);
+    }
+
+    void prefersExactPrimaryRevisionOverCanonicalTitle()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Banjo-Kazooie"}, {"platformId", 3},
+                        {"artworkPixelCount", 900000}},
+            QVariantMap{{"title", "Banjo-Kazooie (Rev A)"}, {"platformId", 3},
+                        {"artworkPixelCount", 0}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
+                     QStringLiteral("Banjo-Kazooie (USA) (Rev A)"), 3, results), 1);
+    }
+
+    void leavesMultipleRevisionlessPrimaryCandidatesAmbiguous()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Banjo-Kazooie"}, {"platformId", 3}},
+            QVariantMap{{"title", "Banjo-Kazooie (Rev B)"}, {"platformId", 3}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
+                     QStringLiteral("Banjo-Kazooie (USA) (Rev A)"), 3, results), -2);
+    }
+
     void leavesEqualRankedCandidatesAmbiguous()
     {
         const QVariantList results = {
