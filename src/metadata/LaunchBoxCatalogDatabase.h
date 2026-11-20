@@ -34,6 +34,8 @@ public:
         const QString &internalPlatform, const QString &localFileName) const;
     QList<LaunchBoxGameRecord> findGamesByTitle(
         const QString &internalPlatform, const QString &title) const;
+    QList<LaunchBoxGameRecord> findGamesByRevisionInsensitiveTitle(
+        const QString &internalPlatform, const QString &title) const;
     bool gameByDatabaseId(int databaseId, LaunchBoxGameRecord *game) const;
 
     int platformCount() const;
