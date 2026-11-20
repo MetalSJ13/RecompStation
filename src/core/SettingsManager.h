@@ -12,6 +12,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString themeName READ themeName WRITE setThemeName NOTIFY themeNameChanged)
     Q_PROPERTY(bool scanOnStartup READ scanOnStartup WRITE setScanOnStartup NOTIFY scanOnStartupChanged)
     Q_PROPERTY(bool theGamesDbEnabled READ theGamesDbEnabled NOTIFY theGamesDbEnabledChanged)
+    Q_PROPERTY(bool launchBoxEnabled READ launchBoxEnabled NOTIFY launchBoxEnabledChanged)
     Q_PROPERTY(QString preferredPresentationSize READ preferredPresentationSize WRITE setPreferredPresentationSize NOTIFY preferredPresentationSizeChanged)
     Q_PROPERTY(QString displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged)
     Q_PROPERTY(QString restoreDisplayMode READ restoreDisplayMode WRITE setRestoreDisplayMode NOTIFY restoreDisplayModeChanged)
@@ -35,6 +36,9 @@ public:
 
     bool theGamesDbEnabled() const;
     Q_INVOKABLE void setTheGamesDbEnabled(bool enabled);
+
+    bool launchBoxEnabled() const;
+    Q_INVOKABLE void setLaunchBoxEnabled(bool enabled);
 
     Q_INVOKABLE QVariantMap controllerProfile(const QString &guid) const;
     Q_INVOKABLE bool saveControllerProfile(const QString &guid, const QVariantMap &profile);
@@ -71,6 +75,7 @@ signals:
     void themeNameChanged();
     void scanOnStartupChanged();
     void theGamesDbEnabledChanged();
+    void launchBoxEnabledChanged();
     void preferredPresentationSizeChanged();
     void displayModeChanged();
     void restoreDisplayModeChanged();
@@ -97,6 +102,7 @@ private:
     QString m_customLibraryBackground;
     bool m_scanOnStartup = true;
     bool m_theGamesDbEnabled = true;
+    bool m_launchBoxEnabled = false;
     static QVariantMap defaultControllerProfile();
     static bool isValidControllerGuid(const QString &guid);
     static bool isSupportedTheme(const QString &themeName);
