@@ -46,6 +46,25 @@ QString requiredCatalogName(const QString &path)
         return baseName;
     return {};
 }
+
+bool skipEntryData(struct archive *reader, const std::atomic_bool *cancelled,
+                   QString *error)
+{
+    char buffer[BufferSize];
+    while (true) {
+        if (cancelled && cancelled->load()) {
+            *error = QStringLiteral("LaunchBox catalog update cancelled.");
+            return false;
+        }
+        const la_ssize_t count = archive_read_data(reader, buffer, sizeof(buffer));
+        if (count == 0)
+            return true;
+        if (count < 0) {
+            *error = archiveError(reader);
+            return false;
+        }
+    }
+}
 }
 
 LaunchBoxArchiveExtractor::Result LaunchBoxArchiveExtractor::extractMetadataArchive(
@@ -137,13 +156,15 @@ LaunchBoxArchiveExtractor::Result LaunchBoxArchiveExtractor::extractMetadataArch
             break;
         }
         if (type == AE_IFDIR) {
-            archive_read_data_skip(reader);
+            if (!skipEntryData(reader, cancelled, &failure))
+                break;
             continue;
         }
 
         const QString catalogName = requiredCatalogName(relativePath);
         if (catalogName.isEmpty()) {
-            archive_read_data_skip(reader);
+            if (!skipEntryData(reader, cancelled, &failure))
+                break;
             continue;
         }
         if (seen.contains(catalogName)) {
