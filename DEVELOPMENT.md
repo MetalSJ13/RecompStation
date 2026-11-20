@@ -177,7 +177,7 @@ The following notes record focused implementation and user-validation updates. T
 
 **Implementation order**
 - [x] Strengthen `DatabaseManager::associateMetadata()` so an existing provider association cannot be overwritten by a fallback insert; add regression tests for existing metadata and missing-field preservation. **Verified:** user confirmed `./scripts/build.sh --test` completed successfully with all tests passing.
-- [ ] Introduce and test a LaunchBox XML parser for `Platforms.xml`, `Files.xml`, and `Metadata.xml`; validate malformed, incomplete, duplicate, and unexpected records.
+- [x] Introduce and test a LaunchBox XML parser for `Platforms.xml`, `Files.xml`, and `Metadata.xml`; validate malformed, incomplete, duplicate, and unexpected records. **Verified:** user confirmed the new build completed and all tests passed.
 - [ ] Add explicit RecompStation-to-LaunchBox platform mappings and conservative filename/title matching, including region/revision handling and ambiguity rejection.
 - [ ] Build a local SQLite catalog/index and query API; avoid loading or reparsing the full XML archive for individual game lookups.
 - [ ] Add archive download, progress reporting, cancellation, extraction, validation, and rollback-safe catalog replacement/update handling. Reuse existing archive infrastructure where appropriate.
