@@ -181,3 +181,7 @@ The current implementation was reviewed against this specification. This is a de
 | Library presentation | Title search, platform filter, Grid/List, configurable density and backgrounds | Search and browsing controls are grouped in the Library; sorting and remaining library states tracked in later milestones |
 
 Audit follow-up: finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.
+
+
+### Library toolbar
+- Keep the collection heading on the left and use a compact, right-aligned single-row filter toolbar. The toolbar has a capped width rather than stretching across the entire window; search receives the flexible remaining space, while Platform, View, and Card/Row Size use deliberate proportional widths.
