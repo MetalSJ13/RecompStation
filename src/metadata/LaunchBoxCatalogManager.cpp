@@ -158,7 +158,7 @@ void LaunchBoxCatalogManager::finishDownload()
     reply->deleteLater();
 
     if (m_cancelRequested) {
-        failUpdate(QStringLiteral("LaunchBox catalog update cancelled."),);
+        failUpdate(QStringLiteral("LaunchBox catalog update cancelled."));
         return;
     }
     if (networkError != QNetworkReply::NoError || status < 200 || status >= 300
