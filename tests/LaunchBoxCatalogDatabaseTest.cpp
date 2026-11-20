@@ -96,6 +96,10 @@ private slots:
         QCOMPARE(parsedImages.at(2).databaseId, 163);
         QCOMPARE(parsedImages.at(2).fileName, QStringLiteral("romhack-cover.jpg"));
         QCOMPARE(parsedImages.at(2).type, QStringLiteral("Box - Front"));
+        QVERIFY(!parsedImages.at(1).crc32.isNull());
+        QVERIFY(parsedImages.at(1).crc32.isEmpty());
+        QVERIFY(!parsedImages.at(2).crc32.isNull());
+        QVERIFY(parsedImages.at(2).crc32.isEmpty());
 
         LaunchBoxCatalogDatabase catalog;
         QVERIFY2(catalog.open(directory.path() + "/launchbox.sqlite"),
