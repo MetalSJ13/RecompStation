@@ -158,6 +158,17 @@ bool LaunchBoxCatalogDatabase::createSchema()
             developer TEXT,
             publisher TEXT
         ))"),
+        QStringLiteral(R"(CREATE TABLE IF NOT EXISTS launchbox_game_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            database_id INTEGER NOT NULL,
+            file_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            region TEXT NOT NULL DEFAULT '',
+            crc32 TEXT NOT NULL DEFAULT '',
+            UNIQUE(database_id, file_name, type, region)
+        ))"),
+        QStringLiteral("CREATE INDEX IF NOT EXISTS idx_launchbox_images_lookup "
+                       "ON launchbox_game_images(database_id, type, region)"),
         QStringLiteral("CREATE INDEX IF NOT EXISTS idx_launchbox_files_lookup "
                        "ON launchbox_file_associations(platform_key, file_key)"),
         QStringLiteral("CREATE INDEX IF NOT EXISTS idx_launchbox_games_title "
@@ -208,6 +219,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     const QStringList deleteStatements = {
         QStringLiteral("DELETE FROM launchbox_catalog_state"),
         QStringLiteral("DELETE FROM launchbox_file_associations"),
+        QStringLiteral("DELETE FROM launchbox_game_images"),
         QStringLiteral("DELETE FROM launchbox_games"),
         QStringLiteral("DELETE FROM launchbox_platform_aliases"),
         QStringLiteral("DELETE FROM launchbox_platforms")
@@ -321,6 +333,29 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             return true;
         }, &parseError, cancelled);
     if (!gamesOk)
+        return rollback(insertError.isEmpty() ? parseError : insertError);
+
+
+    if (progress) progress(QStringLiteral("Indexing game images"), 82);
+    QSqlQuery insertImage(m_database);
+    insertImage.prepare(QStringLiteral(
+        "INSERT OR IGNORE INTO launchbox_game_images("
+        "database_id, file_name, type, region, crc32) VALUES(?, ?, ?, ?, ?)"));
+    const bool imagesOk = LaunchBoxXmlParser::parseGameImagesFile(
+        metadataXmlPath,
+        [&](const LaunchBoxGameImageRecord &image) {
+            insertImage.bindValue(0, image.databaseId);
+            insertImage.bindValue(1, image.fileName);
+            insertImage.bindValue(2, image.type);
+            insertImage.bindValue(3, image.region);
+            insertImage.bindValue(4, image.crc32);
+            if (!insertImage.exec()) {
+                insertError = insertImage.lastError().text();
+                return false;
+            }
+            return true;
+        }, &parseError, cancelled);
+    if (!imagesOk)
         return rollback(insertError.isEmpty() ? parseError : insertError);
 
     if (cancelled && cancelled->load())
@@ -443,6 +478,34 @@ bool LaunchBoxCatalogDatabase::gameByDatabaseId(
     return true;
 }
 
+
+QList<LaunchBoxGameImageRecord> LaunchBoxCatalogDatabase::imagesByDatabaseId(
+    int databaseId) const
+{
+    QList<LaunchBoxGameImageRecord> result;
+    if (!m_database.isOpen() || databaseId <= 0)
+        return result;
+
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "SELECT database_id, file_name, type, region, crc32 "
+        "FROM launchbox_game_images WHERE database_id = ? "
+        "ORDER BY type, region, file_name"));
+    query.addBindValue(databaseId);
+    if (!query.exec())
+        return result;
+    while (query.next()) {
+        LaunchBoxGameImageRecord image;
+        image.databaseId = query.value(0).toInt();
+        image.fileName = query.value(1).toString();
+        image.type = query.value(2).toString();
+        image.region = query.value(3).toString();
+        image.crc32 = query.value(4).toString();
+        result.append(image);
+    }
+    return result;
+}
+
 int LaunchBoxCatalogDatabase::platformCount() const
 {
     QSqlQuery query(m_database);
@@ -461,6 +524,14 @@ int LaunchBoxCatalogDatabase::gameCount() const
 {
     QSqlQuery query(m_database);
     return query.exec(QStringLiteral("SELECT COUNT(*) FROM launchbox_games"))
+        && query.next() ? query.value(0).toInt() : 0;
+}
+
+
+int LaunchBoxCatalogDatabase::gameImageCount() const
+{
+    QSqlQuery query(m_database);
+    return query.exec(QStringLiteral("SELECT COUNT(*) FROM launchbox_game_images"))
         && query.next() ? query.value(0).toInt() : 0;
 }
 
