@@ -381,7 +381,8 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
         {QStringLiteral("title"), selected.value(QStringLiteral("title"))},
         {QStringLiteral("platform"), selected.value(QStringLiteral("platform"))},
         {QStringLiteral("hasMetadata"), !selected.value(QStringLiteral("metadataTitle")).toString().isEmpty()},
-        {QStringLiteral("artworkUrl"), selected.value(QStringLiteral("metadataArtworkUrl"))}
+        {QStringLiteral("artworkUrl"), selected.value(QStringLiteral("metadataArtworkUrl"))},
+        {QStringLiteral("path"), selected.value(QStringLiteral("path"))}
     });
 
     m_completedCount = 0;
@@ -466,7 +467,7 @@ bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason)
     if (match.releaseDate.isValid())
         releaseDate = match.releaseDate.toString(Qt::ISODate);
     else if (match.releaseYear > 0)
-        releaseDate = QStringLiteral("%1-01-01").arg(match.releaseYear);
+        releaseDate = QString::number(match.releaseYear);
 
     const bool saved = m_database && m_database->associateMetadataIfMissing(
         gameId, QStringLiteral("launchbox"), match.databaseId, match.name,
