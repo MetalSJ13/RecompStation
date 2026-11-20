@@ -2950,8 +2950,8 @@ ApplicationWindow {
                                 required property int index
                                 width: gameList.width - gameList.leftMargin - gameList.rightMargin
                                 readonly property int rowHeight:
-                                    settingsManager.libraryListDensity === "compact" ? 84
-                                    : settingsManager.libraryListDensity === "spacious" ? 144 : 112
+                                    settingsManager.libraryListDensity === "compact" ? 104
+                                    : settingsManager.libraryListDensity === "spacious" ? 144 : 128
                                 height: rowHeight
                                 focus: ListView.isCurrentItem
                                 z: highlighted ? 2 : 1
@@ -3024,10 +3024,10 @@ ApplicationWindow {
                                     anchors.left: parent.left
                                     anchors.leftMargin: 12
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: settingsManager.libraryListDensity === "compact" ? 54
-                                        : settingsManager.libraryListDensity === "spacious" ? 94 : 76
-                                    height: settingsManager.libraryListDensity === "compact" ? 62
-                                        : settingsManager.libraryListDensity === "spacious" ? 116 : 88
+                                    width: settingsManager.libraryListDensity === "compact" ? 68
+                                        : settingsManager.libraryListDensity === "spacious" ? 94 : 86
+                                    height: settingsManager.libraryListDensity === "compact" ? 82
+                                        : settingsManager.libraryListDensity === "spacious" ? 116 : 104
                                     Image {
                                         id: listCoverImage
                                         anchors.fill: parent
@@ -3048,13 +3048,13 @@ ApplicationWindow {
                                 }
                                 ColumnLayout {
                                     anchors.left: parent.left
-                                    anchors.leftMargin: settingsManager.libraryListDensity === "compact" ? 76
-                                        : settingsManager.libraryListDensity === "spacious" ? 122 : 104
+                                    anchors.leftMargin: settingsManager.libraryListDensity === "compact" ? 90
+                                        : settingsManager.libraryListDensity === "spacious" ? 122 : 114
                                     anchors.right: parent.right
                                     anchors.rightMargin: 18
                                     anchors.verticalCenter: parent.verticalCenter
                                     spacing: 5
-                                    Label { Layout.fillWidth: true; text: listTile.title; color: theme.textPrimary; font.pixelSize: (settingsManager.libraryListDensity === "compact" ? 13 : settingsManager.libraryListDensity === "spacious" ? 17 : 15) * theme.fontScale; font.bold: true; elide: Text.ElideRight }
+                                    Label { Layout.fillWidth: true; text: listTile.title; color: theme.textPrimary; font.pixelSize: (settingsManager.libraryListDensity === "compact" ? 14 : settingsManager.libraryListDensity === "spacious" ? 17 : 16) * theme.fontScale; font.bold: true; elide: Text.ElideRight }
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Label { text: listTile.platform; color: theme.textSecondary; font.pixelSize: 11 * theme.fontScale }
