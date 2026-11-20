@@ -61,7 +61,8 @@ QString LaunchBoxArtworkManager::imageUrl(const QString &fileName)
         || safeName.contains(QLatin1Char('\\')) || safeName == QStringLiteral(".")
         || safeName == QStringLiteral(".."))
         return {};
-    return QStringLiteral("https://images.launchbox-app.com/") + safeName;
+    return QStringLiteral("https://images.launchbox-app.com/")
+        + QString::fromLatin1(QUrl::toPercentEncoding(safeName));
 }
 
 int LaunchBoxArtworkManager::regionPreference(const QString &region)
@@ -159,7 +160,15 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
                                             .filePath(QString::number(localId) + QLatin1Char('/')
                                                       + request.destination);
             if (QFileInfo(destination).isFile()) {
-                ++m_skipped;
+                bool linked = true;
+                if (request.type == QStringLiteral("Box - Front"))
+                    linked = m_database->setArtworkPath(localId, destination);
+                else if (request.type == QStringLiteral("Screenshot - Gameplay"))
+                    linked = m_database->addGameScreenshot(localId, destination);
+                if (linked)
+                    ++m_skipped;
+                else
+                    ++m_failed;
                 continue;
             }
             m_queue.enqueue({localId, destination, request.type, url});
