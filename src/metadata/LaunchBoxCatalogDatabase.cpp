@@ -319,7 +319,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             if (insertGame.numRowsAffected() > 0)
                 ++gamesInserted;
             return true;
-        }, &parseError);
+        }, &parseError, cancelled);
     if (!gamesOk)
         return rollback(insertError.isEmpty() ? parseError : insertError);
 
