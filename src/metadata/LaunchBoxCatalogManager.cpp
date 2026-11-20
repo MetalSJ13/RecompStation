@@ -6,12 +6,14 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QMetaObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSaveFile>
 #include <QTimer>
 #include <QUuid>
 #include <QUrl>
+#include <QtConcurrent/QtConcurrentRun>
 
 namespace {
 const QUrl MetadataArchiveUrl(QStringLiteral("https://gamesdb.launchbox-app.com/Metadata.zip"));
@@ -25,25 +27,24 @@ LaunchBoxCatalogManager::LaunchBoxCatalogManager(
       m_catalogDirectory(QDir(m_dataDirectory).filePath(QStringLiteral("metadata/launchbox"))),
       m_catalogPath(QDir(m_catalogDirectory).filePath(QStringLiteral("catalog.sqlite")))
 {
+    connect(&m_buildWatcher, &QFutureWatcher<LaunchBoxCatalogBuildResult>::finished,
+            this, &LaunchBoxCatalogManager::finishBackgroundBuild);
 }
 
 LaunchBoxCatalogManager::~LaunchBoxCatalogManager()
 {
+    if (m_cancelFlag)
+        m_cancelFlag->store(true);
     if (m_reply)
         m_reply->abort();
+    if (m_buildWatcher.isRunning())
+        m_buildWatcher.waitForFinished();
     m_downloadFile.cancelWriting();
     cleanupStaging();
 }
 
-bool LaunchBoxCatalogManager::busy() const
-{
-    return m_busy;
-}
-
-QString LaunchBoxCatalogManager::catalogPath() const
-{
-    return m_catalogPath;
-}
+bool LaunchBoxCatalogManager::busy() const { return m_busy; }
+QString LaunchBoxCatalogManager::catalogPath() const { return m_catalogPath; }
 
 void LaunchBoxCatalogManager::setBusy(bool value)
 {
@@ -64,8 +65,9 @@ int LaunchBoxCatalogManager::updateCatalog()
         return -1;
     }
 
-    m_requestId++;
+    ++m_requestId;
     m_cancelRequested = false;
+    m_cancelFlag = std::make_shared<std::atomic_bool>(false);
     const QString token = QUuid::createUuid().toString(QUuid::WithoutBraces);
     const QString staging = QDir(m_catalogDirectory).filePath(QStringLiteral(".update-") + token);
     if (!QDir().mkdir(staging)) {
@@ -116,10 +118,10 @@ void LaunchBoxCatalogManager::cancelUpdate()
     if (!m_busy)
         return;
     m_cancelRequested = true;
+    if (m_cancelFlag)
+        m_cancelFlag->store(true);
     if (m_reply)
         m_reply->abort();
-    else
-        failUpdate(QStringLiteral("LaunchBox catalog update cancelled."));
 }
 
 void LaunchBoxCatalogManager::receiveDownloadData()
@@ -170,29 +172,74 @@ void LaunchBoxCatalogManager::finishDownload()
         failUpdate(QStringLiteral("The downloaded LaunchBox archive is empty or could not be finalized."));
         return;
     }
+    startBackgroundBuild();
+}
 
-    emit updateProgress(QStringLiteral("Extracting and validating metadata archive"), 0);
-    const LaunchBoxArchiveExtractor::Result extracted =
-        LaunchBoxArchiveExtractor::extractMetadataArchive(m_archivePath, m_extractPath);
-    if (!extracted.success) {
-        failUpdate(extracted.error);
+void LaunchBoxCatalogManager::startBackgroundBuild()
+{
+    const QString archivePath = m_archivePath;
+    const QString extractPath = m_extractPath;
+    const QString databasePath = m_temporaryDatabasePath;
+    const auto cancelFlag = m_cancelFlag;
+    emit updateProgress(QStringLiteral("Extracting LaunchBox metadata"), 0);
+
+    m_buildWatcher.setFuture(QtConcurrent::run(
+        [this, archivePath, extractPath, databasePath, cancelFlag]() {
+        LaunchBoxCatalogBuildResult result;
+        const auto extracted = LaunchBoxArchiveExtractor::extractMetadataArchive(
+            archivePath, extractPath, cancelFlag.get(),
+            [this](qint64 received, qint64) {
+                QMetaObject::invokeMethod(this, [this, received]() {
+                    emit updateProgress(QStringLiteral("Extracting LaunchBox metadata"),
+                                        qBound(0, static_cast<int>(received * 100 / (1024LL * 1024LL * 550LL)), 99));
+                }, Qt::QueuedConnection);
+            });
+        if (!extracted.success) {
+            result.error = extracted.error;
+            return result;
+        }
+        if (cancelFlag->load()) {
+            result.error = QStringLiteral("LaunchBox catalog update cancelled.");
+            return result;
+        }
+
+        LaunchBoxCatalogDatabase catalog;
+        if (!catalog.open(databasePath)) {
+            result.error = catalog.lastError();
+            return result;
+        }
+        const bool indexed = catalog.rebuildFromXmlFiles(
+            extracted.files.platformsXmlPath, extracted.files.filesXmlPath,
+            extracted.files.metadataXmlPath, cancelFlag.get(),
+            [this](const QString &stage, int percent) {
+                QMetaObject::invokeMethod(this, [this, stage, percent]() {
+                    emit updateProgress(stage, percent);
+                }, Qt::QueuedConnection);
+            });
+        if (!indexed) {
+            result.error = catalog.lastError();
+            return result;
+        }
+        result.platformCount = catalog.platformCount();
+        result.fileCount = catalog.fileAssociationCount();
+        result.gameCount = catalog.gameCount();
+        result.success = true;
+        return result;
+    }));
+}
+
+void LaunchBoxCatalogManager::finishBackgroundBuild()
+{
+    const LaunchBoxCatalogBuildResult result = m_buildWatcher.result();
+    if (m_cancelRequested || (m_cancelFlag && m_cancelFlag->load())) {
+        failUpdate(QStringLiteral("LaunchBox catalog update cancelled."));
         return;
     }
-
-    emit updateProgress(QStringLiteral("Building searchable local catalog"), 0);
-    LaunchBoxCatalogDatabase catalog;
-    if (!catalog.open(m_temporaryDatabasePath)
-        || !catalog.rebuildFromXmlFiles(extracted.files.platformsXmlPath,
-                                        extracted.files.filesXmlPath,
-                                        extracted.files.metadataXmlPath)) {
-        const QString error = catalog.lastError();
-        failUpdate(QStringLiteral("Could not index the LaunchBox archive: %1").arg(error));
+    if (!result.success) {
+        failUpdate(result.error.isEmpty()
+            ? QStringLiteral("Could not build the LaunchBox catalog.") : result.error);
         return;
     }
-    const int platforms = catalog.platformCount();
-    const int files = catalog.fileAssociationCount();
-    const int games = catalog.gameCount();
-    catalog.close();
 
     QString installError;
     if (!validateAndInstallCatalog(&installError)) {
@@ -201,9 +248,10 @@ void LaunchBoxCatalogManager::finishDownload()
     }
 
     cleanupStaging();
+    m_cancelFlag.reset();
     setBusy(false);
     emit updateProgress(QStringLiteral("LaunchBox catalog ready"), 100);
-    emit updateCompleted(platforms, files, games);
+    emit updateCompleted(result.platformCount, result.fileCount, result.gameCount);
 }
 
 bool LaunchBoxCatalogManager::validateAndInstallCatalog(QString *errorMessage)
@@ -214,7 +262,6 @@ bool LaunchBoxCatalogManager::validateAndInstallCatalog(QString *errorMessage)
         return false;
     }
 
-    // Re-open the completed database before replacing the current catalog.
     LaunchBoxCatalogDatabase validation;
     if (!validation.open(m_temporaryDatabasePath)) {
         *errorMessage = QStringLiteral("The rebuilt LaunchBox catalog failed validation: %1")
@@ -235,9 +282,10 @@ bool LaunchBoxCatalogManager::validateAndInstallCatalog(QString *errorMessage)
         return false;
     }
     if (!QFile::rename(m_temporaryDatabasePath, m_catalogPath)) {
-        if (hadPrevious)
-            QFile::rename(m_backupDatabasePath, m_catalogPath);
-        *errorMessage = QStringLiteral("Could not activate the new LaunchBox catalog; the previous catalog was restored.");
+        if (hadPrevious && !QFile::rename(m_backupDatabasePath, m_catalogPath))
+            *errorMessage = QStringLiteral("Catalog activation failed and automatic restoration failed; backup remains at %1").arg(m_backupDatabasePath);
+        else
+            *errorMessage = QStringLiteral("Could not activate the new LaunchBox catalog; the previous catalog was restored.");
         return false;
     }
     if (hadPrevious)
@@ -253,8 +301,13 @@ void LaunchBoxCatalogManager::failUpdate(const QString &message)
         m_reply->deleteLater();
         m_reply = nullptr;
     }
+    if (m_cancelFlag)
+        m_cancelFlag->store(true);
+    if (m_buildWatcher.isRunning())
+        return; // The worker completion handler performs final cleanup.
     m_downloadFile.cancelWriting();
     cleanupStaging();
+    m_cancelFlag.reset();
     const bool cancelled = m_cancelRequested;
     m_cancelRequested = false;
     setBusy(false);
