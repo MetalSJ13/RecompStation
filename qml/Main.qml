@@ -567,6 +567,25 @@ ApplicationWindow {
     property int launcherRevision: 0
     property string pendingUninstallProjectId: ""
     property int selectedMetadataPlatformId: 0
+    property int launchBoxProgressPercent: 0
+    property string launchBoxStatusMessage: launchBoxCatalogManager.catalogAvailable ? "LaunchBox catalog is ready." : ""
+    Connections {
+        target: launchBoxCatalogManager
+        function onUpdateProgress(stage, percent) {
+            launchBoxStatusMessage = stage
+            launchBoxProgressPercent = percent
+        }
+        function onUpdateCompleted(platforms, files, games) {
+            launchBoxProgressPercent = 100
+            launchBoxStatusMessage = "Catalog updated: " + platforms + " platforms, " + files + " file associations, " + games + " games."
+        }
+        function onUpdateFailed(message) {
+            launchBoxStatusMessage = "Update failed: " + message
+        }
+        function onUpdateCancelled() {
+            launchBoxStatusMessage = "Catalog update cancelled. The previous catalog was preserved."
+        }
+    }
     property int selectedLocalGameId: 0
     property string metadataAssociationMessage: ""
     property string artworkMessage: ""
@@ -4462,9 +4481,113 @@ ApplicationWindow {
                                         }
                                     }
 
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: launchBoxProviderColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: settingsManager.launchBoxEnabled ? theme.accent : theme.divider
+                                        ColumnLayout {
+                                            id: launchBoxProviderColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 9
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                CheckBox {
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: "LaunchBox Games Database"
+                                                    checked: settingsManager.launchBoxEnabled
+                                                    onToggled: settingsManager.setLaunchBoxEnabled(checked)
+                                                    background: Rectangle {
+                                                        radius: 8
+                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                        anchors.margins: -6
+                                                    }
+                                                }
+                                                Item { Layout.fillWidth: true }
+                                                Label {
+                                                    text: !settingsManager.launchBoxEnabled ? "Disabled"
+                                                        : launchBoxCatalogManager.catalogAvailable ? "Catalog ready" : "Enabled · catalog not downloaded"
+                                                    color: launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled
+                                                        ? "#48C78E" : theme.textMuted
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Optional local metadata fallback. TheGamesDB remains the primary provider. Enabling LaunchBox does not download anything automatically."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: launchBoxCatalogManager.catalogAvailable
+                                                    ? "Local catalog: available"
+                                                    : "Local catalog: not installed"
+                                                color: theme.textMuted
+                                                font.pixelSize: 11 * theme.fontScale
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: settingsManager.launchBoxLastUpdated.length > 0
+                                                    ? "Last updated: " + settingsManager.launchBoxLastUpdated
+                                                    : "Last updated: never"
+                                                color: theme.textMuted
+                                                font.pixelSize: 11 * theme.fontScale
+                                            }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 10
+                                                Button {
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    Layout.preferredWidth: 190
+                                                    Layout.preferredHeight: 40
+                                                    highlighted: true
+                                                    text: launchBoxCatalogManager.busy ? "Updating Catalog…" : "Update Catalog"
+                                                    enabled: settingsManager.launchBoxEnabled && !launchBoxCatalogManager.busy
+                                                    onClicked: launchBoxCatalogManager.updateCatalog()
+                                                }
+                                                Button {
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    Layout.preferredWidth: 110
+                                                    Layout.preferredHeight: 40
+                                                    text: "Cancel"
+                                                    visible: launchBoxCatalogManager.busy
+                                                    enabled: launchBoxCatalogManager.busy
+                                                    onClicked: launchBoxCatalogManager.cancelUpdate()
+                                                }
+                                            }
+                                            ProgressBar {
+                                                Layout.fillWidth: true
+                                                visible: launchBoxCatalogManager.busy
+                                                from: 0
+                                                to: 100
+                                                value: launchBoxProgressPercent
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                visible: launchBoxCatalogManager.busy || launchBoxStatusMessage.length > 0
+                                                text: launchBoxStatusMessage
+                                                color: theme.textMuted
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
+
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "TheGamesDB is the currently integrated metadata provider. Additional services will appear here when their integrations are ready."
+                                        text: "The catalog download is approximately 106 MB compressed. Updates are manual, and the existing catalog remains available until a replacement has been validated."
                                         color: theme.textMuted
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
