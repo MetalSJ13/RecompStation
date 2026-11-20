@@ -5,6 +5,8 @@
 #include <QList>
 #include <QString>
 #include <QSqlDatabase>
+#include <atomic>
+#include <functional>
 
 class LaunchBoxCatalogDatabase
 {
@@ -24,7 +26,9 @@ public:
     // indexing fails, rollback leaves the previous catalog intact.
     bool rebuildFromXmlFiles(const QString &platformsXmlPath,
                              const QString &filesXmlPath,
-                             const QString &metadataXmlPath);
+                             const QString &metadataXmlPath,
+                             const std::atomic_bool *cancelled = nullptr,
+                             const std::function<void(const QString &, int)> &progress = {});
 
     QList<LaunchBoxFileAssociation> findFileAssociations(
         const QString &internalPlatform, const QString &localFileName) const;
