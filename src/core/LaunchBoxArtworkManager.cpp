@@ -122,7 +122,7 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
         return;
 
     m_queue.clear();
-    m_downloaded = m_skipped = m_failed = m_batchRequests = 0;
+    m_downloaded = m_skipped = m_failed = m_batchRequests = m_totalRequests = 0;
 
     LaunchBoxCatalogDatabase catalog;
     if (!catalog.open(m_catalogPath)) {
@@ -182,9 +182,10 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
         emit refreshFinished(0, m_skipped, 0);
         return;
     }
+    m_totalRequests = m_queue.size();
     setBusy(true);
-    setStatus(QStringLiteral("Downloading LaunchBox artwork for %1 matched library game(s)...")
-                  .arg(eligibleGames));
+    setStatus(QStringLiteral("Queued %1 LaunchBox images for %2 matched library game(s).")
+                  .arg(m_totalRequests).arg(eligibleGames));
     qCInfo(lcArtwork) << "LaunchBox artwork queue contains" << m_queue.size()
                       << "images for" << eligibleGames << "library games.";
     processNext();
@@ -226,8 +227,11 @@ void LaunchBoxArtworkManager::processNext()
         const QByteArray bytes = reply->readAll();
         const QString extension = supportedImageExtension(
             reply->header(QNetworkRequest::ContentTypeHeader).toByteArray(), bytes);
+        const QUrl finalUrl = reply->url();
         const bool networkOk = reply->error() == QNetworkReply::NoError
-            && statusCode >= 200 && statusCode < 300;
+            && statusCode >= 200 && statusCode < 300
+            && finalUrl.scheme() == QStringLiteral("https")
+            && finalUrl.host() == QStringLiteral("images.launchbox-app.com");
         const QString networkError = reply->errorString();
         reply->deleteLater();
 
@@ -263,6 +267,9 @@ void LaunchBoxArtworkManager::processNext()
                                  << networkError;
         }
         ++m_batchRequests;
+        setStatus(QStringLiteral("LaunchBox artwork: %1/%2 processed, %3 skipped, %4 failed.")
+                      .arg(m_downloaded + m_failed).arg(m_totalRequests)
+                      .arg(m_skipped).arg(m_failed));
         processNext();
     });
 }
