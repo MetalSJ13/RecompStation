@@ -70,15 +70,23 @@ void ScreenshotManager::refreshLibraryScreenshots()
 
     m_queue.clear();
     const QVariantList games = m_database->gamesWithMetadata();
-    for (const QVariant &entry : games)
-        m_queue.enqueue(entry.toMap());
+    for (const QVariant &entry : games) {
+        const QVariantMap game = entry.toMap();
+        if (!game.value(QStringLiteral("screenshots")).toList().isEmpty()) {
+            ++m_skipped;
+            continue;
+        }
+        m_queue.enqueue(game);
+    }
 
     m_downloaded = 0;
+    m_skipped = 0;
     m_withoutScreenshots = 0;
     m_failed = 0;
     if (m_queue.isEmpty()) {
-        setStatus("No games with saved metadata are available for screenshot refresh.");
-        emit refreshFinished(0, 0, 0);
+        setStatus(QString("Screenshot refresh complete: 0 downloaded, %1 already had screenshots, no missing screenshots to retrieve.")
+                      .arg(m_skipped));
+        emit refreshFinished(0, m_skipped, 0, 0);
         return;
     }
     setBusy(true);
@@ -90,9 +98,9 @@ void ScreenshotManager::processNextGame()
 {
     if (m_queue.isEmpty()) {
         setBusy(false);
-        setStatus(QString("Screenshot refresh complete: %1 downloaded, %2 had none, %3 failed.")
-                      .arg(m_downloaded).arg(m_withoutScreenshots).arg(m_failed));
-        emit refreshFinished(m_downloaded, m_withoutScreenshots, m_failed);
+        setStatus(QString("Screenshot refresh complete: %1 downloaded, %2 skipped (already available), %3 had none, %4 failed.")
+                      .arg(m_downloaded).arg(m_skipped).arg(m_withoutScreenshots).arg(m_failed));
+        emit refreshFinished(m_downloaded, m_skipped, m_withoutScreenshots, m_failed);
         return;
     }
 
@@ -153,17 +161,6 @@ void ScreenshotManager::processNextGame()
             if (resolved.scheme() == "https" && !resolved.host().isEmpty())
                 m_pendingUrls.append(resolved.toString());
         }
-
-        // Replace a game's old screenshot set only after a valid provider
-        // response has arrived; a network failure leaves its existing cache intact.
-        const QString cacheDirectory = QDir(m_artworkDirectory)
-                                           .filePath(QString("screenshots/%1").arg(m_currentGameId));
-        if (!m_database->clearGameScreenshots(m_currentGameId)) {
-            ++m_failed;
-            processNextGame();
-            return;
-        }
-        QDir(cacheDirectory).removeRecursively();
 
         if (m_pendingUrls.isEmpty()) {
             ++m_withoutScreenshots;
