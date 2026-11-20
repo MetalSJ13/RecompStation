@@ -359,7 +359,10 @@ bool LaunchBoxXmlParser::parsePlatformsFile(
     QString *errorMessage)
 {
     return streamCatalogFile<PlatformRecordTag>(
-        path, QStringLiteral("Platforms"), parsePlatformRecord,
+        path, QStringLiteral("Platforms"),
+        [](QXmlStreamReader &reader, LaunchBoxPlatform *record) {
+            parsePlatformRecord(reader, record);
+        },
         [](const LaunchBoxPlatform &record) {
             return !normalizedKey(record.name).isEmpty();
         }, consumer, errorMessage);
@@ -371,7 +374,10 @@ bool LaunchBoxXmlParser::parseFilesFile(
     QString *errorMessage)
 {
     return streamCatalogFile<FileRecordTag>(
-        path, QStringLiteral("Files"), parseFileRecord,
+        path, QStringLiteral("Files"),
+        [](QXmlStreamReader &reader, LaunchBoxFileAssociation *record) {
+            parseFileRecord(reader, record);
+        },
         [](const LaunchBoxFileAssociation &record) {
             return !record.platform.isEmpty() && !record.fileName.isEmpty()
                 && !record.gameName.isEmpty();
@@ -384,7 +390,10 @@ bool LaunchBoxXmlParser::parseMetadataFile(
     QString *errorMessage)
 {
     return streamCatalogFile<GameRecordTag>(
-        path, QStringLiteral("Metadata"), parseGameRecord,
+        path, QStringLiteral("Metadata"),
+        [](QXmlStreamReader &reader, LaunchBoxGameRecord *record) {
+            parseGameRecord(reader, record);
+        },
         [](const LaunchBoxGameRecord &record) {
             return record.databaseId > 0 && !record.name.isEmpty()
                 && !record.platform.isEmpty();
