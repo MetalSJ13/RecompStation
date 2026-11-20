@@ -69,5 +69,6 @@ private:
     int m_skipped = 0;
     int m_failed = 0;
     bool m_busy = false;
+    bool m_refreshPending = false;
     QString m_status;
 };
