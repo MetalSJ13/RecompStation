@@ -1,10 +1,106 @@
 #include <QtTest>
 
 #include "core/LibraryMetadataMatcher.h"
+#include "core/SettingsManager.h"
+#include "database/DatabaseManager.h"
+#include "metadata/MetadataManager.h"
+#include "metadata/MetadataProvider.h"
+#include "metadata/LaunchBoxCatalogManager.h"
+#include "metadata/LaunchBoxCatalogDatabase.h"
+
+#include <QFile>
+#include <QSignalSpy>
+#include <QTemporaryDir>
+
+
+class FakeMetadataProvider : public MetadataProvider
+{
+    Q_OBJECT
+public:
+    QList<GameMetadata> results;
+    bool failRequest = false;
+
+    QString providerId() const override { return QStringLiteral("fake"); }
+    bool isConfigured() const override { return true; }
+    void fetchPlatforms() override
+    {
+        emit platformsLoaded({TheGamesDbPlatform{3, QStringLiteral("Nintendo 64"),
+                                                 QStringLiteral("nintendo-64")}});
+    }
+    void searchGames(const QString &, int) override
+    {
+        if (failRequest) {
+            emit requestFailed(1, QStringLiteral("simulated provider failure"));
+            return;
+        }
+        emit searchCompleted(1, results);
+    }
+};
 
 class LibraryMetadataMatcherTest : public QObject
 {
     Q_OBJECT
+
+private:
+
+    static bool writeFile(const QString &path, const QByteArray &contents)
+    {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && file.write(contents) == contents.size();
+    }
+
+    static bool prepareLaunchBoxCatalog(const QString &dataDirectory,
+                                        LaunchBoxCatalogManager *manager,
+                                        bool duplicateMetadata = false)
+    {
+        if (!manager)
+            return false;
+        const QString root = dataDirectory + QStringLiteral("/catalog-source");
+        if (!QDir().mkpath(root))
+            return false;
+        const QByteArray platforms = R"xml(
+            <LaunchBox><Platform><Name>Nintendo 64</Name></Platform></LaunchBox>
+        )xml";
+        const QByteArray files = R"xml(
+            <LaunchBox><File><Platform>Nintendo 64</Platform>
+                <FileName>Banjo-Kazooie (USA) (Rev A)</FileName>
+                <GameName>Banjo-Kazooie (USA) (Rev A)</GameName>
+            </File></LaunchBox>
+        )xml";
+        QByteArray metadata = R"xml(
+            <LaunchBox><Game><DatabaseID>162</DatabaseID><Name>Banjo-Kazooie</Name>
+                <Platform>Nintendo 64</Platform><ReleaseYear>1998</ReleaseYear>
+                <Overview>Bear and bird adventure.</Overview></Game>
+        )xml";
+        if (duplicateMetadata) {
+            metadata += R"xml(
+                <Game><DatabaseID>163</DatabaseID><Name>Banjo-Kazooie</Name>
+                    <Platform>Nintendo 64</Platform></Game>
+            )xml";
+        }
+        metadata += "</LaunchBox>";
+        if (!writeFile(root + "/Platforms.xml", platforms)
+            || !writeFile(root + "/Files.xml", files)
+            || !writeFile(root + "/Metadata.xml", metadata))
+            return false;
+
+        LaunchBoxCatalogDatabase catalog;
+        return catalog.open(manager->catalogPath())
+            && catalog.rebuildFromXmlFiles(root + "/Platforms.xml",
+                                            root + "/Files.xml",
+                                            root + "/Metadata.xml");
+    }
+
+    static bool prepareLibraryGame(const QString &root, DatabaseManager *database)
+    {
+        if (!database || !database->initialize(root + "/library.sqlite"))
+            return false;
+        return database->registerGame(
+            QStringLiteral("Banjo-Kazooie (USA) (Rev A)"), QStringLiteral("N64"),
+            root + "/roms/Banjo-Kazooie (USA) (Rev A).z64");
+    }
+
 
 private slots:
     void matchesTitlesWithoutCaseOrPunctuationDifferences()
@@ -138,6 +234,145 @@ private slots:
         QCOMPARE(LibraryMetadataMatcher::bestMatchIndex(
                      QStringLiteral("Donkey Kong 64"), 3, results), -1);
     }
+
+    void usesLaunchBoxAfterSuccessfulEmptyTheGamesDbResponse()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+        QSignalSpy finished(&matcher, &LibraryMetadataMatcher::scrapeFinished);
+
+        matcher.scrapeLibrary();
+        QCOMPARE(finished.size(), 1);
+        QCOMPARE(finished.first().at(0).toInt(), 1);
+        const QVariantMap game = database.games().first().toMap();
+        QCOMPARE(game.value("metadataProvider").toString(), QStringLiteral("launchbox"));
+        QCOMPARE(game.value("metadataGameId").toInt(), 162);
+        QCOMPARE(game.value("metadataTitle").toString(), QStringLiteral("Banjo-Kazooie"));
+        QCOMPARE(game.value("metadataReleaseDate").toString(), QStringLiteral("1998"));
+        QVERIFY(game.value("metadataArtworkUrl").toString().isEmpty());
+        QVERIFY(game.value("artworkPath").toString().isEmpty());
+    }
+
+    void doesNotUseLaunchBoxForNonEmptyUncertainPrimaryResults()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        GameMetadata unrelated;
+        unrelated.provider = QStringLiteral("fake");
+        unrelated.providerGameId = 77;
+        unrelated.title = QStringLiteral("Banjo-Tooie");
+        unrelated.platformId = 3;
+        provider.results.append(unrelated);
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+
+        matcher.scrapeLibrary();
+        QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
+    }
+
+    void doesNotUseLaunchBoxAfterPrimaryProviderFailure()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        provider.failRequest = true;
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+
+        matcher.scrapeLibrary();
+        QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
+    }
+
+    void doesNotUseLaunchBoxWhenDisabled()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(false);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+
+        matcher.scrapeLibrary();
+        QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
+    }
+
+    void primaryMatchRemainsPreferredOverLaunchBox()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        GameMetadata primary;
+        primary.provider = QStringLiteral("thegamesdb");
+        primary.providerGameId = 987;
+        primary.title = QStringLiteral("Banjo-Kazooie");
+        primary.platformId = 3;
+        provider.results.append(primary);
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+
+        matcher.scrapeLibrary();
+        const QVariantMap game = database.games().first().toMap();
+        QCOMPARE(game.value("metadataProvider").toString(), QStringLiteral("thegamesdb"));
+        QCOMPARE(game.value("metadataGameId").toInt(), 987);
+    }
+
+    void ambiguousLaunchBoxAssociationRemainsUnresolved()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager, true));
+        FakeMetadataProvider provider;
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+
+        matcher.scrapeLibrary();
+        QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
+    }
+
 };
 
 QTEST_GUILESS_MAIN(LibraryMetadataMatcherTest)
