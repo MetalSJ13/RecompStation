@@ -534,7 +534,8 @@ QVariantList DatabaseManager::gamesNeedingMetadata(bool includePreviouslyChecked
     query.prepare(R"(
         SELECT games.id, games.title, platforms.name,
                CASE WHEN game_metadata.game_id IS NULL THEN 0 ELSE 1 END,
-               COALESCE(game_metadata.artwork_url, ''), games.game_path
+               COALESCE(game_metadata.artwork_url, ''), games.game_path,
+               COALESCE(game_metadata.provider, '')
         FROM games
         JOIN platforms ON games.platform_id = platforms.id
         LEFT JOIN game_metadata ON game_metadata.game_id = games.id
@@ -561,7 +562,8 @@ QVariantList DatabaseManager::gamesNeedingMetadata(bool includePreviouslyChecked
             {QStringLiteral("platform"), query.value(2).toString()},
             {QStringLiteral("hasMetadata"), query.value(3).toBool()},
             {QStringLiteral("artworkUrl"), query.value(4).toString()},
-            {QStringLiteral("path"), query.value(5).toString()}
+            {QStringLiteral("path"), query.value(5).toString()},
+            {QStringLiteral("metadataProvider"), query.value(6).toString()}
         });
     }
     return result;
