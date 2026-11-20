@@ -264,7 +264,7 @@ private slots:
         QVERIFY(game.value("artworkPath").toString().isEmpty());
     }
 
-    void doesNotUseLaunchBoxForNonEmptyUncertainPrimaryResults()
+    void usesLaunchBoxWhenPrimaryResultsHaveNoConfidentMatch()
     {
         QTemporaryDir directory;
         QVERIFY(directory.isValid());
@@ -286,7 +286,38 @@ private slots:
                                        &catalogManager, &settings);
 
         matcher.scrapeLibrary();
-        QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
+        const QVariantMap game = database.games().first().toMap();
+        QCOMPARE(game.value("metadataProvider").toString(), QStringLiteral("launchbox"));
+        QCOMPARE(game.value("metadataGameId").toInt(), 162);
+    }
+
+    void usesLaunchBoxWhenPrimaryResultsAreAmbiguous()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        for (int id : {77, 78}) {
+            GameMetadata candidate;
+            candidate.provider = QStringLiteral("thegamesdb");
+            candidate.providerGameId = id;
+            candidate.title = QStringLiteral("Banjo-Kazooie");
+            candidate.platformId = 3;
+            provider.results.append(candidate);
+        }
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+
+        matcher.scrapeLibrary();
+        const QVariantMap game = database.games().first().toMap();
+        QCOMPARE(game.value("metadataProvider").toString(), QStringLiteral("launchbox"));
+        QCOMPARE(game.value("metadataGameId").toInt(), 162);
     }
 
     void doesNotUseLaunchBoxAfterPrimaryProviderFailure()
