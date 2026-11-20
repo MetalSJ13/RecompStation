@@ -159,6 +159,36 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 4: Automatic library and metadata maintenance
 
+
+#### LaunchBox optional local-catalog fallback — planned
+
+**Agreed design decisions**
+- TheGamesDB remains the primary metadata provider. LaunchBox is an optional secondary source and must be disabled by default for new installations.
+- Download the LaunchBox `Metadata.zip` archive only after the user explicitly enables LaunchBox. Show download/extraction or indexing progress, support cancellation, and retain a usable existing catalog if an update fails.
+- Keep a local searchable index rather than reparsing the extracted XML for every game lookup. The supplied archive is approximately 106 MB compressed and 550 MB extracted, so avoid unnecessary repeated extraction and processing.
+- Use `Platforms.xml` only as reference data. Map RecompStation platforms to explicit canonical LaunchBox platform names; do not blindly accept every LaunchBox alias (for example, the Nintendo 64DD alias collision).
+- Use `Files.xml` platform-specific filename associations as the preferred route: match the local ROM filename conservatively, then use its `GameName` to locate the corresponding `Metadata.xml` record. Fall back to conservative platform-and-title matching only when no reliable file association exists.
+- Treat platform as a mandatory matching constraint. Prefer exact normalized title matches, preserve meaningful revision distinctions, and reject ambiguous candidates rather than guessing. Treat `ReleaseType` as a confidence/safeguard signal, not a blanket exclusion; supported libraries may include ports, homebrew, and ROM hacks.
+- Query LaunchBox only after TheGamesDB reports a genuine no-match. Do not use it to mask TheGamesDB network errors, rate limits, provider failures, or ambiguous results.
+- Never replace an existing metadata association with LaunchBox data. Add a database-level guard in addition to matcher-level routing. Missing LaunchBox fields must not erase populated values.
+- Keep artwork independent. The inspected LaunchBox game records do not establish an artwork URL/source; do not assume artwork is included in the metadata catalog or overwrite existing artwork. Artwork-provider integration is a separate decision.
+- Do not integrate `Mame.xml` in this initial console-library implementation. It is an arcade/MAME machine catalog with distinct short-name and clone relationships; revisit it only if arcade library support is planned.
+- Provide a manual catalog update action and consider an optional periodic update check. Do not silently download large archives without the user's enablement and update preferences.
+
+**Implementation order**
+- [ ] Strengthen `DatabaseManager::associateMetadata()` so an existing provider association cannot be overwritten by a fallback insert; add regression tests for existing metadata and missing-field preservation.
+- [ ] Introduce and test a LaunchBox XML parser for `Platforms.xml`, `Files.xml`, and `Metadata.xml`; validate malformed, incomplete, duplicate, and unexpected records.
+- [ ] Add explicit RecompStation-to-LaunchBox platform mappings and conservative filename/title matching, including region/revision handling and ambiguity rejection.
+- [ ] Build a local SQLite catalog/index and query API; avoid loading or reparsing the full XML archive for individual game lookups.
+- [ ] Add archive download, progress reporting, cancellation, extraction, validation, and rollback-safe catalog replacement/update handling. Reuse existing archive infrastructure where appropriate.
+- [ ] Add persistent LaunchBox enablement, defaulting to disabled, plus catalog status and a user-controlled update workflow in Settings → Metadata. Download/index only when enabled.
+- [ ] Integrate LaunchBox as a fallback after a confirmed TheGamesDB no-match; preserve TheGamesDB priority and do not fallback on provider errors or ambiguous results.
+- [ ] Keep metadata and artwork provenance/refresh behavior separate; verify that LaunchBox fallback does not change existing artwork paths or URLs when no new artwork source is configured.
+- [ ] Add focused unit, parser, database, matching, archive/update, and end-to-end fallback regression coverage. Include disabled-provider, primary-match, genuine-no-match, provider-error, ambiguity, platform-collision, and no-overwrite cases.
+- [ ] Build with `./scripts/build.sh --test`, run the complete regression suite, then perform local runtime checks for first-time enablement, download/cancellation, indexing, fallback matching, manual update, and disabled/default behavior before checking off implementation tasks.
+
+**Scope and completion rule:** This work extends Milestone 4's automatic metadata maintenance. The checklist remains planned until the implementation, full automated regression suite, local build, and relevant runtime checks are completed and confirmed. Do not mark tasks complete based solely on code being committed.
+
 - [ ] Use one shared discovery/matching pipeline for manual and automatic scans
 - [x] Add recursive filesystem monitoring for configured platform folders, with a 750 ms debounce and automatic full-library reconciliation (implementation and regression tests committed; local build/runtime validation pending)
 - [x] Detect added and removed games, including newly created nested folders; preserve unavailable database records and avoid duplicate registration (local validation pending)
