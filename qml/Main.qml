@@ -259,7 +259,7 @@ ApplicationWindow {
                 gameList.forceActiveFocus()
                 return
             }
-            const columns = Math.max(1, Math.floor(gameGrid.width / gameGrid.cellWidth))
+            const columns = gameGrid.responsiveColumns
             if (direction === "left") next--
             else if (direction === "right") next++
             else if (direction === "up") next -= columns
@@ -2571,18 +2571,21 @@ ApplicationWindow {
                             // including the first and last rows.
                             topMargin: 10
                             bottomMargin: 10
-                            leftMargin: 8
-                            rightMargin: 8
-                            // Choose a density-specific target card width, then divide
-                            // the complete viewport by the resulting column count. This
-                            // avoids the unused right-edge strip caused by fixed preferred
-                            // column counts and integer cell-width rounding.
+                            // Keep card widths fixed for each density. Center the complete
+                            // column block with equal outer margins; GridView keeps a
+                            // partially filled final row aligned to the first column.
                             readonly property real targetCardWidth:
                                 settingsManager.libraryDensity === "compact" ? 190
                                 : settingsManager.libraryDensity === "spacious" ? 290 : 230
+                            readonly property real gridCellWidth: targetCardWidth + 14
                             readonly property int responsiveColumns:
-                                Math.max(1, Math.floor(width / Math.max(1, targetCardWidth)))
-                            cellWidth: width > 0 ? width / responsiveColumns : targetCardWidth
+                                Math.max(1, Math.floor(Math.max(0, width - 16)
+                                    / Math.max(1, gridCellWidth)))
+                            readonly property real centeredOuterMargin:
+                                Math.max(8, (width - responsiveColumns * gridCellWidth) / 2)
+                            leftMargin: centeredOuterMargin
+                            rightMargin: centeredOuterMargin
+                            cellWidth: gridCellWidth
                             // Reserve enough vertical room for the shared 2:3 artwork
                             // frame plus the title and platform footer.
                             cellHeight: Math.round(cellWidth * 1.76)
@@ -2785,9 +2788,9 @@ ApplicationWindow {
                                             // Every platform uses the same portrait
                                             // artwork window. Landscape covers remain
                                             // uncropped in front of a fitted blurred fill.
-                                            Layout.preferredHeight: Math.round((gameTile.width - 34) * 1.5)
+                                            Layout.preferredHeight: Math.round((gameTile.width - 20) * 1.5)
                                             Layout.minimumHeight: 96
-                                            Layout.maximumHeight: Math.round((gameTile.width - 34) * 1.5)
+                                            Layout.maximumHeight: Math.round((gameTile.width - 20) * 1.5)
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
                                             border.width: 1
