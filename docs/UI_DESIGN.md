@@ -206,3 +206,11 @@ Audit follow-up: finish complete keyboard/controller focus and accessibility val
 - Grid View uses a broader 240 px fade zone with a smoothstep easing curve and a subtle 0.18 minimum opacity for partially visible cards. This avoids the linear, abrupt-looking fade during fast scrolling.
 - Grid View combines the scroll-edge opacity with its existing startup reveal opacity.
 - Reduced Motion disables the scroll-edge fade by keeping cards fully opaque.
+
+
+### Console / Carousel View
+- Add a third Library presentation alongside Grid and List: a single horizontal row of cover cards, inspired by console game-library interfaces.
+- Use a consistent, moderate card width so several titles are visible at once; center the selected card and keep its artwork/title treatment legible.
+- Scroll horizontally with smooth flicking and directional navigation; selecting a card opens the same Game Details experience as the other views.
+- Fade cards progressively near the left and right viewport edges to reinforce the carousel depth/continuity. Reduced Motion disables this fade.
+- Keep the view choice persistent and reuse the same filtered library model, platform filter, and search results as Grid and List.
