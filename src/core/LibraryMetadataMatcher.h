@@ -8,6 +8,8 @@
 class ArtworkManager;
 class DatabaseManager;
 class MetadataManager;
+class LaunchBoxCatalogManager;
+class SettingsManager;
 
 class LibraryMetadataMatcher : public QObject
 {
@@ -21,6 +23,8 @@ public:
     explicit LibraryMetadataMatcher(DatabaseManager *database,
                                     MetadataManager *metadata,
                                     ArtworkManager *artwork,
+                                    LaunchBoxCatalogManager *launchBoxCatalog,
+                                    SettingsManager *settings,
                                     QObject *parent = nullptr);
 
     bool isBusy() const;
@@ -43,6 +47,7 @@ signals:
     void scrapeFinished(int matched, int unresolved);
 
 private:
+    bool tryLaunchBoxFallback(const QString &reason);
     void processNext();
     void finishCurrent(bool matched, const QString &reason = {});
     void setBusy(bool busy);
@@ -51,6 +56,8 @@ private:
     DatabaseManager *m_database = nullptr;
     MetadataManager *m_metadata = nullptr;
     ArtworkManager *m_artwork = nullptr;
+    LaunchBoxCatalogManager *m_launchBoxCatalog = nullptr;
+    SettingsManager *m_settings = nullptr;
     QQueue<QVariantMap> m_queue;
     QVariantMap m_currentGame;
     int m_completedCount = 0;
