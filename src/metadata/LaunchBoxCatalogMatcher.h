@@ -43,4 +43,5 @@ public:
         const QList<LaunchBoxGameRecord> &games);
 
     static QString normalizedTitle(const QString &title);
+    static QString normalizedTitleWithoutRevision(const QString &title);
 };
