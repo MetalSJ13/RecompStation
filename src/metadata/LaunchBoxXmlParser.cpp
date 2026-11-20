@@ -3,6 +3,7 @@
 #include <QSet>
 #include <QFile>
 #include <QXmlStreamReader>
+#include <atomic>
 
 namespace {
 
@@ -278,7 +279,8 @@ namespace {
 template <typename Record, typename ParseRecord, typename IsUsable, typename Consumer>
 bool streamCatalogFile(const QString &path, const QString &catalogName,
                        ParseRecord parseRecord, IsUsable isUsable,
-                       const Consumer &consumer, QString *errorMessage)
+                       const Consumer &consumer, QString *errorMessage,
+                       const std::atomic_bool *cancelled)
 {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -302,6 +304,11 @@ bool streamCatalogFile(const QString &path, const QString &catalogName,
 
     int recordCount = 0;
     while (reader.readNextStartElement()) {
+        if (cancelled && cancelled->load()) {
+            if (errorMessage)
+                *errorMessage = QStringLiteral("LaunchBox catalog update cancelled.");
+            return false;
+        }
         if (reader.name() != Record::elementName()) {
             reader.skipCurrentElement();
             continue;
@@ -356,7 +363,7 @@ struct GameRecordTag {
 bool LaunchBoxXmlParser::parsePlatformsFile(
     const QString &path,
     const std::function<bool(const LaunchBoxPlatform &)> &consumer,
-    QString *errorMessage)
+    QString *errorMessage, const std::atomic_bool *cancelled)
 {
     return streamCatalogFile<PlatformRecordTag>(
         path, QStringLiteral("Platforms"),
@@ -365,13 +372,13 @@ bool LaunchBoxXmlParser::parsePlatformsFile(
         },
         [](const LaunchBoxPlatform &record) {
             return !normalizedKey(record.name).isEmpty();
-        }, consumer, errorMessage);
+        }, consumer, errorMessage, cancelled);
 }
 
 bool LaunchBoxXmlParser::parseFilesFile(
     const QString &path,
     const std::function<bool(const LaunchBoxFileAssociation &)> &consumer,
-    QString *errorMessage)
+    QString *errorMessage, const std::atomic_bool *cancelled)
 {
     return streamCatalogFile<FileRecordTag>(
         path, QStringLiteral("Files"),
@@ -387,7 +394,7 @@ bool LaunchBoxXmlParser::parseFilesFile(
 bool LaunchBoxXmlParser::parseMetadataFile(
     const QString &path,
     const std::function<bool(const LaunchBoxGameRecord &)> &consumer,
-    QString *errorMessage)
+    QString *errorMessage, const std::atomic_bool *cancelled)
 {
     return streamCatalogFile<GameRecordTag>(
         path, QStringLiteral("Metadata"),
