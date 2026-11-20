@@ -3967,11 +3967,10 @@ ApplicationWindow {
                                         color: theme.sidebarBackground
                                         border.color: theme.divider
                                         clip: true
-                                        gradient: settingsManager.libraryBackgroundType === "static"
-                                            ? Gradient {
-                                                GradientStop { position: 0.0; color: theme.backgroundTop }
-                                                GradientStop { position: 1.0; color: theme.backgroundBottom }
-                                            } : undefined
+                                        gradient: Gradient {
+                                            GradientStop { position: 0.0; color: theme.backgroundTop }
+                                            GradientStop { position: 1.0; color: theme.backgroundBottom }
+                                        }
                                         Image {
                                             anchors.fill: parent
                                             visible: settingsManager.libraryBackgroundType === "custom"
