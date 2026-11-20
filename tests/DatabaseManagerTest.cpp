@@ -68,7 +68,80 @@ private slots:
                  QStringLiteral("https://cdn.example.test/banjo-front.jpg"));
     }
 
-    void reassociatingMetadataReplacesThePreviousMatch()
+    void fallbackMetadataCannotOverwriteExistingAssociation()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY2(database.initialize(
+                     temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+        QVERIFY(database.registerGame(
+            QStringLiteral("Banjo-Kazooie"), QStringLiteral("N64"),
+            temporaryDirectory.path() + "/Banjo-Kazooie.z64"));
+
+        const int gameId = database.games().first().toMap().value("id").toInt();
+        QVERIFY(database.associateMetadata(
+            gameId, QStringLiteral("thegamesdb"), 1234,
+            QStringLiteral("Banjo-Kazooie"), QStringLiteral("Primary overview"),
+            QStringLiteral("1998-06-29"), 3, QStringLiteral("E"),
+            QStringLiteral("https://cdn.example.test/primary.jpg")));
+
+        QVERIFY(!database.associateMetadataIfMissing(
+            gameId, QStringLiteral("launchbox"), 5678,
+            QStringLiteral("Different Banjo-Kazooie"),
+            QStringLiteral("Fallback overview"), QStringLiteral("1998"),
+            0, QStringLiteral("4.5"),
+            QStringLiteral("https://cdn.example.test/fallback.jpg")));
+        QVERIFY(database.lastError().contains(
+            QStringLiteral("already associated")));
+
+        const QVariantMap saved = database.games().first().toMap();
+        QCOMPARE(saved.value("metadataProvider").toString(),
+                 QStringLiteral("thegamesdb"));
+        QCOMPARE(saved.value("metadataGameId").toInt(), 1234);
+        QCOMPARE(saved.value("metadataTitle").toString(),
+                 QStringLiteral("Banjo-Kazooie"));
+        QCOMPARE(saved.value("metadataOverview").toString(),
+                 QStringLiteral("Primary overview"));
+        QCOMPARE(saved.value("metadataReleaseDate").toString(),
+                 QStringLiteral("1998-06-29"));
+        QCOMPARE(saved.value("metadataPlatformId").toInt(), 3);
+        QCOMPARE(saved.value("metadataRating").toString(), QStringLiteral("E"));
+        QCOMPARE(saved.value("metadataArtworkUrl").toString(),
+                 QStringLiteral("https://cdn.example.test/primary.jpg"));
+    }
+
+    void fallbackMetadataCanPopulateAnEmptyAssociation()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY2(database.initialize(
+                     temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+        QVERIFY(database.registerGame(
+            QStringLiteral("Banjo-Kazooie"), QStringLiteral("N64"),
+            temporaryDirectory.path() + "/Banjo-Kazooie.z64"));
+
+        const int gameId = database.games().first().toMap().value("id").toInt();
+        QVERIFY(database.associateMetadataIfMissing(
+            gameId, QStringLiteral("launchbox"), 5678,
+            QStringLiteral("Banjo-Kazooie"), QStringLiteral("Fallback overview"),
+            QStringLiteral("1998-06-29"), 0, QStringLiteral("4.5"),
+            QStringLiteral("https://cdn.example.test/fallback.jpg")));
+
+        const QVariantMap saved = database.games().first().toMap();
+        QCOMPARE(saved.value("metadataProvider").toString(),
+                 QStringLiteral("launchbox"));
+        QCOMPARE(saved.value("metadataGameId").toInt(), 5678);
+        QCOMPARE(saved.value("metadataOverview").toString(),
+                 QStringLiteral("Fallback overview"));
+    }
+
+    void sameProviderMetadataRefreshCanStillCorrectAnExistingMatch()
     {
         QTemporaryDir temporaryDirectory;
         QVERIFY(temporaryDirectory.isValid());
