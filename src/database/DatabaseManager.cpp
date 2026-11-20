@@ -146,7 +146,7 @@ bool DatabaseManager::createTables()
         return false;
     }
 
-    for (const QString &platform : QStringList{"N64", "PS1", "GameCube", "Wii"}) {
+    for (const QString &platform : QStringList{"N64", "PS1", "GameCube", "Wii", "Xbox"}) {
         QSqlQuery insertQuery(m_database);
         insertQuery.prepare("INSERT OR IGNORE INTO platforms (name) VALUES (:name)");
         insertQuery.bindValue(":name", platform);
