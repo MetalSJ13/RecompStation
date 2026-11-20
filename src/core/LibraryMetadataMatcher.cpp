@@ -471,7 +471,10 @@ bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason)
             }
         }
     } else {
-        candidates = catalog.findGamesByTitle(platform, title);
+        // Query with the full revision-aware key first and its revisionless
+        // counterpart as a secondary candidate source. The matcher still
+        // prefers an exact revision and rejects multiple revisionless results.
+        candidates = catalog.findGamesByRevisionInsensitiveTitle(platform, title);
     }
 
     const LaunchBoxMatchResult result = !associations.isEmpty()
