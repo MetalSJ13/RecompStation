@@ -3960,6 +3960,63 @@ ApplicationWindow {
                                             onActivated: settingsManager.libraryBackgroundType = currentValue
                                         }
                                     }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 148
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: theme.divider
+                                        clip: true
+                                        gradient: settingsManager.libraryBackgroundType === "static"
+                                            ? Gradient {
+                                                GradientStop { position: 0.0; color: theme.backgroundTop }
+                                                GradientStop { position: 1.0; color: theme.backgroundBottom }
+                                            } : undefined
+                                        Image {
+                                            anchors.fill: parent
+                                            visible: settingsManager.libraryBackgroundType === "custom"
+                                                && settingsManager.customLibraryBackground.length > 0
+                                            source: settingsManager.customLibraryBackground
+                                            fillMode: Image.PreserveAspectCrop
+                                            asynchronous: true
+                                            cache: true
+                                            smooth: true
+                                        }
+                                        Image {
+                                            anchors.fill: parent
+                                            visible: settingsManager.libraryBackgroundType === "animated"
+                                            source: libraryVisualSettings.wavePalette === "violet"
+                                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
+                                                : libraryVisualSettings.wavePalette === "emerald"
+                                                    ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
+                                                    : libraryVisualSettings.wavePalette === "ember"
+                                                        ? "qrc:/qt/qml/RecompStation/assets/library-waves-ember.svg"
+                                                        : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                                            fillMode: Image.PreserveAspectCrop
+                                            asynchronous: true
+                                            cache: true
+                                        }
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            color: Qt.rgba(theme.windowBackground.r,
+                                                theme.windowBackground.g, theme.windowBackground.b, 0.24)
+                                        }
+                                        Label {
+                                            anchors.left: parent.left
+                                            anchors.bottom: parent.bottom
+                                            anchors.margins: 12
+                                            text: settingsManager.libraryBackgroundType === "custom"
+                                                && settingsManager.customLibraryBackground.length === 0
+                                                ? "Choose an image to preview it"
+                                                : settingsManager.libraryBackgroundType === "animated"
+                                                    ? "Animated ambience preview"
+                                                    : settingsManager.libraryBackgroundType === "custom"
+                                                        ? "Custom background preview" : "Current theme background"
+                                            color: theme.textPrimary
+                                            font.pixelSize: 12 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                    }
                                     RowLayout {
                                         visible: settingsManager.libraryBackgroundType === "animated"
                                         Layout.fillWidth: true
