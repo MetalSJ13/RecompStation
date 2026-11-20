@@ -106,6 +106,28 @@ void parseFileRecord(QXmlStreamReader &reader, LaunchBoxFileAssociation *file)
     }
 }
 
+void parseGameImageRecord(QXmlStreamReader &reader, LaunchBoxGameImageRecord *image)
+{
+    while (reader.readNextStartElement()) {
+        const QString field = reader.name().toString();
+        const QString value = readText(reader);
+        if (field == QStringLiteral("DatabaseID")) {
+            bool ok = false;
+            const int id = value.toInt(&ok);
+            if (ok && id > 0)
+                image->databaseId = id;
+        } else if (field == QStringLiteral("FileName")) {
+            image->fileName = value;
+        } else if (field == QStringLiteral("Type")) {
+            image->type = value;
+        } else if (field == QStringLiteral("Region")) {
+            image->region = value;
+        } else if (field == QStringLiteral("CRC32")) {
+            image->crc32 = value;
+        }
+    }
+}
+
 void parseGameRecord(QXmlStreamReader &reader, LaunchBoxGameRecord *game)
 {
     while (reader.readNextStartElement()) {
@@ -236,6 +258,40 @@ bool LaunchBoxXmlParser::parseFiles(
     return true;
 }
 
+bool LaunchBoxXmlParser::parseGameImages(
+    const QByteArray &xml, QList<LaunchBoxGameImageRecord> *images,
+    QString *errorMessage)
+{
+    if (!images) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("A game-image destination is required.");
+        return false;
+    }
+    QXmlStreamReader reader;
+    if (!beginDocument(xml, &reader, errorMessage))
+        return false;
+
+    QList<LaunchBoxGameImageRecord> parsed;
+    while (reader.readNextStartElement()) {
+        if (reader.name() != QStringLiteral("GameImage")) {
+            reader.skipCurrentElement();
+            continue;
+        }
+        LaunchBoxGameImageRecord image;
+        parseGameImageRecord(reader, &image);
+        if (image.databaseId <= 0 || image.fileName.isEmpty()
+            || image.type.isEmpty())
+            continue;
+        parsed.append(image);
+    }
+
+    if (!finishDocument(reader, QStringLiteral("Game images"), parsed.size(),
+                        errorMessage))
+        return false;
+    *images = parsed;
+    return true;
+}
+
 bool LaunchBoxXmlParser::parseMetadata(const QByteArray &xml,
                                        QList<LaunchBoxGameRecord> *games,
                                        QString *errorMessage)
@@ -357,6 +413,10 @@ struct GameRecordTag {
     using value_type = LaunchBoxGameRecord;
     static QString elementName() { return QStringLiteral("Game"); }
 };
+struct GameImageRecordTag {
+    using value_type = LaunchBoxGameImageRecord;
+    static QString elementName() { return QStringLiteral("GameImage"); }
+};
 
 } // namespace
 
@@ -404,5 +464,21 @@ bool LaunchBoxXmlParser::parseMetadataFile(
         [](const LaunchBoxGameRecord &record) {
             return record.databaseId > 0 && !record.name.isEmpty()
                 && !record.platform.isEmpty();
+        }, consumer, errorMessage, cancelled);
+}
+
+bool LaunchBoxXmlParser::parseGameImagesFile(
+    const QString &path,
+    const std::function<bool(const LaunchBoxGameImageRecord &)> &consumer,
+    QString *errorMessage, const std::atomic_bool *cancelled)
+{
+    return streamCatalogFile<GameImageRecordTag>(
+        path, QStringLiteral("Game images"),
+        [](QXmlStreamReader &reader, LaunchBoxGameImageRecord *record) {
+            parseGameImageRecord(reader, record);
+        },
+        [](const LaunchBoxGameImageRecord &record) {
+            return record.databaseId > 0 && !record.fileName.isEmpty()
+                && !record.type.isEmpty();
         }, consumer, errorMessage, cancelled);
 }
