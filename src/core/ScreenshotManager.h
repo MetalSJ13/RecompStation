@@ -27,7 +27,7 @@ public:
 signals:
     void busyChanged();
     void statusChanged();
-    void refreshFinished(int downloaded, int withoutScreenshots, int failed);
+    void refreshFinished(int downloaded, int skipped, int withoutScreenshots, int failed);
 
 private:
     void processNextGame();
@@ -44,6 +44,7 @@ private:
     int m_currentGameId = 0;
     int m_currentProviderGameId = 0;
     int m_downloaded = 0;
+    int m_skipped = 0;
     int m_withoutScreenshots = 0;
     int m_failed = 0;
     bool m_busy = false;
