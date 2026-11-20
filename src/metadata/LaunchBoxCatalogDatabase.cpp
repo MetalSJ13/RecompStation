@@ -356,8 +356,10 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             insertImage.bindValue(0, image.databaseId);
             insertImage.bindValue(1, image.fileName);
             insertImage.bindValue(2, image.type);
-            insertImage.bindValue(3, image.region);
-            insertImage.bindValue(4, image.crc32);
+            insertImage.bindValue(3, image.region.isNull()
+                                             ? QStringLiteral("") : image.region);
+            insertImage.bindValue(4, image.crc32.isNull()
+                                             ? QStringLiteral("") : image.crc32);
             if (!insertImage.exec()) {
                 insertError = QStringLiteral(
                     "Could not insert LaunchBox image record (database ID %1, file '%2', type '%3'): %4")
