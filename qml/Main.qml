@@ -575,6 +575,13 @@ ApplicationWindow {
             if (settingsManager.libraryView === "grid") {
                 window.gridRevealToken += 1
                 window.initialGridRevealPending = false
+            } else if (settingsManager.libraryView === "carousel") {
+                Qt.callLater(function() {
+                    if (settingsManager.libraryView === "carousel"
+                            && gameCarousel.count > 0 && gameGrid.currentIndex >= 0) {
+                        gameCarousel.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+                    }
+                })
             }
         }
     }
@@ -2516,7 +2523,7 @@ ApplicationWindow {
                                         Layout.minimumWidth: 125
                                         spacing: 3
                                         Label {
-                                            text: settingsManager.libraryView === "grid" ? "CARD SIZE" : "ROW SIZE"
+                                            text: settingsManager.libraryView === "list" ? "ROW SIZE" : "CARD SIZE"
                                             color: theme.textMuted
                                             font.pixelSize: 9 * theme.fontScale
                                             font.bold: true
@@ -2533,14 +2540,14 @@ ApplicationWindow {
                                                 { label: "Spacious", value: "spacious" }
                                             ]
                                             currentIndex: Math.max(0, indexOfValue(
-                                                settingsManager.libraryView === "grid"
-                                                    ? settingsManager.libraryDensity
-                                                    : settingsManager.libraryListDensity))
+                                                settingsManager.libraryView === "list"
+                                                    ? settingsManager.libraryListDensity
+                                                    : settingsManager.libraryDensity))
                                             onActivated: {
-                                                if (settingsManager.libraryView === "grid")
-                                                    settingsManager.libraryDensity = currentValue
-                                                else
+                                                if (settingsManager.libraryView === "list")
                                                     settingsManager.libraryListDensity = currentValue
+                                                else
+                                                    settingsManager.libraryDensity = currentValue
                                             }
                                         }
                                     }
@@ -3145,7 +3152,10 @@ ApplicationWindow {
                             flickDeceleration: 2200
                             maximumFlickVelocity: 1500
                             spacing: 22
-                            readonly property real cardWidth: 248
+                            readonly property real cardWidth:
+                                settingsManager.libraryDensity === "compact" ? 218
+                                : settingsManager.libraryDensity === "spacious" ? 258 : 238
+                            readonly property real cardHeight: 390
                             leftMargin: Math.max(28, (width - cardWidth) / 2)
                             rightMargin: leftMargin
                             model: gameGrid.model
@@ -3183,8 +3193,8 @@ ApplicationWindow {
                                 required property int id
                                 required property int index
                                 width: gameCarousel.cardWidth
-                                height: gameCarousel.height - 36
-                                y: 18
+                                height: gameCarousel.cardHeight
+                                y: (gameCarousel.height - height) / 2
                                 readonly property real edgeDistance: Math.min(
                                     carouselTile.x + carouselTile.width / 2 - gameCarousel.contentX,
                                     gameCarousel.width - (carouselTile.x + carouselTile.width / 2
@@ -3246,6 +3256,7 @@ ApplicationWindow {
                                                            theme.background.b, 0.42)
                                             clip: true
                                             Image {
+                                                id: carouselCover
                                                 anchors.fill: parent
                                                 anchors.margins: 7
                                                 source: carouselTile.artworkPath
@@ -3262,8 +3273,7 @@ ApplicationWindow {
                                                 fillMode: Image.PreserveAspectFit
                                                 asynchronous: true
                                                 cache: true
-                                                visible: parent.children.length > 0
-                                                    && parent.children[0].status !== Image.Ready
+                                                visible: carouselCover.status !== Image.Ready
                                             }
                                         }
                                         Label {
