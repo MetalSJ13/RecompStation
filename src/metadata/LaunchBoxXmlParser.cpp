@@ -272,23 +272,32 @@ bool LaunchBoxXmlParser::parseGameImages(
         return false;
 
     QList<LaunchBoxGameImageRecord> parsed;
-    while (reader.readNextStartElement()) {
-        if (reader.name() != QStringLiteral("GameImage")) {
-            reader.skipCurrentElement();
+    while (!reader.atEnd()) {
+        reader.readNext();
+        if (!reader.isStartElement()
+            || reader.name() != QStringLiteral("GameImage"))
             continue;
-        }
         LaunchBoxGameImageRecord image;
         parseGameImageRecord(reader, &image);
-        if (image.databaseId <= 0 || image.fileName.isEmpty()
-            || image.type.isEmpty())
-            continue;
-        parsed.append(image);
+        if (image.databaseId > 0 && !image.fileName.isEmpty()
+            && !image.type.isEmpty())
+            parsed.append(image);
     }
 
-    if (!finishDocument(reader, QStringLiteral("Game images"), parsed.size(),
-                        errorMessage))
+    if (reader.hasError()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("Invalid Game images XML: %1")
+                                .arg(reader.errorString());
         return false;
+    }
+    if (parsed.isEmpty()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("Game images XML contains no usable records.");
+        return false;
+    }
     *images = parsed;
+    if (errorMessage)
+        errorMessage->clear();
     return true;
 }
 
@@ -473,13 +482,56 @@ bool LaunchBoxXmlParser::parseGameImagesFile(
     const std::function<bool(const LaunchBoxGameImageRecord &)> &consumer,
     QString *errorMessage, const std::atomic_bool *cancelled)
 {
-    return streamCatalogFile<GameImageRecordTag>(
-        path, QStringLiteral("Game images"),
-        [](QXmlStreamReader &reader, LaunchBoxGameImageRecord *record) {
-            parseGameImageRecord(reader, record);
-        },
-        [](const LaunchBoxGameImageRecord &record) {
-            return record.databaseId > 0 && !record.fileName.isEmpty()
-                && !record.type.isEmpty();
-        }, consumer, errorMessage, cancelled, false);
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("Could not open Game images XML: %1")
+                                .arg(file.errorString());
+        return false;
+    }
+
+    QXmlStreamReader reader(&file);
+    if (!reader.readNextStartElement()
+        || reader.name() != QStringLiteral("LaunchBox")) {
+        if (errorMessage)
+            *errorMessage = reader.hasError()
+                ? reader.errorString()
+                : QStringLiteral("Expected a LaunchBox root element in Game images XML.");
+        return false;
+    }
+
+    int recordCount = 0;
+    while (!reader.atEnd()) {
+        reader.readNext();
+        if (cancelled && cancelled->load()) {
+            if (errorMessage)
+                *errorMessage = QStringLiteral("LaunchBox catalog update cancelled.");
+            return false;
+        }
+        if (!reader.isStartElement()
+            || reader.name() != QStringLiteral("GameImage"))
+            continue;
+
+        LaunchBoxGameImageRecord image;
+        parseGameImageRecord(reader, &image);
+        if (image.databaseId <= 0 || image.fileName.isEmpty()
+            || image.type.isEmpty())
+            continue;
+        if (!consumer(image)) {
+            if (errorMessage)
+                *errorMessage = QStringLiteral("The Game images record consumer rejected a record.");
+            return false;
+        }
+        ++recordCount;
+    }
+
+    if (reader.hasError()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("Invalid Game images XML: %1")
+                                .arg(reader.errorString());
+        return false;
+    }
+    if (errorMessage)
+        errorMessage->clear();
+    return true;
 }
