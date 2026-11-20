@@ -35,7 +35,11 @@ QString normalizedTitle(QString title)
         QStringLiteral(
             R"(\s*[\(\[]\s*(?:USA|US|U|Europe|EUR|EU|E|Japan|JPN|JP|J|World|W)\s*[\)\]])"),
         QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression languageTag(
+        QStringLiteral(R"(\s*[\(\[]\s*(?:EN|ENG|FR|FRE|ES|SPA|DE|GER|IT|ITA|NL|DUT|PT|POR|SV|SWE|NO|NOR|DA|DAN|FI|FIN|PL|POL|RU|RUS|JA|JPN|ZH|CHI|KO|KOR|CS|CZE|HU|HUN|TR|TUR|AR|HE|TH|EL|GRE|RO|RON|BG|BUL|HR|CRO|SK|SL|UK|UKR|VI|ID|MS|CA|EU|GL)(?:\s*[,;+]\s*(?:EN|ENG|FR|FRE|ES|SPA|DE|GER|IT|ITA|NL|DUT|PT|POR|SV|SWE|NO|NOR|DA|DAN|FI|FIN|PL|POL|RU|RUS|JA|JPN|ZH|CHI|KO|KOR|CS|CZE|HU|HUN|TR|TUR|AR|HE|TH|EL|GRE|RO|RON|BG|BUL|HR|CRO|SK|SL|UK|UKR|VI|ID|MS|CA|EU|GL))*\s*[\)\]])"),
+        QRegularExpression::CaseInsensitiveOption);
     title.remove(regionTag);
+    title.remove(languageTag);
     title = title.normalized(QString::NormalizationForm_D);
     QString result;
     result.reserve(title.size());
