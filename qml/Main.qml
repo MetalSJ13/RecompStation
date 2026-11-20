@@ -2573,11 +2573,19 @@ ApplicationWindow {
                             bottomMargin: 10
                             leftMargin: 8
                             rightMargin: 8
-                            readonly property int preferredColumns: settingsManager.libraryDensity === "compact" ? 10
-                                : settingsManager.libraryDensity === "spacious" ? 6 : 8
-                            cellWidth: Math.max(180, Math.min(480,
-                                Math.floor(width / Math.max(1, preferredColumns))))
-                            cellHeight: Math.round(cellWidth * 1.35)
+                            // Choose a density-specific target card width, then divide
+                            // the complete viewport by the resulting column count. This
+                            // avoids the unused right-edge strip caused by fixed preferred
+                            // column counts and integer cell-width rounding.
+                            readonly property real targetCardWidth:
+                                settingsManager.libraryDensity === "compact" ? 190
+                                : settingsManager.libraryDensity === "spacious" ? 290 : 230
+                            readonly property int responsiveColumns:
+                                Math.max(1, Math.floor(width / Math.max(1, targetCardWidth)))
+                            cellWidth: width > 0 ? width / responsiveColumns : targetCardWidth
+                            // Reserve enough vertical room for the shared 2:3 artwork
+                            // frame plus the title and platform footer.
+                            cellHeight: Math.round(cellWidth * 1.76)
                             // Window-level shortcuts own directional movement so
                             // keyboard input cannot be processed twice by the view.
                             keyNavigationEnabled: false
@@ -2774,9 +2782,12 @@ ApplicationWindow {
                                         Rectangle {
                                             Layout.fillWidth: true
                                             Layout.fillHeight: true
-                                            // Artwork flexes with the card instead of
-                                            // forcing the footer outside short cards.
+                                            // Every platform uses the same portrait
+                                            // artwork window. Landscape covers remain
+                                            // uncropped in front of a fitted blurred fill.
+                                            Layout.preferredHeight: Math.round((gameTile.width - 34) * 1.5)
                                             Layout.minimumHeight: 96
+                                            Layout.maximumHeight: Math.round((gameTile.width - 34) * 1.5)
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
                                             border.width: 1
@@ -2795,6 +2806,8 @@ ApplicationWindow {
                                                 anchors.fill: parent
                                                 source: gameTile.artworkPath
                                                 fillMode: Image.PreserveAspectCrop
+                                                horizontalAlignment: Image.AlignHCenter
+                                                verticalAlignment: Image.AlignVCenter
                                                 asynchronous: true
                                                 cache: true
                                                 visible: gameTile.artworkPath.length > 0
@@ -2851,27 +2864,7 @@ ApplicationWindow {
                                                 font.pixelSize: 12 * theme.fontScale
                                                 elide: Text.ElideRight
                                             }
-                                            Rectangle {
-                                                visible: gameTile.metadataTitle.length > 0
-                                                radius: 5
-                                                color: Qt.rgba(theme.success.r, theme.success.g,
-                                                               theme.success.b, 0.12)
-                                                border.width: 1
-                                                border.color: Qt.rgba(theme.success.r, theme.success.g,
-                                                                      theme.success.b, 0.24)
-                                                implicitWidth: metadataTagLabel.implicitWidth + 14
-                                                implicitHeight: 22
 
-                                                Label {
-                                                    id: metadataTagLabel
-                                                    anchors.centerIn: parent
-                                                    text: "METADATA"
-                                                    color: theme.success
-                                                    font.pixelSize: 9 * theme.fontScale
-                                                    font.bold: true
-                                                    font.letterSpacing: 0.5
-                                                }
-                                            }
                                         }
                                     }
                                 }
@@ -3031,8 +3024,6 @@ ApplicationWindow {
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Label { text: listTile.platform; color: theme.textSecondary; font.pixelSize: 11 * theme.fontScale }
-                                        Rectangle { width: 5; height: 5; radius: 3; color: theme.textMuted }
-                                        Label { text: listTile.metadataTitle.length > 0 ? "Metadata available" : "Metadata pending"; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale }
                                     }
                                 }
                                 MouseArea {
