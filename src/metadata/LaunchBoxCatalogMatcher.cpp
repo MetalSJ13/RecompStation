@@ -30,16 +30,6 @@ QString titleWithoutExtension(const QString &value)
     return info.fileName();
 }
 
-QString normalizedTitleWithoutRevision(const QString &title)
-{
-    static const QRegularExpression revisionTag(
-        QStringLiteral(R"(\s*[\(\[]\s*(?:Rev(?:ision)?|v)\s*[A-Z0-9.]+\s*[\)\]])"),
-        QRegularExpression::CaseInsensitiveOption);
-    QString value = title;
-    value.remove(revisionTag);
-    return LaunchBoxCatalogMatcher::normalizedTitle(value);
-}
-
 LaunchBoxMatchResult resultForCandidates(const QList<int> &matches,
                                         const QString &description)
 {
@@ -71,6 +61,16 @@ QString LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(
     if (key == QStringLiteral("xbox"))
         return QStringLiteral("Microsoft Xbox");
     return {};
+}
+
+QString LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(const QString &title)
+{
+    static const QRegularExpression revisionTag(
+        QStringLiteral(R"(\s*[\(\[]\s*(?:Rev(?:ision)?|v)\s*[A-Z0-9.]+\s*[\)\]])"),
+        QRegularExpression::CaseInsensitiveOption);
+    QString value = title;
+    value.remove(revisionTag);
+    return normalizedTitle(value);
 }
 
 QString LaunchBoxCatalogMatcher::normalizedTitle(const QString &input)
