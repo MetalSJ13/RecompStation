@@ -185,8 +185,8 @@ The following notes record focused implementation and user-validation updates. T
 
 **LaunchBox artwork integration — implementation plan**
 
-- [ ] Extend the streaming XML parser to recognize and validate `GameImage` records (LaunchBox database ID, file name, type, region, and CRC32).
-- [ ] Add a locally indexed image table keyed by LaunchBox database ID/type/region, with lookup/count APIs and rollback-safe catalog rebuild behavior.
+- [ ] Extend the streaming XML parser to recognize and validate `GameImage` records (LaunchBox database ID, file name, type, region, and CRC32). **Implementation committed; local build/test verification pending.**
+- [ ] Add a locally indexed image table keyed by LaunchBox database ID/type/region, with lookup/count APIs and rollback-safe catalog rebuild behavior. **Implementation committed; local build/test verification pending.**
 - [ ] Implement deterministic image selection for front covers and screenshots, preserving all regional/type variants in the catalog.
 - [ ] Integrate image downloads with the existing artwork/cache infrastructure using the verified `images.launchbox-app.com` host, image validation, no-overwrite behavior, and bounded retries.
 - [ ] Add a centralized batch scheduler: maximum five in-flight image requests, five-request batches, 500 ms inter-batch pause, 429 backoff/Retry-After handling, and provider pause on 403.
