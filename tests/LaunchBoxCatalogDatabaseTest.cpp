@@ -158,7 +158,7 @@ private slots:
             directory.path() + "/Files.xml",
             directory.path() + "/Metadata.xml", &cancelled));
         QVERIFY(catalog.lastError().contains(QStringLiteral("cancelled")));
-        QCOMPARE(catalog.gameCount(), 3);
+        QCOMPARE(catalog.gameCount(), 4);
         QCOMPARE(catalog.indexedAt(), originalIndexedAt);
     }
 
@@ -178,7 +178,7 @@ private slots:
             directory.path() + "/Platforms.xml",
             directory.path() + "/missing.xml",
             directory.path() + "/Metadata.xml"));
-        QCOMPARE(catalog.gameCount(), 3);
+        QCOMPARE(catalog.gameCount(), 4);
     }
 
     void requiresOpenDatabaseAndValidOutput()
