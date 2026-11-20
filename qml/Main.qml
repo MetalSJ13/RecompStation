@@ -4582,6 +4582,14 @@ ApplicationWindow {
                                                 font.pixelSize: 11 * theme.fontScale
                                                 wrapMode: Text.Wrap
                                             }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                visible: launchBoxArtworkManager.status.length > 0
+                                                text: launchBoxArtworkManager.status
+                                                color: theme.textMuted
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
                                         }
                                     }
 
