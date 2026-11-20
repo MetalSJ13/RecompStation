@@ -13,6 +13,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool scanOnStartup READ scanOnStartup WRITE setScanOnStartup NOTIFY scanOnStartupChanged)
     Q_PROPERTY(bool theGamesDbEnabled READ theGamesDbEnabled NOTIFY theGamesDbEnabledChanged)
     Q_PROPERTY(bool launchBoxEnabled READ launchBoxEnabled NOTIFY launchBoxEnabledChanged)
+    Q_PROPERTY(QString launchBoxLastUpdated READ launchBoxLastUpdated NOTIFY launchBoxLastUpdatedChanged)
     Q_PROPERTY(QString preferredPresentationSize READ preferredPresentationSize WRITE setPreferredPresentationSize NOTIFY preferredPresentationSizeChanged)
     Q_PROPERTY(QString displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged)
     Q_PROPERTY(QString restoreDisplayMode READ restoreDisplayMode WRITE setRestoreDisplayMode NOTIFY restoreDisplayModeChanged)
@@ -39,6 +40,8 @@ public:
 
     bool launchBoxEnabled() const;
     Q_INVOKABLE void setLaunchBoxEnabled(bool enabled);
+    QString launchBoxLastUpdated() const;
+    Q_INVOKABLE void setLaunchBoxLastUpdated(const QString &timestamp);
 
     Q_INVOKABLE QVariantMap controllerProfile(const QString &guid) const;
     Q_INVOKABLE bool saveControllerProfile(const QString &guid, const QVariantMap &profile);
@@ -76,6 +79,7 @@ signals:
     void scanOnStartupChanged();
     void theGamesDbEnabledChanged();
     void launchBoxEnabledChanged();
+    void launchBoxLastUpdatedChanged();
     void preferredPresentationSizeChanged();
     void displayModeChanged();
     void restoreDisplayModeChanged();
@@ -103,6 +107,7 @@ private:
     bool m_scanOnStartup = true;
     bool m_theGamesDbEnabled = true;
     bool m_launchBoxEnabled = false;
+    QString m_launchBoxLastUpdated;
     static QVariantMap defaultControllerProfile();
     static bool isValidControllerGuid(const QString &guid);
     static bool isSupportedTheme(const QString &themeName);
