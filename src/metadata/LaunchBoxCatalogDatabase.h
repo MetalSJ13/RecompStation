@@ -37,10 +37,12 @@ public:
     QList<LaunchBoxGameRecord> findGamesByRevisionInsensitiveTitle(
         const QString &internalPlatform, const QString &title) const;
     bool gameByDatabaseId(int databaseId, LaunchBoxGameRecord *game) const;
+    QList<LaunchBoxGameImageRecord> imagesByDatabaseId(int databaseId) const;
 
     int platformCount() const;
     int fileAssociationCount() const;
     int gameCount() const;
+    int gameImageCount() const;
     QString indexedAt() const;
 
 private:
