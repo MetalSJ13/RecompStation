@@ -55,7 +55,7 @@ bool finishDocument(QXmlStreamReader &reader, const QString &catalogName,
                                 .arg(catalogName, reader.errorString());
         return false;
     }
-    if (requireUsableRecords && recordCount == 0) {
+    if (recordCount == 0) {
         if (errorMessage)
             *errorMessage = QStringLiteral("%1 XML contains no usable records.")
                                 .arg(catalogName);
@@ -391,7 +391,7 @@ bool streamCatalogFile(const QString &path, const QString &catalogName,
                                 .arg(catalogName, reader.errorString());
         return false;
     }
-    if (recordCount == 0) {
+    if (requireUsableRecords && recordCount == 0) {
         if (errorMessage)
             *errorMessage = QStringLiteral("%1 XML contains no usable records.")
                                 .arg(catalogName);
