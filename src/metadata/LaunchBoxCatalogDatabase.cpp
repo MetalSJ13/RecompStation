@@ -344,10 +344,6 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     const bool imagesOk = LaunchBoxXmlParser::parseGameImagesFile(
         metadataXmlPath,
         [&](const LaunchBoxGameImageRecord &image) {
-            // Explicitly reset the prepared statement between streamed records.
-            // This avoids retaining an active SQLite statement state while the
-            // XML parser advances to the next image.
-            insertImage.finish();
             insertImage.bindValue(0, image.databaseId);
             insertImage.bindValue(1, image.fileName);
             insertImage.bindValue(2, image.type);
