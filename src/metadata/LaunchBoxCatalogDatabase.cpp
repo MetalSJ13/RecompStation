@@ -407,20 +407,21 @@ QList<LaunchBoxGameRecord> LaunchBoxCatalogDatabase::findGamesByRevisionInsensit
     if (canonical.isEmpty())
         return result;
 
+    const QString exactKey = LaunchBoxCatalogMatcher::normalizedTitle(title);
+    const QString revisionlessKey =
+        LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(title);
     QSqlQuery query(m_database);
     query.prepare(gameSelect
-        + QStringLiteral("WHERE platform_key = ? ORDER BY database_id"));
+        + QStringLiteral("WHERE platform_key = ? AND title_key IN (?, ?) "
+                         "ORDER BY database_id"));
     query.addBindValue(platformKey(canonical));
+    query.addBindValue(exactKey);
+    query.addBindValue(revisionlessKey);
     if (!query.exec())
         return result;
 
-    const QString wanted =
-        LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(title);
-    while (query.next()) {
-        LaunchBoxGameRecord game = gameFromQuery(query);
-        if (LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(game.name) == wanted)
-            result.append(game);
-    }
+    while (query.next())
+        result.append(gameFromQuery(query));
     return result;
 }
 
