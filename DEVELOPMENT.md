@@ -174,9 +174,26 @@ The following notes record focused implementation and user-validation updates. T
 - Updating the LaunchBox catalog does not automatically retry unresolved games. The user can explicitly run Refresh Metadata after the catalog update; an optional targeted retry action can be considered later.
 - During a catalog update, skip fallback lookups rather than opening a catalog while its file is being replaced. Existing LaunchBox associations remain intact if TheGamesDB has no result; a confident TheGamesDB match may upgrade a LaunchBox association to the primary provider.
 - Never replace an existing metadata association with LaunchBox data. Add a database-level guard in addition to matcher-level routing. Missing LaunchBox fields must not erase populated values.
-- Keep artwork independent. The inspected LaunchBox game records do not establish an artwork URL/source; do not assume artwork is included in the metadata catalog or overwrite existing artwork. Artwork-provider integration is a separate decision.
+- Keep artwork independent from metadata provenance. LaunchBox artwork is a separate optional capability and may fill missing artwork even when game metadata came from TheGamesDB. Resolve artwork only through the confidently matched LaunchBox `DatabaseID`; never perform a second title-only image match.
+- Parse `<GameImage>` records from the existing `Metadata.xml` and index image metadata locally by LaunchBox `DatabaseID`, image type, and region. Store the image `FileName` and construct downloads only from the verified image host `https://images.launchbox-app.com/{FileName}`; do not use the Games Database page URL, which produced redirect-loop behavior in diagnostics.
+- Initially prioritize `Box - Front` for cover artwork and `Screenshot - Gameplay` plus `Screenshot - Game Title` for screenshots. Region ordering is a provisional selection preference (North America, World, Europe, Japan, then unspecified); retain all indexed variants so this can be adjusted without re-downloading the catalog.
+- Download actual image files only when a matched game in the user's library needs them. Reuse cached files, validate HTTP response, content type, image decoding, and dimensions before database association, and never replace an existing cover automatically. Keep screenshots separate in the existing screenshot model.
+- Use conservative image-request scheduling: at most five concurrent HTTP image requests, process requests in batches of five, and wait 500 ms between batches. These are RecompStation safety defaults, not a claim about LaunchBox's published limits (no authoritative numeric image-host limit has been established). Make the settings centralized so they can be tuned.
+- Handle HTTP 429 by honoring `Retry-After` when supplied and otherwise applying bounded exponential backoff. Treat HTTP 403 as a signal to pause further LaunchBox image requests and report the issue; retry transient network/5xx failures only a limited number of times. Cache successful downloads and avoid repeating requests for already available images.
 - Do not integrate `Mame.xml` in this initial console-library implementation. It is an arcade/MAME machine catalog with distinct short-name and clone relationships; revisit it only if arcade library support is planned.
 - Provide a manual catalog update action and consider an optional periodic update check. Do not silently download large archives without the user's enablement and update preferences.
+
+**LaunchBox artwork integration — implementation plan**
+
+- [ ] Extend the streaming XML parser to recognize and validate `GameImage` records (LaunchBox database ID, file name, type, region, and CRC32).
+- [ ] Add a locally indexed image table keyed by LaunchBox database ID/type/region, with lookup/count APIs and rollback-safe catalog rebuild behavior.
+- [ ] Implement deterministic image selection for front covers and screenshots, preserving all regional/type variants in the catalog.
+- [ ] Integrate image downloads with the existing artwork/cache infrastructure using the verified `images.launchbox-app.com` host, image validation, no-overwrite behavior, and bounded retries.
+- [ ] Add a centralized batch scheduler: maximum five in-flight image requests, five-request batches, 500 ms inter-batch pause, 429 backoff/Retry-After handling, and provider pause on 403.
+- [ ] Populate missing cover artwork independently of metadata source; never replace existing artwork automatically.
+- [ ] Populate gameplay/title screenshots through the existing screenshot storage path, without conflating screenshots with cover artwork.
+- [ ] Add parser, database, scheduler, HTTP failure, image-validation, cache, and no-overwrite regression tests.
+- [ ] Build and run the complete regression suite, then validate locally with Banjo-Kazooie and representative games that have missing artwork. Confirm the user-visible cover and screenshot behavior before marking the work complete.
 
 **Implementation order**
 - [x] Strengthen `DatabaseManager::associateMetadata()` so an existing provider association cannot be overwritten by a fallback insert; add regression tests for existing metadata and missing-field preservation. **Verified:** user confirmed `./scripts/build.sh --test` completed successfully with all tests passing.
