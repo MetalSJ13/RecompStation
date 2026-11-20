@@ -98,6 +98,10 @@ int main(int argc, char *argv[])
     LibraryMetadataMatcher metadataMatcher(&databaseManager, &metadataManager,
                                            &artworkManager, &launchBoxCatalogManager,
                                            &settingsManager);
+    QObject::connect(&metadataMatcher, &LibraryMetadataMatcher::scrapeFinished,
+                     &launchBoxArtworkManager, [&launchBoxArtworkManager](int, int) {
+        launchBoxArtworkManager.refreshLibraryArtwork();
+    });
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
