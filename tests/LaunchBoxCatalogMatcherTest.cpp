@@ -160,6 +160,18 @@ private slots:
         QCOMPARE(result.status, LaunchBoxMatchResult::Status::UnsupportedPlatform);
     }
 
+    void exactFilenameNormalizationPreservesRegionLanguageAndRevision()
+    {
+        const QString usaRevA = LaunchBoxCatalogMatcher::normalizedFileName(
+            "Banjo-Kazooie (USA) (Rev A).z64");
+        QCOMPARE(usaRevA, LaunchBoxCatalogMatcher::normalizedFileName(
+                             "BANJO KAZOOIE USA REV A"));
+        QVERIFY(usaRevA != LaunchBoxCatalogMatcher::normalizedFileName(
+                              "Banjo-Kazooie (Europe) (Rev A).z64"));
+        QVERIFY(usaRevA != LaunchBoxCatalogMatcher::normalizedFileName(
+                              "Banjo-Kazooie (USA) (Rev B).z64"));
+    }
+
     void stripsRegionsAndLanguageTagsButPreservesRevisionTags()
     {
         QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle("Banjo-Kazooie (USA).z64"),
