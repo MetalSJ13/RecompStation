@@ -8,6 +8,7 @@
 #include "metadata/LaunchBoxCatalogManager.h"
 #include "metadata/LaunchBoxCatalogDatabase.h"
 
+#include <QDir>
 #include <QFile>
 #include <QSignalSpy>
 #include <QTemporaryDir>
