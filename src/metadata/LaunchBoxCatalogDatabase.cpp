@@ -412,13 +412,14 @@ QList<LaunchBoxGameRecord> LaunchBoxCatalogDatabase::findGamesByRevisionInsensit
         LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(title);
     QSqlQuery query(m_database);
     query.prepare(gameSelect
-        + QStringLiteral("WHERE platform_key = ? AND (title_key = ? OR title_key LIKE ?) "
+        + QStringLiteral("WHERE platform_key = ? "
+                         "AND (title_key = ? OR title_key = ? OR title_key LIKE ?) "
                          "ORDER BY database_id"));
     query.addBindValue(platformKey(canonical));
     query.addBindValue(exactKey);
-    // Also retrieve other revision-tagged variants sharing the same canonical
-    // base. The matcher filters the prefix results by the revisionless key and
-    // rejects multiple plausible variants instead of silently choosing one.
+    // Include the canonical title itself as well as revision-tagged variants.
+    // The matcher prefers exact revisions and rejects competing candidates.
+    query.addBindValue(revisionlessKey);
     query.addBindValue(revisionlessKey + QStringLiteral(" %"));
     if (!query.exec())
         return result;
