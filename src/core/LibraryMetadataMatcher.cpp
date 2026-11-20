@@ -101,11 +101,17 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             m_currentGame.value(QStringLiteral("platform")).toString());
         const int matchIndex = bestMatchIndex(localTitle, expectedPlatformId, results);
 
-        // A successful empty provider response is the only condition that
-        // permits LaunchBox fallback. Non-empty but uncertain results remain
-        // unresolved rather than being reinterpreted by a second provider.
-        if (results.isEmpty()) {
-            if (tryLaunchBoxFallback(QStringLiteral("TheGamesDB returned no results.")))
+        // LaunchBox is the second-chance provider whenever TheGamesDB
+        // completes successfully but cannot produce a confident association.
+        // This includes empty, unrelated, and ambiguous result sets. Provider
+        // failures are handled separately by searchFailed and never fall back.
+        if (matchIndex < 0) {
+            const QString reason = results.isEmpty()
+                ? QStringLiteral("TheGamesDB returned no results.")
+                : (matchIndex == -2
+                    ? QStringLiteral("TheGamesDB results were ambiguous.")
+                    : QStringLiteral("TheGamesDB returned no confident match."));
+            if (tryLaunchBoxFallback(reason))
                 return;
         }
 
