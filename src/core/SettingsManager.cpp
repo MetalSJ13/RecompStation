@@ -39,6 +39,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         : kDefaultTheme;
     m_scanOnStartup = settings.value(QStringLiteral("library/scanOnStartup"), true).toBool();
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
+    m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
 
     const QString storedPresentationSize = settings.value(
         QStringLiteral("display/preferredPresentationSize"),
@@ -145,6 +146,29 @@ void SettingsManager::setTheGamesDbEnabled(bool enabled)
     m_theGamesDbEnabled = enabled;
     emit theGamesDbEnabledChanged();
     qCInfo(lcSettings) << "TheGamesDB provider enabled:" << m_theGamesDbEnabled;
+}
+
+bool SettingsManager::launchBoxEnabled() const
+{
+    return m_launchBoxEnabled;
+}
+
+void SettingsManager::setLaunchBoxEnabled(bool enabled)
+{
+    if (m_launchBoxEnabled == enabled)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("metadata/launchBoxEnabled"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist LaunchBox metadata preference.";
+        return;
+    }
+
+    m_launchBoxEnabled = enabled;
+    emit launchBoxEnabledChanged();
+    qCInfo(lcSettings) << "LaunchBox metadata fallback enabled:" << m_launchBoxEnabled;
 }
 
 
