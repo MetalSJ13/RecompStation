@@ -42,6 +42,9 @@ public:
         const QString &localTitle,
         const QList<LaunchBoxGameRecord> &games);
 
+    // Filename keys preserve region, language, and revision tokens while
+    // ignoring only the supported ROM extension and punctuation/case.
+    static QString normalizedFileName(const QString &fileName);
     static QString normalizedTitle(const QString &title);
     static QString normalizedTitleWithoutRevision(const QString &title);
 };
