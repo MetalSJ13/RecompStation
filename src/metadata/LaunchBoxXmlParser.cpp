@@ -404,5 +404,5 @@ bool LaunchBoxXmlParser::parseMetadataFile(
         [](const LaunchBoxGameRecord &record) {
             return record.databaseId > 0 && !record.name.isEmpty()
                 && !record.platform.isEmpty();
-        }, consumer, errorMessage);
+        }, consumer, errorMessage, cancelled);
 }
