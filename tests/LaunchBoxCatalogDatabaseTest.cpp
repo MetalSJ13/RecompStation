@@ -48,6 +48,16 @@ private:
                         <Publisher>Nintendo</Publisher></Game>
                     <Game><DatabaseID>163</DatabaseID><Name>Banjo-Kazooie</Name>
                         <Platform>Nintendo 64</Platform><ReleaseType>ROM Hack</ReleaseType></Game>
+                    <GameImage><DatabaseID>162</DatabaseID>
+                        <FileName>banjo-front-na.jpg</FileName>
+                        <Type>Box - Front</Type><Region>North America</Region>
+                        <CRC32>2977056290</CRC32></GameImage>
+                    <GameImage><DatabaseID>162</DatabaseID>
+                        <FileName>banjo-gameplay.png</FileName>
+                        <Type>Screenshot - Gameplay</Type><Region>World</Region></GameImage>
+                    <GameImage><DatabaseID>163</DatabaseID>
+                        <FileName>romhack-cover.jpg</FileName>
+                        <Type>Box - Front</Type><Region>Europe</Region></GameImage>
                     <Game><DatabaseID>164</DatabaseID><Name>Banjo-Kazooie</Name>
                         <Platform>Nintendo DS</Platform></Game>
                     <Game><DatabaseID>165</DatabaseID><Name>Banjo-Kazooie (Rev B)</Name>
@@ -78,6 +88,7 @@ private slots:
         QCOMPARE(catalog.platformCount(), 2);
         QCOMPARE(catalog.fileAssociationCount(), 1);
         QCOMPARE(catalog.gameCount(), 4);
+        QCOMPARE(catalog.gameImageCount(), 3);
         QVERIFY(!catalog.indexedAt().isEmpty());
 
         const auto associations = catalog.findFileAssociations(
@@ -103,6 +114,16 @@ private slots:
         QCOMPARE(revisionInsensitive.at(0).databaseId, 162);
         QCOMPARE(revisionInsensitive.at(1).databaseId, 163);
         QCOMPARE(revisionInsensitive.at(2).databaseId, 165);
+
+        const auto images = catalog.imagesByDatabaseId(162);
+        QCOMPARE(images.size(), 2);
+        QCOMPARE(images.at(0).databaseId, 162);
+        QCOMPARE(images.at(0).fileName, QStringLiteral("banjo-front-na.jpg"));
+        QCOMPARE(images.at(0).type, QStringLiteral("Box - Front"));
+        QCOMPARE(images.at(0).region, QStringLiteral("North America"));
+        QCOMPARE(images.at(0).crc32, QStringLiteral("2977056290"));
+        QCOMPARE(images.at(1).fileName, QStringLiteral("banjo-gameplay.png"));
+        QVERIFY(catalog.imagesByDatabaseId(999).isEmpty());
 
         LaunchBoxGameRecord byId;
         QVERIFY(catalog.gameByDatabaseId(164, &byId));
@@ -134,6 +155,7 @@ private slots:
             directory.path() + "/Metadata.xml"));
         QVERIFY(!catalog.lastError().isEmpty());
         QCOMPARE(catalog.gameCount(), 4);
+        QCOMPARE(catalog.gameImageCount(), 3);
         QCOMPARE(catalog.indexedAt(), originalIndexedAt);
         QCOMPARE(catalog.findGamesByTitle("N64", "Banjo-Kazooie").size(), 2);
     }
@@ -159,6 +181,7 @@ private slots:
             directory.path() + "/Metadata.xml", &cancelled));
         QVERIFY(catalog.lastError().contains(QStringLiteral("cancelled")));
         QCOMPARE(catalog.gameCount(), 4);
+        QCOMPARE(catalog.gameImageCount(), 3);
         QCOMPARE(catalog.indexedAt(), originalIndexedAt);
     }
 
