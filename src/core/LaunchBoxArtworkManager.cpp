@@ -119,8 +119,12 @@ QList<LaunchBoxArtworkRequest> LaunchBoxArtworkManager::selectRequests(
 
 void LaunchBoxArtworkManager::refreshLibraryArtwork()
 {
-    if (m_busy || !m_database)
+    if (!m_database)
         return;
+    if (m_busy) {
+        m_refreshPending = true;
+        return;
+    }
 
     m_queue.clear();
     m_downloaded = m_skipped = m_failed = m_batchRequests = m_totalRequests = 0;
@@ -211,6 +215,10 @@ void LaunchBoxArtworkManager::processNext()
                       .arg(m_downloaded).arg(m_skipped).arg(m_failed));
         qCInfo(lcArtwork) << m_status;
         emit refreshFinished(m_downloaded, m_skipped, m_failed);
+        if (m_refreshPending) {
+            m_refreshPending = false;
+            QTimer::singleShot(0, this, &LaunchBoxArtworkManager::refreshLibraryArtwork);
+        }
         return;
     }
     if (m_batchRequests >= 5) {
