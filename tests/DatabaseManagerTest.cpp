@@ -322,6 +322,8 @@ private slots:
         image.write("test");
         image.close();
         QCOMPARE(database.gameScreenshots(gameId).size(), 1);
+        const QVariantMap gameWithScreenshots = database.gamesWithMetadata().first().toMap();
+        QCOMPARE(gameWithScreenshots.value("screenshots").toList().size(), 1);
 
         QVERIFY(database.clearGameScreenshots(gameId));
         QVERIFY(database.gameScreenshots(gameId).isEmpty());
