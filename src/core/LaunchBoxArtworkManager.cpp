@@ -43,7 +43,8 @@ LaunchBoxArtworkManager::LaunchBoxArtworkManager(
     DatabaseManager *database, const QString &dataDirectory, QObject *parent)
     : QObject(parent),
       m_database(database),
-      m_artworkDirectory(QDir(dataDirectory).filePath(QStringLiteral("artwork/launchbox")))
+      m_artworkDirectory(QDir(dataDirectory).filePath(QStringLiteral("artwork/launchbox"))),
+      m_catalogPath(QDir(dataDirectory).filePath(QStringLiteral("metadata/launchbox/catalog.sqlite")))
 {
     m_batchPause.setSingleShot(true);
     m_batchPause.setInterval(300);
@@ -123,10 +124,7 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
     m_downloaded = m_skipped = m_failed = m_batchRequests = 0;
 
     LaunchBoxCatalogDatabase catalog;
-    if (!catalog.open(QDir(QFileInfo(m_artworkDirectory).absolutePath())
-                          .filePath(QStringLiteral("../metadata/launchbox/catalog.sqlite")))) {
-        // The canonical catalog path is supplied by the data directory, not inferred
-        // from a user-visible artwork location. Resolve it from the known sibling path.
+    if (!catalog.open(m_catalogPath)) {
         setStatus(QStringLiteral("LaunchBox artwork skipped: catalog could not be opened."));
         emit refreshFinished(0, 0, 0);
         return;
@@ -147,7 +145,7 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
 
         const QString currentArtwork = QUrl(game.value(QStringLiteral("artworkPath")).toString())
                                            .toLocalFile();
-        const bool coverExists = !currentArtwork.isEmpty() && QFileInfo::isFile(currentArtwork);
+        const bool coverExists = !currentArtwork.isEmpty() && QFileInfo(currentArtwork).isFile();
         const auto requests = selectRequests(localId, catalogId,
                                              catalog.imagesByDatabaseId(catalogId),
                                              !coverExists, 3);
@@ -160,7 +158,7 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
             const QString destination = QDir(m_artworkDirectory)
                                             .filePath(QString::number(localId) + QLatin1Char('/')
                                                       + request.destination);
-            if (QFileInfo::isFile(destination)) {
+            if (QFileInfo(destination).isFile()) {
                 ++m_skipped;
                 continue;
             }
@@ -259,8 +257,6 @@ void LaunchBoxArtworkManager::processNext()
         processNext();
     });
 }
-
-void LaunchBoxArtworkManager::finishRequest(bool, const QString &) {}
 
 void LaunchBoxArtworkManager::setBusy(bool value)
 {
