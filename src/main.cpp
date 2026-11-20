@@ -12,6 +12,7 @@
 #include "core/GameLaunchManager.h"
 #include "core/LibraryScanner.h"
 #include "core/ArtworkManager.h"
+#include "core/LaunchBoxArtworkManager.h"
 #include "core/ScreenshotManager.h"
 #include "core/LibraryMetadataMatcher.h"
 #include "database/DatabaseManager.h"
@@ -80,6 +81,12 @@ int main(int argc, char *argv[])
     });
     ArtworkManager artworkManager(&databaseManager,
                                   platformManager.dataDirectory() + "/artwork");
+    LaunchBoxArtworkManager launchBoxArtworkManager(&databaseManager,
+                                                     platformManager.dataDirectory());
+    QObject::connect(&launchBoxCatalogManager, &LaunchBoxCatalogManager::updateCompleted,
+                     &launchBoxArtworkManager, [&launchBoxArtworkManager](int, int, int) {
+        launchBoxArtworkManager.refreshLibraryArtwork();
+    });
     ScreenshotManager screenshotManager(&databaseManager,
                                         platformManager.dataDirectory() + "/artwork",
                                         qEnvironmentVariable("RECOMPSTATION_TGDB_API_KEY"));
@@ -126,6 +133,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("libraryScanner", &libraryScanner);
     engine.rootContext()->setContextProperty("metadataManager", &metadataManager);
     engine.rootContext()->setContextProperty("launchBoxCatalogManager", &launchBoxCatalogManager);
+    engine.rootContext()->setContextProperty("launchBoxArtworkManager", &launchBoxArtworkManager);
     engine.rootContext()->setContextProperty("artworkManager", &artworkManager);
     engine.rootContext()->setContextProperty("screenshotManager", &screenshotManager);
     engine.rootContext()->setContextProperty("metadataMatcher", &metadataMatcher);
