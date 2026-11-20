@@ -2642,6 +2642,34 @@ ApplicationWindow {
                                 readonly property int revealBottomVisibleRow:
                                     Math.floor((gameGrid.contentY + gameGrid.height - gameGrid.topMargin)
                                         / Math.max(1, gameGrid.cellHeight))
+                                // Resolve stagger timing to a finite, non-negative integer.
+                                // GridView can briefly report incomplete geometry while its
+                                // delegates are being created during application startup.
+                                readonly property int revealDelayMs: {
+                                    const row = gameTile.revealRow
+                                    const column = gameTile.revealColumn
+                                    const bottomRow = gameTile.revealBottomVisibleRow
+                                    if (!isFinite(row) || !isFinite(column) || !isFinite(bottomRow))
+                                        return 0
+                                    const delay = Math.max(0, bottomRow - row) * 115
+                                        + Math.max(0, column) * 38
+                                    return isFinite(delay) ? Math.max(0, Math.round(delay)) : 0
+                                }
+                                // A delegate must never remain transparent if an animation
+                                // is interrupted by a model/layout change during startup.
+                                Timer {
+                                    id: revealFailsafeTimer
+                                    interval: Math.max(1200, gameTile.revealDelayMs + 900)
+                                    repeat: false
+                                    onTriggered: {
+                                        if (gameTile.revealOpacity < 1) {
+                                            gameTile.revealOpacity = 1
+                                            gameTile.revealScale = 1
+                                            gameTile.revealOffsetY = 0
+                                            revealAnimation.stop()
+                                        }
+                                    }
+                                }
                                 // Grid cards are taller than List rows, so use a
                                 // broader, eased fade to keep fast scrolling natural.
                                 // Smoothstep avoids the linear, abrupt-looking opacity
@@ -2678,6 +2706,7 @@ ApplicationWindow {
                                         if (settingsManager.libraryView !== "grid")
                                             return
                                         if (settingsManager.reducedMotion) {
+                                            revealFailsafeTimer.stop()
                                             gameTile.revealOpacity = 1
                                             gameTile.revealScale = 1
                                             gameTile.revealOffsetY = 0
@@ -2686,6 +2715,7 @@ ApplicationWindow {
                                         gameTile.revealOpacity = 0
                                         gameTile.revealScale = 0.94
                                         gameTile.revealOffsetY = 26
+                                        revealFailsafeTimer.restart()
                                         revealAnimation.restart()
                                     }
                                 }
@@ -2695,9 +2725,7 @@ ApplicationWindow {
                                     PauseAnimation {
                                         // Reveal the bottom row first, then work upward.
                                         // Cards within each row follow from left to right.
-                                        duration: Math.max(0,
-                                            Math.max(0, gameTile.revealBottomVisibleRow - gameTile.revealRow) * 115
-                                            + Math.max(0, gameTile.revealColumn) * 38)
+                                        duration: gameTile.revealDelayMs
                                     }
                                     ParallelAnimation {
                                         NumberAnimation {
@@ -2722,6 +2750,13 @@ ApplicationWindow {
                                             easing.type: Easing.OutCubic
                                         }
                                     }
+                                    onFinished: revealFailsafeTimer.stop()
+                                }
+
+                                Component.onCompleted: {
+                                    if (window.initialGridRevealPending
+                                            && settingsManager.libraryView === "grid")
+                                        revealFailsafeTimer.start()
                                 }
 
                                 readonly property bool highlighted:
