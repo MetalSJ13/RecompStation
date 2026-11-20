@@ -95,6 +95,28 @@ private slots:
                  QStringLiteral("Corrected Match"));
     }
 
+    void registersOriginalXboxAsLibraryPlatform()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+
+        DatabaseManager database;
+        QVERIFY2(database.initialize(
+                     temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+
+        QVERIFY2(database.registerGame(
+                     QStringLiteral("Halo: Combat Evolved"),
+                     QStringLiteral("Xbox"),
+                     temporaryDirectory.path() + "/Xbox/Halo.iso"),
+                 qPrintable(database.lastError()));
+
+        const QVariantList xboxGames = database.games(QStringLiteral("Xbox"));
+        QCOMPARE(xboxGames.size(), 1);
+        QCOMPARE(xboxGames.first().toMap().value("platform").toString(),
+                 QStringLiteral("Xbox"));
+    }
+
     void storesCachedArtworkPath()
     {
         QTemporaryDir temporaryDirectory;
