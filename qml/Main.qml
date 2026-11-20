@@ -3161,6 +3161,7 @@ ApplicationWindow {
                             model: gameGrid.model
                             currentIndex: -1
                             highlightRangeMode: ListView.StrictlyEnforceRange
+                            highlightMoveDuration: settingsManager.reducedMotion ? 0 : 240
                             preferredHighlightBegin: Math.max(0, (width - cardWidth) / 2)
                             preferredHighlightEnd: preferredHighlightBegin + cardWidth
                             Component.onCompleted: {
