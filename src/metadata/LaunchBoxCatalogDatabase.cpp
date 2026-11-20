@@ -327,8 +327,11 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     if (!state.exec())
         return rollback(state.lastError().text());
 
-    if (!m_database.commit())
-        return setError(m_database.lastError().text());
+    if (!m_database.commit()) {
+        const QString commitError = m_database.lastError().text();
+        m_database.rollback();
+        return setError(commitError);
+    }
     m_lastError.clear();
     return true;
 }
