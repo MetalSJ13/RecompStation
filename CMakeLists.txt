@@ -61,6 +61,8 @@ qt_add_executable(RecompStationApp
     src/metadata/LaunchBoxXmlParser.cpp
     src/metadata/LaunchBoxCatalogMatcher.h
     src/metadata/LaunchBoxCatalogMatcher.cpp
+    src/metadata/LaunchBoxCatalogDatabase.h
+    src/metadata/LaunchBoxCatalogDatabase.cpp
     src/metadata/GameMetadata.h
     src/metadata/MetadataPlatformMapping.h
     src/metadata/MetadataProvider.h
@@ -359,6 +361,26 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME LaunchBoxCatalogMatcherTests COMMAND LaunchBoxCatalogMatcherTests)
+
+    qt_add_executable(LaunchBoxCatalogDatabaseTests
+        tests/LaunchBoxCatalogDatabaseTest.cpp
+        src/metadata/LaunchBoxCatalogDatabase.h
+        src/metadata/LaunchBoxCatalogDatabase.cpp
+        src/metadata/LaunchBoxCatalogMatcher.h
+        src/metadata/LaunchBoxCatalogMatcher.cpp
+        src/metadata/LaunchBoxXmlParser.h
+        src/metadata/LaunchBoxXmlParser.cpp
+    )
+
+    target_include_directories(LaunchBoxCatalogDatabaseTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(LaunchBoxCatalogDatabaseTests PRIVATE
+        Qt6::Core Qt6::Sql Qt6::Test
+    )
+
+    add_test(NAME LaunchBoxCatalogDatabaseTests COMMAND LaunchBoxCatalogDatabaseTests)
 
     qt_add_executable(N64RomHashTests
         tests/N64RomHashTest.cpp
