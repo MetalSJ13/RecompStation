@@ -116,7 +116,7 @@ Do not begin with an overwhelming theme editor or dozens of arbitrary color cont
 ## Metadata and artwork maintenance
 
 - LaunchBox catalog indexing may retain the full catalog for matching, but image-file downloads must be restricted to games present in the user's available local library.
-- Resolve artwork records from an existing LaunchBox association when possible; otherwise require a unique, conservative title/platform match. Do not download images for unmatched catalog-only games.
+- Resolve artwork records only through a saved, confident LaunchBox DatabaseID association in the local library. Do not infer an image association from title alone or download images for catalog-only games.
 - Fetch one preferred `Box - Front` cover and up to three `Screenshot - Gameplay` images per matched local game. Prefer North American artwork when available, preserve an existing cover, and reuse valid cached files.
 - Use the verified LaunchBox image CDN host `images.launchbox-app.com`. Keep requests sequential and pause 300 ms after every five image requests. Display artwork progress and downloaded/skipped/failed totals separately from catalog-indexing progress.
 
