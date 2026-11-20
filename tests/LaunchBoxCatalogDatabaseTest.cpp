@@ -50,6 +50,8 @@ private:
                         <Platform>Nintendo 64</Platform><ReleaseType>ROM Hack</ReleaseType></Game>
                     <Game><DatabaseID>164</DatabaseID><Name>Banjo-Kazooie</Name>
                         <Platform>Nintendo DS</Platform></Game>
+                    <Game><DatabaseID>165</DatabaseID><Name>Banjo-Kazooie (Rev B)</Name>
+                        <Platform>Nintendo 64</Platform></Game>
                 </LaunchBox>
             )xml");
         return writeFile(root + "/Platforms.xml", platforms)
@@ -75,7 +77,7 @@ private slots:
 
         QCOMPARE(catalog.platformCount(), 2);
         QCOMPARE(catalog.fileAssociationCount(), 1);
-        QCOMPARE(catalog.gameCount(), 3);
+        QCOMPARE(catalog.gameCount(), 4);
         QVERIFY(!catalog.indexedAt().isEmpty());
 
         const auto associations = catalog.findFileAssociations(
@@ -93,9 +95,10 @@ private slots:
 
         const auto revisionInsensitive = catalog.findGamesByRevisionInsensitiveTitle(
             "N64", "Banjo-Kazooie (USA) (Rev A)");
-        QCOMPARE(revisionInsensitive.size(), 2);
+        QCOMPARE(revisionInsensitive.size(), 3);
         QCOMPARE(revisionInsensitive.at(0).databaseId, 162);
         QCOMPARE(revisionInsensitive.at(1).databaseId, 163);
+        QCOMPARE(revisionInsensitive.at(2).databaseId, 165);
 
         LaunchBoxGameRecord byId;
         QVERIFY(catalog.gameByDatabaseId(164, &byId));
@@ -118,7 +121,7 @@ private slots:
             directory.path() + "/Files.xml",
             directory.path() + "/Metadata.xml"));
         const QString originalIndexedAt = catalog.indexedAt();
-        QCOMPARE(catalog.gameCount(), 3);
+        QCOMPARE(catalog.gameCount(), 4);
 
         QVERIFY(writeCatalog(directory.path(), true));
         QVERIFY(!catalog.rebuildFromXmlFiles(
