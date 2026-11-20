@@ -396,6 +396,34 @@ QList<LaunchBoxGameRecord> LaunchBoxCatalogDatabase::findGamesByTitle(
     return result;
 }
 
+QList<LaunchBoxGameRecord> LaunchBoxCatalogDatabase::findGamesByRevisionInsensitiveTitle(
+    const QString &internalPlatform, const QString &title) const
+{
+    QList<LaunchBoxGameRecord> result;
+    if (!m_database.isOpen())
+        return result;
+    const QString canonical =
+        LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(internalPlatform);
+    if (canonical.isEmpty())
+        return result;
+
+    QSqlQuery query(m_database);
+    query.prepare(gameSelect
+        + QStringLiteral("WHERE platform_key = ? ORDER BY database_id"));
+    query.addBindValue(platformKey(canonical));
+    if (!query.exec())
+        return result;
+
+    const QString wanted =
+        LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(title);
+    while (query.next()) {
+        LaunchBoxGameRecord game = gameFromQuery(query);
+        if (LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(game.name) == wanted)
+            result.append(game);
+    }
+    return result;
+}
+
 bool LaunchBoxCatalogDatabase::gameByDatabaseId(
     int databaseId, LaunchBoxGameRecord *game) const
 {
