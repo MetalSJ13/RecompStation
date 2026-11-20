@@ -2641,16 +2641,23 @@ ApplicationWindow {
                                 readonly property int revealBottomVisibleRow:
                                     Math.floor((gameGrid.contentY + gameGrid.height - gameGrid.topMargin)
                                         / Math.max(1, gameGrid.cellHeight))
-                                // Fade cards according to their center's distance
-                                // from the visible viewport edges. The central region
-                                // stays fully opaque; only the entering/leaving edges fade.
-                                readonly property real scrollEdgeOpacity: settingsManager.reducedMotion
+                                // Grid cards are taller than List rows, so use a
+                                // broader, eased fade to keep fast scrolling natural.
+                                // Smoothstep avoids the linear, abrupt-looking opacity
+                                // change while preserving full opacity in the center.
+                                readonly property real scrollEdgeDistance: Math.min(
+                                    gameTile.y + gameTile.height / 2 - gameGrid.contentY,
+                                    gameGrid.contentY + gameGrid.height
+                                        - (gameTile.y + gameTile.height / 2))
+                                readonly property real scrollEdgeProgress: settingsManager.reducedMotion
                                     ? 1
-                                    : Math.max(0, Math.min(1,
-                                        Math.min(
-                                            (gameTile.y + gameTile.height / 2 - gameGrid.contentY) / 140,
-                                            (gameGrid.contentY + gameGrid.height
-                                                - (gameTile.y + gameTile.height / 2)) / 140)))
+                                    : Math.max(0, Math.min(1, scrollEdgeDistance / 240))
+                                readonly property real scrollEdgeEase:
+                                    scrollEdgeProgress * scrollEdgeProgress
+                                    * (3 - 2 * scrollEdgeProgress)
+                                readonly property real scrollEdgeOpacity:
+                                    settingsManager.reducedMotion ? 1
+                                    : 0.18 + 0.82 * scrollEdgeEase
                                 opacity: revealOpacity * scrollEdgeOpacity
                                 transform: [
                                     Scale {
