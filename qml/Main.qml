@@ -2011,7 +2011,8 @@ ApplicationWindow {
                                 }
                                 Button {
                                     visible: gameDetailsPopup.selectedProject !== null
-                                    enabled: !gameDetailsPopup.releaseState.loading
+                                    enabled: gameDetailsPopup.selectedProject !== null
+                                        && !gameDetailsPopup.releaseState.loading
                                         && !window.pendingReleaseRequestsForProject(
                                             gameDetailsPopup.selectedProject.id)
                                     text: gameDetailsPopup.releaseState.loading
@@ -2694,8 +2695,9 @@ ApplicationWindow {
                                     PauseAnimation {
                                         // Reveal the bottom row first, then work upward.
                                         // Cards within each row follow from left to right.
-                                        duration: Math.max(0, gameTile.revealBottomVisibleRow - gameTile.revealRow) * 115
-                                            + gameTile.revealColumn * 38
+                                        duration: Math.max(0,
+                                            Math.max(0, gameTile.revealBottomVisibleRow - gameTile.revealRow) * 115
+                                            + Math.max(0, gameTile.revealColumn) * 38)
                                     }
                                     ParallelAnimation {
                                         NumberAnimation {
