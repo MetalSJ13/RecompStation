@@ -383,6 +383,41 @@ bool DatabaseManager::associateMetadata(int gameId,
                                         const QString &rating,
                                         const QString &artworkUrl)
 {
+    return associateMetadataInternal(gameId, provider, providerGameId,
+                                     metadataTitle, overview, releaseDate,
+                                     providerPlatformId, rating, artworkUrl,
+                                     false);
+}
+
+bool DatabaseManager::associateMetadataIfMissing(
+    int gameId,
+    const QString &provider,
+    int providerGameId,
+    const QString &metadataTitle,
+    const QString &overview,
+    const QString &releaseDate,
+    int providerPlatformId,
+    const QString &rating,
+    const QString &artworkUrl)
+{
+    return associateMetadataInternal(gameId, provider, providerGameId,
+                                     metadataTitle, overview, releaseDate,
+                                     providerPlatformId, rating, artworkUrl,
+                                     true);
+}
+
+bool DatabaseManager::associateMetadataInternal(
+    int gameId,
+    const QString &provider,
+    int providerGameId,
+    const QString &metadataTitle,
+    const QString &overview,
+    const QString &releaseDate,
+    int providerPlatformId,
+    const QString &rating,
+    const QString &artworkUrl,
+    bool onlyIfMissing)
+{
     auto fail = [this](const QString &message) {
         m_lastError = message;
         emit errorChanged();
@@ -409,7 +444,20 @@ bool DatabaseManager::associateMetadata(int gameId,
         return fail(m_database.lastError().text());
 
     QSqlQuery metadataQuery(m_database);
-    metadataQuery.prepare(R"(
+    const QString conflictAction = onlyIfMissing
+        ? QStringLiteral("ON CONFLICT(game_id) DO NOTHING")
+        : QStringLiteral(R"(
+            ON CONFLICT(game_id) DO UPDATE SET
+                provider = excluded.provider,
+                provider_game_id = excluded.provider_game_id,
+                title = excluded.title,
+                overview = excluded.overview,
+                release_date = excluded.release_date,
+                provider_platform_id = excluded.provider_platform_id,
+                rating = excluded.rating,
+                artwork_url = excluded.artwork_url
+        )");
+    metadataQuery.prepare(QStringLiteral(R"(
         INSERT INTO game_metadata (
             game_id, provider, provider_game_id, title, overview,
             release_date, provider_platform_id, rating, artwork_url
@@ -417,16 +465,7 @@ bool DatabaseManager::associateMetadata(int gameId,
             :game_id, :provider, :provider_game_id, :title, :overview,
             :release_date, :provider_platform_id, :rating, :artwork_url
         )
-        ON CONFLICT(game_id) DO UPDATE SET
-            provider = excluded.provider,
-            provider_game_id = excluded.provider_game_id,
-            title = excluded.title,
-            overview = excluded.overview,
-            release_date = excluded.release_date,
-            provider_platform_id = excluded.provider_platform_id,
-            rating = excluded.rating,
-            artwork_url = excluded.artwork_url
-    )");
+    )") + conflictAction);
     metadataQuery.bindValue(":game_id", gameId);
     metadataQuery.bindValue(":provider", provider.trimmed());
     metadataQuery.bindValue(":provider_game_id", providerGameId);
@@ -442,6 +481,14 @@ bool DatabaseManager::associateMetadata(int gameId,
         m_database.rollback();
         return fail(error);
     }
+
+    if (onlyIfMissing && metadataQuery.numRowsAffected() == 0) {
+        metadataQuery.finish();
+        m_database.rollback();
+        return fail("Metadata is already associated with this game.");
+    }
+
+    metadataQuery.finish();
     if (!m_database.commit())
         return fail(m_database.lastError().text());
 
