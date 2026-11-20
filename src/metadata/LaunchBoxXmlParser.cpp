@@ -55,7 +55,7 @@ bool finishDocument(QXmlStreamReader &reader, const QString &catalogName,
                                 .arg(catalogName, reader.errorString());
         return false;
     }
-    if (recordCount == 0) {
+    if (requireUsableRecords && recordCount == 0) {
         if (errorMessage)
             *errorMessage = QStringLiteral("%1 XML contains no usable records.")
                                 .arg(catalogName);
@@ -336,7 +336,8 @@ template <typename Record, typename ParseRecord, typename IsUsable, typename Con
 bool streamCatalogFile(const QString &path, const QString &catalogName,
                        ParseRecord parseRecord, IsUsable isUsable,
                        const Consumer &consumer, QString *errorMessage,
-                       const std::atomic_bool *cancelled)
+                       const std::atomic_bool *cancelled,
+                       bool requireUsableRecords = true)
 {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -480,5 +481,5 @@ bool LaunchBoxXmlParser::parseGameImagesFile(
         [](const LaunchBoxGameImageRecord &record) {
             return record.databaseId > 0 && !record.fileName.isEmpty()
                 && !record.type.isEmpty();
-        }, consumer, errorMessage, cancelled);
+        }, consumer, errorMessage, cancelled, false);
 }
