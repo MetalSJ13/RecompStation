@@ -33,6 +33,17 @@ public:
                                        int providerPlatformId,
                                        const QString &rating,
                                        const QString &artworkUrl);
+    // Inserts metadata only when the local game has no provider association.
+    // Existing metadata is never replaced by this fallback-safe operation.
+    bool associateMetadataIfMissing(int gameId,
+                                    const QString &provider,
+                                    int providerGameId,
+                                    const QString &metadataTitle,
+                                    const QString &overview,
+                                    const QString &releaseDate,
+                                    int providerPlatformId,
+                                    const QString &rating,
+                                    const QString &artworkUrl);
     Q_INVOKABLE bool setArtworkPath(int gameId, const QString &artworkPath);
     Q_INVOKABLE QVariantList gamesWithMetadata() const;
     Q_INVOKABLE bool addGameScreenshot(int gameId, const QString &localPath);
@@ -48,4 +59,14 @@ private:
     QSqlDatabase m_database;
     QString m_lastError;
     bool createTables();
+    bool associateMetadataInternal(int gameId,
+                                   const QString &provider,
+                                   int providerGameId,
+                                   const QString &metadataTitle,
+                                   const QString &overview,
+                                   const QString &releaseDate,
+                                   int providerPlatformId,
+                                   const QString &rating,
+                                   const QString &artworkUrl,
+                                   bool onlyIfMissing);
 };
