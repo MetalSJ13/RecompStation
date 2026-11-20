@@ -61,14 +61,20 @@ void ScreenshotManager::refreshLibraryScreenshots()
     if (m_busy || !m_database) return;
     if (!m_providerEnabled) {
         setStatus("Screenshot downloads are disabled in Metadata Settings.");
+        emit refreshFinished(0, 0, 0, 0);
         return;
     }
     if (m_apiKey.isEmpty()) {
         setStatus("Screenshot downloads require a configured TheGamesDB API key.");
+        emit refreshFinished(0, 0, 0, 0);
         return;
     }
 
     m_queue.clear();
+    m_downloaded = 0;
+    m_skipped = 0;
+    m_withoutScreenshots = 0;
+    m_failed = 0;
     const QVariantList games = m_database->gamesWithMetadata();
     for (const QVariant &entry : games) {
         const QVariantMap game = entry.toMap();
@@ -79,10 +85,6 @@ void ScreenshotManager::refreshLibraryScreenshots()
         m_queue.enqueue(game);
     }
 
-    m_downloaded = 0;
-    m_skipped = 0;
-    m_withoutScreenshots = 0;
-    m_failed = 0;
     if (m_queue.isEmpty()) {
         setStatus(QString("Screenshot refresh complete: 0 downloaded, %1 already had screenshots, no missing screenshots to retrieve.")
                       .arg(m_skipped));
