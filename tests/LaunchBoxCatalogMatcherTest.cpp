@@ -38,20 +38,50 @@ private slots:
     {
         const QList<LaunchBoxFileAssociation> associations = {
             {QStringLiteral("Nintendo 64"),
-             QStringLiteral("Banjo-Kazoozie (USA) (Rev A)"),
-             QStringLiteral("Banjo-Kazoozie (USA) (Rev A)")}
+             QStringLiteral("Banjo-Kazooie (USA) (Rev A)"),
+             QStringLiteral("Banjo-Kazooie (USA) (Rev A)")}
         };
         const QList<LaunchBoxGameRecord> games = {
-            game(162, "Banjo-Kazoozie (USA) (Rev A)", "Nintendo 64"),
-            game(163, "Banjo-Kazoozie", "Nintendo 64")
+            game(162, "Banjo-Kazooie (USA) (Rev A)", "Nintendo 64"),
+            game(163, "Banjo-Kazooie", "Nintendo 64")
         };
 
         const auto result = LaunchBoxCatalogMatcher::matchByFileAssociation(
-            "N64", "Banjo-Kazoozie (USA) (Rev A).z64",
+            "N64", "Banjo-Kazooie (USA) (Rev A).z64",
             associations, games);
         QVERIFY(result.isMatch());
         QCOMPARE(result.index, 0);
         QCOMPARE(games.at(result.index).databaseId, 162);
+    }
+
+    void resolvesRevisionedFileAssociationToUniqueCanonicalMetadataTitle()
+    {
+        const QList<LaunchBoxFileAssociation> associations = {
+            {"Nintendo 64", "Banjo-Kazooie (USA) (Rev A)",
+             "Banjo-Kazooie (USA) (Rev A)"}
+        };
+        const QList<LaunchBoxGameRecord> games = {
+            game(162, "Banjo-Kazooie", "Nintendo 64")
+        };
+        const auto result = LaunchBoxCatalogMatcher::matchByFileAssociation(
+            "N64", "Banjo-Kazooie (USA) (Rev A).z64",
+            associations, games);
+        QVERIFY(result.isMatch());
+        QCOMPARE(games.at(result.index).databaseId, 162);
+    }
+
+    void leavesRevisionFallbackAmbiguousWhenMultipleRecordsExist()
+    {
+        const QList<LaunchBoxFileAssociation> associations = {
+            {"Nintendo 64", "Game (USA) (Rev A)", "Game (Rev A)"}
+        };
+        const QList<LaunchBoxGameRecord> games = {
+            game(1, "Game", "Nintendo 64"),
+            game(2, "Game (Rev B)", "Nintendo 64")
+        };
+        const auto result = LaunchBoxCatalogMatcher::matchByFileAssociation(
+            "N64", "Game (USA) (Rev A).z64", associations, games);
+        QCOMPARE(result.status, LaunchBoxMatchResult::Status::Ambiguous);
     }
 
     void preservesRevisionDistinctionsDuringFallback()
@@ -132,7 +162,7 @@ private slots:
 
     void stripsRegionsButPreservesRevisionTags()
     {
-        QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle("Banjo-Kazoozie (USA).z64"),
+        QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle("Banjo-Kazooie (USA).z64"),
                  LaunchBoxCatalogMatcher::normalizedTitle("Banjo Kazoozie"));
         QVERIFY(LaunchBoxCatalogMatcher::normalizedTitle("Game (Rev A)")
                 != LaunchBoxCatalogMatcher::normalizedTitle("Game"));
