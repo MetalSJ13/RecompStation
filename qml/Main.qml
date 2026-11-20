@@ -3195,6 +3195,10 @@ ApplicationWindow {
                             highlightMoveDuration: settingsManager.reducedMotion ? 0 : 230
                             snapMode: ListView.NoSnap
                             currentIndex: gameGrid.currentIndex
+                            Component.onCompleted: {
+                                if (currentIndex < 0 && count > 0)
+                                    currentIndex = 0
+                            }
                             onCurrentIndexChanged: {
                                 if (currentIndex !== gameGrid.currentIndex)
                                     gameGrid.currentIndex = currentIndex
