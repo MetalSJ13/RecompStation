@@ -2575,8 +2575,8 @@ ApplicationWindow {
                             // column block with equal outer margins; GridView keeps a
                             // partially filled final row aligned to the first column.
                             readonly property real targetCardWidth:
-                                settingsManager.libraryDensity === "compact" ? 190
-                                : settingsManager.libraryDensity === "spacious" ? 290 : 230
+                                settingsManager.libraryDensity === "compact" ? 220
+                                : settingsManager.libraryDensity === "spacious" ? 290 : 270
                             readonly property real gridCellWidth: targetCardWidth + 14
                             readonly property int responsiveColumns:
                                 Math.max(1, Math.floor(Math.max(0, width - 16)
