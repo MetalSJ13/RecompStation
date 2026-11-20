@@ -83,6 +83,13 @@ int main(int argc, char *argv[])
                                   platformManager.dataDirectory() + "/artwork");
     LaunchBoxArtworkManager launchBoxArtworkManager(&databaseManager,
                                                      platformManager.dataDirectory());
+    launchBoxArtworkManager.setEnabled(settingsManager.launchBoxEnabled());
+    QObject::connect(&settingsManager, &SettingsManager::launchBoxEnabledChanged,
+                     &launchBoxArtworkManager, [&settingsManager, &launchBoxArtworkManager]() {
+        launchBoxArtworkManager.setEnabled(settingsManager.launchBoxEnabled());
+        if (settingsManager.launchBoxEnabled())
+            launchBoxArtworkManager.refreshLibraryArtwork();
+    });
     QObject::connect(&launchBoxCatalogManager, &LaunchBoxCatalogManager::updateCompleted,
                      &launchBoxArtworkManager, [&launchBoxArtworkManager](int, int, int) {
         launchBoxArtworkManager.refreshLibraryArtwork();
