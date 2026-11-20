@@ -82,9 +82,9 @@ void LaunchBoxArchiveExtractorTest::extractsOnlyRequiredCatalogFiles()
     const auto result =
         LaunchBoxArchiveExtractor::extractMetadataArchive(archivePath, destination);
     QVERIFY2(result.success, qPrintable(result.error));
-    QVERIFY(QFileInfo::isFile(result.files.platformsXmlPath));
-    QVERIFY(QFileInfo::isFile(result.files.filesXmlPath));
-    QVERIFY(QFileInfo::isFile(result.files.metadataXmlPath));
+    QVERIFY(QFileInfo(result.files.platformsXmlPath).isFile());
+    QVERIFY(QFileInfo(result.files.filesXmlPath).isFile());
+    QVERIFY(QFileInfo(result.files.metadataXmlPath).isFile());
     QVERIFY(!QFileInfo::exists(QDir(destination).filePath("readme.txt")));
     QFile metadata(result.files.metadataXmlPath);
     QVERIFY(metadata.open(QIODevice::ReadOnly));
