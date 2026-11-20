@@ -159,6 +159,15 @@ private slots:
         }
     }
 
+    void ignoresCommonRomLanguageTags()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Mario Kart Wii"}}
+        };
+        QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(
+                     QStringLiteral("Mario Kart Wii (USA) (En,Fr,Es)"), results), 0);
+    }
+
     void preservesRevisionInformation()
     {
         const QVariantList results = {
