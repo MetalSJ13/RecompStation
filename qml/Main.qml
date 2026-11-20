@@ -569,6 +569,7 @@ ApplicationWindow {
     property int selectedMetadataPlatformId: 0
     property int launchBoxProgressPercent: 0
     property string launchBoxStatusMessage: launchBoxCatalogManager.catalogAvailable ? "LaunchBox catalog is ready." : ""
+    property bool universalRefreshPending: false
     Connections {
         target: launchBoxCatalogManager
         function onUpdateProgress(stage, percent) {
@@ -577,7 +578,7 @@ ApplicationWindow {
         }
         function onUpdateCompleted(platforms, files, games) {
             launchBoxProgressPercent = 100
-            launchBoxStatusMessage = "Catalog updated: " + platforms + " platforms, " + files + " file associations, " + games + " games."
+            launchBoxStatusMessage = "Catalog updated: " + platforms + " platforms, " + files + " file associations, " + games + " games. LaunchBox artwork for your library is being checked. Run Refresh All Metadata to match games and retrieve missing screenshots."
         }
         function onUpdateFailed(message) {
             launchBoxStatusMessage = "Update failed: " + message
@@ -1074,10 +1075,11 @@ ApplicationWindow {
 
     Connections {
         target: screenshotManager
-        function onRefreshFinished(downloaded, withoutScreenshots, failed) {
+        function onRefreshFinished(downloaded, skipped, withoutScreenshots, failed) {
             window.libraryRevision++
             window.scanMessage = "Screenshots refreshed: " + downloaded
-                + " downloaded, " + withoutScreenshots + " without screenshots, "
+                + " downloaded, " + skipped + " already available, "
+                + withoutScreenshots + " unavailable from the provider, "
                 + failed + " failed."
         }
     }
@@ -1092,6 +1094,10 @@ ApplicationWindow {
             window.libraryRevision++
             window.scanMessage = "Metadata complete: " + matched
                 + " matched, " + unresolved + " left unresolved."
+            if (window.universalRefreshPending) {
+                window.universalRefreshPending = false
+                screenshotManager.refreshLibraryScreenshots()
+            }
         }
     }
 
@@ -4603,7 +4609,7 @@ ApplicationWindow {
 
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                     Label {
-                                        text: "METADATA REFRESH"
+                                        text: "UNIVERSAL LIBRARY REFRESH"
                                         color: theme.textMuted
                                         font.pixelSize: 10 * theme.fontScale
                                         font.bold: true
@@ -4611,7 +4617,7 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Retry lookups for unmatched games using your enabled metadata providers. Existing matches are preserved, and previously checked games are not repeatedly queried during automatic scans."
+                                        text: "Refresh missing game metadata, cover artwork, and gameplay screenshots across your library. Existing matches and downloaded images are preserved and skipped."
                                         color: theme.textSecondary
                                         font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
@@ -4626,13 +4632,19 @@ ApplicationWindow {
                                         }
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
-                                        Layout.preferredWidth: 210
+                                        Layout.preferredWidth: 230
                                         Layout.preferredHeight: 44
-                                        text: metadataMatcher.busy ? "Refreshing Metadata…" : "Refresh Metadata"
+                                        text: window.universalRefreshPending || metadataMatcher.busy
+                                            ? "Refreshing Library…" : "Refresh All Metadata"
                                         highlighted: true
-                                        enabled: metadataManager.configured && !metadataMatcher.busy
+                                        enabled: metadataManager.configured
+                                            && !window.universalRefreshPending
+                                            && !metadataMatcher.busy
+                                            && !screenshotManager.busy
+                                            && !launchBoxCatalogManager.busy
                                         onClicked: {
-                                            window.scanMessage = "Refreshing metadata for unresolved games..."
+                                            window.universalRefreshPending = true
+                                            window.scanMessage = "Refreshing metadata, artwork, and screenshots for your library…"
                                             metadataMatcher.scrapeLibrary(true)
                                         }
                                     }
@@ -4643,38 +4655,6 @@ ApplicationWindow {
                                         color: theme.textMuted
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
-                                    }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label {
-                                        text: "GAMEPLAY SCREENSHOTS"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "Download gameplay screenshots for games that already have saved TheGamesDB metadata. This does not repeat metadata matching or change cover artwork."
-                                        color: theme.textSecondary
-                                        font.pixelSize: 12 * theme.fontScale
-                                        wrapMode: Text.Wrap
-                                    }
-                                    Button {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                : (parent.highlighted ? theme.accent : theme.surface)
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
-                                        }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        Layout.preferredWidth: 210
-                                        Layout.preferredHeight: 44
-                                        text: screenshotManager.busy ? "Refreshing Screenshots…" : "Refresh Screenshots"
-                                        highlighted: true
-                                        enabled: metadataManager.configured && !screenshotManager.busy
-                                        onClicked: screenshotManager.refreshLibraryScreenshots()
                                     }
                                     Label {
                                         Layout.fillWidth: true
