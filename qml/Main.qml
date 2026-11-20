@@ -2901,8 +2901,10 @@ ApplicationWindow {
                             anchors.left: parent.left
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
+                            // List rows should use more of the available canvas
+                            // while retaining a readable maximum width.
                             width: Math.min(parent.width,
-                                Math.max(300, Math.min(parent.width * 0.52, 760)))
+                                Math.max(420, Math.min(parent.width * 0.68, 1200)))
                             visible: settingsManager.libraryView === "list" || opacity > 0
                             opacity: settingsManager.libraryView === "list" ? 1 : 0
                             Behavior on opacity {
@@ -2976,11 +2978,38 @@ ApplicationWindow {
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: theme.radiusCard
-                                    color: listTile.highlighted ? theme.elevatedSurface : theme.surface
+                                    clip: true
+                                    gradient: Gradient {
+                                        orientation: Gradient.Horizontal
+                                        GradientStop {
+                                            position: 0.0
+                                            color: listTile.highlighted
+                                                ? Qt.rgba(theme.elevatedSurface.r, theme.elevatedSurface.g,
+                                                          theme.elevatedSurface.b, 0.94)
+                                                : Qt.rgba(theme.surface.r, theme.surface.g,
+                                                          theme.surface.b, 0.64)
+                                        }
+                                        GradientStop {
+                                            position: 0.58
+                                            color: listTile.highlighted
+                                                ? Qt.rgba(theme.elevatedSurface.r, theme.elevatedSurface.g,
+                                                          theme.elevatedSurface.b, 0.68)
+                                                : Qt.rgba(theme.surface.r, theme.surface.g,
+                                                          theme.surface.b, 0.34)
+                                        }
+                                        GradientStop {
+                                            position: 1.0
+                                            color: listTile.highlighted
+                                                ? Qt.rgba(theme.elevatedSurface.r, theme.elevatedSurface.g,
+                                                          theme.elevatedSurface.b, 0.20)
+                                                : Qt.rgba(theme.surface.r, theme.surface.g,
+                                                          theme.surface.b, 0.035)
+                                        }
+                                    }
                                     border.width: listTile.highlighted ? 2 : 1
                                     border.color: listTile.highlighted ? theme.accent
                                         : Qt.rgba(theme.divider.r, theme.divider.g,
-                                                  theme.divider.b, 0.42)
+                                                  theme.divider.b, 0.28)
                                     Behavior on border.color {
                                         enabled: !settingsManager.reducedMotion
                                         ColorAnimation { duration: 170; easing.type: Easing.OutCubic }
