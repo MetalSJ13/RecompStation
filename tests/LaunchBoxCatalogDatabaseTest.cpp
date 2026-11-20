@@ -76,6 +76,18 @@ private slots:
         QVERIFY(directory.isValid());
         QVERIFY(writeCatalog(directory.path()));
 
+        // Verify the exact fixture file independently before exercising the
+        // catalog's SQL insertion path.
+        QList<LaunchBoxGameImageRecord> parsedImages;
+        QString imageParseError;
+        QVERIFY2(LaunchBoxXmlParser::parseGameImagesFile(
+                     directory.path() + "/Metadata.xml",
+                     [&](const LaunchBoxGameImageRecord &image) {
+                         parsedImages.append(image);
+                         return true;
+                     }, &imageParseError), qPrintable(imageParseError));
+        QCOMPARE(parsedImages.size(), 3);
+
         LaunchBoxCatalogDatabase catalog;
         QVERIFY2(catalog.open(directory.path() + "/launchbox.sqlite"),
                  qPrintable(catalog.lastError()));
