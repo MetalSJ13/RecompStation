@@ -26,6 +26,7 @@ private slots:
     void persistsTheGamesDbEnabledPreference();
     void defaultsToLaunchBoxDisabled();
     void persistsLaunchBoxEnabledPreference();
+    void persistsLaunchBoxLastUpdatedTimestamp();
     void controllerProfilesDefaultPerGuidAndPersistIndependently();
     void rejectsInvalidControllerProfiles();
     void persistsPreferencesInExplicitConfigFile();
@@ -205,6 +206,29 @@ void SettingsManagerTest::persistsLaunchBoxEnabledPreference()
     reloaded.setLaunchBoxEnabled(false);
     QVERIFY(!reloaded.launchBoxEnabled());
     QCOMPARE(changed.count(), 1);
+}
+
+void SettingsManagerTest::persistsLaunchBoxLastUpdatedTimestamp()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    const QString timestamp = QStringLiteral("2026-11-20T14:30:00-05:00");
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy changed(&manager, &SettingsManager::launchBoxLastUpdatedChanged);
+        manager.setLaunchBoxLastUpdated(timestamp);
+        QCOMPARE(manager.launchBoxLastUpdated(), timestamp);
+        QCOMPARE(changed.count(), 1);
+        manager.setLaunchBoxLastUpdated(QString());
+        QCOMPARE(manager.launchBoxLastUpdated(), timestamp);
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.launchBoxLastUpdated(), timestamp);
 }
 
 void SettingsManagerTest::controllerProfilesDefaultPerGuidAndPersistIndependently()
