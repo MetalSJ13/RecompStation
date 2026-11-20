@@ -5,11 +5,24 @@
 #include <QString>
 #include <QStringList>
 #include <QList>
+#include <functional>
 
 struct LaunchBoxPlatform
 {
     QString name;
     QStringList alternateNames;
+
+    // Streaming variants used by catalog indexing. Records are delivered one
+    // at a time so large XML files never need to be materialized in memory.
+    static bool parsePlatformsFile(const QString &path,
+                                   const std::function<bool(const LaunchBoxPlatform &)> &consumer,
+                                   QString *errorMessage = nullptr);
+    static bool parseFilesFile(const QString &path,
+                               const std::function<bool(const LaunchBoxFileAssociation &)> &consumer,
+                               QString *errorMessage = nullptr);
+    static bool parseMetadataFile(const QString &path,
+                                  const std::function<bool(const LaunchBoxGameRecord &)> &consumer,
+                                  QString *errorMessage = nullptr);
 };
 
 struct LaunchBoxFileAssociation
