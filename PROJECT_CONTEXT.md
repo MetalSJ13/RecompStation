@@ -47,6 +47,10 @@ Current scanning otherwise remains user-invoked; The active UI branch now connec
 
 Continuous filesystem monitoring now has an initial implementation: LibraryScanner watches the configured platform directories and their existing subdirectories, debounces directory changes, rescans the library, and refreshes watches so newly created nested folders are included. The initial regression tests cover nested-folder additions, file removals, and stopping/restarting monitoring. This implementation is committed on the active branch but still requires local build, test, and runtime validation.
 
+## LaunchBox metadata fallback
+
+The optional LaunchBox local catalog is integrated as a secondary source in the shared `LibraryMetadataMatcher` queue. Newly discovered games are queued after library scans, and the Settings manual Refresh Metadata action uses the same matching path. TheGamesDB remains primary. LaunchBox is considered only after a successful TheGamesDB lookup returns an empty result; provider/network errors and non-empty but ambiguous or low-confidence responses remain unresolved. Lookup prefers platform-specific `Files.xml` associations, then exact platform/title matching when no reliable association exists. The fallback inserts metadata only into an empty association, does not supply an artwork URL, and does not modify artwork paths. A confident TheGamesDB result can later upgrade a LaunchBox association. Catalog updates do not trigger an automatic library retry; users can manually refresh metadata afterward. This integration is committed but awaits local build and runtime verification.
+
 ## Product and UI direction
 
 The product experience is defined in `docs/UI_DESIGN.md`.
