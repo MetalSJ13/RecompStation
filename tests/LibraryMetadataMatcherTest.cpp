@@ -71,7 +71,12 @@ private:
                     <GameName>Banjo-Kazooie (USA) (Rev A)</GameName>
                 </File></LaunchBox>
             )xml")
-            : QByteArray("<LaunchBox/>");
+            : QByteArray(R"xml(
+                <LaunchBox><File><Platform>Nintendo 64</Platform>
+                    <FileName>Some Other Game (USA)</FileName>
+                    <GameName>Some Other Game</GameName>
+                </File></LaunchBox>
+            )xml");
         QByteArray metadata = R"xml(
             <LaunchBox><Game><DatabaseID>162</DatabaseID><Name>Banjo-Kazooie</Name>
                 <Platform>Nintendo 64</Platform><ReleaseYear>1998</ReleaseYear>
