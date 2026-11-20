@@ -1,11 +1,24 @@
 #pragma once
 
+#include <QFutureWatcher>
 #include <QNetworkAccessManager>
 #include <QObject>
 #include <QPointer>
 #include <QSaveFile>
 
+#include <atomic>
+#include <memory>
+
 class QNetworkReply;
+
+struct LaunchBoxCatalogBuildResult
+{
+    bool success = false;
+    int platformCount = 0;
+    int fileCount = 0;
+    int gameCount = 0;
+    QString error;
+};
 
 class LaunchBoxCatalogManager : public QObject
 {
@@ -36,6 +49,8 @@ private:
     QNetworkAccessManager m_network;
     QPointer<QNetworkReply> m_reply;
     QSaveFile m_downloadFile;
+    QFutureWatcher<LaunchBoxCatalogBuildResult> m_buildWatcher;
+    std::shared_ptr<std::atomic_bool> m_cancelFlag;
     QString m_dataDirectory;
     QString m_catalogDirectory;
     QString m_catalogPath;
@@ -50,6 +65,8 @@ private:
     void setBusy(bool busy);
     void receiveDownloadData();
     void finishDownload();
+    void startBackgroundBuild();
+    void finishBackgroundBuild();
     void failUpdate(const QString &message);
     void cleanupStaging();
     bool validateAndInstallCatalog(QString *errorMessage);
