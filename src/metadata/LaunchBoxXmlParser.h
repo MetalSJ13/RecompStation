@@ -22,6 +22,15 @@ struct LaunchBoxFileAssociation
     QString gameName;
 };
 
+struct LaunchBoxGameImageRecord
+{
+    int databaseId = 0;
+    QString fileName;
+    QString type;
+    QString region;
+    QString crc32;
+};
+
 struct LaunchBoxGameRecord
 {
     int databaseId = 0;
@@ -55,6 +64,9 @@ public:
     static bool parseMetadata(const QByteArray &xml,
                               QList<LaunchBoxGameRecord> *games,
                               QString *errorMessage = nullptr);
+    static bool parseGameImages(const QByteArray &xml,
+                                QList<LaunchBoxGameImageRecord> *images,
+                                QString *errorMessage = nullptr);
 
     // Streaming variants used by catalog indexing. Records are delivered one
     // at a time so large XML files never need to be materialized in memory.
@@ -71,6 +83,11 @@ public:
     static bool parseMetadataFile(
         const QString &path,
         const std::function<bool(const LaunchBoxGameRecord &)> &consumer,
+        QString *errorMessage = nullptr,
+        const std::atomic_bool *cancelled = nullptr);
+    static bool parseGameImagesFile(
+        const QString &path,
+        const std::function<bool(const LaunchBoxGameImageRecord &)> &consumer,
         QString *errorMessage = nullptr,
         const std::atomic_bool *cancelled = nullptr);
 };
