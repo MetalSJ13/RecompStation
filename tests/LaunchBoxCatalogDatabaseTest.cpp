@@ -85,6 +85,10 @@ private slots:
         QCOMPARE(associations.size(), 1);
         QCOMPARE(associations.first().gameName,
                  QStringLiteral("Banjo-Kazooie (USA) (Rev A)"));
+        QVERIFY(catalog.findFileAssociations(
+            "N64", "Banjo-Kazooie (Europe) (Rev A).z64").isEmpty());
+        QVERIFY(catalog.findFileAssociations(
+            "N64", "Banjo-Kazooie (USA) (Rev B).z64").isEmpty());
 
         const auto matches = catalog.findGamesByTitle("N64", "Banjo-Kazooie");
         QCOMPARE(matches.size(), 2);
@@ -129,7 +133,7 @@ private slots:
             directory.path() + "/Files.xml",
             directory.path() + "/Metadata.xml"));
         QVERIFY(!catalog.lastError().isEmpty());
-        QCOMPARE(catalog.gameCount(), 3);
+        QCOMPARE(catalog.gameCount(), 4);
         QCOMPARE(catalog.indexedAt(), originalIndexedAt);
         QCOMPARE(catalog.findGamesByTitle("N64", "Banjo-Kazooie").size(), 2);
     }
