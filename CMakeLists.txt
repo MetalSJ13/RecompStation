@@ -427,6 +427,10 @@ if(BUILD_TESTING)
         src/core/LibraryMetadataMatcher.cpp
         src/core/ArtworkManager.h
         src/core/ArtworkManager.cpp
+        src/core/SettingsManager.h
+        src/core/SettingsManager.cpp
+        src/core/ArchiveExtractor.h
+        src/core/ArchiveExtractor.cpp
         src/database/DatabaseManager.h
         src/database/DatabaseManager.cpp
         src/metadata/GameMetadata.h
@@ -434,6 +438,16 @@ if(BUILD_TESTING)
         src/metadata/MetadataProvider.h
         src/metadata/MetadataManager.h
         src/metadata/MetadataManager.cpp
+        src/metadata/LaunchBoxXmlParser.h
+        src/metadata/LaunchBoxXmlParser.cpp
+        src/metadata/LaunchBoxCatalogMatcher.h
+        src/metadata/LaunchBoxCatalogMatcher.cpp
+        src/metadata/LaunchBoxCatalogDatabase.h
+        src/metadata/LaunchBoxCatalogDatabase.cpp
+        src/metadata/LaunchBoxArchiveExtractor.h
+        src/metadata/LaunchBoxArchiveExtractor.cpp
+        src/metadata/LaunchBoxCatalogManager.h
+        src/metadata/LaunchBoxCatalogManager.cpp
     )
 
     target_include_directories(LibraryMetadataMatcherTests PRIVATE
@@ -441,7 +455,7 @@ if(BUILD_TESTING)
     )
 
     target_link_libraries(LibraryMetadataMatcherTests PRIVATE
-        Qt6::Core Qt6::Sql Qt6::Network Qt6::Test
+        Qt6::Core Qt6::Sql Qt6::Network Qt6::Concurrent Qt6::Test LibArchive::LibArchive
     )
 
     add_test(NAME LibraryMetadataMatcherTests COMMAND LibraryMetadataMatcherTests)
