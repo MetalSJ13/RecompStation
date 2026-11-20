@@ -67,7 +67,7 @@ The visual direction is a polished, dark, immersive personal collection experien
 
 The Settings navigation has been refined with a wider, more readable category panel and bundled SVG icons for Appearance, Display, Library, Metadata, Controller, and Application.
 
-The Metadata page now exposes a persistent TheGamesDB enable/disable checkbox and clearly labels ScreenScraper, Hasheous, and IGDB as not yet integrated or still under evaluation. Disabling TheGamesDB prevents initial platform-catalog requests, subsequent game-search requests, and new gameplay-screenshot refreshes; provider selection is initialized from the saved preference. Provider priority, fallback, and separate artwork-source selection remain future work.
+The Metadata page now exposes a persistent TheGamesDB enable/disable checkbox and clearly labels ScreenScraper, Hasheous, and IGDB as not yet integrated or still under evaluation. Disabling TheGamesDB prevents initial platform-catalog requests, subsequent game-search requests, and new gameplay-screenshot refreshes; provider selection is initialized from the saved preference. TheGamesDB remains primary, with optional LaunchBox fallback implemented in the shared matcher; local validation is pending. Separate artwork-source selection remains future work.
 
 The Controller category currently provides live connected/disconnected status, controller name/type, and SDL support availability. Per-device profiles and button remapping are still planned and must not be represented as available functionality. This Settings pass is awaiting local build and runtime verification.
 
