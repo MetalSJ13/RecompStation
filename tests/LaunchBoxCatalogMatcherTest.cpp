@@ -54,6 +54,22 @@ private slots:
         QCOMPARE(games.at(result.index).databaseId, 162);
     }
 
+    void fileAssociationRequiresMatchingRegionAndRevisionTokens()
+    {
+        const QList<LaunchBoxFileAssociation> associations = {
+            {"Nintendo 64", "Game (USA) (Rev A)", "Game (USA) (Rev A)"}
+        };
+        const QList<LaunchBoxGameRecord> games = {
+            game(1, "Game", "Nintendo 64")
+        };
+        const auto wrongRegion = LaunchBoxCatalogMatcher::matchByFileAssociation(
+            "N64", "Game (Europe) (Rev A).z64", associations, games);
+        QCOMPARE(wrongRegion.status, LaunchBoxMatchResult::Status::NoMatch);
+        const auto wrongRevision = LaunchBoxCatalogMatcher::matchByFileAssociation(
+            "N64", "Game (USA) (Rev B).z64", associations, games);
+        QCOMPARE(wrongRevision.status, LaunchBoxMatchResult::Status::NoMatch);
+    }
+
     void resolvesRevisionedFileAssociationToUniqueCanonicalMetadataTitle()
     {
         const QList<LaunchBoxFileAssociation> associations = {
