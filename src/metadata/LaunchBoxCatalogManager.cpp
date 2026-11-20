@@ -45,6 +45,10 @@ LaunchBoxCatalogManager::~LaunchBoxCatalogManager()
 
 bool LaunchBoxCatalogManager::busy() const { return m_busy; }
 QString LaunchBoxCatalogManager::catalogPath() const { return m_catalogPath; }
+bool LaunchBoxCatalogManager::catalogAvailable() const
+{
+    return QFileInfo(m_catalogPath).isFile() && QFileInfo(m_catalogPath).size() > 0;
+}
 
 void LaunchBoxCatalogManager::setBusy(bool value)
 {
@@ -252,6 +256,7 @@ void LaunchBoxCatalogManager::finishBackgroundBuild()
     m_cancelFlag.reset();
     setBusy(false);
     emit updateProgress(QStringLiteral("LaunchBox catalog ready"), 100);
+    emit catalogAvailableChanged();
     emit updateCompleted(result.platformCount, result.fileCount, result.gameCount);
 }
 
