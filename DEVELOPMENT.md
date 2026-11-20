@@ -237,12 +237,12 @@ The following notes record focused implementation and user-validation updates. T
 ### Milestone 5: Settings and first-run experience
 
 - [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
-- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying (local validation pending)
+- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
 - [x] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior (initial lightweight wave ambience and image scaling implemented; further visual refinement remains)
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
 - [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
-- [x] Add automatic filesystem monitoring for configured folders (initial implementation; local build/runtime validation pending)
+- [x] Add automatic filesystem monitoring for configured folders (runtime monitoring/reconciliation behavior confirmed; see Milestone 4 for implementation and validation details).
 - [x] Cache gameplay screenshots independently of cover art for games with saved TheGamesDB associations.
 - [x] Expose TheGamesDB provider status/enablement and one coordinated **Refresh All Metadata** action in Settings → Metadata; separate manual metadata and screenshot buttons have been retired.
 - [ ] Add launcher installation/update preferences as supported
@@ -251,10 +251,10 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 6: Launcher experience
 
-- [ ] Present supported project discovery and installation contextually from game details
+- [x] Present supported project discovery and installation contextually from game details. **Runtime verified:** the Banjo Recompiled workflow exposed the compatible launcher, completed installation, and successfully launched it through the game workflow.
 - [ ] Derive and display one accurate Playable/Beta/Alpha status per game from curated project/launcher compatibility data (intentionally deferred until the core library experience is settled)
 - [ ] Refine release/asset selection and architecture compatibility explanations
-- [ ] Improve download progress, cancellation, extraction, installation, and failure feedback
+- [ ] Improve download progress, cancellation, extraction, installation, and failure feedback. **Partially runtime verified:** Banjo Recompiled archive download, extraction, installation, and Play Game were exercised successfully; cancellation and failure-path feedback still require dedicated validation.
 - [ ] Improve installed-launcher status and confirmation-protected uninstall
 - [ ] Make installed release/version information clear when available
 
