@@ -108,22 +108,41 @@ void parseFileRecord(QXmlStreamReader &reader, LaunchBoxFileAssociation *file)
 
 void parseGameImageRecord(QXmlStreamReader &reader, LaunchBoxGameImageRecord *image)
 {
-    while (reader.readNextStartElement()) {
+    // The reader is positioned on the GameImage start element. Consume tokens
+    // until its matching end element so sibling records remain visible to the
+    // caller, even when LaunchBox includes unexpected nested elements.
+    while (!reader.atEnd()) {
+        const auto token = reader.readNext();
+        if (token == QXmlStreamReader::EndElement
+            && reader.name() == QStringLiteral("GameImage"))
+            return;
+        if (token != QXmlStreamReader::StartElement)
+            continue;
+
         const QString field = reader.name().toString();
-        const QString value = readText(reader);
-        if (field == QStringLiteral("DatabaseID")) {
-            bool ok = false;
-            const int id = value.toInt(&ok);
-            if (ok && id > 0)
-                image->databaseId = id;
-        } else if (field == QStringLiteral("FileName")) {
-            image->fileName = value;
-        } else if (field == QStringLiteral("Type")) {
-            image->type = value;
-        } else if (field == QStringLiteral("Region")) {
-            image->region = value;
-        } else if (field == QStringLiteral("CRC32")) {
-            image->crc32 = value;
+        if (field == QStringLiteral("DatabaseID")
+            || field == QStringLiteral("FileName")
+            || field == QStringLiteral("Type")
+            || field == QStringLiteral("Region")
+            || field == QStringLiteral("CRC32")) {
+            const QString value = reader.readElementText(
+                QXmlStreamReader::IncludeChildElements).trimmed();
+            if (field == QStringLiteral("DatabaseID")) {
+                bool ok = false;
+                const int id = value.toInt(&ok);
+                if (ok && id > 0)
+                    image->databaseId = id;
+            } else if (field == QStringLiteral("FileName")) {
+                image->fileName = value;
+            } else if (field == QStringLiteral("Type")) {
+                image->type = value;
+            } else if (field == QStringLiteral("Region")) {
+                image->region = value;
+            } else if (field == QStringLiteral("CRC32")) {
+                image->crc32 = value;
+            }
+        } else {
+            reader.skipCurrentElement();
         }
     }
 }
