@@ -7,6 +7,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUuid>
+#include <atomic>
+#include <functional>
 
 namespace {
 
@@ -180,7 +182,9 @@ bool LaunchBoxCatalogDatabase::createSchema()
 bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     const QString &platformsXmlPath,
     const QString &filesXmlPath,
-    const QString &metadataXmlPath)
+    const QString &metadataXmlPath,
+    const std::atomic_bool *cancelled,
+    const std::function<void(const QString &, int)> &progress)
 {
     if (!m_database.isOpen())
         return setError(QStringLiteral("LaunchBox catalog database is not open."));
@@ -227,6 +231,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
         "INSERT OR IGNORE INTO launchbox_platform_aliases(platform_name, alias, normalized_alias) "
         "VALUES(?, ?, ?)"));
 
+    if (progress) progress(QStringLiteral("Indexing platforms"), 0);
     const bool platformsOk = LaunchBoxXmlParser::parsePlatformsFile(
         platformsXmlPath,
         [&](const LaunchBoxPlatform &platform) {
@@ -248,10 +253,11 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
                 }
             }
             return true;
-        }, &parseError);
+        }, &parseError, cancelled);
     if (!platformsOk)
         return rollback(insertError.isEmpty() ? parseError : insertError);
 
+    if (progress) progress(QStringLiteral("Indexing file associations"), 33);
     QSqlQuery insertFile(m_database);
     insertFile.prepare(QStringLiteral(
         "INSERT OR IGNORE INTO launchbox_file_associations"
@@ -275,6 +281,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     if (!filesOk)
         return rollback(insertError.isEmpty() ? parseError : insertError);
 
+    if (progress) progress(QStringLiteral("Indexing game metadata"), 66);
     QSqlQuery insertGame(m_database);
     insertGame.prepare(QStringLiteral(
         "INSERT OR IGNORE INTO launchbox_games("
@@ -316,6 +323,9 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     if (!gamesOk)
         return rollback(insertError.isEmpty() ? parseError : insertError);
 
+    if (cancelled && cancelled->load())
+        return rollback(QStringLiteral("LaunchBox catalog update cancelled."));
+    if (progress) progress(QStringLiteral("Finalizing catalog index"), 95);
     QSqlQuery state(m_database);
     state.prepare(QStringLiteral(
         "INSERT INTO launchbox_catalog_state"
@@ -333,6 +343,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
         return setError(commitError);
     }
     m_lastError.clear();
+    if (progress) progress(QStringLiteral("Catalog index complete"), 100);
     return true;
 }
 
