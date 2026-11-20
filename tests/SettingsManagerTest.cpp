@@ -36,6 +36,7 @@ private slots:
     void persistsAccessibilityPreferences();
     void rejectsUnsupportedFontSize();
     void defaultsToCuratedLibraryPresentation();
+    void persistsCarouselLibraryView();
     void persistsLibraryPresentationPreferences();
     void rejectsUnsupportedLibraryPresentationPreferences();
 };
@@ -384,6 +385,25 @@ void SettingsManagerTest::defaultsToCuratedLibraryPresentation()
     QVERIFY(manager.customLibraryBackground().isEmpty());
 }
 
+void SettingsManagerTest::persistsCarouselLibraryView()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy changed(&manager, &SettingsManager::libraryViewChanged);
+        manager.setLibraryView(QStringLiteral("carousel"));
+        QCOMPARE(manager.libraryView(), QStringLiteral("carousel"));
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.libraryView(), QStringLiteral("carousel"));
+}
+
 void SettingsManagerTest::persistsLibraryPresentationPreferences()
 {
     QTemporaryDir temporaryDirectory;
@@ -407,7 +427,7 @@ void SettingsManagerTest::persistsLibraryPresentationPreferences()
         QSignalSpy backgroundChanged(&manager, &SettingsManager::libraryBackgroundTypeChanged);
         QSignalSpy imageChanged(&manager, &SettingsManager::customLibraryBackgroundChanged);
 
-        manager.setLibraryView(QStringLiteral("list"));
+        manager.setLibraryView(QStringLiteral("carousel"));
         manager.setLibraryDensity(QStringLiteral("spacious"));
         manager.setLibraryListDensity(QStringLiteral("compact"));
         manager.setLibraryBackgroundType(QStringLiteral("custom"));
@@ -426,7 +446,7 @@ void SettingsManagerTest::persistsLibraryPresentationPreferences()
     }
 
     SettingsManager reloaded(settingsPath);
-    QCOMPARE(reloaded.libraryView(), QStringLiteral("list"));
+    QCOMPARE(reloaded.libraryView(), QStringLiteral("carousel"));
     QCOMPARE(reloaded.libraryDensity(), QStringLiteral("spacious"));
     QCOMPARE(reloaded.libraryListDensity(), QStringLiteral("compact"));
     QCOMPARE(reloaded.libraryBackgroundType(), QStringLiteral("custom"));
@@ -446,7 +466,7 @@ void SettingsManagerTest::rejectsUnsupportedLibraryPresentationPreferences()
     QSignalSpy listDensityChanged(&manager, &SettingsManager::libraryListDensityChanged);
     QSignalSpy backgroundChanged(&manager, &SettingsManager::libraryBackgroundTypeChanged);
 
-    manager.setLibraryView(QStringLiteral("carousel"));
+    manager.setLibraryView(QStringLiteral("unsupported"));
     manager.setLibraryDensity(QStringLiteral("extreme"));
     manager.setLibraryListDensity(QStringLiteral("extreme"));
     manager.setLibraryBackgroundType(QStringLiteral("video"));
