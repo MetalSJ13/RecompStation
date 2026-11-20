@@ -348,8 +348,10 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             // Keep the query scoped to one record while capturing enough
             // information to distinguish parser loss from SQLite rejection.
             QSqlQuery insertImage(m_database);
+            // Do not suppress constraint failures while diagnosing image indexing.
+            // A plain INSERT exposes the exact SQLite constraint in lastError().
             insertImage.prepare(QStringLiteral(
-                "INSERT OR IGNORE INTO launchbox_game_images("
+                "INSERT INTO launchbox_game_images("
                 "database_id, file_name, type, region, crc32) VALUES(?, ?, ?, ?, ?)"));
             insertImage.bindValue(0, image.databaseId);
             insertImage.bindValue(1, image.fileName);
