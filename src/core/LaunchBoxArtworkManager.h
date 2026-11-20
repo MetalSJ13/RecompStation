@@ -32,6 +32,7 @@ public:
     bool busy() const;
     QString status() const;
     Q_INVOKABLE void refreshLibraryArtwork();
+    void setEnabled(bool enabled);
 
     static QString imageUrl(const QString &fileName);
     static int regionPreference(const QString &region);
@@ -69,6 +70,7 @@ private:
     int m_skipped = 0;
     int m_failed = 0;
     bool m_busy = false;
+    bool m_enabled = false;
     bool m_refreshPending = false;
     QString m_status;
 };
