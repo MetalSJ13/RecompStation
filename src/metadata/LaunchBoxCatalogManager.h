@@ -25,6 +25,7 @@ class LaunchBoxCatalogManager : public QObject
     Q_OBJECT
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     Q_PROPERTY(QString catalogPath READ catalogPath CONSTANT)
+    Q_PROPERTY(bool catalogAvailable READ catalogAvailable NOTIFY catalogAvailableChanged)
 
 public:
     explicit LaunchBoxCatalogManager(const QString &dataDirectory,
@@ -33,12 +34,14 @@ public:
 
     bool busy() const;
     QString catalogPath() const;
+    bool catalogAvailable() const;
 
     Q_INVOKABLE int updateCatalog();
     Q_INVOKABLE void cancelUpdate();
 
 signals:
     void busyChanged();
+    void catalogAvailableChanged();
     void downloadProgress(qint64 received, qint64 total);
     void updateProgress(const QString &stage, int percent);
     void updateCompleted(int platformCount, int fileCount, int gameCount);
