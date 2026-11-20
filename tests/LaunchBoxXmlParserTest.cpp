@@ -165,6 +165,55 @@ private slots:
         QCOMPARE(games.first().name, QStringLiteral("Valid Game"));
     }
 
+
+    void parsesGameImageRecordsAndSkipsIncompleteEntries()
+    {
+        const QByteArray xml = R"xml(
+            <LaunchBox>
+                <Game><DatabaseID>162</DatabaseID><Name>Banjo-Kazooie</Name></Game>
+                <GameImage>
+                    <DatabaseID>162</DatabaseID>
+                    <FileName>r2_cfcd4631-d083-4f58-b377-9b67ee33de9f.jpg</FileName>
+                    <Type>Box - Front</Type>
+                    <Region>North America</Region>
+                    <CRC32>2977056290</CRC32>
+                </GameImage>
+                <GameImage>
+                    <DatabaseID>162</DatabaseID>
+                    <FileName>245bc8dd-9677-4dc6-a491-e76a8527dd50.png</FileName>
+                    <Type>Screenshot - Gameplay</Type>
+                    <Region>World</Region>
+                </GameImage>
+                <GameImage><DatabaseID>162</DatabaseID><Type>Box - Back</Type></GameImage>
+                <GameImage><DatabaseID>0</DatabaseID><FileName>invalid.jpg</FileName><Type>Box - Front</Type></GameImage>
+            </LaunchBox>
+        )xml";
+
+        QList<LaunchBoxGameImageRecord> images;
+        QString error;
+        QVERIFY2(LaunchBoxXmlParser::parseGameImages(xml, &images, &error),
+                 qPrintable(error));
+        QCOMPARE(images.size(), 2);
+        QCOMPARE(images.at(0).databaseId, 162);
+        QCOMPARE(images.at(0).fileName,
+                 QStringLiteral("r2_cfcd4631-d083-4f58-b377-9b67ee33de9f.jpg"));
+        QCOMPARE(images.at(0).type, QStringLiteral("Box - Front"));
+        QCOMPARE(images.at(0).region, QStringLiteral("North America"));
+        QCOMPARE(images.at(0).crc32, QStringLiteral("2977056290"));
+        QCOMPARE(images.at(1).type, QStringLiteral("Screenshot - Gameplay"));
+        QVERIFY(images.at(1).crc32.isEmpty());
+    }
+
+    void rejectsGameImageCatalogWithoutUsableRecords()
+    {
+        QList<LaunchBoxGameImageRecord> images;
+        QString error;
+        QVERIFY(!LaunchBoxXmlParser::parseGameImages(
+            QByteArray("<LaunchBox><GameImage><DatabaseID>2</DatabaseID></GameImage></LaunchBox>"),
+            &images, &error));
+        QVERIFY(error.contains(QStringLiteral("no usable records")));
+    }
+
     void rejectsMalformedXmlWithoutReplacingOutput()
     {
         QList<LaunchBoxPlatform> platforms = {
