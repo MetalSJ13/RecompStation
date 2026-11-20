@@ -91,6 +91,12 @@ private slots:
         QCOMPARE(matches.at(0).developer, QStringLiteral("Rare"));
         QCOMPARE(matches.at(1).databaseId, 163);
 
+        const auto revisionInsensitive = catalog.findGamesByRevisionInsensitiveTitle(
+            "N64", "Banjo-Kazooie (USA) (Rev A)");
+        QCOMPARE(revisionInsensitive.size(), 2);
+        QCOMPARE(revisionInsensitive.at(0).databaseId, 162);
+        QCOMPARE(revisionInsensitive.at(1).databaseId, 163);
+
         LaunchBoxGameRecord byId;
         QVERIFY(catalog.gameByDatabaseId(164, &byId));
         QCOMPARE(byId.platform, QStringLiteral("Nintendo DS"));
