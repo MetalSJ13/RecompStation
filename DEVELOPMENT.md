@@ -6,7 +6,7 @@ This document is the authoritative development status and implementation order f
 
 ### Current focus
 - **Active milestone:** Milestone 3 — Game Library experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred; the last user-confirmed baseline before the current artwork change: all 18/18 CTest suites passed on 2026-11-20; the new artwork work still requires a fresh local build/test run.
-- **Current UI work:** The shell, immersive Game Details transition, Library Grid/List browsing, fullscreen startup, and recent keyboard/controller navigation fixes have been locally exercised. Next, review the remaining Milestone 3 Game Library presentation, contextual details content, and artwork/empty/loading/error states.
+- **Current UI work:** Added the third Console library presentation alongside Grid and List. The horizontal carousel shares the filtered library model and persistent card-size preference, synchronizes selection with the other views, centers keyboard/controller selection, and fades cards near both horizontal edges. This implementation requires a local build and visual/input validation; preserve the existing Grid reveal and List layout during that pass.
 - **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
 
 ### Implemented foundations
@@ -56,6 +56,7 @@ The following notes record focused implementation and user-validation updates. T
 ### Library and navigation polish
 - [x] Simplify primary Library/Settings navigation to compact icon-led controls; user approved the appearance.
 - [x] Add configurable Grid/List browsing, title search, platform filtering, and independent view sizing.
+- [ ] Validate the new Console carousel locally: horizontal scrolling, selected-card centering/focus, mouse/keyboard/controller selection, details opening, persistence, and Grid/List regression.
 - [x] Add coordinated static/animated/custom library background treatments.
 - [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
 - [x] Validate fullscreen startup and the coordinated startup Grid reveal on the user's Wayland desktop; no initial windowed flash or duplicate/late card animation remains.
