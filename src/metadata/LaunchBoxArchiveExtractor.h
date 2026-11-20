@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QString>
+#include <atomic>
+#include <functional>
 
 struct LaunchBoxExtractedMetadata
 {
@@ -25,6 +27,8 @@ public:
     // files, and oversized archives are rejected.
     static Result extractMetadataArchive(
         const QString &archivePath,
-        const QString &destinationDirectory
+        const QString &destinationDirectory,
+        const std::atomic_bool *cancelled = nullptr,
+        const std::function<void(qint64, qint64)> &progress = {}
     );
 };
