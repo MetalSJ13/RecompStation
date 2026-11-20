@@ -3,9 +3,15 @@
 #include "ArtworkManager.h"
 #include "../database/DatabaseManager.h"
 #include "../metadata/MetadataManager.h"
+#include "../metadata/LaunchBoxCatalogManager.h"
+#include "../metadata/LaunchBoxCatalogDatabase.h"
+#include "../metadata/LaunchBoxCatalogMatcher.h"
+#include "SettingsManager.h"
 #include "Logging.h"
 
 #include <QRegularExpression>
+#include <QFileInfo>
+#include <algorithm>
 #include <QString>
 #include <QVariantMap>
 
@@ -52,11 +58,15 @@ QString normalizedTitle(QString title)
 LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
                                                MetadataManager *metadata,
                                                ArtworkManager *artwork,
+                                               LaunchBoxCatalogManager *launchBoxCatalog,
+                                               SettingsManager *settings,
                                                QObject *parent)
     : QObject(parent),
       m_database(database),
       m_metadata(metadata),
-      m_artwork(artwork)
+      m_artwork(artwork),
+      m_launchBoxCatalog(launchBoxCatalog),
+      m_settings(settings)
 {
     if (!m_metadata)
         return;
@@ -90,6 +100,14 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         const int expectedPlatformId = m_metadata->metadataPlatformId(
             m_currentGame.value(QStringLiteral("platform")).toString());
         const int matchIndex = bestMatchIndex(localTitle, expectedPlatformId, results);
+
+        // A successful empty provider response is the only condition that
+        // permits LaunchBox fallback. Non-empty but uncertain results remain
+        // unresolved rather than being reinterpreted by a second provider.
+        if (results.isEmpty()) {
+            if (tryLaunchBoxFallback(QStringLiteral("TheGamesDB returned no results.")))
+                return;
+        }
 
         if (matchIndex < 0) {
             qCWarning(lcMetadata) << "No confident match for" << localTitle
@@ -376,6 +394,95 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
     setStatus(QStringLiteral("Retrying metadata for %1...")
                   .arg(selected.value(QStringLiteral("title")).toString()));
     processNext();
+}
+
+bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason)
+{
+    const int gameId = m_currentGame.value(QStringLiteral("id")).toInt();
+    const QString title = m_currentGame.value(QStringLiteral("title")).toString();
+    const QString platform = m_currentGame.value(QStringLiteral("platform")).toString();
+    if (!m_settings || !m_settings->launchBoxEnabled()
+        || !m_launchBoxCatalog || !m_launchBoxCatalog->catalogAvailable()
+        || m_launchBoxCatalog->busy()) {
+        qCInfo(lcMetadata) << "LaunchBox fallback skipped for" << title
+                           << "- disabled, unavailable, or catalog update active.";
+        if (m_database)
+            m_database->markMetadataLookupAttempt(gameId, QStringLiteral("no_match"));
+        finishCurrent(false, QStringLiteral("No TheGamesDB match; LaunchBox fallback unavailable."));
+        return true;
+    }
+
+    LaunchBoxCatalogDatabase catalog;
+    if (!catalog.open(m_launchBoxCatalog->catalogPath())) {
+        qCWarning(lcMetadata) << "Could not open LaunchBox catalog:" << catalog.lastError();
+        if (m_database)
+            m_database->markMetadataLookupAttempt(gameId, QStringLiteral("no_match"));
+        finishCurrent(false, QStringLiteral("LaunchBox catalog could not be opened."));
+        return true;
+    }
+
+    const QString localPath = m_currentGame.value(QStringLiteral("path")).toString();
+    const QString fileName = localPath.isEmpty() ? title : QFileInfo(localPath).fileName();
+    const auto associations = catalog.findFileAssociations(platform, fileName);
+    QList<LaunchBoxGameRecord> candidates;
+    if (!associations.isEmpty()) {
+        for (const LaunchBoxFileAssociation &association : associations) {
+            const auto records = catalog.findGamesByRevisionInsensitiveTitle(
+                platform, association.gameName);
+            for (const LaunchBoxGameRecord &record : records) {
+                const bool duplicate = std::any_of(
+                    candidates.cbegin(), candidates.cend(),
+                    [&record](const LaunchBoxGameRecord &existing) {
+                        return existing.databaseId == record.databaseId;
+                    });
+                if (!duplicate)
+                    candidates.append(record);
+            }
+        }
+    } else {
+        candidates = catalog.findGamesByTitle(platform, title);
+    }
+
+    const LaunchBoxMatchResult result = !associations.isEmpty()
+        ? LaunchBoxCatalogMatcher::matchByFileAssociation(
+              platform, fileName, associations, candidates)
+        : LaunchBoxCatalogMatcher::matchByTitle(platform, title, candidates);
+
+    if (!result.isMatch()) {
+        qCInfo(lcMetadata) << "LaunchBox fallback did not produce a unique match for"
+                           << title << "reason:" << result.reason;
+        if (m_database)
+            m_database->markMetadataLookupAttempt(
+                gameId, result.status == LaunchBoxMatchResult::Status::Ambiguous
+                    ? QStringLiteral("ambiguous") : QStringLiteral("no_match"));
+        finishCurrent(false, result.status == LaunchBoxMatchResult::Status::Ambiguous
+            ? QStringLiteral("LaunchBox found ambiguous candidates; left unresolved.")
+            : QStringLiteral("No confident LaunchBox match; left unresolved."));
+        return true;
+    }
+
+    const LaunchBoxGameRecord &match = candidates.at(result.index);
+    QString releaseDate;
+    if (match.releaseDate.isValid())
+        releaseDate = match.releaseDate.toString(Qt::ISODate);
+    else if (match.releaseYear > 0)
+        releaseDate = QStringLiteral("%1-01-01").arg(match.releaseYear);
+
+    const bool saved = m_database && m_database->associateMetadataIfMissing(
+        gameId, QStringLiteral("launchbox"), match.databaseId, match.name,
+        match.overview, releaseDate, 0, match.communityRating, QString());
+    if (!saved) {
+        qCWarning(lcMetadata) << "LaunchBox fallback association was not saved for"
+                              << title << (m_database ? m_database->lastError() : QString());
+        finishCurrent(false, QStringLiteral("LaunchBox metadata could not be saved."));
+        return true;
+    }
+
+    m_database->markMetadataLookupAttempt(gameId, QStringLiteral("matched"));
+    qCInfo(lcMetadata) << "LaunchBox fallback matched" << title
+                       << "to" << match.name << "after" << reason;
+    finishCurrent(true, QStringLiteral("Matched with LaunchBox metadata; artwork remains unchanged."));
+    return true;
 }
 
 void LibraryMetadataMatcher::processNext()
