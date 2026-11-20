@@ -163,7 +163,7 @@ private slots:
     void stripsRegionsButPreservesRevisionTags()
     {
         QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle("Banjo-Kazooie (USA).z64"),
-                 LaunchBoxCatalogMatcher::normalizedTitle("Banjo Kazoozie"));
+                 LaunchBoxCatalogMatcher::normalizedTitle("Banjo Kazooie"));
         QVERIFY(LaunchBoxCatalogMatcher::normalizedTitle("Game (Rev A)")
                 != LaunchBoxCatalogMatcher::normalizedTitle("Game"));
     }
