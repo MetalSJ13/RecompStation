@@ -54,6 +54,13 @@ LaunchBoxArtworkManager::LaunchBoxArtworkManager(
 bool LaunchBoxArtworkManager::busy() const { return m_busy; }
 QString LaunchBoxArtworkManager::status() const { return m_status; }
 
+void LaunchBoxArtworkManager::setEnabled(bool enabled)
+{
+    m_enabled = enabled;
+    if (!m_enabled && !m_busy)
+        setStatus(QStringLiteral("LaunchBox artwork downloads are disabled in Metadata Settings."));
+}
+
 QString LaunchBoxArtworkManager::imageUrl(const QString &fileName)
 {
     const QString safeName = fileName.trimmed();
@@ -120,6 +127,10 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
 {
     if (!m_database)
         return;
+    if (!m_enabled) {
+        setStatus(QStringLiteral("LaunchBox artwork downloads are disabled in Metadata Settings."));
+        return;
+    }
     if (m_busy) {
         m_refreshPending = true;
         return;
@@ -197,6 +208,14 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
 
 void LaunchBoxArtworkManager::processNext()
 {
+    if (!m_enabled) {
+        m_queue.clear();
+        setBusy(false);
+        setStatus(QStringLiteral("LaunchBox artwork paused: disabled in Metadata Settings (%1 downloaded, %2 failed).")
+                      .arg(m_downloaded).arg(m_failed));
+        emit refreshFinished(m_downloaded, m_skipped, m_failed);
+        return;
+    }
     if (m_queue.isEmpty()) {
         setBusy(false);
         setStatus(QStringLiteral("LaunchBox artwork complete: %1 downloaded, %2 skipped, %3 failed.")
