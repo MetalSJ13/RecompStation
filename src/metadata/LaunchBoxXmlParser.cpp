@@ -1,6 +1,7 @@
 #include "LaunchBoxXmlParser.h"
 
 #include <QSet>
+#include <QFile>
 #include <QXmlStreamReader>
 
 namespace {
@@ -269,4 +270,123 @@ bool LaunchBoxXmlParser::parseMetadata(const QByteArray &xml,
         return false;
     *games = parsed;
     return true;
+}
+
+
+namespace {
+
+template <typename Record, typename ParseRecord, typename IsUsable, typename Consumer>
+bool streamCatalogFile(const QString &path, const QString &catalogName,
+                       ParseRecord parseRecord, IsUsable isUsable,
+                       const Consumer &consumer, QString *errorMessage)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("Could not open %1 XML: %2")
+                                .arg(catalogName, file.errorString());
+        return false;
+    }
+
+    QXmlStreamReader reader(&file);
+    if (!reader.readNextStartElement()
+        || reader.name() != QStringLiteral("LaunchBox")) {
+        if (errorMessage) {
+            *errorMessage = reader.hasError()
+                ? reader.errorString()
+                : QStringLiteral("Expected a LaunchBox root element in %1 XML.")
+                      .arg(catalogName);
+        }
+        return false;
+    }
+
+    int recordCount = 0;
+    while (reader.readNextStartElement()) {
+        if (reader.name() != Record::elementName()) {
+            reader.skipCurrentElement();
+            continue;
+        }
+        typename Record::value_type record;
+        parseRecord(reader, &record);
+        if (!isUsable(record))
+            continue;
+        if (!consumer(record)) {
+            if (errorMessage)
+                *errorMessage = QStringLiteral("The %1 record consumer rejected a record.")
+                                    .arg(catalogName);
+            return false;
+        }
+        ++recordCount;
+    }
+
+    while (!reader.atEnd())
+        reader.readNext();
+    if (reader.hasError()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("Invalid %1 XML: %2")
+                                .arg(catalogName, reader.errorString());
+        return false;
+    }
+    if (recordCount == 0) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("%1 XML contains no usable records.")
+                                .arg(catalogName);
+        return false;
+    }
+    if (errorMessage)
+        errorMessage->clear();
+    return true;
+}
+
+struct PlatformRecordTag {
+    using value_type = LaunchBoxPlatform;
+    static QString elementName() { return QStringLiteral("Platform"); }
+};
+struct FileRecordTag {
+    using value_type = LaunchBoxFileAssociation;
+    static QString elementName() { return QStringLiteral("File"); }
+};
+struct GameRecordTag {
+    using value_type = LaunchBoxGameRecord;
+    static QString elementName() { return QStringLiteral("Game"); }
+};
+
+} // namespace
+
+bool LaunchBoxXmlParser::parsePlatformsFile(
+    const QString &path,
+    const std::function<bool(const LaunchBoxPlatform &)> &consumer,
+    QString *errorMessage)
+{
+    return streamCatalogFile<PlatformRecordTag>(
+        path, QStringLiteral("Platforms"), parsePlatformRecord,
+        [](const LaunchBoxPlatform &record) {
+            return !normalizedKey(record.name).isEmpty();
+        }, consumer, errorMessage);
+}
+
+bool LaunchBoxXmlParser::parseFilesFile(
+    const QString &path,
+    const std::function<bool(const LaunchBoxFileAssociation &)> &consumer,
+    QString *errorMessage)
+{
+    return streamCatalogFile<FileRecordTag>(
+        path, QStringLiteral("Files"), parseFileRecord,
+        [](const LaunchBoxFileAssociation &record) {
+            return !record.platform.isEmpty() && !record.fileName.isEmpty()
+                && !record.gameName.isEmpty();
+        }, consumer, errorMessage);
+}
+
+bool LaunchBoxXmlParser::parseMetadataFile(
+    const QString &path,
+    const std::function<bool(const LaunchBoxGameRecord &)> &consumer,
+    QString *errorMessage)
+{
+    return streamCatalogFile<GameRecordTag>(
+        path, QStringLiteral("Metadata"), parseGameRecord,
+        [](const LaunchBoxGameRecord &record) {
+            return record.databaseId > 0 && !record.name.isEmpty()
+                && !record.platform.isEmpty();
+        }, consumer, errorMessage);
 }
