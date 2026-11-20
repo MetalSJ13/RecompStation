@@ -8,6 +8,8 @@
 #include <QFileInfo>
 #include <QSaveFile>
 #include <QSet>
+#include <atomic>
+#include <functional>
 
 namespace {
 constexpr qint64 MaximumExtractedBytes = 1024LL * 1024LL * 1024LL;
@@ -48,7 +50,9 @@ QString requiredCatalogName(const QString &path)
 
 LaunchBoxArchiveExtractor::Result LaunchBoxArchiveExtractor::extractMetadataArchive(
     const QString &archivePath,
-    const QString &destinationDirectory)
+    const QString &destinationDirectory,
+    const std::atomic_bool *cancelled,
+    const std::function<void(qint64, qint64)> &progress)
 {
     Result result;
     const QFileInfo archiveInfo(archivePath);
@@ -108,6 +112,10 @@ LaunchBoxArchiveExtractor::Result LaunchBoxArchiveExtractor::extractMetadataArch
     int status = ARCHIVE_OK;
 
     while ((status = archive_read_next_header(reader, &entry)) == ARCHIVE_OK) {
+        if (cancelled && cancelled->load()) {
+            failure = QStringLiteral("LaunchBox catalog update cancelled.");
+            break;
+        }
         if (++entryCount > MaximumArchiveEntries) {
             failure = QStringLiteral("The LaunchBox archive contains too many entries.");
             break;
@@ -159,6 +167,10 @@ LaunchBoxArchiveExtractor::Result LaunchBoxArchiveExtractor::extractMetadataArch
         char buffer[BufferSize];
         qint64 entryWritten = 0;
         while (true) {
+            if (cancelled && cancelled->load()) {
+                failure = QStringLiteral("LaunchBox catalog update cancelled.");
+                break;
+            }
             const la_ssize_t count = archive_read_data(reader, buffer, sizeof(buffer));
             if (count == 0)
                 break;
@@ -177,6 +189,7 @@ LaunchBoxArchiveExtractor::Result LaunchBoxArchiveExtractor::extractMetadataArch
             }
             entryWritten += count;
             totalWritten += count;
+            if (progress) progress(totalWritten, 0);
         }
         if (!failure.isEmpty()) {
             output.cancelWriting();
