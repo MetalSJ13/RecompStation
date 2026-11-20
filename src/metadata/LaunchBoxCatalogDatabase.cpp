@@ -337,12 +337,16 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
 
 
     if (progress) progress(QStringLiteral("Indexing game images"), 82);
+    int imageRecordsReceived = 0;
+    int imageRowsInserted = 0;
+    int imageRowsIgnored = 0;
     const bool imagesOk = LaunchBoxXmlParser::parseGameImagesFile(
         metadataXmlPath,
         [&](const LaunchBoxGameImageRecord &image) {
-            // Use a record-scoped query so each streamed record gets a fresh
-            // execution context. This avoids driver-specific prepared-query
-            // state leaking across callbacks on large XML streams.
+            ++imageRecordsReceived;
+
+            // Keep the query scoped to one record while capturing enough
+            // information to distinguish parser loss from SQLite rejection.
             QSqlQuery insertImage(m_database);
             insertImage.prepare(QStringLiteral(
                 "INSERT OR IGNORE INTO launchbox_game_images("
@@ -353,13 +357,56 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             insertImage.bindValue(3, image.region);
             insertImage.bindValue(4, image.crc32);
             if (!insertImage.exec()) {
-                insertError = insertImage.lastError().text();
+                insertError = QStringLiteral(
+                    "Could not insert LaunchBox image record (database ID %1, file '%2', type '%3'): %4")
+                    .arg(image.databaseId)
+                    .arg(image.fileName, image.type, insertImage.lastError().text());
+                qWarning().noquote() << "[LaunchBox catalog] Image insert failed:"
+                                     << insertError;
                 return false;
             }
+
+            const int affected = insertImage.numRowsAffected();
+            if (affected > 0)
+                imageRowsInserted += affected;
+            else
+                ++imageRowsIgnored;
+
+            QSqlQuery imageCountQuery(m_database);
+            int countAfterInsert = -1;
+            if (imageCountQuery.exec(QStringLiteral(
+                    "SELECT COUNT(*) FROM launchbox_game_images"))
+                && imageCountQuery.next()) {
+                countAfterInsert = imageCountQuery.value(0).toInt();
+            }
+
+            qInfo().noquote()
+                << "[LaunchBox catalog] Image record"
+                << imageRecordsReceived
+                << "databaseId=" << image.databaseId
+                << "fileName=" << image.fileName
+                << "type=" << image.type
+                << "region=" << image.region
+                << "rowsAffected=" << affected
+                << "tableCount=" << countAfterInsert;
             return true;
         }, &parseError, cancelled);
     if (!imagesOk)
         return rollback(insertError.isEmpty() ? parseError : insertError);
+
+    QSqlQuery finalImageCountQuery(m_database);
+    int imageCountBeforeCommit = -1;
+    if (finalImageCountQuery.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM launchbox_game_images"))
+        && finalImageCountQuery.next()) {
+        imageCountBeforeCommit = finalImageCountQuery.value(0).toInt();
+    }
+    qInfo().noquote()
+        << "[LaunchBox catalog] Image indexing summary:"
+        << "recordsReceived=" << imageRecordsReceived
+        << "rowsInserted=" << imageRowsInserted
+        << "rowsIgnored=" << imageRowsIgnored
+        << "tableCountBeforeCommit=" << imageCountBeforeCommit;
 
     if (cancelled && cancelled->load())
         return rollback(QStringLiteral("LaunchBox catalog update cancelled."));
