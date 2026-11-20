@@ -259,6 +259,16 @@ ApplicationWindow {
                 gameList.forceActiveFocus()
                 return
             }
+            if (settingsManager.libraryView === "carousel") {
+                if (direction !== "left" && direction !== "right")
+                    return
+                next += direction === "left" ? -1 : 1
+                next = Math.max(0, Math.min(gameGrid.count - 1, next))
+                gameGrid.currentIndex = next
+                gameCarousel.positionViewAtIndex(next, ListView.Contain)
+                gameCarousel.forceActiveFocus()
+                return
+            }
             const columns = gameGrid.responsiveColumns
             if (direction === "left") next--
             else if (direction === "right") next++
@@ -328,6 +338,10 @@ ApplicationWindow {
             const index = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
             if (settingsManager.libraryView === "list") {
                 const tile = gameList.itemAtIndex(index)
+                if (tile && tile.openDetails)
+                    tile.openDetails()
+            } else if (settingsManager.libraryView === "carousel") {
+                const tile = gameCarousel.itemAtIndex(index)
                 if (tile && tile.openDetails)
                     tile.openDetails()
             } else {
@@ -1348,6 +1362,8 @@ ApplicationWindow {
                 gameGrid.currentIndex = gameDetailsPopup.switchTargetIndex
                 if (settingsManager.libraryView === "list")
                     gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+                else if (settingsManager.libraryView === "carousel")
+                    gameCarousel.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
                 else
                     gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
 
@@ -2485,7 +2501,11 @@ ApplicationWindow {
                                             Layout.preferredHeight: 34
                                             textRole: "label"
                                             valueRole: "value"
-                                            model: [{ label: "Grid", value: "grid" }, { label: "List", value: "list" }]
+                                            model: [
+                                                { label: "Grid", value: "grid" },
+                                                { label: "List", value: "list" },
+                                                { label: "Console", value: "carousel" }
+                                            ]
                                             currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
                                             onActivated: settingsManager.libraryView = currentValue
                                         }
@@ -3106,6 +3126,179 @@ ApplicationWindow {
                                 }
                             }
                             ScrollBar.vertical: ScrollBar {
+                                policy: ScrollBar.AlwaysOff
+                            }
+                        }
+
+                        ListView {
+                            id: gameCarousel
+                            anchors.fill: parent
+                            visible: settingsManager.libraryView === "carousel" || opacity > 0
+                            opacity: settingsManager.libraryView === "carousel" ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 210; easing.type: Easing.OutCubic }
+                            }
+                            clip: true
+                            orientation: ListView.Horizontal
+                            boundsBehavior: Flickable.StopAtBounds
+                            flickDeceleration: 2200
+                            maximumFlickVelocity: 1500
+                            spacing: 22
+                            readonly property real cardWidth: 248
+                            leftMargin: Math.max(28, (width - cardWidth) / 2)
+                            rightMargin: leftMargin
+                            model: gameGrid.model
+                            currentIndex: -1
+                            highlightRangeMode: ListView.StrictlyEnforceRange
+                            preferredHighlightBegin: Math.max(0, (width - cardWidth) / 2)
+                            preferredHighlightEnd: preferredHighlightBegin + cardWidth
+                            Component.onCompleted: {
+                                currentIndex = gameGrid.currentIndex >= 0
+                                    ? gameGrid.currentIndex : (count > 0 ? 0 : -1)
+                            }
+                            onCurrentIndexChanged: {
+                                if (currentIndex !== gameGrid.currentIndex)
+                                    gameGrid.currentIndex = currentIndex
+                            }
+                            Connections {
+                                target: gameGrid
+                                function onCurrentIndexChanged() {
+                                    if (gameCarousel.currentIndex !== gameGrid.currentIndex)
+                                        gameCarousel.currentIndex = gameGrid.currentIndex
+                                }
+                            }
+                            keyNavigationEnabled: false
+                            delegate: Item {
+                                id: carouselTile
+                                required property string title
+                                required property string platform
+                                required property string path
+                                required property string artworkPath
+                                required property string metadataTitle
+                                required property string metadataOverview
+                                required property string metadataReleaseDate
+                                required property string metadataRating
+                                required property var screenshots
+                                required property int id
+                                required property int index
+                                width: gameCarousel.cardWidth
+                                height: gameCarousel.height - 36
+                                y: 18
+                                readonly property real edgeDistance: Math.min(
+                                    carouselTile.x + carouselTile.width / 2 - gameCarousel.contentX,
+                                    gameCarousel.width - (carouselTile.x + carouselTile.width / 2
+                                        - gameCarousel.contentX))
+                                readonly property real edgeProgress: settingsManager.reducedMotion
+                                    ? 1 : Math.max(0, Math.min(1, edgeDistance / 230))
+                                readonly property real edgeEase:
+                                    edgeProgress * edgeProgress * (3 - 2 * edgeProgress)
+                                opacity: settingsManager.reducedMotion ? 1 : 0.18 + 0.82 * edgeEase
+                                scale: ListView.isCurrentItem ? 1.045 : 1
+                                z: ListView.isCurrentItem ? 2 : 1
+                                Behavior on scale {
+                                    enabled: !settingsManager.reducedMotion
+                                    NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                                }
+                                function openDetails() {
+                                    window.selectedGame = {
+                                        id: carouselTile.id,
+                                        title: carouselTile.title,
+                                        platform: carouselTile.platform,
+                                        path: carouselTile.path,
+                                        artworkPath: carouselTile.artworkPath,
+                                        screenshots: carouselTile.screenshots,
+                                        metadataTitle: carouselTile.metadataTitle,
+                                        metadataOverview: carouselTile.metadataOverview,
+                                        metadataReleaseDate: carouselTile.metadataReleaseDate,
+                                        metadataRating: carouselTile.metadataRating
+                                    }
+                                    gameDetailsPopup.open()
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: -5
+                                    radius: theme.radiusCard + 5
+                                    color: theme.accent
+                                    opacity: ListView.isCurrentItem ? 0.18 : 0
+                                    Behavior on opacity {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                                    }
+                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: theme.radiusCard
+                                    color: Qt.rgba(theme.surface.r, theme.surface.g,
+                                                   theme.surface.b, ListView.isCurrentItem ? 0.96 : 0.78)
+                                    border.width: ListView.isCurrentItem ? 2 : 1
+                                    border.color: ListView.isCurrentItem ? theme.accent : theme.divider
+                                    ColumnLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 12
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            radius: theme.radiusCard - 4
+                                            color: Qt.rgba(theme.background.r, theme.background.g,
+                                                           theme.background.b, 0.42)
+                                            clip: true
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 7
+                                                source: carouselTile.artworkPath
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                                cache: true
+                                                smooth: true
+                                                visible: status === Image.Ready
+                                            }
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 7
+                                                source: "qrc:/icons/game-artwork-unavailable.png"
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                                cache: true
+                                                visible: parent.children.length > 0
+                                                    && parent.children[0].status !== Image.Ready
+                                            }
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: carouselTile.title
+                                            color: theme.textPrimary
+                                            font.pixelSize: 15 * theme.fontScale
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                            horizontalAlignment: Text.AlignHCenter
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: carouselTile.platform
+                                            color: theme.textSecondary
+                                            font.pixelSize: 11 * theme.fontScale
+                                            elide: Text.ElideRight
+                                            horizontalAlignment: Text.AlignHCenter
+                                        }
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onEntered: {
+                                        gameCarousel.currentIndex = carouselTile.index
+                                        window.activeInputDevice = "mouse"
+                                    }
+                                    onClicked: {
+                                        gameGrid.currentIndex = carouselTile.index
+                                        carouselTile.openDetails()
+                                    }
+                                }
+                            }
+                            ScrollBar.horizontal: ScrollBar {
                                 policy: ScrollBar.AlwaysOff
                             }
                         }
