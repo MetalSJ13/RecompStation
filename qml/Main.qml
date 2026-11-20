@@ -2641,7 +2641,17 @@ ApplicationWindow {
                                 readonly property int revealBottomVisibleRow:
                                     Math.floor((gameGrid.contentY + gameGrid.height - gameGrid.topMargin)
                                         / Math.max(1, gameGrid.cellHeight))
-                                opacity: revealOpacity
+                                // Fade cards according to their center's distance
+                                // from the visible viewport edges. The central region
+                                // stays fully opaque; only the entering/leaving edges fade.
+                                readonly property real scrollEdgeOpacity: settingsManager.reducedMotion
+                                    ? 1
+                                    : Math.max(0, Math.min(1,
+                                        Math.min(
+                                            (gameTile.y + gameTile.height / 2 - gameGrid.contentY) / 140,
+                                            (gameGrid.contentY + gameGrid.height
+                                                - (gameTile.y + gameTile.height / 2)) / 140)))
+                                opacity: revealOpacity * scrollEdgeOpacity
                                 transform: [
                                     Scale {
                                         origin.x: gameTile.width / 2
@@ -2953,6 +2963,14 @@ ApplicationWindow {
                                     settingsManager.libraryListDensity === "compact" ? 104
                                     : settingsManager.libraryListDensity === "spacious" ? 144 : 128
                                 height: rowHeight
+                                // Match Grid View's scroll-edge treatment so both
+                                // presentations share the same 140 px fade zone.
+                                opacity: settingsManager.reducedMotion ? 1
+                                    : Math.max(0, Math.min(1,
+                                        Math.min(
+                                            (listTile.y + listTile.height / 2 - gameList.contentY) / 140,
+                                            (gameList.contentY + gameList.height
+                                                - (listTile.y + listTile.height / 2)) / 140)))
                                 focus: ListView.isCurrentItem
                                 z: highlighted ? 2 : 1
                                 scale: highlighted ? 1.035 : 1.0
