@@ -40,6 +40,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
     m_scanOnStartup = settings.value(QStringLiteral("library/scanOnStartup"), true).toBool();
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
     m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
+    m_launchBoxLastUpdated = settings.value(QStringLiteral("metadata/launchBoxLastUpdated")).toString();
 
     const QString storedPresentationSize = settings.value(
         QStringLiteral("display/preferredPresentationSize"),
@@ -169,6 +170,28 @@ void SettingsManager::setLaunchBoxEnabled(bool enabled)
     m_launchBoxEnabled = enabled;
     emit launchBoxEnabledChanged();
     qCInfo(lcSettings) << "LaunchBox metadata fallback enabled:" << m_launchBoxEnabled;
+}
+
+QString SettingsManager::launchBoxLastUpdated() const
+{
+    return m_launchBoxLastUpdated;
+}
+
+void SettingsManager::setLaunchBoxLastUpdated(const QString &timestamp)
+{
+    if (timestamp.trimmed().isEmpty() || m_launchBoxLastUpdated == timestamp)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("metadata/launchBoxLastUpdated"), timestamp);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist LaunchBox catalog update timestamp.";
+        return;
+    }
+
+    m_launchBoxLastUpdated = timestamp;
+    emit launchBoxLastUpdatedChanged();
 }
 
 
