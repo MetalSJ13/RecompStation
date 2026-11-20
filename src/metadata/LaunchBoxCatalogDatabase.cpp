@@ -217,6 +217,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     int filesInserted = 0;
     int gamesInserted = 0;
     QString parseError;
+    QString insertError;
 
     QSqlQuery insertPlatform(m_database);
     insertPlatform.prepare(QStringLiteral(
@@ -231,21 +232,25 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
         [&](const LaunchBoxPlatform &platform) {
             insertPlatform.bindValue(0, platform.name);
             insertPlatform.bindValue(1, platformKey(platform.name));
-            if (!insertPlatform.exec())
+            if (!insertPlatform.exec()) {
+                insertError = insertPlatform.lastError().text();
                 return false;
+            }
             if (insertPlatform.numRowsAffected() > 0)
                 ++platformsInserted;
             for (const QString &alias : platform.alternateNames) {
                 insertAlias.bindValue(0, platform.name);
                 insertAlias.bindValue(1, alias);
                 insertAlias.bindValue(2, platformKey(alias));
-                if (!insertAlias.exec())
+                if (!insertAlias.exec()) {
+                    insertError = insertAlias.lastError().text();
                     return false;
+                }
             }
             return true;
         }, &parseError);
     if (!platformsOk)
-        return rollback(parseError);
+        return rollback(insertError.isEmpty() ? parseError : insertError);
 
     QSqlQuery insertFile(m_database);
     insertFile.prepare(QStringLiteral(
@@ -259,14 +264,16 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             insertFile.bindValue(2, file.fileName);
             insertFile.bindValue(3, LaunchBoxCatalogMatcher::normalizedTitle(file.fileName));
             insertFile.bindValue(4, file.gameName);
-            if (!insertFile.exec())
+            if (!insertFile.exec()) {
+                insertError = insertFile.lastError().text();
                 return false;
+            }
             if (insertFile.numRowsAffected() > 0)
                 ++filesInserted;
             return true;
         }, &parseError);
     if (!filesOk)
-        return rollback(parseError);
+        return rollback(insertError.isEmpty() ? parseError : insertError);
 
     QSqlQuery insertGame(m_database);
     insertGame.prepare(QStringLiteral(
@@ -298,14 +305,16 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             insertGame.bindValue(16, game.genres);
             insertGame.bindValue(17, game.developer);
             insertGame.bindValue(18, game.publisher);
-            if (!insertGame.exec())
+            if (!insertGame.exec()) {
+                insertError = insertGame.lastError().text();
                 return false;
+            }
             if (insertGame.numRowsAffected() > 0)
                 ++gamesInserted;
             return true;
         }, &parseError);
     if (!gamesOk)
-        return rollback(parseError);
+        return rollback(insertError.isEmpty() ? parseError : insertError);
 
     QSqlQuery state(m_database);
     state.prepare(QStringLiteral(
