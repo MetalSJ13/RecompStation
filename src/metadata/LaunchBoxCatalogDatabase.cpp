@@ -268,7 +268,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             insertFile.bindValue(0, file.platform);
             insertFile.bindValue(1, platformKey(file.platform));
             insertFile.bindValue(2, file.fileName);
-            insertFile.bindValue(3, LaunchBoxCatalogMatcher::normalizedTitle(file.fileName));
+            insertFile.bindValue(3, LaunchBoxCatalogMatcher::normalizedFileName(file.fileName));
             insertFile.bindValue(4, file.gameName);
             if (!insertFile.exec()) {
                 insertError = insertFile.lastError().text();
@@ -363,7 +363,7 @@ QList<LaunchBoxFileAssociation> LaunchBoxCatalogDatabase::findFileAssociations(
         "SELECT platform, file_name, game_name FROM launchbox_file_associations "
         "WHERE platform_key = ? AND file_key = ? ORDER BY id"));
     query.addBindValue(platformKey(canonical));
-    query.addBindValue(LaunchBoxCatalogMatcher::normalizedTitle(localFileName));
+    query.addBindValue(LaunchBoxCatalogMatcher::normalizedFileName(localFileName));
     if (!query.exec())
         return result;
     while (query.next()) {
