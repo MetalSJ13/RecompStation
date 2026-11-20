@@ -157,16 +157,16 @@ LaunchBoxMatchResult LaunchBoxCatalogMatcher::matchByFileAssociation(
     for (const LaunchBoxFileAssociation &association : associations) {
         if (normalizedPlatform(association.platform)
                 != normalizedPlatform(canonical)
-            || normalizedTitle(association.fileName) != wantedFile) {
+            || normalizedFileName(association.fileName) != wantedFile) {
             continue;
         }
 
-        const QString gameKey = normalizedTitle(association.gameName);
+        const QString gameKey = normalizedFileName(association.gameName);
         if (gameKey.isEmpty())
             continue;
         bool alreadyPresent = false;
         for (const QString &existing : associatedGameNames) {
-            if (normalizedTitle(existing) == gameKey) {
+            if (normalizedFileName(existing) == gameKey) {
                 alreadyPresent = true;
                 break;
             }
