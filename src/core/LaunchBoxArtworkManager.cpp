@@ -3,6 +3,7 @@
 #include "Logging.h"
 #include "../database/DatabaseManager.h"
 #include "../metadata/LaunchBoxCatalogDatabase.h"
+#include "../metadata/LaunchBoxCatalogMatcher.h"
 
 #include <QDir>
 #include <QFile>
@@ -135,12 +136,23 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
     int eligibleGames = 0;
     for (const QVariant &entry : games) {
         const QVariantMap game = entry.toMap();
-        if (game.value(QStringLiteral("metadataProvider")).toString()
-                != QStringLiteral("launchbox"))
-            continue;
         const int localId = game.value(QStringLiteral("id")).toInt();
-        const int catalogId = game.value(QStringLiteral("metadataGameId")).toInt();
-        if (localId <= 0 || catalogId <= 0)
+        if (localId <= 0)
+            continue;
+
+        int catalogId = 0;
+        if (game.value(QStringLiteral("metadataProvider")).toString()
+                == QStringLiteral("launchbox")) {
+            catalogId = game.value(QStringLiteral("metadataGameId")).toInt();
+        } else {
+            const QString platform = game.value(QStringLiteral("platform")).toString();
+            const QString title = game.value(QStringLiteral("title")).toString();
+            const auto candidates = catalog.findGamesByRevisionInsensitiveTitle(platform, title);
+            const auto match = LaunchBoxCatalogMatcher::matchByTitle(platform, title, candidates);
+            if (match.isMatch() && match.index >= 0 && match.index < candidates.size())
+                catalogId = candidates.at(match.index).databaseId;
+        }
+        if (catalogId <= 0)
             continue;
         ++eligibleGames;
 
