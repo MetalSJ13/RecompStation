@@ -27,8 +27,10 @@ struct LaunchBoxGameImageRecord
     int databaseId = 0;
     QString fileName;
     QString type;
-    QString region;
-    QString crc32;
+    // Optional XML fields must be non-null empty strings when absent so
+    // SQL NOT NULL columns receive '' rather than an explicitly bound NULL.
+    QString region = QStringLiteral("");
+    QString crc32 = QStringLiteral("");
 };
 
 struct LaunchBoxGameRecord
