@@ -7,6 +7,7 @@
 #include <QStringList>
 
 #include <functional>
+#include <atomic>
 
 struct LaunchBoxPlatform
 {
@@ -47,7 +48,8 @@ class LaunchBoxXmlParser
 public:
     static bool parsePlatforms(const QByteArray &xml,
                                QList<LaunchBoxPlatform> *platforms,
-                               QString *errorMessage = nullptr);
+                               QString *errorMessage = nullptr,
+        const std::atomic_bool *cancelled = nullptr);
     static bool parseFiles(const QByteArray &xml,
                            QList<LaunchBoxFileAssociation> *associations,
                            QString *errorMessage = nullptr);
