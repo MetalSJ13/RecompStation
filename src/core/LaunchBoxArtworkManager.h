@@ -64,6 +64,7 @@ private:
     QQueue<PendingRequest> m_queue;
     QTimer m_batchPause;
     int m_batchRequests = 0;
+    int m_totalRequests = 0;
     int m_downloaded = 0;
     int m_skipped = 0;
     int m_failed = 0;
