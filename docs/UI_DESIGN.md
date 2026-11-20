@@ -185,3 +185,9 @@ Audit follow-up: finish complete keyboard/controller focus and accessibility val
 
 ### Library toolbar
 - Keep the collection heading on the left and use a compact, right-aligned single-row filter toolbar. The toolbar has a capped width rather than stretching across the entire window; search receives the flexible remaining space, while Platform, View, and Card/Row Size use deliberate proportional widths.
+
+### List View presentation
+- List rows use up to 68% of the available Library content width, capped at 1,200 px, rather than appearing as a narrow column on wide displays.
+- Unselected rows use translucent surfaces with a horizontal fade toward the right edge so the selected background artwork remains visible.
+- The selected row retains a stronger translucent surface and accent border for clear focus. Artwork and text remain fully opaque and readable.
+- List rows remain left-aligned; the expanded width is not centered.
