@@ -198,3 +198,10 @@ Audit follow-up: finish complete keyboard/controller focus and accessibility val
 - Comfortable: 128 px row height, 86 × 104 px artwork frame, 16 px title text.
 - Spacious: retain the existing 144 px row height, 94 × 116 px artwork frame, and 17 px title text.
 - Keep the list density steps visually distinct while making Compact and Comfortable less undersized relative to Spacious.
+
+
+### Library scroll-edge fades
+- Grid View and List View apply a position-based opacity fade to cards near the top and bottom viewport edges.
+- Cards become fully opaque in the central viewing region; the fade zone extends approximately 140 px inward from each edge.
+- Grid View combines the scroll-edge opacity with its existing startup reveal opacity.
+- Reduced Motion disables the scroll-edge fade by keeping cards fully opaque.
