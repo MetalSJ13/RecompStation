@@ -5,7 +5,7 @@ This document is the authoritative development status and implementation order f
 ## Project status
 
 ### Current focus
-- **Active milestone:** Milestone 3 — Game Library experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred; the latest local build succeeded and all 14 automated tests passed.
+- **Active milestone:** Milestone 3 — Game Library experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred; the last user-confirmed baseline before the current artwork change: all 18/18 CTest suites passed on 2026-11-20; the new artwork work still requires a fresh local build/test run.
 - **Current UI work:** The shell, immersive Game Details transition, Library Grid/List browsing, fullscreen startup, and recent keyboard/controller navigation fixes have been locally exercised. Next, review the remaining Milestone 3 Game Library presentation, contextual details content, and artwork/empty/loading/error states.
 - **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
 
@@ -185,17 +185,17 @@ The following notes record focused implementation and user-validation updates. T
 - Do not integrate `Mame.xml` in this initial console-library implementation. It is an arcade/MAME machine catalog with distinct short-name and clone relationships; revisit it only if arcade library support is planned.
 - Provide a manual catalog update action and consider an optional periodic update check. Do not silently download large archives without the user's enablement and update preferences.
 
-**LaunchBox artwork integration — implementation plan**
+**LaunchBox artwork integration — implementation status**
 
-- [ ] Extend the streaming XML parser to recognize and validate `GameImage` records (LaunchBox database ID, file name, type, region, and CRC32). **Implementation committed; local build/test verification pending.**
-- [ ] Add a locally indexed image table keyed by LaunchBox database ID/type/region, with lookup/count APIs and rollback-safe catalog rebuild behavior. **Implementation committed; local build/test verification pending.**
-- [ ] Implement deterministic image selection for front covers and screenshots, preserving all regional/type variants in the catalog.
-- [ ] Integrate image downloads with the existing artwork/cache infrastructure using the verified `images.launchbox-app.com` host, image validation, no-overwrite behavior, and bounded retries.
-- [ ] Add a centralized batch scheduler: maximum five in-flight image requests, five-request batches, 500 ms inter-batch pause, 429 backoff/Retry-After handling, and provider pause on 403.
-- [ ] Populate missing cover artwork independently of metadata source; never replace existing artwork automatically.
-- [ ] Populate gameplay/title screenshots through the existing screenshot storage path, without conflating screenshots with cover artwork.
-- [ ] Add parser, database, scheduler, HTTP failure, image-validation, cache, and no-overwrite regression tests.
-- [ ] Build and run the complete regression suite, then validate locally with Banjo-Kazooie and representative games that have missing artwork. Confirm the user-visible cover and screenshot behavior before marking the work complete.
+- [x] Reuse the locally indexed GameImage records and image lookup API keyed by LaunchBox database ID, type, and region.
+- [x] Select one Box - Front cover (North America preferred) and up to three Screenshot - Gameplay images; do not fetch unrelated image categories or regional variants.
+- [x] Download images only for available local games with an explicit LaunchBox metadata association. Do not download artwork for catalog-only games or infer an image association from title alone.
+- [x] Use the verified images.launchbox-app.com CDN host, validate HTTPS/final host, HTTP success, supported image format, and a 20 MB response limit.
+- [x] Cache covers and screenshots under the local game's artwork directory, reuse existing files, preserve existing cover artwork, and register cached files with the database.
+- [x] Schedule one request at a time; after every five image requests, pause for 300 ms. This is intentionally more conservative than five concurrent requests.
+- [x] Trigger refresh after successful catalog updates and metadata scrapes; defer a refresh request if a download batch is already active.
+- [x] Add focused tests for trusted CDN URL construction, regional cover selection, gameplay screenshot selection, and cover-skip behavior.
+- [ ] Build and run the complete regression suite, then validate locally with Banjo-Kazooie and representative LaunchBox-associated games that have missing artwork. Confirm the user-visible cover and screenshot behavior before marking the work verified.
 
 **Implementation order**
 - [x] Strengthen `DatabaseManager::associateMetadata()` so an existing provider association cannot be overwritten by a fallback insert; add regression tests for existing metadata and missing-field preservation. **Verified:** user confirmed `./scripts/build.sh --test` completed successfully with all tests passing.
