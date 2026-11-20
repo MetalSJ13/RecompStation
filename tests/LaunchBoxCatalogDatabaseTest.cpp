@@ -5,6 +5,7 @@
 
 #include <QFile>
 #include <QTemporaryDir>
+#include <atomic>
 
 class LaunchBoxCatalogDatabaseTest : public QObject
 {
@@ -122,6 +123,30 @@ private slots:
         QCOMPARE(catalog.gameCount(), 3);
         QCOMPARE(catalog.indexedAt(), originalIndexedAt);
         QCOMPARE(catalog.findGamesByTitle("N64", "Banjo-Kazooie").size(), 2);
+    }
+
+    void cancellationRollsBackTheCatalogTransaction()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        QVERIFY(writeCatalog(directory.path()));
+
+        LaunchBoxCatalogDatabase catalog;
+        QVERIFY(catalog.open(directory.path() + "/launchbox.sqlite"));
+        QVERIFY(catalog.rebuildFromXmlFiles(
+            directory.path() + "/Platforms.xml",
+            directory.path() + "/Files.xml",
+            directory.path() + "/Metadata.xml"));
+        const QString originalIndexedAt = catalog.indexedAt();
+
+        std::atomic_bool cancelled{true};
+        QVERIFY(!catalog.rebuildFromXmlFiles(
+            directory.path() + "/Platforms.xml",
+            directory.path() + "/Files.xml",
+            directory.path() + "/Metadata.xml", &cancelled));
+        QVERIFY(catalog.lastError().contains(QStringLiteral("cancelled")));
+        QCOMPARE(catalog.gameCount(), 3);
+        QCOMPARE(catalog.indexedAt(), originalIndexedAt);
     }
 
     void rejectsMissingSourceWithoutDestroyingCatalog()
