@@ -89,7 +89,8 @@ int main(int argc, char *argv[])
         screenshotManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
     });
     LibraryMetadataMatcher metadataMatcher(&databaseManager, &metadataManager,
-                                           &artworkManager);
+                                           &artworkManager, &launchBoxCatalogManager,
+                                           &settingsManager);
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
