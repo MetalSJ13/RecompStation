@@ -110,8 +110,8 @@ QList<LaunchBoxArtworkRequest> LaunchBoxArtworkManager::selectRequests(
     for (int i = 0; i < count; ++i) {
         const auto &image = screenshots.at(i);
         requests.append({libraryGameId, image.fileName, image.type,
-                         QStringLiteral("screenshots/%1.%2").arg(i + 1,
-                             QFileInfo(image.fileName).suffix().toLower())});
+                         QStringLiteral("screenshots/%1.%2").arg(i + 1)
+                             .arg(QFileInfo(image.fileName).suffix().toLower())});
     }
     return requests;
 }
