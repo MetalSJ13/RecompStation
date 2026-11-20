@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../metadata/LaunchBoxXmlParser.h"
+
 #include <QObject>
 #include <QNetworkAccessManager>
 #include <QQueue>
@@ -35,7 +37,7 @@ public:
     static int regionPreference(const QString &region);
     static QList<LaunchBoxArtworkRequest> selectRequests(
         int libraryGameId, int launchBoxGameId,
-        const QList<struct LaunchBoxGameImageRecord> &images,
+        const QList<LaunchBoxGameImageRecord> &images,
         bool includeCover, int maximumScreenshots = 3);
 
 signals:
@@ -52,12 +54,12 @@ private:
     };
 
     void processNext();
-    void finishRequest(bool success, const QString &message = {});
     void setBusy(bool value);
     void setStatus(const QString &value);
 
     DatabaseManager *m_database = nullptr;
     QString m_artworkDirectory;
+    QString m_catalogPath;
     QNetworkAccessManager m_network;
     QQueue<PendingRequest> m_queue;
     QTimer m_batchPause;
