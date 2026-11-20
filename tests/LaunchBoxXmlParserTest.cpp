@@ -204,6 +204,37 @@ private slots:
         QVERIFY(images.at(1).crc32.isEmpty());
     }
 
+    void streamsEveryGameImageRecordFromXmlFile()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString path = directory.filePath(QStringLiteral("Metadata.xml"));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        const QByteArray xml = R"xml(
+            <LaunchBox>
+                <Game><DatabaseID>162</DatabaseID><Name>Banjo-Kazooie</Name></Game>
+                <GameImage><DatabaseID>162</DatabaseID><FileName>front.jpg</FileName><Type>Box - Front</Type></GameImage>
+                <GameImage><DatabaseID>162</DatabaseID><FileName>shot.png</FileName><Type>Screenshot - Gameplay</Type></GameImage>
+                <GameImage><DatabaseID>163</DatabaseID><FileName>other.jpg</FileName><Type>Box - Front</Type></GameImage>
+            </LaunchBox>
+        )xml";
+        QCOMPARE(file.write(xml), qint64(xml.size()));
+        file.close();
+
+        QList<LaunchBoxGameImageRecord> images;
+        QString error;
+        QVERIFY2(LaunchBoxXmlParser::parseGameImagesFile(
+                     path, [&](const LaunchBoxGameImageRecord &image) {
+                         images.append(image);
+                         return true;
+                     }, &error), qPrintable(error));
+        QCOMPARE(images.size(), 3);
+        QCOMPARE(images.at(0).fileName, QStringLiteral("front.jpg"));
+        QCOMPARE(images.at(1).fileName, QStringLiteral("shot.png"));
+        QCOMPARE(images.at(2).fileName, QStringLiteral("other.jpg"));
+    }
+
     void rejectsGameImageCatalogWithoutUsableRecords()
     {
         QList<LaunchBoxGameImageRecord> images;
