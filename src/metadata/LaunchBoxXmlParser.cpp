@@ -388,7 +388,7 @@ bool LaunchBoxXmlParser::parseFilesFile(
         [](const LaunchBoxFileAssociation &record) {
             return !record.platform.isEmpty() && !record.fileName.isEmpty()
                 && !record.gameName.isEmpty();
-        }, consumer, errorMessage);
+        }, consumer, errorMessage, cancelled);
 }
 
 bool LaunchBoxXmlParser::parseMetadataFile(
