@@ -1,0 +1,56 @@
+#pragma once
+
+#include <QNetworkAccessManager>
+#include <QObject>
+#include <QPointer>
+#include <QSaveFile>
+
+class QNetworkReply;
+
+class LaunchBoxCatalogManager : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
+    Q_PROPERTY(QString catalogPath READ catalogPath CONSTANT)
+
+public:
+    explicit LaunchBoxCatalogManager(const QString &dataDirectory,
+                                     QObject *parent = nullptr);
+    ~LaunchBoxCatalogManager() override;
+
+    bool busy() const;
+    QString catalogPath() const;
+
+    Q_INVOKABLE int updateCatalog();
+    Q_INVOKABLE void cancelUpdate();
+
+signals:
+    void busyChanged();
+    void downloadProgress(qint64 received, qint64 total);
+    void updateProgress(const QString &stage, int percent);
+    void updateCompleted(int platformCount, int fileCount, int gameCount);
+    void updateFailed(const QString &message);
+    void updateCancelled();
+
+private:
+    QNetworkAccessManager m_network;
+    QPointer<QNetworkReply> m_reply;
+    QSaveFile m_downloadFile;
+    QString m_dataDirectory;
+    QString m_catalogDirectory;
+    QString m_catalogPath;
+    QString m_archivePath;
+    QString m_extractPath;
+    QString m_temporaryDatabasePath;
+    QString m_backupDatabasePath;
+    bool m_busy = false;
+    bool m_cancelRequested = false;
+    int m_requestId = 0;
+
+    void setBusy(bool busy);
+    void receiveDownloadData();
+    void finishDownload();
+    void failUpdate(const QString &message);
+    void cleanupStaging();
+    bool validateAndInstallCatalog(QString *errorMessage);
+};
