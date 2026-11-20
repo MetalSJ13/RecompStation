@@ -188,10 +188,9 @@ void LaunchBoxCatalogManager::startBackgroundBuild()
         LaunchBoxCatalogBuildResult result;
         const auto extracted = LaunchBoxArchiveExtractor::extractMetadataArchive(
             archivePath, extractPath, cancelFlag.get(),
-            [this](qint64 received, qint64) {
-                QMetaObject::invokeMethod(this, [this, received]() {
-                    emit updateProgress(QStringLiteral("Extracting LaunchBox metadata"),
-                                        qBound(0, static_cast<int>(received * 100 / (1024LL * 1024LL * 550LL)), 99));
+            [this](qint64, qint64) {
+                QMetaObject::invokeMethod(this, [this]() {
+                    emit updateProgress(QStringLiteral("Extracting LaunchBox metadata"), 0);
                 }, Qt::QueuedConnection);
             });
         if (!extracted.success) {
