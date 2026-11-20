@@ -337,13 +337,16 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
 
 
     if (progress) progress(QStringLiteral("Indexing game images"), 82);
-    QSqlQuery insertImage(m_database);
-    insertImage.prepare(QStringLiteral(
-        "INSERT OR IGNORE INTO launchbox_game_images("
-        "database_id, file_name, type, region, crc32) VALUES(?, ?, ?, ?, ?)"));
     const bool imagesOk = LaunchBoxXmlParser::parseGameImagesFile(
         metadataXmlPath,
         [&](const LaunchBoxGameImageRecord &image) {
+            // Use a record-scoped query so each streamed record gets a fresh
+            // execution context. This avoids driver-specific prepared-query
+            // state leaking across callbacks on large XML streams.
+            QSqlQuery insertImage(m_database);
+            insertImage.prepare(QStringLiteral(
+                "INSERT OR IGNORE INTO launchbox_game_images("
+                "database_id, file_name, type, region, crc32) VALUES(?, ?, ?, ?, ?)"));
             insertImage.bindValue(0, image.databaseId);
             insertImage.bindValue(1, image.fileName);
             insertImage.bindValue(2, image.type);
