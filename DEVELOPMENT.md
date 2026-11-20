@@ -176,7 +176,7 @@ The following notes record focused implementation and user-validation updates. T
 - Provide a manual catalog update action and consider an optional periodic update check. Do not silently download large archives without the user's enablement and update preferences.
 
 **Implementation order**
-- [ ] Strengthen `DatabaseManager::associateMetadata()` so an existing provider association cannot be overwritten by a fallback insert; add regression tests for existing metadata and missing-field preservation.
+- [x] Strengthen `DatabaseManager::associateMetadata()` so an existing provider association cannot be overwritten by a fallback insert; add regression tests for existing metadata and missing-field preservation. **Verified:** user confirmed `./scripts/build.sh --test` completed successfully with all tests passing.
 - [ ] Introduce and test a LaunchBox XML parser for `Platforms.xml`, `Files.xml`, and `Metadata.xml`; validate malformed, incomplete, duplicate, and unexpected records.
 - [ ] Add explicit RecompStation-to-LaunchBox platform mappings and conservative filename/title matching, including region/revision handling and ambiguity rejection.
 - [ ] Build a local SQLite catalog/index and query API; avoid loading or reparsing the full XML archive for individual game lookups.
