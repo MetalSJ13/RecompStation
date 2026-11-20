@@ -619,10 +619,12 @@ QVariantList DatabaseManager::gamesWithMetadata() const
     if (!query.exec())
         return result;
     while (query.next()) {
+        const int gameId = query.value(0).toInt();
         result.append(QVariantMap{
-            {QStringLiteral("id"), query.value(0).toInt()},
+            {QStringLiteral("id"), gameId},
             {QStringLiteral("metadataProvider"), query.value(1).toString()},
-            {QStringLiteral("metadataGameId"), query.value(2).toInt()}
+            {QStringLiteral("metadataGameId"), query.value(2).toInt()},
+            {QStringLiteral("screenshots"), gameScreenshots(gameId)}
         });
     }
     return result;
