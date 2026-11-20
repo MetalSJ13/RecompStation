@@ -87,6 +87,15 @@ private slots:
                          return true;
                      }, &imageParseError), qPrintable(imageParseError));
         QCOMPARE(parsedImages.size(), 3);
+        QCOMPARE(parsedImages.at(0).databaseId, 162);
+        QCOMPARE(parsedImages.at(0).fileName, QStringLiteral("banjo-front-na.jpg"));
+        QCOMPARE(parsedImages.at(0).type, QStringLiteral("Box - Front"));
+        QCOMPARE(parsedImages.at(1).databaseId, 162);
+        QCOMPARE(parsedImages.at(1).fileName, QStringLiteral("banjo-gameplay.png"));
+        QCOMPARE(parsedImages.at(1).type, QStringLiteral("Screenshot - Gameplay"));
+        QCOMPARE(parsedImages.at(2).databaseId, 163);
+        QCOMPARE(parsedImages.at(2).fileName, QStringLiteral("romhack-cover.jpg"));
+        QCOMPARE(parsedImages.at(2).type, QStringLiteral("Box - Front"));
 
         LaunchBoxCatalogDatabase catalog;
         QVERIFY2(catalog.open(directory.path() + "/launchbox.sqlite"),
