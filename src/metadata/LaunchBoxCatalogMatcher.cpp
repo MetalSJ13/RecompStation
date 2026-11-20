@@ -86,13 +86,17 @@ QString LaunchBoxCatalogMatcher::normalizedTitle(const QString &input)
                     .arg(articleMatch.captured(1), articleMatch.captured(2));
     }
 
-    // Strip region markers only. Revision, prototype, and other meaningful
-    // parenthetical tags remain part of the comparison key.
+    // Region and language markers describe the ROM dump, not the canonical
+    // game title. Remove them while retaining revision tags for the first,
+    // most-specific matching pass.
     static const QRegularExpression regionTag(
-        QStringLiteral(
-            R"(\s*[\(\[]\s*(?:USA|US|U|Europe|EUR|EU|E|Japan|JPN|JP|J|World|W)\s*[\)\]])"),
+        QStringLiteral(R"(\s*[\(\[]\s*(?:USA|US|U|Europe|EUR|EU|E|Japan|JPN|JP|J|World|W)\s*[\)\]])"),
+        QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression languageTag(
+        QStringLiteral(R"(\s*[\(\[]\s*(?:EN|ENG|FR|FRE|ES|SPA|DE|GER|IT|ITA|NL|DUT|PT|POR|SV|SWE|NO|NOR|DA|DAN|FI|FIN|PL|POL|RU|RUS|JA|JPN|ZH|CHI|KO|KOR|CS|CZE|HU|HUN|TR|TUR|AR|HE|TH|EL|GRE|RO|RON|BG|BUL|HR|CRO|SK|SL|UK|UKR|VI|ID|MS|CA|EU|GL)(?:\s*[,;+]\s*(?:EN|ENG|FR|FRE|ES|SPA|DE|GER|IT|ITA|NL|DUT|PT|POR|SV|SWE|NO|NOR|DA|DAN|FI|FIN|PL|POL|RU|RUS|JA|JPN|ZH|CHI|KO|KOR|CS|CZE|HU|HUN|TR|TUR|AR|HE|TH|EL|GRE|RO|RON|BG|BUL|HR|CRO|SK|SL|UK|UKR|VI|ID|MS|CA|EU|GL))*\s*[\)\]])"),
         QRegularExpression::CaseInsensitiveOption);
     title.remove(regionTag);
+    title.remove(languageTag);
     title = title.normalized(QString::NormalizationForm_D);
 
     QString result;
@@ -215,5 +219,21 @@ LaunchBoxMatchResult LaunchBoxCatalogMatcher::matchByTitle(
         if (normalizedTitle(game.name) == wanted)
             matches.append(i);
     }
-    return resultForCandidates(matches, QStringLiteral("exact platform-and-title"));
+
+    // Prefer exact revision-preserving title matches. Only when none exist may
+    // revision/version suffixes be ignored, and then only one platform-specific
+    // candidate is safe to associate.
+    if (!matches.isEmpty())
+        return resultForCandidates(matches, QStringLiteral("exact platform-and-title"));
+
+    const QString wantedWithoutRevision =
+        normalizedTitleWithoutRevision(localTitle);
+    for (int i = 0; i < games.size(); ++i) {
+        const LaunchBoxGameRecord &game = games.at(i);
+        if (normalizedPlatform(game.platform) != normalizedPlatform(canonical))
+            continue;
+        if (normalizedTitleWithoutRevision(game.name) == wantedWithoutRevision)
+            matches.append(i);
+    }
+    return resultForCandidates(matches, QStringLiteral("revision-insensitive platform-and-title"));
 }
