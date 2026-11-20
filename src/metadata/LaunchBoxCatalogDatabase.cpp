@@ -277,7 +277,7 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
             if (insertFile.numRowsAffected() > 0)
                 ++filesInserted;
             return true;
-        }, &parseError);
+        }, &parseError, cancelled);
     if (!filesOk)
         return rollback(insertError.isEmpty() ? parseError : insertError);
 
