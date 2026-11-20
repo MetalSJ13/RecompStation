@@ -63,6 +63,26 @@ QString LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(
     return {};
 }
 
+QString LaunchBoxCatalogMatcher::normalizedFileName(const QString &input)
+{
+    const QString fileName = titleWithoutExtension(input).trimmed()
+                                .normalized(QString::NormalizationForm_D);
+    QString result;
+    result.reserve(fileName.size());
+    for (const QChar character : fileName) {
+        if (character.category() == QChar::Mark_NonSpacing
+            || character.category() == QChar::Mark_SpacingCombining
+            || character.category() == QChar::Mark_Enclosing) {
+            continue;
+        }
+        if (character.isLetterOrNumber())
+            result.append(character.toCaseFolded());
+        else
+            result.append(QLatin1Char(' '));
+    }
+    return result.simplified();
+}
+
 QString LaunchBoxCatalogMatcher::normalizedTitleWithoutRevision(const QString &title)
 {
     static const QRegularExpression revisionTag(
@@ -128,7 +148,7 @@ LaunchBoxMatchResult LaunchBoxCatalogMatcher::matchByFileAssociation(
                     .arg(internalPlatform)};
     }
 
-    const QString wantedFile = normalizedTitle(localFileName);
+    const QString wantedFile = normalizedFileName(localFileName);
     if (wantedFile.isEmpty())
         return {LaunchBoxMatchResult::Status::NoMatch, -1,
                 QStringLiteral("The local ROM filename is empty.")};
