@@ -382,7 +382,8 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
         {QStringLiteral("platform"), selected.value(QStringLiteral("platform"))},
         {QStringLiteral("hasMetadata"), !selected.value(QStringLiteral("metadataTitle")).toString().isEmpty()},
         {QStringLiteral("artworkUrl"), selected.value(QStringLiteral("metadataArtworkUrl"))},
-        {QStringLiteral("path"), selected.value(QStringLiteral("path"))}
+        {QStringLiteral("path"), selected.value(QStringLiteral("path"))},
+        {QStringLiteral("metadataProvider"), selected.value(QStringLiteral("metadataProvider"))}
     });
 
     m_completedCount = 0;
@@ -402,6 +403,15 @@ bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason)
     const int gameId = m_currentGame.value(QStringLiteral("id")).toInt();
     const QString title = m_currentGame.value(QStringLiteral("title")).toString();
     const QString platform = m_currentGame.value(QStringLiteral("platform")).toString();
+    const bool alreadyLaunchBox =
+        m_currentGame.value(QStringLiteral("metadataProvider")).toString()
+            == QStringLiteral("launchbox");
+    if (alreadyLaunchBox) {
+        if (m_database)
+            m_database->markMetadataLookupAttempt(gameId, QStringLiteral("matched"));
+        finishCurrent(true, QStringLiteral("Existing LaunchBox metadata retained; no artwork source configured."));
+        return true;
+    }
     if (!m_settings || !m_settings->launchBoxEnabled()
         || !m_launchBoxCatalog || !m_launchBoxCatalog->catalogAvailable()
         || m_launchBoxCatalog->busy()) {
