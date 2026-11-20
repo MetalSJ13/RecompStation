@@ -342,7 +342,7 @@ private slots:
         GameMetadata primary;
         primary.provider = QStringLiteral("thegamesdb");
         primary.providerGameId = 987;
-        primary.title = QStringLiteral("Banjo-Kazooie");
+        primary.title = QStringLiteral("Banjo-Kazooie (USA) (Rev A)");
         primary.platformId = 3;
         provider.results.append(primary);
         MetadataManager metadata(&provider, nullptr, true);
