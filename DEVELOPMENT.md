@@ -267,6 +267,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Ensure keyboard navigation and visible focus across all screens (Library navigation works; Settings arrow-key routing and focus traversal have an initial fix committed, awaiting local verification)
 - [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
 - [ ] Complete controller-only navigation across every settings control, dialog, dropdown, and long scrolling page.
+- [ ] Add smooth right-analog-stick scrolling to the active Library Grid/List view, with a configurable-feeling dead zone, tilt-sensitive speed, and smooth deceleration on release; retain D-pad item-by-item navigation and existing mouse-wheel behavior.
 - [ ] Persist independent controller profiles keyed by stable SDL hardware GUID (backend foundation complete); apply assignments to the input router and implement interactive remapping/reset
 - [ ] Ensure Xbox/PlayStation defaults and launcher/game-session input ownership remain correct
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
