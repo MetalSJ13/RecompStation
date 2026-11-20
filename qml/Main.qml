@@ -2389,9 +2389,11 @@ ApplicationWindow {
                             }
 
                             Rectangle {
-                                Layout.fillWidth: true
+                                // Keep the filter strip visually compact while the
+                                // collection heading absorbs the flexible space to its left.
                                 Layout.minimumWidth: 520
-                                Layout.preferredWidth: 700
+                                Layout.preferredWidth: 1080
+                                Layout.maximumWidth: 1080
                                 Layout.preferredHeight: 76
                                 radius: 10
                                 color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.82)
@@ -2439,8 +2441,8 @@ ApplicationWindow {
                                     }
 
                                     ColumnLayout {
-                                        Layout.preferredWidth: 154
-                                        Layout.minimumWidth: 125
+                                        Layout.preferredWidth: 230
+                                        Layout.minimumWidth: 160
                                         spacing: 3
                                         Label {
                                             text: "PLATFORM"
@@ -2468,8 +2470,8 @@ ApplicationWindow {
                                     }
 
                                     ColumnLayout {
-                                        Layout.preferredWidth: 104
-                                        Layout.minimumWidth: 88
+                                        Layout.preferredWidth: 150
+                                        Layout.minimumWidth: 105
                                         spacing: 3
                                         Label {
                                             text: "VIEW"
@@ -2490,8 +2492,8 @@ ApplicationWindow {
                                     }
 
                                     ColumnLayout {
-                                        Layout.preferredWidth: 132
-                                        Layout.minimumWidth: 116
+                                        Layout.preferredWidth: 170
+                                        Layout.minimumWidth: 125
                                         spacing: 3
                                         Label {
                                             text: settingsManager.libraryView === "grid" ? "CARD SIZE" : "ROW SIZE"
