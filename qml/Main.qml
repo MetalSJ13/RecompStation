@@ -2724,6 +2724,12 @@ ApplicationWindow {
 
                                 readonly property bool highlighted:
                                     tileMouse.containsMouse || gameTile.GridView.isCurrentItem
+                                // The blurred fill is useful for landscape covers with
+                                // letterboxing, but duplicates portrait cover art. Keep
+                                // portrait artwork clean so it does not ghost during fades.
+                                readonly property bool useBlurredArtworkBackdrop:
+                                    gameTileCover.status === Image.Ready
+                                    && gameTileCover.sourceSize.width > gameTileCover.sourceSize.height
                                 function openDetails() {
                                     window.selectedGame = {
                                         id: gameTile.gameId,
@@ -2832,7 +2838,7 @@ ApplicationWindow {
                                                 verticalAlignment: Image.AlignVCenter
                                                 asynchronous: true
                                                 cache: true
-                                                visible: gameTile.artworkPath.length > 0
+                                                visible: gameTile.useBlurredArtworkBackdrop
                                                 opacity: 0.42
                                             }
                                             MultiEffect {
@@ -2841,7 +2847,7 @@ ApplicationWindow {
                                                 blurEnabled: true
                                                 blur: 0.8
                                                 autoPaddingEnabled: false
-                                                visible: gameTile.artworkPath.length > 0
+                                                visible: gameTile.useBlurredArtworkBackdrop
                                             }
                                             Rectangle {
                                                 anchors.fill: parent
