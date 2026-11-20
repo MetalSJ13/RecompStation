@@ -198,7 +198,7 @@ The following notes record focused implementation and user-validation updates. T
 
 **Scope and completion rule:** This work extends Milestone 4's automatic metadata maintenance. The checklist remains planned until the implementation, full automated regression suite, local build, and relevant runtime checks are completed and confirmed. Do not mark tasks complete based solely on code being committed.
 
-- [ ] Use one shared discovery/matching pipeline for manual and automatic scans
+- [ ] Use one shared discovery/matching pipeline for manual and automatic scans (the automatic post-scan scrape and manual refresh now enter the same `LibraryMetadataMatcher` queue; local verification pending)
 - [x] Add recursive filesystem monitoring for configured platform folders, with a 750 ms debounce and automatic full-library reconciliation (implementation and regression tests committed; local build/runtime validation pending)
 - [x] Detect added and removed games, including newly created nested folders; preserve unavailable database records and avoid duplicate registration (local validation pending)
 - [x] Automatically identify metadata using conservative title and platform matching (initial implementation; local build/runtime validation pending)
