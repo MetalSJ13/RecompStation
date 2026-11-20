@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QSet>
+#include <QDateTime>
 
 #include "core/Logging.h"
 #include "core/ControllerManager.h"
@@ -16,6 +17,7 @@
 #include "database/DatabaseManager.h"
 #include "metadata/TheGamesDbClient.h"
 #include "metadata/MetadataManager.h"
+#include "metadata/LaunchBoxCatalogManager.h"
 #include "github/GitHubManager.h"
 #include "projects/ProjectCatalog.h"
 
@@ -66,6 +68,12 @@ int main(int argc, char *argv[])
     TheGamesDbClient metadataProvider;
     MetadataManager metadataManager(&metadataProvider, nullptr,
                                     settingsManager.theGamesDbEnabled());
+    LaunchBoxCatalogManager launchBoxCatalogManager(platformManager.dataDirectory());
+    QObject::connect(&launchBoxCatalogManager, &LaunchBoxCatalogManager::updateCompleted,
+                     &settingsManager, [&settingsManager](int, int, int) {
+        settingsManager.setLaunchBoxLastUpdated(
+            QDateTime::currentDateTime().toString(Qt::ISODate));
+    });
     QObject::connect(&settingsManager, &SettingsManager::theGamesDbEnabledChanged,
                      &metadataManager, [&settingsManager, &metadataManager]() {
         metadataManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
@@ -116,6 +124,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);
     engine.rootContext()->setContextProperty("libraryScanner", &libraryScanner);
     engine.rootContext()->setContextProperty("metadataManager", &metadataManager);
+    engine.rootContext()->setContextProperty("launchBoxCatalogManager", &launchBoxCatalogManager);
     engine.rootContext()->setContextProperty("artworkManager", &artworkManager);
     engine.rootContext()->setContextProperty("screenshotManager", &screenshotManager);
     engine.rootContext()->setContextProperty("metadataMatcher", &metadataMatcher);
