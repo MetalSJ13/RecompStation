@@ -53,6 +53,8 @@ qt_add_executable(RecompStationApp
     src/core/LibraryMetadataMatcher.cpp
     src/core/ArtworkManager.h
     src/core/ArtworkManager.cpp
+    src/core/LaunchBoxArtworkManager.h
+    src/core/LaunchBoxArtworkManager.cpp
     src/core/ScreenshotManager.h
     src/core/ScreenshotManager.cpp
     src/database/DatabaseManager.h
@@ -309,6 +311,32 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME ArtworkManagerTests COMMAND ArtworkManagerTests)
+
+    qt_add_executable(LaunchBoxArtworkManagerTests
+        tests/LaunchBoxArtworkManagerTest.cpp
+        src/core/LaunchBoxArtworkManager.h
+        src/core/LaunchBoxArtworkManager.cpp
+        src/core/Logging.h
+        src/core/Logging.cpp
+        src/database/DatabaseManager.h
+        src/database/DatabaseManager.cpp
+        src/metadata/LaunchBoxCatalogDatabase.h
+        src/metadata/LaunchBoxCatalogDatabase.cpp
+        src/metadata/LaunchBoxCatalogMatcher.h
+        src/metadata/LaunchBoxCatalogMatcher.cpp
+        src/metadata/LaunchBoxXmlParser.h
+        src/metadata/LaunchBoxXmlParser.cpp
+    )
+
+    target_include_directories(LaunchBoxArtworkManagerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(LaunchBoxArtworkManagerTests PRIVATE
+        Qt6::Core Qt6::Sql Qt6::Network Qt6::Test
+    )
+
+    add_test(NAME LaunchBoxArtworkManagerTests COMMAND LaunchBoxArtworkManagerTests)
 
     qt_add_executable(MetadataProviderTests
         src/core/Logging.h
