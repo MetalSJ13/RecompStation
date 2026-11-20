@@ -160,12 +160,48 @@ private slots:
         QCOMPARE(result.status, LaunchBoxMatchResult::Status::UnsupportedPlatform);
     }
 
-    void stripsRegionsButPreservesRevisionTags()
+    void stripsRegionsAndLanguageTagsButPreservesRevisionTags()
     {
         QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle("Banjo-Kazooie (USA).z64"),
                  LaunchBoxCatalogMatcher::normalizedTitle("Banjo Kazooie"));
+        QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle("Mario Kart Wii (USA) (En,Fr,Es).rvz"),
+                 LaunchBoxCatalogMatcher::normalizedTitle("Mario Kart Wii"));
         QVERIFY(LaunchBoxCatalogMatcher::normalizedTitle("Game (Rev A)")
                 != LaunchBoxCatalogMatcher::normalizedTitle("Game"));
+    }
+
+    void titleFallbackCanResolveUniqueCanonicalTitleWhenRevisionIsMissing()
+    {
+        const QList<LaunchBoxGameRecord> games = {
+            game(1, "Banjo-Kazooie", "Nintendo 64")
+        };
+        const auto result = LaunchBoxCatalogMatcher::matchByTitle(
+            "N64", "Banjo-Kazooie (USA) (Rev A)", games);
+        QVERIFY(result.isMatch());
+        QCOMPARE(games.at(result.index).databaseId, 1);
+    }
+
+    void titleFallbackPrefersExactRevisionWhenBothExist()
+    {
+        const QList<LaunchBoxGameRecord> games = {
+            game(1, "Game", "Nintendo 64"),
+            game(2, "Game (Rev 1)", "Nintendo 64")
+        };
+        const auto result = LaunchBoxCatalogMatcher::matchByTitle(
+            "N64", "Game (Rev 1) (USA)", games);
+        QVERIFY(result.isMatch());
+        QCOMPARE(games.at(result.index).databaseId, 2);
+    }
+
+    void titleFallbackKeepsRevisionInsensitiveDuplicatesAmbiguous()
+    {
+        const QList<LaunchBoxGameRecord> games = {
+            game(1, "Game", "Nintendo 64"),
+            game(2, "Game (Rev 2)", "Nintendo 64")
+        };
+        const auto result = LaunchBoxCatalogMatcher::matchByTitle(
+            "N64", "Game (Rev 1) (USA)", games);
+        QCOMPARE(result.status, LaunchBoxMatchResult::Status::Ambiguous);
     }
 };
 
