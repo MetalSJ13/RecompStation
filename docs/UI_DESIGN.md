@@ -191,3 +191,10 @@ Audit follow-up: finish complete keyboard/controller focus and accessibility val
 - Unselected rows use translucent surfaces with a horizontal fade toward the right edge so the selected background artwork remains visible.
 - The selected row retains a stronger translucent surface and accent border for clear focus. Artwork and text remain fully opaque and readable.
 - List rows remain left-aligned; the expanded width is not centered.
+
+
+### List View density sizing
+- Compact: 104 px row height, 68 × 82 px artwork frame, 14 px title text.
+- Comfortable: 128 px row height, 86 × 104 px artwork frame, 16 px title text.
+- Spacious: retain the existing 144 px row height, 94 × 116 px artwork frame, and 17 px title text.
+- Keep the list density steps visually distinct while making Compact and Comfortable less undersized relative to Spacious.
