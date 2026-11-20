@@ -618,7 +618,9 @@ void SettingsManager::setCustomLibraryBackground(const QString &path)
 
 bool SettingsManager::isSupportedLibraryView(const QString &view)
 {
-    return view == QStringLiteral("grid") || view == QStringLiteral("list");
+    return view == QStringLiteral("grid")
+        || view == QStringLiteral("list")
+        || view == QStringLiteral("carousel");
 }
 
 bool SettingsManager::isSupportedLibraryDensity(const QString &density)
