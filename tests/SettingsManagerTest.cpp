@@ -24,6 +24,8 @@ private slots:
     void persistsScanOnStartupPreference();
     void defaultsToTheGamesDbEnabled();
     void persistsTheGamesDbEnabledPreference();
+    void defaultsToLaunchBoxDisabled();
+    void persistsLaunchBoxEnabledPreference();
     void controllerProfilesDefaultPerGuidAndPersistIndependently();
     void rejectsInvalidControllerProfiles();
     void persistsPreferencesInExplicitConfigFile();
@@ -169,6 +171,41 @@ void SettingsManagerTest::persistsTheGamesDbEnabledPreference()
     QCOMPARE(changed.count(), 1);
 }
 
+
+void SettingsManagerTest::defaultsToLaunchBoxDisabled()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QVERIFY(!manager.launchBoxEnabled());
+}
+
+void SettingsManagerTest::persistsLaunchBoxEnabledPreference()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy changed(&manager, &SettingsManager::launchBoxEnabledChanged);
+        manager.setLaunchBoxEnabled(true);
+        QVERIFY(manager.launchBoxEnabled());
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QVERIFY(reloaded.launchBoxEnabled());
+    QSignalSpy changed(&reloaded, &SettingsManager::launchBoxEnabledChanged);
+    reloaded.setLaunchBoxEnabled(true);
+    QCOMPARE(changed.count(), 0);
+    reloaded.setLaunchBoxEnabled(false);
+    QVERIFY(!reloaded.launchBoxEnabled());
+    QCOMPARE(changed.count(), 1);
+}
 
 void SettingsManagerTest::controllerProfilesDefaultPerGuidAndPersistIndependently()
 {
