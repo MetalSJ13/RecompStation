@@ -31,6 +31,13 @@ This document is the authoritative development status and implementation order f
 
 Keep the application buildable after each focused change. Preserve working backend behavior while the user-facing workflows are redesigned.
 
+### Library folder browser
+- Replace the desktop-native folder picker with an in-app directory browser for first-run setup and Settings.
+- Support folder navigation, Home/Up navigation, right-click context actions, and creating directories without leaving RecompStation.
+- Folder creation is restricted to a single child name in the current writable directory; selecting the library root still delegates platform-subfolder creation and persistence to PlatformManager.
+- Add regression coverage for directory listing, safe folder creation, duplicate names, and path traversal rejection.
+- Local build, UI interaction, and regression validation are required after pulling the change.
+
 ## Recent implementation notes (2026-11-18)
 
 The following notes record focused implementation and user-validation updates. The milestone checklists below remain the authoritative task/status tracker.
