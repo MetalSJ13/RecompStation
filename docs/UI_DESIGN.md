@@ -1,3 +1,7 @@
+### Non-blocking first-run setup
+- The first-run library setup panel is informational and must not be modal. Users can still interact with the application toolbar and navigate to Settings before choosing a library folder.
+- Keep its visibility scoped to the Library page and suppress it while the controller pause menu is open.
+
 ### First-run setup visibility and controller pause menu
 - The first-run library setup overlay is visible only while the Library page is active and no library root is configured.
 - Navigating to Settings hides the setup overlay; returning to Library restores it until setup is completed.
