@@ -333,7 +333,6 @@ int LibraryMetadataMatcher::bestMatchIndex(const QString &localTitle,
 void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
                                             bool forceArtworkDownload)
 {
-    m_forceArtworkDownload = forceArtworkDownload;
     qCInfo(lcMetadata) << "Library metadata scan requested. Include previously checked:"
                        << includePreviouslyChecked
                        << "busy:" << m_busy
@@ -350,6 +349,7 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
         return;
     }
 
+    m_forceArtworkDownload = forceArtworkDownload;
     const QVariantList games = m_database->gamesNeedingMetadata(includePreviouslyChecked);
     qCInfo(lcMetadata) << "Library metadata scan queued" << games.size()
                        << "game(s) for matching.";
@@ -377,7 +377,6 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
 
 void LibraryMetadataMatcher::scrapeGame(int gameId)
 {
-    m_forceArtworkDownload = true;
     qCInfo(lcMetadata) << "Manual metadata retry requested for game ID:" << gameId;
     if (m_busy || !m_database || !m_metadata)
         return;
@@ -406,6 +405,7 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
         return;
     }
 
+    m_forceArtworkDownload = true;
     m_queue.clear();
     m_queue.enqueue(QVariantMap{
         {QStringLiteral("id"), gameId},
