@@ -306,9 +306,28 @@ ApplicationWindow {
             return
         }
 
+        if (currentPage === "Library" && window.isDescendantOf(
+                    window.activeFocusItem, libraryFilterPanel)) {
+            if (direction === "left" || direction === "right") {
+                window.moveDirectionalFocus(libraryFilterPanel, direction)
+            } else if (direction === "down") {
+                gameGrid.currentIndex = Math.max(0, gameGrid.currentIndex)
+                gameGrid.forceActiveFocus()
+                gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
+            }
+            return
+        }
+
         if (currentPage === "Library" && gameGrid.count > 0) {
             let next = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
             if (settingsManager.libraryView === "list") {
+                if (direction === "up" && next === 0) {
+                    const toolbarItems = []
+                    window.collectFocusableItems(libraryFilterPanel, toolbarItems, [])
+                    if (toolbarItems.length > 0)
+                        toolbarItems[0].forceActiveFocus()
+                    return
+                }
                 if (direction === "up") next--
                 else if (direction === "down") next++
                 next = Math.max(0, Math.min(gameGrid.count - 1, next))
@@ -318,6 +337,13 @@ ApplicationWindow {
                 return
             }
             if (settingsManager.libraryView === "carousel") {
+                if (direction === "up") {
+                    const toolbarItems = []
+                    window.collectFocusableItems(libraryFilterPanel, toolbarItems, [])
+                    if (toolbarItems.length > 0)
+                        toolbarItems[0].forceActiveFocus()
+                    return
+                }
                 if (direction !== "left" && direction !== "right")
                     return
                 next += direction === "left" ? -1 : 1
@@ -329,6 +355,13 @@ ApplicationWindow {
             }
             const columns = Math.max(1, gameGrid.responsiveColumns)
             const row = Math.floor(next / columns)
+            if (direction === "up" && row === 0) {
+                const toolbarItems = []
+                window.collectFocusableItems(libraryFilterPanel, toolbarItems, [])
+                if (toolbarItems.length > 0)
+                    toolbarItems[0].forceActiveFocus()
+                return
+            }
             const column = next % columns
             const rowCount = Math.ceil(gameGrid.count / columns)
             let targetRow = row
@@ -3279,6 +3312,7 @@ ApplicationWindow {
                             }
 
                             Rectangle {
+                                id: libraryFilterPanel
                                 // Keep the filter strip visually compact while the
                                 // collection heading absorbs the flexible space to its left.
                                 Layout.minimumWidth: 520
@@ -3342,6 +3376,8 @@ ApplicationWindow {
                                             font.letterSpacing: 0.8
                                         }
                                         ComboBox {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: 34
                                             model: ["All Platforms"].concat(platformManager.platforms())
@@ -3371,6 +3407,8 @@ ApplicationWindow {
                                             font.letterSpacing: 0.8
                                         }
                                         ComboBox {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: 34
                                             textRole: "label"
@@ -3397,6 +3435,8 @@ ApplicationWindow {
                                             font.letterSpacing: 0.8
                                         }
                                         ComboBox {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: 34
                                             textRole: "label"
