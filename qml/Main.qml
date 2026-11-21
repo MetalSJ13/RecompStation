@@ -1115,16 +1115,254 @@ ApplicationWindow {
         }
     }
 
-    FolderDialog {
+    Dialog {
         id: libraryFolderDialog
         title: "Choose your RecompStation game library"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 36, 760)
+        height: Math.min(parent.height - 36, 620)
+        standardButtons: Dialog.NoButton
+        padding: 18
+
+        property string currentFolderPath: ""
+        property string selectedFolderPath: ""
+        property var directoryEntries: []
+        property string browserMessage: ""
+
+        function refreshDirectory() {
+            directoryEntries = platformManager.libraryDirectories(currentFolderPath)
+            browserMessage = directoryEntries.length === 0
+                ? "No subfolders in this location." : ""
+        }
+
+        function navigateTo(path) {
+            currentFolderPath = path
+            selectedFolderPath = path
+            refreshDirectory()
+        }
+
+        onOpened: {
+            const startPath = platformManager.libraryConfigured
+                ? platformManager.libraryDirectory : platformManager.homeDirectory()
+            navigateTo(startPath)
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 12
+
+            Label {
+                Layout.fillWidth: true
+                text: "Choose where RecompStation should store and scan your games. You can create a folder here without leaving setup."
+                color: theme.textSecondary
+                wrapMode: Text.Wrap
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Button {
+                    text: "Home"
+                    onClicked: libraryFolderDialog.navigateTo(platformManager.homeDirectory())
+                }
+                Button {
+                    text: "Up"
+                    enabled: platformManager.parentDirectory(libraryFolderDialog.currentFolderPath)
+                        !== libraryFolderDialog.currentFolderPath
+                    onClicked: libraryFolderDialog.navigateTo(
+                        platformManager.parentDirectory(libraryFolderDialog.currentFolderPath))
+                }
+                Label {
+                    Layout.fillWidth: true
+                    text: libraryFolderDialog.currentFolderPath
+                    color: theme.textMuted
+                    elide: Text.ElideMiddle
+                }
+                Button {
+                    text: "New Folder"
+                    highlighted: true
+                    onClicked: {
+                        newLibraryFolderName.text = ""
+                        newLibraryFolderDialog.open()
+                        newLibraryFolderName.forceActiveFocus()
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: theme.sidebarBackground
+                border.color: theme.divider
+                radius: 10
+                clip: true
+
+                ListView {
+                    id: libraryDirectoryList
+                    anchors.fill: parent
+                    anchors.margins: 6
+                    model: libraryFolderDialog.directoryEntries
+                    clip: true
+                    spacing: 3
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: ListView.view.width
+                        height: 44
+                        radius: 7
+                        color: folderMouseArea.containsMouse
+                            ? Qt.rgba(0.45, 0.45, 0.45, 0.16)
+                            : (libraryFolderDialog.selectedFolderPath === modelData.path
+                                ? Qt.rgba(0.35, 0.55, 0.85, 0.18) : "transparent")
+                        border.color: libraryFolderDialog.selectedFolderPath === modelData.path
+                            ? theme.accent : "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 10
+                            spacing: 10
+                            Label {
+                                text: "📁"
+                                color: theme.textSecondary
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: modelData.name
+                                color: theme.textPrimary
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                text: "›"
+                                color: theme.textMuted
+                                font.pixelSize: 20
+                            }
+                        }
+
+                        MouseArea {
+                            id: folderMouseArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            onClicked: function(mouse) {
+                                if (mouse.button === Qt.RightButton) {
+                                    libraryFolderDialog.selectedFolderPath = modelData.path
+                                    folderContextMenu.popup()
+                                } else {
+                                    libraryFolderDialog.selectedFolderPath = modelData.path
+                                }
+                            }
+                            onDoubleClicked: function(mouse) {
+                                if (mouse.button === Qt.LeftButton)
+                                    libraryFolderDialog.navigateTo(modelData.path)
+                            }
+                        }
+                    }
+
+                    Label {
+                        anchors.centerIn: parent
+                        visible: libraryFolderDialog.directoryEntries.length === 0
+                        text: "No folders here yet. Use New Folder or right-click a folder to create one."
+                        color: theme.textMuted
+                        wrapMode: Text.Wrap
+                        width: parent.width - 40
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: libraryFolderDialog.browserMessage
+                color: theme.textMuted
+                font.pixelSize: 11 * theme.fontScale
+                visible: text.length > 0
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Label {
+                    Layout.fillWidth: true
+                    text: "Selected: " + libraryFolderDialog.selectedFolderPath
+                    color: theme.textMuted
+                    elide: Text.ElideMiddle
+                }
+                Button {
+                    text: "Cancel"
+                    onClicked: libraryFolderDialog.reject()
+                }
+                Button {
+                    text: "Choose This Folder"
+                    highlighted: true
+                    enabled: libraryFolderDialog.selectedFolderPath.length > 0
+                    onClicked: {
+                        if (platformManager.setLibraryDirectoryPath(
+                                libraryFolderDialog.selectedFolderPath)) {
+                            window.scanMessage = "Library folder saved. Scanning platform folders..."
+                            libraryFolderDialog.accept()
+                            librarySetupDialog.close()
+                            libraryScanner.scanAll()
+                        } else {
+                            libraryFolderDialog.browserMessage =
+                                "Could not use that folder. Check that it exists and is writable."
+                        }
+                    }
+                }
+            }
+        }
+
+        Menu {
+            id: folderContextMenu
+            MenuItem {
+                text: "Open"
+                onTriggered: libraryFolderDialog.navigateTo(
+                    libraryFolderDialog.selectedFolderPath)
+            }
+            MenuItem {
+                text: "Create New Folder"
+                onTriggered: {
+                    newLibraryFolderName.text = ""
+                    newLibraryFolderDialog.open()
+                    newLibraryFolderName.forceActiveFocus()
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: newLibraryFolderDialog
+        title: "Create New Folder"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 48, 420)
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onOpened: newLibraryFolderName.forceActiveFocus()
         onAccepted: {
-            if (platformManager.setLibraryDirectory(selectedFolder)) {
-                window.scanMessage = "Library folder saved. Scanning platform folders..."
-                librarySetupDialog.close()
-                libraryScanner.scanAll()
+            if (platformManager.createLibraryFolder(
+                    libraryFolderDialog.currentFolderPath,
+                    newLibraryFolderName.text)) {
+                libraryFolderDialog.refreshDirectory()
+                libraryFolderDialog.selectedFolderPath =
+                    libraryFolderDialog.currentFolderPath + "/" + newLibraryFolderName.text.trim()
+                libraryFolderDialog.browserMessage = "Folder created."
             } else {
-                window.scanMessage = "Could not use that folder. Choose an existing, readable local directory."
+                libraryFolderDialog.browserMessage =
+                    "Could not create that folder. Check the name, permissions, and whether it already exists."
+            }
+        }
+        ColumnLayout {
+            width: parent.width
+            Label {
+                Layout.fillWidth: true
+                text: "Enter a name for the new folder."
+                color: theme.textSecondary
+            }
+            TextField {
+                id: newLibraryFolderName
+                Layout.fillWidth: true
+                placeholderText: "Folder name"
+                selectByMouse: true
             }
         }
     }
