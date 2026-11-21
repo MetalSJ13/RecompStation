@@ -88,6 +88,10 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("library/listDensity"), QStringLiteral("comfortable")).toString();
     m_libraryListDensity = isSupportedLibraryListDensity(storedLibraryListDensity)
         ? storedLibraryListDensity : QStringLiteral("comfortable");
+    const QString storedLibraryConsoleDensity = settings.value(
+        QStringLiteral("library/consoleDensity"), QStringLiteral("spacious")).toString();
+    m_libraryConsoleDensity = isSupportedLibraryDensity(storedLibraryConsoleDensity)
+        ? storedLibraryConsoleDensity : QStringLiteral("spacious");
     const QString storedBackgroundType = settings.value(
         QStringLiteral("appearance/libraryBackgroundType"), QStringLiteral("static")).toString();
     m_libraryBackgroundType = isSupportedLibraryBackgroundType(storedBackgroundType)
@@ -534,6 +538,26 @@ void SettingsManager::setLibraryListDensity(const QString &density)
     }
     m_libraryListDensity = density;
     emit libraryListDensityChanged();
+}
+
+QString SettingsManager::libraryConsoleDensity() const
+{
+    return m_libraryConsoleDensity;
+}
+
+void SettingsManager::setLibraryConsoleDensity(const QString &density)
+{
+    if (!isSupportedLibraryDensity(density) || m_libraryConsoleDensity == density)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("library/consoleDensity"), density);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist Console view density:" << density;
+        return;
+    }
+    m_libraryConsoleDensity = density;
+    emit libraryConsoleDensityChanged();
 }
 
 QString SettingsManager::libraryBackgroundType() const
