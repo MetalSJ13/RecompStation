@@ -3201,6 +3201,10 @@ ApplicationWindow {
                                 if (currentIndex < 0 && count > 0)
                                     currentIndex = 0
                             }
+                            onCountChanged: {
+                                if (currentIndex < 0 && count > 0)
+                                    currentIndex = 0
+                            }
                             onCurrentIndexChanged: {
                                 if (currentIndex !== gameGrid.currentIndex)
                                     gameGrid.currentIndex = currentIndex
