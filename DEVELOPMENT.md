@@ -6,7 +6,7 @@ This document is the authoritative development status and implementation order f
 
 ### Current focus
 - **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream is functionally complete and user-validated on 2026-11-21. The broader milestone remains open for controller-interface polish, accessibility review, display/multi-monitor validation, and a fresh full regression pass. The last user-confirmed automated baseline was 18/18 CTest suites passing on 2026-11-20; subsequent changes still need a fresh local build/test run.
-- **Current UI work:** The Carousel presentation is the first-run default, with persistent user-selected view preferences and independent sizing. The latest first-run library setup and automatic metadata workflow have been exercised by the user. Current work is focused on completing keyboard navigation, visible focus, and controller-only navigation across the application.
+- **Current UI work:** The Carousel presentation is the first-run default, with persistent user-selected view preferences and independent sizing. The latest first-run library setup and automatic metadata workflow have been exercised by the user. Navigation and Focus is functionally complete; remaining UI work is focused on controller-interface polish, accessibility/scaling, Carousel hover sensitivity, and broader display validation.
 - **Next technical focus:** With Navigation and Focus complete, proceed through controller-interface polish, accessibility/scaling, Carousel hover sensitivity, display/multi-monitor validation, and a full regression pass. Per-device controller profiles and navigation sounds are deferred backlog items. N64 hash lookup and provider fallback validation remain future tasks.
 
 ### Implemented foundations
@@ -90,14 +90,15 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Add a persistent TheGamesDB provider checkbox and configured/disabled/API-key-required status.
 - [x] Gate TheGamesDB platform-catalog and search requests using the saved provider preference.
 - [x] Add regression coverage for provider preference persistence and disabled-provider search behavior.
-- [ ] Build and run locally; verify Settings scrolling, category navigation, provider-toggle persistence, and metadata refresh behavior.
+- [x] Build/run and verify Settings scrolling and category navigation; user has since confirmed navigation through the Settings categories and long content using keyboard/controller input.
+- [ ] Verify provider-toggle persistence across restarts and metadata refresh behavior.
 - [ ] Add provider priority/fallback and independent artwork-source controls as additional providers are integrated.
 
 ### Library and navigation polish
 - [x] Simplify primary Library/Settings navigation to compact icon-led controls; user approved the appearance.
 - [x] Add configurable Grid/List browsing, title search, platform filtering, and independent view sizing.
-- [ ] Validate the new Console carousel locally: horizontal scrolling, selected-card centering/focus, mouse/keyboard/controller selection, details opening, persistence, and Grid/List regression.
-- [ ] Verify Carousel hover no longer cascades through cards when the pointer is stationary near the screen edges; card selection should follow actual pointer movement.
+- [ ] Complete Carousel validation: verify selected-card centering/focus, mouse/keyboard/controller selection, details opening, preference persistence, and Grid/List regression. Horizontal controller navigation has been exercised; remaining checks are not yet fully confirmed.
+- [ ] Verify Carousel hover no longer cascades through cards when the pointer is stationary near the screen edges; card selection should follow actual pointer movement. User previously reported excessive edge sensitivity, so this remains open.
 - [x] Add coordinated static/animated/custom library background treatments.
 - [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
 - [x] Validate fullscreen startup and the coordinated startup Grid reveal on the user's Wayland desktop; no initial windowed flash or duplicate/late card animation remains.
@@ -180,7 +181,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Add the bottom-up, staggered Grid card entrance for application startup, List-to-Grid switching, and return from Settings; respect Reduced Motion. User has visually validated the timing and behavior across these entry points.
 - [x] Normalize the Settings category content gutters, title/description/divider hierarchy, section spacing, and horizontal-scroll behavior; retain the shared focus treatment and on-demand vertical scrolling.
 - [x] Request fullscreen as the initial native window state on every application launch, including first-run and existing-library installations; gate the startup Grid card reveal until fullscreen is confirmed and initialize delegates in their hidden reveal state to prevent a visible pre-animation flash. User confirmed the startup behavior on Wayland, including the absence of the windowed flash and duplicate/late card reveal.
-- [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition.
+- [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition. The recent Navigation and Focus validation covers core Library/Settings navigation, but does not replace this broader regression.
 
 **Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch behavior are implemented and user-validated. The latest local build completed successfully and all 14 automated tests passed. Recent fixes for Application-page controller/keyboard navigation, Settings scrolling and Escape handling, and adaptive pause-menu hints were also confirmed by the user. The comprehensive manual navigation/backend regression pass remains intentionally open and deferred while work proceeds on Milestone 3; do not mark Milestone 2 complete until that pass is explicitly resumed and finished.
 
@@ -283,7 +284,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
 - [ ] Revisit the Ember theme in a future design pass; the user prefers Midnight Violet and Electric Blue and does not feel Ember is at the same visual quality. Keep the current theme available for now; consider a stronger replacement/refinement later.
 - [x] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior (initial lightweight wave ambience and image scaling implemented; further visual refinement remains)
-- [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
+- [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes). **User-validated:** Windowed, Fullscreen, and Maximized modes work, and the preferred custom window size now applies correctly on the user's Wayland desktop. Multi-display behavior remains a separate open validation item.
 - [ ] Make the UI adapt cleanly to 1080p (1920×1080), 1440p (2560×1440), and 4K (3840×2160), including Library presentations, Game Details, Settings, dialogs, overlays, and window resizing; preserve the intended spacious design at each resolution.
 - [ ] Validate Qt high-DPI and desktop scaling behavior on the current KDE Plasma Wayland environment. Keep explicit monitor selection deferred; the compositor remains responsible for monitor placement and resolution.
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
