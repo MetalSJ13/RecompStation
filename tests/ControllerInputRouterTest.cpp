@@ -20,6 +20,8 @@ private slots:
     void suspendedInputDoesNotEmitActions();
     void heldButtonsDoNotFireWhenInputResumes();
     void emitsInputEnabledChangeOnlyWhenStateChanges();
+    void gameSessionSuspendsNavigationWithoutChangingPreference();
+    void heldButtonsDoNotFireWhenGameSessionEnds();
     void resolvesActionsFromCustomMappings();
     void resolvesNavigationFromCustomMappings();
     void supportsMultipleInputsForOneAction();
@@ -205,6 +207,54 @@ void ControllerInputRouterTest::emitsInputEnabledChangeOnlyWhenStateChanges()
     QCOMPARE(changed.count(), 2);
 }
 
+
+void ControllerInputRouterTest::gameSessionSuspendsNavigationWithoutChangingPreference()
+{
+    ControllerInputRouter router;
+    QSignalSpy select(&router, &ControllerInputRouter::selectRequested);
+    QSignalSpy navigation(&router, &ControllerInputRouter::navigationRequested);
+
+    QVERIFY(router.inputEnabled());
+    QVERIFY(router.navigationActive());
+
+    router.setGameSessionActive(true);
+    QVERIFY(router.inputEnabled());
+    QVERIFY(!router.navigationActive());
+    router.processFrame("up", true, false, false, false, false, 0);
+    QCOMPARE(select.count(), 0);
+    QCOMPARE(navigation.count(), 0);
+
+    router.setGameSessionActive(false);
+    QVERIFY(router.inputEnabled());
+    QVERIFY(router.navigationActive());
+    router.processFrame("up", false, false, false, false, false, 16);
+    QCOMPARE(navigation.count(), 1);
+
+    router.setInputEnabled(false);
+    router.setGameSessionActive(true);
+    router.setGameSessionActive(false);
+    QVERIFY(!router.inputEnabled());
+    QVERIFY(!router.navigationActive());
+    router.processFrame("down", true, false, false, false, false, 32);
+    QCOMPARE(select.count(), 0);
+    QCOMPARE(navigation.count(), 1);
+}
+
+void ControllerInputRouterTest::heldButtonsDoNotFireWhenGameSessionEnds()
+{
+    ControllerInputRouter router;
+    QSignalSpy select(&router, &ControllerInputRouter::selectRequested);
+
+    router.setGameSessionActive(true);
+    router.processFrame({}, true, false, false, false, false, 0);
+    router.setGameSessionActive(false);
+    router.processFrame({}, true, false, false, false, false, 16);
+    QCOMPARE(select.count(), 0);
+
+    router.processFrame({}, false, false, false, false, false, 32);
+    router.processFrame({}, true, false, false, false, false, 48);
+    QCOMPARE(select.count(), 1);
+}
 
 void ControllerInputRouterTest::resolvesActionsFromCustomMappings()
 {
