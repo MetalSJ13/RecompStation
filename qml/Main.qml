@@ -4128,8 +4128,15 @@ ApplicationWindow {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     onEntered: {
-                                        consoleView.currentIndex = consoleTile.index
+                                        // A card can slide beneath a stationary pointer as the
+                                        // carousel recenters. Do not treat that as a new hover
+                                        // selection or it can trigger a rapid card-to-card cascade.
                                         window.activeInputDevice = "mouse"
+                                    }
+                                    onPositionChanged: {
+                                        // Only pointer movement should change the hovered card.
+                                        if (containsMouse)
+                                            consoleView.currentIndex = consoleTile.index
                                     }
                                     onClicked: {
                                         gameGrid.currentIndex = consoleTile.index
