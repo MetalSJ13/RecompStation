@@ -309,7 +309,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Add adaptive mouse, keyboard, and controller navigation hints with bundled icons
 - [x] Detect controllers connected after application startup; switch hints when controller input is used
 - [ ] Ensure keyboard navigation and visible focus across all screens (Library navigation works; Settings arrow-key routing and focus traversal have an initial fix committed, awaiting local verification)
-- [ ] Verify the keyboard-operable Library Folder Picker from both the Settings folder-change flow and first-run/reset setup (initial focus, arrow-key folder traversal, Enter to open, Space to select, and focusable action buttons); application-level Settings arrow-key shortcuts now yield while the picker is open. Local build/runtime validation pending.
+- [ ] Verify the keyboard-operable Library Folder Picker from both the Settings folder-change flow and first-run/reset setup (initial focus, arrow-key folder traversal with automatic scrolling, Page Up/Down, Home/End, Enter to open, Space to select, and focusable action buttons); application-level Settings arrow-key shortcuts now yield while the picker is open. Local build/runtime validation pending.
 - [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
 - [ ] Complete controller-only navigation across every settings control, dialog, dropdown, and long scrolling page.
 - [ ] Add smooth right-analog-stick scrolling to the active Library Grid/List view, with a configurable-feeling dead zone, tilt-sensitive speed, and smooth deceleration on release; retain D-pad item-by-item navigation and existing mouse-wheel behavior.
