@@ -1078,12 +1078,18 @@ ApplicationWindow {
         target: libraryScanner
         function onScanCompleted(gamesFound) {
             window.libraryRevision++
-            window.scanMessage = libraryScanner.lastError.length > 0
-                ? libraryScanner.lastError + "\nChecking metadata for discovered games..."
-                : gamesFound + " new game(s) found. Checking metadata..."
-            // A problem with one platform folder must not block metadata for
-            // games successfully discovered on other platforms.
-            metadataMatcher.scrapeLibrary()
+            if (settingsManager.automaticMetadataMatchingEnabled) {
+                window.scanMessage = libraryScanner.lastError.length > 0
+                    ? libraryScanner.lastError + "\nChecking metadata for discovered games..."
+                    : gamesFound + " new game(s) found. Checking metadata..."
+                // A problem with one platform folder must not block metadata for
+                // games successfully discovered on other platforms.
+                metadataMatcher.scrapeLibrary()
+            } else {
+                window.scanMessage = libraryScanner.lastError.length > 0
+                    ? libraryScanner.lastError + "\nAutomatic metadata matching is disabled."
+                    : gamesFound + " new game(s) found. Automatic metadata matching is disabled."
+            }
         }
     }
 
@@ -5408,6 +5414,64 @@ ApplicationWindow {
                                         wrapMode: Text.Wrap
                                     }
                                     Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+
+                                    Label {
+                                        text: "AUTOMATION"
+                                        color: theme.textMuted
+                                        font.pixelSize: 10 * theme.fontScale
+                                        font.bold: true
+                                        font.letterSpacing: 1
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: automaticMetadataColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: settingsManager.automaticMetadataMatchingEnabled
+                                            ? theme.accent : theme.divider
+                                        ColumnLayout {
+                                            id: automaticMetadataColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 8
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                CheckBox {
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: "Automatically match metadata"
+                                                    checked: settingsManager.automaticMetadataMatchingEnabled
+                                                    onToggled: settingsManager.setAutomaticMetadataMatchingEnabled(checked)
+                                                    background: Rectangle {
+                                                        radius: 8
+                                                        color: parent.activeFocus
+                                                            ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                        anchors.margins: -6
+                                                    }
+                                                }
+                                                Item { Layout.fillWidth: true }
+                                                Label {
+                                                    text: settingsManager.automaticMetadataMatchingEnabled
+                                                        ? "Enabled" : "Disabled"
+                                                    color: settingsManager.automaticMetadataMatchingEnabled
+                                                        ? "#48C78E" : theme.textMuted
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Automatically identify newly discovered games after a library scan. When disabled, use Refresh All Metadata to run matching manually."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
 
                                     Label {
                                         text: "AVAILABLE PROVIDERS"
