@@ -3928,7 +3928,10 @@ ApplicationWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            visible: gameGrid.count === 0
+                            // Keep the empty-library message out of the first-run setup
+                            // experience. The setup overlay remains visible; the empty state
+                            // becomes eligible only after a library folder is configured.
+                            visible: platformManager.libraryConfigured && gameGrid.count === 0
                             radius: theme.radiusLarge
                             color: theme.surface
                             border.color: theme.divider
