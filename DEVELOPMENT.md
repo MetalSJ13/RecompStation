@@ -5,9 +5,9 @@ This document is the authoritative development status and implementation order f
 ## Project status
 
 ### Current focus
-- **Active milestone:** Milestones 5 and 6 — Settings/first-run experience and launcher experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred. The last user-confirmed baseline before the current artwork change: all 18/18 CTest suites passed on 2026-11-20; the new artwork work still requires a fresh local build/test run.
-- **Current UI work:** The Carousel presentation is the first-run default, with persistent user-selected view preferences and independent sizing. The current discussion is focused on Settings/first-run behavior, display-resolution adaptation, and launcher workflow completeness.
-- **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
+- **Active milestone:** Milestones 5 and 6 — Settings/first-run experience and launcher experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred. The last user-confirmed automated baseline was 18/18 CTest suites passing on 2026-11-20; changes committed on 2026-11-21 still need a fresh local build/test run.
+- **Current UI work:** The Carousel presentation is the first-run default, with persistent user-selected view preferences and independent sizing. The latest first-run library setup and automatic metadata workflow have been exercised by the user. The user is pausing feature work; future theme refinement is deferred.
+- **Next technical focus:** Resume with local regression validation, then continue the outstanding platform, metadata-provider, accessibility, and launcher work. N64 hash lookup and provider fallback validation remain future tasks.
 
 ### Implemented foundations
 - **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
@@ -43,14 +43,17 @@ Keep the application buildable after each focused change. Preserve working backe
 ### Metadata matching preference
 - [x] Add persistent Settings → Metadata options to enable or disable automatic metadata matching and automatic cover-art downloads; both default to enabled to preserve the existing workflow.
 - [x] Keep the manual **Refresh All Metadata** workflow available regardless of either automatic preference; manual refresh explicitly retries matching and artwork retrieval.
-- [ ] Build and run locally; verify both preferences persist across restarts, disabled scans skip matching, automatic cover downloads respect their preference, and manual refresh overrides both preferences.
+- [x] Add persistent automatic metadata-matching and automatic artwork-download preferences, both enabled by default; preserve manual **Refresh All Metadata** as an explicit override.
+- [x] User visually confirmed the new Metadata settings are present.
+- [ ] Build and run locally; verify both preferences persist across restarts, disabled scans skip matching, automatic cover/screenshot downloads respect their preference, and manual refresh overrides both preferences.
 
 ### First-run experience and library setup
 - [x] Add the optional automatic application-update preference prompt before library-folder setup. Yes, No, closing the prompt, and Escape all complete the preference; dismissal is saved as disabled, and the choice can later be changed in Settings → Application. This is preference UI only: release checks are not connected and no network requests are made.
 - [x] Polish the first-run library-folder setup overlay to match the active theme and the rest of the application.
 - [x] Scope the library-folder setup overlay to the Library page and prevent it from covering the controller pause menu.
 - [x] Make the library-folder setup overlay non-modal so mouse users can still use the toolbar and navigate to Settings while setup remains incomplete.
-- [ ] Test the complete first-run sequence after resetting library data, including update preference, folder selection, initial scan, and the resulting empty/non-empty Library states. This validation is now in progress.
+- [x] User exercised the reset/setup flow, selected an existing library root, corrected an initially incorrect folder path, and confirmed that the subsequent scan discovers the games and automatically starts metadata matching.
+- [ ] Complete validation of both empty-library and populated-library presentation after a full reset; only the populated-library scan/matching path has been confirmed in this pass.
 - [ ] Revisit the empty-library presentation only after observing the complete reset/first-run flow. A trial that hid the empty state until a library folder was configured was reverted at the user's request; current behavior is intentionally unchanged.
 
 ### Library folder browser
@@ -268,6 +271,7 @@ The following notes record focused implementation and user-validation updates. T
 
 - [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent.
 - [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
+- [ ] Revisit the Ember theme in a future design pass; the user prefers Midnight Violet and Electric Blue and does not feel Ember is at the same visual quality. Keep the current theme available for now; consider a stronger replacement/refinement later.
 - [x] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior (initial lightweight wave ambience and image scaling implemented; further visual refinement remains)
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
 - [ ] Make the UI adapt cleanly to 1080p (1920×1080), 1440p (2560×1440), and 4K (3840×2160), including Library presentations, Game Details, Settings, dialogs, overlays, and window resizing; preserve the intended spacious design at each resolution.
@@ -277,7 +281,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Style the first-run library-folder setup overlay and keep it scoped to the Library page.
 - [x] Keep the setup overlay non-modal so the toolbar and Settings remain mouse-accessible; suppress it while the controller pause menu is open.
 - [x] Add automatic filesystem monitoring for configured folders (runtime monitoring/reconciliation behavior confirmed; see Milestone 4 for implementation and validation details).
-- [ ] Automatically scan an existing library immediately when the user selects or changes the library root; populate filename-based cards before metadata is available. The scan trigger and regression test are committed; local build/test and first-run validation are pending.
+- [x] Automatically scan an existing library immediately when the user selects or changes the library root; populate filename-based cards before metadata is available. User confirmed the corrected library root is scanned, games are discovered, and automatic metadata matching starts afterward.
 - [x] Cache gameplay screenshots independently of cover art for games with saved TheGamesDB associations.
 - [x] Expose TheGamesDB provider status/enablement and one coordinated **Refresh All Metadata** action in Settings → Metadata; separate manual metadata and screenshot buttons have been retired.
 - [ ] Revisit launcher installation/update preferences only when the underlying launcher workflows and higher-priority Settings work are settled; no broad all-launcher GitHub update polling is planned.
