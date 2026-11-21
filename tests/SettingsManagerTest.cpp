@@ -26,6 +26,8 @@ private slots:
     void persistsUpdatePreferenceAndPromptCompletion();
     void defaultsToAutomaticMetadataMatchingEnabled();
     void persistsAutomaticMetadataMatchingPreference();
+    void defaultsToAutomaticArtworkDownloadsEnabled();
+    void persistsAutomaticArtworkDownloadsPreference();
     void defaultsToTheGamesDbEnabled();
     void persistsTheGamesDbEnabledPreference();
     void defaultsToLaunchBoxDisabled();
@@ -218,6 +220,41 @@ void SettingsManagerTest::persistsAutomaticMetadataMatchingPreference()
     QCOMPARE(changed.count(), 0);
     reloaded.setAutomaticMetadataMatchingEnabled(true);
     QVERIFY(reloaded.automaticMetadataMatchingEnabled());
+    QCOMPARE(changed.count(), 1);
+}
+
+void SettingsManagerTest::defaultsToAutomaticArtworkDownloadsEnabled()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QVERIFY(manager.automaticArtworkDownloadsEnabled());
+}
+
+void SettingsManagerTest::persistsAutomaticArtworkDownloadsPreference()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy changed(&manager, &SettingsManager::automaticArtworkDownloadsEnabledChanged);
+        manager.setAutomaticArtworkDownloadsEnabled(false);
+        QVERIFY(!manager.automaticArtworkDownloadsEnabled());
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QVERIFY(!reloaded.automaticArtworkDownloadsEnabled());
+    QSignalSpy changed(&reloaded, &SettingsManager::automaticArtworkDownloadsEnabledChanged);
+    reloaded.setAutomaticArtworkDownloadsEnabled(false);
+    QCOMPARE(changed.count(), 0);
+    reloaded.setAutomaticArtworkDownloadsEnabled(true);
+    QVERIFY(reloaded.automaticArtworkDownloadsEnabled());
     QCOMPARE(changed.count(), 1);
 }
 
