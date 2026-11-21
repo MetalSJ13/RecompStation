@@ -311,7 +311,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Support Escape to return from immersive game details to the Game Library
 - [x] Add adaptive mouse, keyboard, and controller navigation hints with bundled icons
 - [x] Detect controllers connected after application startup; switch hints when controller input is used
-- [ ] Ensure keyboard navigation and visible focus across all screens (Library navigation works; Settings arrow-key routing and focus traversal have an initial fix committed, awaiting local verification)
+- [ ] Ensure keyboard navigation and visible focus across all screens (user confirms Library keyboard navigation works well and Settings navigation is nearly complete; known issue: Settings options that open sub-settings pages activate with Space but not Enter/Return. Fix Enter/Return activation consistently without interfering with text fields, dropdowns, or modal-dialog shortcuts.)
 - [ ] Verify the keyboard-operable Library Folder Picker from both the Settings folder-change flow and first-run/reset setup (initial focus, arrow-key folder traversal with automatic scrolling, Page Up/Down, Home/End, Enter to open, Space to select, and focusable action buttons); application-level Settings arrow-key shortcuts now yield while the picker is open. Local build/runtime validation pending.
 - [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
 - [ ] Complete controller-only navigation across every settings control, dialog, dropdown, and long scrolling page.
