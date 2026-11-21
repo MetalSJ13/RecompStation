@@ -5,9 +5,9 @@ This document is the authoritative development status and implementation order f
 ## Project status
 
 ### Current focus
-- **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. Navigation and focus validation is the current workstream. The last user-confirmed automated baseline was 18/18 CTest suites passing on 2026-11-20; subsequent changes still need a fresh local build/test run.
+- **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream is functionally complete and user-validated on 2026-11-21. The broader milestone remains open for controller-interface polish, accessibility review, display/multi-monitor validation, and a fresh full regression pass. The last user-confirmed automated baseline was 18/18 CTest suites passing on 2026-11-20; subsequent changes still need a fresh local build/test run.
 - **Current UI work:** The Carousel presentation is the first-run default, with persistent user-selected view preferences and independent sizing. The latest first-run library setup and automatic metadata workflow have been exercised by the user. Current work is focused on completing keyboard navigation, visible focus, and controller-only navigation across the application.
-- **Next technical focus:** Complete Navigation and Focus validation, then proceed through controller-interface polish, accessibility/scaling, Carousel hover sensitivity, display validation, and a full regression pass. Per-device controller profiles and navigation sounds are deferred backlog items. N64 hash lookup and provider fallback validation remain future tasks.
+- **Next technical focus:** With Navigation and Focus complete, proceed through controller-interface polish, accessibility/scaling, Carousel hover sensitivity, display/multi-monitor validation, and a full regression pass. Per-device controller profiles and navigation sounds are deferred backlog items. N64 hash lookup and provider fallback validation remain future tasks.
 
 ### Implemented foundations
 - **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
@@ -39,6 +39,15 @@ Keep the application buildable after each focused change. Preserve working backe
 - [x] User-confirmed local build/run and UI interaction: the browser opens and can create folders.
 
 ## Recent implementation notes (2026-11-21)
+
+### Navigation and Focus completion
+- [x] Confirm controller focus is visible and usable on the Library toolbar controls, including platform/view/card-size dropdowns.
+- [x] Refine Settings directional focus so vertical D-pad movement follows visual row order.
+- [x] Confirm keyboard/controller navigation through Settings categories and content, including Application settings and long scrolling content.
+- [x] Confirm display controls: Windowed, Fullscreen, Maximized, and preferred custom window sizing.
+- [x] Add horizontal D-pad navigation between the custom Library background image actions (Choose image / Choose another image and Clear); user confirmed the final fix works.
+- [x] Confirm controller navigation is restored after a managed game session ends and that game processes retain input ownership while running.
+- **Status:** The Navigation and Focus workstream is functionally complete based on user testing. This does not close Milestone 7 as a whole; remaining accessibility, controller-interface, modal/file-picker, multi-display, and full regression items stay tracked below.
 
 ### Metadata matching preference
 - [x] Add persistent Settings → Metadata options to enable or disable automatic metadata matching and automatic cover-art downloads; both default to enabled to preserve the existing workflow.
@@ -305,7 +314,7 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 7: Input, accessibility, and regression pass
 
-**Current workstream: Navigation and Focus.** Start by validating keyboard navigation and visible focus across every screen, then complete the folder-picker keyboard workflow and controller-only navigation through Settings, dialogs, dropdowns, and long scrolling pages. Per-device controller profiles are intentionally deferred because they are not currently a user priority.
+**Navigation and Focus workstream: functionally complete (user-validated 2026-11-21).** Keyboard/controller focus movement across the Library and Settings, including Application settings and custom-background actions, has been exercised successfully. The remaining Milestone 7 work is broader controller-interface polish, accessibility/scaling review, display validation, and a fresh full regression pass. Folder-picker keyboard validation remains a separate open item. Per-device controller profiles are intentionally deferred because they are not currently a user priority.
 
 - [x] Add application-level arrow-key navigation for the Game Library Grid View and Enter/Return game selection
 - [x] Support Escape to return from immersive game details to the Game Library
@@ -314,7 +323,8 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Validate keyboard navigation and visible focus across the Library and Settings pages. Library navigation works well; Settings category navigation now activates with Enter/Return as well as Space. User confirms it works, with minor keyboard-focus/activation rough edges accepted for now; further refinement is deferred to later polish.
 - [ ] Complete keyboard-operability validation of the Library Folder Picker in both Settings and first-run/reset flows (initial focus, arrow-key folder traversal with automatic scrolling, Page Up/Down, Home/End, Enter to open, Space to select, and focusable action buttons). The first-run Enter/Return activation issue has been fixed and user-confirmed; the full interaction checklist still needs systematic verification.
 - [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
-- [ ] Complete controller-only navigation across every settings control, dialog, dropdown, and long scrolling page.
+- [x] Complete controller navigation across Settings categories, controls, dropdowns, long scrolling content, and custom-background actions. User confirmed Application settings navigation and D-pad left/right movement between Choose image and Clear.
+- [ ] Complete controller-only validation of modal dialogs and file-picker interactions, including focus entry, action selection, cancellation, and focus restoration.
 - [x] Validate smooth right-analog-stick scrolling in Library Grid/List (viewport-only movement, tilt-sensitive speed, dead zone, and deceleration on release); user confirmed it works. D-pad navigation remains item-by-item.
 - [x] Validate progressive navigation acceleration in all Library layouts (List, Grid, Carousel) for the left analog stick and D-pad: starts deliberately (280 ms repeat), accelerates to 150 ms and then 75 ms while held; selection advances one item per event. User confirmed accelerated navigation works well across all three views.
 - [ ] **Deferred:** Complete per-device controller profiles keyed by stable SDL hardware GUID and apply each device's saved assignments to the input router. GUID-based persistence has a backend foundation, but full profile/device management is not currently a priority.
@@ -324,7 +334,8 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Implement and user-validate game-session input ownership: external game process start/finish/failure drives a separate session-suspension state, including multiple concurrent launcher processes. RecompStation controller navigation and right-stick UI scrolling are suspended while any managed game process runs; the user's manual controller-input preference is preserved. User confirmed normal game input, navigation restoration, manual-preference preservation, and failed-launch recovery.
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
 - [ ] Add lightweight navigation sounds with volume controls
-- [ ] Check fullscreen, windowed, and multi-display behavior
+- [x] Validate Windowed, Fullscreen, and Maximized display modes and applying the preferred custom window size. User confirmed all four behaviors work.
+- [ ] Validate multi-display behavior and compositor placement across monitors.
 - [ ] Run the full build and regression suite; manually exercise existing workflows
 - [ ] Fix regressions before considering the UI milestone complete
 
