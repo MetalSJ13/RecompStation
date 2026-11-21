@@ -1155,6 +1155,7 @@ ApplicationWindow {
             const startPath = platformManager.libraryConfigured
                 ? platformManager.libraryDirectory : platformManager.homeDirectory()
             navigateTo(startPath)
+            Qt.callLater(function() { libraryDirectoryList.forceActiveFocus() })
         }
 
         contentItem: ColumnLayout {
@@ -1173,14 +1174,24 @@ ApplicationWindow {
 
                 Button {
                     text: "Home"
-                    onClicked: libraryFolderDialog.navigateTo(platformManager.homeDirectory())
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
+                    onClicked: {
+                        libraryFolderDialog.navigateTo(platformManager.homeDirectory())
+                        libraryDirectoryList.forceActiveFocus()
+                    }
                 }
                 Button {
                     text: "Up"
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
                     enabled: platformManager.parentDirectory(libraryFolderDialog.currentFolderPath)
                         !== libraryFolderDialog.currentFolderPath
-                    onClicked: libraryFolderDialog.navigateTo(
-                        platformManager.parentDirectory(libraryFolderDialog.currentFolderPath))
+                    onClicked: {
+                        libraryFolderDialog.navigateTo(
+                            platformManager.parentDirectory(libraryFolderDialog.currentFolderPath))
+                        libraryDirectoryList.forceActiveFocus()
+                    }
                 }
                 Label {
                     Layout.fillWidth: true
@@ -1191,6 +1202,8 @@ ApplicationWindow {
                 Button {
                     text: "New Folder"
                     highlighted: true
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
                     onClicked: {
                         libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
                         newLibraryFolderName.text = ""
@@ -1224,18 +1237,44 @@ ApplicationWindow {
                     model: libraryFolderDialog.directoryEntries
                     clip: true
                     spacing: 3
+                    focus: true
+                    activeFocusOnTab: true
+                    keyNavigationEnabled: true
+                    highlightFollowsCurrentItem: false
+
+                    Keys.onReturnPressed: {
+                        if (currentIndex >= 0 && currentIndex < count) {
+                            const entry = model[currentIndex]
+                            libraryFolderDialog.navigateTo(entry.path)
+                        }
+                    }
+                    Keys.onEnterPressed: {
+                        if (currentIndex >= 0 && currentIndex < count) {
+                            const entry = model[currentIndex]
+                            libraryFolderDialog.navigateTo(entry.path)
+                        }
+                    }
+                    Keys.onSpacePressed: {
+                        if (currentIndex >= 0 && currentIndex < count) {
+                            const entry = model[currentIndex]
+                            libraryFolderDialog.selectedFolderPath = entry.path
+                        }
+                    }
 
                     delegate: Rectangle {
                         required property var modelData
                         width: ListView.view.width
                         height: 44
                         radius: 7
-                        color: folderMouseArea.containsMouse
+                        color: folderMouseArea.containsMouse || ListView.isCurrentItem && libraryDirectoryList.activeFocus
                             ? Qt.rgba(0.45, 0.45, 0.45, 0.16)
                             : (libraryFolderDialog.selectedFolderPath === modelData.path
                                 ? Qt.rgba(0.35, 0.55, 0.85, 0.18) : "transparent")
-                        border.color: libraryFolderDialog.selectedFolderPath === modelData.path
-                            ? theme.accent : "transparent"
+                        border.color: ListView.isCurrentItem && libraryDirectoryList.activeFocus
+                            ? theme.accent
+                            : libraryFolderDialog.selectedFolderPath === modelData.path
+                                ? theme.accent : "transparent"
+                        border.width: ListView.isCurrentItem && libraryDirectoryList.activeFocus ? 2 : 1
 
                         RowLayout {
                             anchors.fill: parent
@@ -1265,6 +1304,8 @@ ApplicationWindow {
                             hoverEnabled: true
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onClicked: function(mouse) {
+                                libraryDirectoryList.currentIndex = index
+                                libraryDirectoryList.forceActiveFocus()
                                 if (mouse.button === Qt.RightButton) {
                                     libraryFolderDialog.selectedFolderPath = modelData.path
                                     folderContextMenu.popup()
@@ -1309,11 +1350,15 @@ ApplicationWindow {
                 }
                 Button {
                     text: "Cancel"
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
                     onClicked: libraryFolderDialog.reject()
                 }
                 Button {
                     text: "Choose This Folder"
                     highlighted: true
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
                     enabled: libraryFolderDialog.selectedFolderPath.length > 0
                     onClicked: {
                         if (platformManager.setLibraryDirectoryPath(
