@@ -1395,31 +1395,193 @@ ApplicationWindow {
 
     Dialog {
         id: librarySetupDialog
-        title: "Set up your game library"
+        title: ""
         modal: true
         anchors.centerIn: parent
-        width: Math.min(parent.width - 40, 520)
+        width: Math.min(parent.width - 40, 560)
+        padding: 26
         closePolicy: platformManager.libraryConfigured ? Popup.CloseOnEscape : Popup.NoAutoClose
         visible: !platformManager.libraryConfigured
         standardButtons: Dialog.NoButton
-        ColumnLayout {
-            width: parent.width
-            spacing: 12
+
+        background: Rectangle {
+            color: theme.elevatedSurface
+            radius: theme.radiusLarge
+            border.width: 1
+            border.color: theme.divider
+        }
+
+        enter: Transition {
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 0
+                    to: 1
+                    duration: settingsManager.reducedMotion ? 0 : 220
+                    easing.type: Easing.OutCubic
+                }
+                NumberAnimation {
+                    property: "scale"
+                    from: 0.97
+                    to: 1
+                    duration: settingsManager.reducedMotion ? 0 : 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+        exit: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: settingsManager.reducedMotion ? 0 : 160
+                easing.type: Easing.InCubic
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 18
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 14
+
+                Rectangle {
+                    Layout.preferredWidth: 54
+                    Layout.preferredHeight: 54
+                    radius: 16
+                    color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.16)
+                    border.color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.38)
+                    Label {
+                        anchors.centerIn: parent
+                        text: "▣"
+                        color: theme.accent
+                        font.pixelSize: 28
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 3
+                    Label {
+                        Layout.fillWidth: true
+                        text: "Welcome to RecompStation"
+                        color: theme.textPrimary
+                        font.pixelSize: 21 * theme.fontScale
+                        font.weight: Font.DemiBold
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: "Let's set up your game library"
+                        color: theme.accent
+                        font.pixelSize: 12 * theme.fontScale
+                        font.weight: Font.Medium
+                    }
+                }
+            }
+
             Label {
                 Layout.fillWidth: true
-                text: "First, choose the main folder where you keep your game files. RecompStation will create the supported platform folders inside it."
-                color: theme.textSecondary; wrapMode: Text.Wrap
+                text: "Choose the main folder where you keep your game files. RecompStation will organize supported systems into their own folders."
+                color: theme.textSecondary
+                font.pixelSize: 13 * theme.fontScale
+                wrapMode: Text.Wrap
+                lineHeight: 1.2
             }
-            Label {
+
+            Rectangle {
                 Layout.fillWidth: true
-                text: "Your games will stay where they are; this only creates folders and sets the locations RecompStation scans."
-                color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
+                radius: theme.radiusCard
+                color: theme.sidebarBackground
+                border.color: theme.divider
+                implicitHeight: setupInfoColumn.implicitHeight + 26
+
+                ColumnLayout {
+                    id: setupInfoColumn
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 13
+                    spacing: 9
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 9
+                        Label {
+                            text: "✓"
+                            color: theme.success
+                            font.pixelSize: 15
+                            font.weight: Font.Bold
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Your existing game files stay where they are."
+                            color: theme.textPrimary
+                            font.pixelSize: 12 * theme.fontScale
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 9
+                        Label {
+                            text: "✓"
+                            color: theme.success
+                            font.pixelSize: 15
+                            font.weight: Font.Bold
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Platform folders are created automatically."
+                            color: theme.textPrimary
+                            font.pixelSize: 12 * theme.fontScale
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 9
+                        Label {
+                            text: "✓"
+                            color: theme.success
+                            font.pixelSize: 15
+                            font.weight: Font.Bold
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "You can change this location later in Settings."
+                            color: theme.textPrimary
+                            font.pixelSize: 12 * theme.fontScale
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                }
             }
-            Button {
-                Layout.alignment: Qt.AlignRight
-                text: "Choose Library Folder"
-                highlighted: true
-                onClicked: libraryFolderDialog.open()
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: "Choose Library Folder"
+                    highlighted: true
+                    font.pixelSize: 13 * theme.fontScale
+                    padding: 13
+                    onClicked: libraryFolderDialog.open()
+                    background: Rectangle {
+                        radius: 9
+                        color: parent.down ? theme.accentPressed
+                            : parent.hovered ? theme.accentHover : theme.accent
+                    }
+                    contentItem: Label {
+                        text: parent.text
+                        color: "#ffffff"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
             }
         }
     }
