@@ -24,7 +24,10 @@ ControllerManager::ControllerManager(QObject *parent)
     connect(&m_inputRouter, &ControllerInputRouter::nextSectionRequested,
             this, &ControllerManager::nextSectionRequested);
     connect(&m_inputRouter, &ControllerInputRouter::inputEnabledChanged,
-            this, &ControllerManager::inputEnabledChanged);
+            this, [this]() {
+        emit inputEnabledChanged();
+        emit navigationActiveChanged();
+    });
     m_mappingCaptureTimer.setSingleShot(true);
     connect(&m_mappingCaptureTimer, &QTimer::timeout,
             this, &ControllerManager::cancelMappingCapture);
@@ -74,6 +77,8 @@ QString ControllerManager::controllerName() const { return m_controllerName; }
 QString ControllerManager::controllerType() const { return m_controllerType; }
 QString ControllerManager::controllerGuid() const { return m_controllerGuid; }
 bool ControllerManager::inputEnabled() const { return m_inputRouter.inputEnabled(); }
+bool ControllerManager::navigationActive() const { return m_inputRouter.navigationActive(); }
+bool ControllerManager::gameSessionActive() const { return m_gameSessionActive; }
 bool ControllerManager::navigationAccelerationEnabled() const { return m_navigationAccelerationEnabled; }
 
 void ControllerManager::setSettingsManager(SettingsManager *settingsManager)
@@ -158,9 +163,30 @@ void ControllerManager::setNavigationAccelerationEnabled(bool enabled)
 
 void ControllerManager::setInputEnabled(bool enabled)
 {
+    if (m_inputRouter.inputEnabled() == enabled)
+        return;
+
     m_inputRouter.setInputEnabled(enabled);
-    qCInfo(lcApplication) << "Controller input"
-                          << (enabled ? "resumed" : "suspended");
+    qCInfo(lcApplication) << "Controller input preference"
+                          << (enabled ? "enabled" : "disabled");
+}
+
+void ControllerManager::setGameSessionActive(bool active)
+{
+    if (m_gameSessionActive == active)
+        return;
+
+    m_gameSessionActive = active;
+    m_inputRouter.setGameSessionActive(active);
+    emit gameSessionActiveChanged();
+    emit navigationActiveChanged();
+    if (active) {
+        // Stop any in-progress UI scroll easing as soon as game input takes over.
+        emit rightStickScrollRequested(0.0);
+    }
+    qCInfo(lcApplication) << "External game session"
+                          << (active ? "started; RecompStation controller navigation suspended"
+                                     : "ended; RecompStation controller navigation restored");
 }
 
 void ControllerManager::setConnected(bool connected, const QString &name,
@@ -336,7 +362,7 @@ void ControllerManager::pollController()
             : 0.0;
     // Emit zero after the stick returns to its dead zone so the QML scroller
     // can apply a short, smooth deceleration instead of stopping abruptly.
-    emit rightStickScrollRequested(scrollAmount);
+    emit rightStickScrollRequested(navigationActive() ? scrollAmount : 0.0);
 
     m_inputRouter.processFrame(
         direction,
