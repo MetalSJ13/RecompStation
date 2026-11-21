@@ -1,7 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QSet>
 #include <QDateTime>
 
 #include "core/Logging.h"
@@ -115,24 +114,6 @@ int main(int argc, char *argv[])
     ControllerManager controllerManager;
     controllerManager.setSettingsManager(&settingsManager);
 
-    // Do not let RecompStation consume controller input while a launched game
-    // is active. Keep input suspended until every launched process has exited.
-    QSet<QString> activeGameProcesses;
-    QObject::connect(&gameLaunchManager, &GameLaunchManager::launchStarted,
-                     &app, [&controllerManager, &activeGameProcesses](const QString &projectId, qint64) {
-        activeGameProcesses.insert(projectId);
-        controllerManager.setInputEnabled(false);
-    });
-    QObject::connect(&gameLaunchManager, &GameLaunchManager::launchFailed,
-                     &app, [&controllerManager, &activeGameProcesses](const QString &projectId, const QString &) {
-        activeGameProcesses.remove(projectId);
-        controllerManager.setInputEnabled(activeGameProcesses.isEmpty());
-    });
-    QObject::connect(&gameLaunchManager, &GameLaunchManager::processFinished,
-                     &app, [&controllerManager, &activeGameProcesses](const QString &projectId, int, bool) {
-        activeGameProcesses.remove(projectId);
-        controllerManager.setInputEnabled(activeGameProcesses.isEmpty());
-    });
     if (projectCatalog.isLoaded())
         qCInfo(lcApplication) << "Project catalog loaded with supported platforms:"
                               << projectCatalog.supportedPlatforms();
