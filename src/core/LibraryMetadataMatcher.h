@@ -32,7 +32,8 @@ public:
     int totalCount() const;
     QString status() const;
 
-    Q_INVOKABLE void scrapeLibrary(bool includePreviouslyChecked = false);
+    Q_INVOKABLE void scrapeLibrary(bool includePreviouslyChecked = false,
+                                   bool forceArtworkDownload = false);
     Q_INVOKABLE void scrapeGame(int gameId);
 
     static int exactMatchIndex(const QString &localTitle,
@@ -65,5 +66,6 @@ private:
     int m_matchedCount = 0;
     int m_unresolvedCount = 0;
     bool m_busy = false;
+    bool m_forceArtworkDownload = false;
     QString m_status;
 };
