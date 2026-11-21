@@ -22,6 +22,8 @@ class ControllerManager final : public QObject
     Q_PROPERTY(QString controllerType READ controllerType NOTIFY connectedChanged)
     Q_PROPERTY(QString controllerGuid READ controllerGuid NOTIFY connectedChanged)
     Q_PROPERTY(bool inputEnabled READ inputEnabled WRITE setInputEnabled NOTIFY inputEnabledChanged)
+    Q_PROPERTY(bool navigationActive READ navigationActive NOTIFY navigationActiveChanged)
+    Q_PROPERTY(bool gameSessionActive READ gameSessionActive WRITE setGameSessionActive NOTIFY gameSessionActiveChanged)
     Q_PROPERTY(bool navigationAccelerationEnabled READ navigationAccelerationEnabled WRITE setNavigationAccelerationEnabled)
     Q_PROPERTY(bool mappingCaptureActive READ mappingCaptureActive NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(QString mappingCaptureAction READ mappingCaptureAction NOTIFY mappingCaptureStateChanged)
@@ -37,6 +39,8 @@ public:
     QString controllerType() const;
     QString controllerGuid() const;
     bool inputEnabled() const;
+    bool navigationActive() const;
+    bool gameSessionActive() const;
     bool navigationAccelerationEnabled() const;
     bool mappingCaptureActive() const;
     QString mappingCaptureAction() const;
@@ -44,6 +48,7 @@ public:
 
 public slots:
     void setInputEnabled(bool enabled);
+    void setGameSessionActive(bool active);
     void setNavigationAccelerationEnabled(bool enabled);
     void setSettingsManager(SettingsManager *settingsManager);
     Q_INVOKABLE void reloadControllerProfile();
@@ -53,6 +58,8 @@ public slots:
 signals:
     void connectedChanged();
     void inputEnabledChanged();
+    void navigationActiveChanged();
+    void gameSessionActiveChanged();
     void navigationRequested(const QString &direction);
     void selectRequested();
     void backRequested();
@@ -89,6 +96,7 @@ private:
     QString m_controllerType = QStringLiteral("generic");
     QString m_controllerGuid;
     bool m_connected = false;
+    bool m_gameSessionActive = false;
     bool m_navigationAccelerationEnabled = false;
     bool m_sdlInitialized = false;
 };
