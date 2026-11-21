@@ -224,11 +224,14 @@ void PlatformManagerTest::listsLibraryDirectoriesAndCreatesFoldersSafely()
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
-    const QString root = temporaryDirectory.path();
+    const QString root = QDir(temporaryDirectory.path())
+                             .filePath(QStringLiteral("Game Library"));
     const QString existing = QDir(root).filePath(QStringLiteral("Existing Games"));
     QVERIFY(QDir().mkpath(existing));
 
-    PlatformManager manager(QDir(root).filePath(QStringLiteral("app-data")));
+    const QString appData = QDir(temporaryDirectory.path())
+                                .filePath(QStringLiteral("app-data"));
+    PlatformManager manager(appData);
     QVERIFY(manager.initialize());
 
     QCOMPARE(manager.homeDirectory(), QDir::homePath());
