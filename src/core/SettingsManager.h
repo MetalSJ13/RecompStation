@@ -13,6 +13,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool scanOnStartup READ scanOnStartup WRITE setScanOnStartup NOTIFY scanOnStartupChanged)
     Q_PROPERTY(bool automaticUpdateChecksEnabled READ automaticUpdateChecksEnabled NOTIFY automaticUpdateChecksEnabledChanged)
     Q_PROPERTY(bool updatePreferencePromptCompleted READ updatePreferencePromptCompleted NOTIFY updatePreferencePromptCompletedChanged)
+    Q_PROPERTY(bool automaticMetadataMatchingEnabled READ automaticMetadataMatchingEnabled NOTIFY automaticMetadataMatchingEnabledChanged)
     Q_PROPERTY(bool theGamesDbEnabled READ theGamesDbEnabled NOTIFY theGamesDbEnabledChanged)
     Q_PROPERTY(bool launchBoxEnabled READ launchBoxEnabled NOTIFY launchBoxEnabledChanged)
     Q_PROPERTY(QString launchBoxLastUpdated READ launchBoxLastUpdated NOTIFY launchBoxLastUpdatedChanged)
@@ -42,6 +43,9 @@ public:
     bool updatePreferencePromptCompleted() const;
     Q_INVOKABLE void setAutomaticUpdateChecksEnabled(bool enabled);
     Q_INVOKABLE void completeUpdatePreferencePrompt(bool enabled);
+
+    bool automaticMetadataMatchingEnabled() const;
+    Q_INVOKABLE void setAutomaticMetadataMatchingEnabled(bool enabled);
 
     bool theGamesDbEnabled() const;
     Q_INVOKABLE void setTheGamesDbEnabled(bool enabled);
@@ -89,6 +93,7 @@ signals:
     void scanOnStartupChanged();
     void automaticUpdateChecksEnabledChanged();
     void updatePreferencePromptCompletedChanged();
+    void automaticMetadataMatchingEnabledChanged();
     void theGamesDbEnabledChanged();
     void launchBoxEnabledChanged();
     void launchBoxLastUpdatedChanged();
@@ -121,6 +126,7 @@ private:
     bool m_scanOnStartup = true;
     bool m_automaticUpdateChecksEnabled = false;
     bool m_updatePreferencePromptCompleted = false;
+    bool m_automaticMetadataMatchingEnabled = true;
     bool m_theGamesDbEnabled = true;
     bool m_launchBoxEnabled = false;
     QString m_launchBoxLastUpdated;
