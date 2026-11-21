@@ -65,6 +65,8 @@ The visual direction is a polished, dark, immersive personal collection experien
 
 ### Settings experience
 
+The first-run experience asks whether the user wants automatic application-update checks before showing library-folder setup. Yes/No, the close button, and Escape all persist a completed choice; dismissal is saved as disabled. The preference can be changed later in Settings → Application. This is preference UI and persistence only: automatic release checking is not connected and no network requests are made.
+
 The Settings navigation has been refined with a wider, more readable category panel and bundled SVG icons for Appearance, Display, Library, Metadata, Controller, and Application.
 
 The Metadata page now exposes a persistent TheGamesDB enable/disable checkbox and clearly labels ScreenScraper, Hasheous, and IGDB as not yet integrated or still under evaluation. Disabling TheGamesDB prevents initial platform-catalog requests, subsequent game-search requests, and new gameplay-screenshot refreshes; provider selection is initialized from the saved preference. TheGamesDB remains primary, with optional LaunchBox fallback implemented in the shared matcher; local validation is pending. Separate artwork-source selection remains future work.
