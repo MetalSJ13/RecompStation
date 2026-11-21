@@ -32,11 +32,27 @@ This document is the authoritative development status and implementation order f
 Keep the application buildable after each focused change. Preserve working backend behavior while the user-facing workflows are redesigned.
 
 ### Library folder browser
-- Replace the desktop-native folder picker with an in-app directory browser for first-run setup and Settings.
-- Support folder navigation, Home/Up navigation, right-click context actions, and creating directories without leaving RecompStation.
-- Folder creation is restricted to a single child name in the current writable directory; selecting the library root still delegates platform-subfolder creation and persistence to PlatformManager.
-- Add regression coverage for directory listing, safe folder creation, duplicate names, and path traversal rejection.
-- Local build, UI interaction, and regression validation are required after pulling the change.
+- [x] Replace the desktop-native folder picker with an in-app directory browser for first-run setup and Settings.
+- [x] Support folder navigation, Home/Up navigation, right-click context actions, and creating directories without leaving RecompStation.
+- [x] Restrict folder creation to a single child name in the current writable directory; selecting the library root delegates platform-subfolder creation and persistence to PlatformManager.
+- [x] Add regression coverage for directory listing, safe folder creation, duplicate names, and path traversal rejection.
+- [x] User-confirmed local build/run and UI interaction: the browser opens and can create folders.
+
+## Recent implementation notes (2026-11-21)
+
+### First-run experience and library setup
+- [x] Add the optional automatic application-update preference prompt before library-folder setup. Yes, No, closing the prompt, and Escape all complete the preference; dismissal is saved as disabled, and the choice can later be changed in Settings → Application. This is preference UI only: release checks are not connected and no network requests are made.
+- [x] Polish the first-run library-folder setup overlay to match the active theme and the rest of the application.
+- [x] Scope the library-folder setup overlay to the Library page and prevent it from covering the controller pause menu.
+- [x] Make the library-folder setup overlay non-modal so mouse users can still use the toolbar and navigate to Settings while setup remains incomplete.
+- [ ] Test the complete first-run sequence after resetting library data, including update preference, folder selection, initial scan, and the resulting empty/non-empty Library states. This validation is now in progress.
+- [ ] Revisit the empty-library presentation only after observing the complete reset/first-run flow. A trial that hid the empty state until a library folder was configured was reverted at the user's request; current behavior is intentionally unchanged.
+
+### Library folder browser
+- [x] Replace the native folder picker with the in-app browser shared by first-run setup and Settings.
+- [x] Add directory navigation, Home/Up controls, right-click folder actions, and in-app folder creation.
+- [x] Add safe folder-creation validation and regression tests.
+- [x] User confirmed the browser builds, runs, and creates folders successfully.
 
 ## Recent implementation notes (2026-11-18)
 
@@ -245,12 +261,16 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 5: Settings and first-run experience
 
-- [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
+- [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent.
+- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
 - [x] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior (initial lightweight wave ambience and image scaling implemented; further visual refinement remains)
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
 - [ ] Make the UI adapt cleanly to 1080p (1920×1080), 1440p (2560×1440), and 4K (3840×2160), including Library presentations, Game Details, Settings, dialogs, overlays, and window resizing; preserve the intended spacious design at each resolution.
 - [ ] Validate Qt high-DPI and desktop scaling behavior on the current KDE Plasma Wayland environment. Keep explicit monitor selection deferred; the compositor remains responsible for monitor placement and resolution.
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
+- [x] Replace the native folder chooser with the shared in-app folder browser; user confirmed folder creation works.
+- [x] Style the first-run library-folder setup overlay and keep it scoped to the Library page.
+- [x] Keep the setup overlay non-modal so the toolbar and Settings remain mouse-accessible; suppress it while the controller pause menu is open.
 - [x] Add automatic filesystem monitoring for configured folders (runtime monitoring/reconciliation behavior confirmed; see Milestone 4 for implementation and validation details).
 - [x] Cache gameplay screenshots independently of cover art for games with saved TheGamesDB associations.
 - [x] Expose TheGamesDB provider status/enablement and one coordinated **Refresh All Metadata** action in Settings → Metadata; separate manual metadata and screenshot buttons have been retired.
