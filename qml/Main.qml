@@ -1393,6 +1393,160 @@ ApplicationWindow {
         }
     }
 
+    function finishUpdatePreferencePrompt(enabled) {
+        settingsManager.completeUpdatePreferencePrompt(enabled)
+        updatePreferenceDialog.close()
+    }
+
+    Dialog {
+        id: updatePreferenceDialog
+        title: ""
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 40, 540)
+        padding: 26
+        closePolicy: Popup.CloseOnEscape
+        visible: !platformManager.libraryConfigured
+            && !settingsManager.updatePreferencePromptCompleted
+            && !window.systemMenuVisible
+        standardButtons: Dialog.NoButton
+        onRejected: window.finishUpdatePreferencePrompt(false)
+
+        background: Rectangle {
+            color: theme.elevatedSurface
+            radius: theme.radiusLarge
+            border.width: 1
+            border.color: theme.divider
+        }
+
+        enter: Transition {
+            ParallelAnimation {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 0
+                    to: 1
+                    duration: settingsManager.reducedMotion ? 0 : 220
+                    easing.type: Easing.OutCubic
+                }
+                NumberAnimation {
+                    property: "scale"
+                    from: 0.97
+                    to: 1
+                    duration: settingsManager.reducedMotion ? 0 : 260
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+        exit: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: settingsManager.reducedMotion ? 0 : 160
+                easing.type: Easing.InCubic
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 18
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 14
+                Rectangle {
+                    Layout.preferredWidth: 54
+                    Layout.preferredHeight: 54
+                    radius: 16
+                    color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.16)
+                    border.color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.38)
+                    Label {
+                        anchors.centerIn: parent
+                        text: "↻"
+                        color: theme.accent
+                        font.pixelSize: 30
+                    }
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 3
+                    Label {
+                        Layout.fillWidth: true
+                        text: "Application Updates"
+                        color: theme.textPrimary
+                        font.pixelSize: 21 * theme.fontScale
+                        font.weight: Font.DemiBold
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: "A preference you can change at any time"
+                        color: theme.textSecondary
+                        font.pixelSize: 12 * theme.fontScale
+                        wrapMode: Text.Wrap
+                    }
+                }
+                ToolButton {
+                    text: "✕"
+                    Accessible.name: "Close update preferences"
+                    onClicked: window.finishUpdatePreferencePrompt(false)
+                }
+            }
+            Label {
+                Layout.fillWidth: true
+                text: "Would you like RecompStation to automatically check for application updates?"
+                color: theme.textPrimary
+                font.pixelSize: 14 * theme.fontScale
+                wrapMode: Text.Wrap
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                radius: theme.radiusCard
+                color: theme.sidebarBackground
+                border.color: theme.divider
+                implicitHeight: updateInfoColumn.implicitHeight + 26
+                ColumnLayout {
+                    id: updateInfoColumn
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 13
+                    spacing: 6
+                    Label {
+                        text: "You're always in control"
+                        color: theme.textPrimary
+                        font.pixelSize: 12 * theme.fontScale
+                        font.bold: true
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: "You can change this preference later in Settings. RecompStation will never automatically download or install an application update."
+                        color: theme.textMuted
+                        font.pixelSize: 11 * theme.fontScale
+                        wrapMode: Text.Wrap
+                    }
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                Item { Layout.fillWidth: true }
+                Button {
+                    id: updatePreferenceNoButton
+                    text: "No, thanks"
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
+                    onClicked: window.finishUpdatePreferencePrompt(false)
+                }
+                Button {
+                    text: "Yes, check automatically"
+                    highlighted: true
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
+                    onClicked: window.finishUpdatePreferencePrompt(true)
+                }
+            }
+        }
+        onOpened: Qt.callLater(function() { updatePreferenceNoButton.forceActiveFocus() })
+    }
+
     Dialog {
         id: librarySetupDialog
         title: ""
@@ -1401,7 +1555,9 @@ ApplicationWindow {
         width: Math.min(parent.width - 40, 560)
         padding: 26
         closePolicy: platformManager.libraryConfigured ? Popup.CloseOnEscape : Popup.NoAutoClose
-        visible: !platformManager.libraryConfigured && window.currentPage === "Library" && !window.systemMenuVisible
+        visible: !platformManager.libraryConfigured
+            && settingsManager.updatePreferencePromptCompleted
+            && window.currentPage === "Library" && !window.systemMenuVisible
         standardButtons: Dialog.NoButton
 
         background: Rectangle {
@@ -4963,6 +5119,65 @@ ApplicationWindow {
                                     color: theme.textSecondary
                                     font.pixelSize: 13 * theme.fontScale
                                     wrapMode: Text.Wrap
+                                }
+                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                Label {
+                                    text: "APPLICATION UPDATES"
+                                    color: theme.textMuted
+                                    font.pixelSize: 10 * theme.fontScale
+                                    font.bold: true
+                                    font.letterSpacing: 1
+                                }
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    radius: theme.radiusCard
+                                    color: theme.sidebarBackground
+                                    border.color: theme.divider
+                                    implicitHeight: updateSettingsColumn.implicitHeight + 28
+                                    ColumnLayout {
+                                        id: updateSettingsColumn
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: 14
+                                        spacing: 8
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 16
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 4
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: "Check for application updates automatically"
+                                                    color: theme.textPrimary
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                    font.bold: true
+                                                    wrapMode: Text.Wrap
+                                                }
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: "Saved preference for future release-check support."
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 11 * theme.fontScale
+                                                    wrapMode: Text.Wrap
+                                                }
+                                            }
+                                            Switch {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                checked: settingsManager.automaticUpdateChecksEnabled
+                                                onToggled: settingsManager.setAutomaticUpdateChecksEnabled(checked)
+                                            }
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: "Automatic release checking is not connected in this build. Changing this setting only saves your preference; no network requests are made."
+                                            color: theme.textMuted
+                                            font.pixelSize: 10 * theme.fontScale
+                                            wrapMode: Text.Wrap
+                                        }
+                                    }
                                 }
                                 Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
                                 Label {
