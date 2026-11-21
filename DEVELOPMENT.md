@@ -5,8 +5,8 @@ This document is the authoritative development status and implementation order f
 ## Project status
 
 ### Current focus
-- **Active milestone:** Milestone 3 — Game Library experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred; the last user-confirmed baseline before the current artwork change: all 18/18 CTest suites passed on 2026-11-20; the new artwork work still requires a fresh local build/test run.
-- **Current UI work:** Added the third Console library presentation alongside Grid and List. The horizontal carousel shares the filtered library model and persistent card-size preference, synchronizes selection with the other views, centers keyboard/controller selection, and fades cards near both horizontal edges. This implementation requires a local build and visual/input validation; preserve the existing Grid reveal and List layout during that pass.
+- **Active milestone:** Milestones 5 and 6 — Settings/first-run experience and launcher experience. Milestone 2 remains open with its full manual navigation/backend regression pass intentionally deferred. The last user-confirmed baseline before the current artwork change: all 18/18 CTest suites passed on 2026-11-20; the new artwork work still requires a fresh local build/test run.
+- **Current UI work:** The Carousel presentation is the first-run default, with persistent user-selected view preferences and independent sizing. The current discussion is focused on Settings/first-run behavior, display-resolution adaptation, and launcher workflow completeness.
 - **Next technical focus:** Continue automatic library/metadata maintenance, including validation of N64 ROM hash lookup and provider fallback behavior.
 
 ### Implemented foundations
@@ -117,8 +117,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Agree on the product direction: immersive personal game collection, not a storefront or clone of another launcher
 - [x] Establish the two primary destinations: Game Library and Settings
 - [x] Define metadata as an automated library service rather than a standalone search/association workflow
-- [x] Define dark visual language, curated themes, and fullscreen-first behavior
-- [x] Audit the current primary pages, dialogs, overlays, and interactions against `docs/UI_DESIGN.md`; record aligned areas, legacy cleanup, and deferred validation.
+- [x] Define dark visual language, curated themes, and fullscreen-first behavior- [x] Audit the current primary pages, dialogs, overlays, and interactions against `docs/UI_DESIGN.md`; record aligned areas, legacy cleanup, and deferred validation.
 - [x] Bundle reusable SVG icon assets for navigation and common actions; define shared icon sizing (local validation pending)
 - [x] Define the application/page hierarchy, Library and Settings navigation, Game Details overlay behavior, and contextual launcher/metadata workflows.
 - [x] Define the selection-versus-focus model and keyboard/controller navigation expectations for Library, Settings, nested popups, and Escape handling.
@@ -146,7 +145,7 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 3: Game Library experience
 
-**Progress note (2026-11-19):** The dedicated immersive Game Details experience and its contextual metadata/project/installation/launch information are implemented and user-validated; the two corresponding checklist items are checked. The adjacent-game shoulder-button slide and incoming-page/background fade are implemented, with the fade accepted as adequate for now. The grouped empty/loading/scanning/missing-artwork/unsupported/error-state task and missing/unusual-aspect artwork verification remain open.
+**Progress note (2026-11-21):** The dedicated immersive Game Details experience and contextual metadata/project/installation/launch information are implemented and user-validated. The user confirmed the missing-artwork placeholder appears while artwork loads and is replaced by the retrieved image, and that searches with no matches show a no-results overlay. The platform-filtered empty state was also inspected; retain one generic empty-library experience rather than introducing platform-specific messages. Initial truly-empty-library behavior and scan/error recovery still need verification.
 
 - [x] Simplify the library header to one platform selector (All Platforms by default); remove the separate collection search and duplicate management panel
 - [x] Expand game tiles into a responsive multi-row grid with larger artwork, clearer title/platform typography, and stronger selected-game emphasis (local validation pending)
@@ -156,9 +155,11 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Keep the library backdrop stable and theme-driven instead of changing it with game selection (local validation pending)
 - [x] Add a dedicated game-details experience; implemented as the immersive full-window Game Details view and user-validated with representative games.
 - [x] Present metadata, supported project, installation state, and launch action in the game context; metadata, project selection, installed location/ROM requirements, Play Game, and Uninstall are present and user-validated.
-- [ ] Add useful empty, loading, scanning, missing-artwork, unsupported, and error states
+- [ ] Verify the single universal empty-library screen when no games have been discovered; keep its guidance general (no platform-specific empty screens) and do not imply manual scanning is required when automatic scanning is enabled.
+- [x] Confirm the no-search-results overlay and missing-artwork placeholder/loading-to-artwork behavior.
+- [ ] Verify loading/scanning feedback, unsupported-file handling, and scan/metadata error recovery.
 - [x] Keep manual library scanning in Settings; remove duplicate scan and metadata-refresh controls from the Library page
-- [ ] Verify missing and differently proportioned artwork
+- [ ] Verify missing and differently proportioned artwork beyond the already-confirmed placeholder and artwork-loading behavior.
 
 ### Milestone 4: Automatic library and metadata maintenance
 
@@ -237,18 +238,22 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 5: Settings and first-run experience
 
-- [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent
-- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
+- [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
 - [x] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior (initial lightweight wave ambience and image scaling implemented; further visual refinement remains)
 - [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes; local Wayland validation pending)
-- [ ] Enumerate and support selecting actual display devices; current size presets are constrained to the current screen's available logical area
+- [ ] Make the UI adapt cleanly to 1080p (1920×1080), 1440p (2560×1440), and 4K (3840×2160), including Library presentations, Game Details, Settings, dialogs, overlays, and window resizing; preserve the intended spacious design at each resolution.
+- [ ] Validate Qt high-DPI and desktop scaling behavior on the current KDE Plasma Wayland environment. Keep explicit monitor selection deferred; the compositor remains responsible for monitor placement and resolution.
 - [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
 - [x] Add automatic filesystem monitoring for configured folders (runtime monitoring/reconciliation behavior confirmed; see Milestone 4 for implementation and validation details).
 - [x] Cache gameplay screenshots independently of cover art for games with saved TheGamesDB associations.
 - [x] Expose TheGamesDB provider status/enablement and one coordinated **Refresh All Metadata** action in Settings → Metadata; separate manual metadata and screenshot buttons have been retired.
-- [ ] Add launcher installation/update preferences as supported
-- [ ] Add application preferences and useful first-run guidance
-- [ ] Expose only settings backed by real functionality
+- [ ] Revisit launcher installation/update preferences only when the underlying launcher workflows and higher-priority Settings work are settled; no broad all-launcher GitHub update polling is planned.
+- [ ] Add useful contextual first-run guidance without forcing a lengthy setup wizard.
+- [ ] During initial setup, ask whether the user wants automatic RecompStation application-update checks and persist the choice.
+- [ ] Audit Settings so every exposed control has implemented behavior, a clear purpose, and persistent state where appropriate; remove or defer nonfunctional controls.
+- [ ] Add an opt-in automatic application-update check preference and a manual **Check for Updates Now** action; automatic checks must be disabled when the user opts out.
+- [ ] Check for application updates periodically (no more than once per day), compare the installed version with GitHub releases, and notify the user when a newer release is available.
+- [ ] Update notifications must direct users to the GitHub release page for manual download; do not automatically download, replace, or install RecompStation. Handle API/network failures quietly and avoid repeating the same release notification.
 
 ### Milestone 6: Launcher experience
 
@@ -256,8 +261,9 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Derive and display one accurate Playable/Beta/Alpha status per game from curated project/launcher compatibility data (intentionally deferred until the core library experience is settled)
 - [ ] Refine release/asset selection and architecture compatibility explanations
 - [ ] Improve download progress, cancellation, extraction, installation, and failure feedback. **Partially runtime verified:** Banjo Recompiled archive download, extraction, installation, and Play Game were exercised successfully; cancellation and failure-path feedback still require dedicated validation.
-- [ ] Improve installed-launcher status and confirmation-protected uninstall
-- [ ] Make installed release/version information clear when available
+- [ ] Improve installed-launcher status and confirmation-protected uninstall; make uninstall accessible from the relevant Game Details page as well as Settings, and never remove the user's ROM or unrelated game files.
+- [ ] Make installed release/version information clear when available.
+- [ ] Retain per-game launcher update checks in Game Details; defer a centralized check across every installed launcher to avoid unnecessary GitHub API traffic. A centralized launcher overview remains a future design discussion.
 
 ### Milestone 7: Input, accessibility, and regression pass
 
