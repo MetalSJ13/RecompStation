@@ -197,9 +197,13 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
                            << match.value(QStringLiteral("title")).toString();
         const QString artworkUrl =
             match.value(QStringLiteral("artworkUrl")).toString();
-        if (m_artwork && !artworkUrl.isEmpty()) {
+        const bool downloadArtwork = m_forceArtworkDownload
+            || (m_settings && m_settings->automaticArtworkDownloadsEnabled());
+        if (downloadArtwork && m_artwork && !artworkUrl.isEmpty()) {
             m_artwork->downloadArtwork(gameId, artworkUrl);
             finishCurrent(true, QStringLiteral("Metadata matched; artwork download started."));
+        } else if (!downloadArtwork && !artworkUrl.isEmpty()) {
+            finishCurrent(true, QStringLiteral("Metadata matched; automatic artwork downloads are disabled."));
         } else {
             finishCurrent(true, QStringLiteral("Metadata matched, but the provider returned no cover artwork."));
         }
@@ -326,8 +330,10 @@ int LibraryMetadataMatcher::bestMatchIndex(const QString &localTitle,
     return bestIndex < 0 ? -1 : (tied ? -2 : bestIndex);
 }
 
-void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked)
+void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
+                                            bool forceArtworkDownload)
 {
+    m_forceArtworkDownload = forceArtworkDownload;
     qCInfo(lcMetadata) << "Library metadata scan requested. Include previously checked:"
                        << includePreviouslyChecked
                        << "busy:" << m_busy
@@ -371,6 +377,7 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked)
 
 void LibraryMetadataMatcher::scrapeGame(int gameId)
 {
+    m_forceArtworkDownload = true;
     qCInfo(lcMetadata) << "Manual metadata retry requested for game ID:" << gameId;
     if (m_busy || !m_database || !m_metadata)
         return;
