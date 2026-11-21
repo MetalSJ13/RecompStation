@@ -1345,8 +1345,11 @@ ApplicationWindow {
             window.libraryRevision++
             window.scanMessage = "Metadata complete: " + matched
                 + " matched, " + unresolved + " left unresolved."
-            const shouldRefreshScreenshots = window.universalRefreshPending
-                || (settingsManager.automaticArtworkDownloadsEnabled && matched > 0)
+            // TheGamesDB screenshots are a separate provider-specific pass.
+            // LaunchBox artwork is refreshed independently by LaunchBoxArtworkManager.
+            const shouldRefreshScreenshots = metadataManager.configured
+                && (window.universalRefreshPending
+                    || (settingsManager.automaticArtworkDownloadsEnabled && matched > 0))
             if (window.universalRefreshPending)
                 window.universalRefreshPending = false
             if (shouldRefreshScreenshots)
