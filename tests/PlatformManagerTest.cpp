@@ -24,6 +24,7 @@ private slots:
     void migratesLegacySettingsIntoApplicationConfig();
     void missingConfigRequiresFirstRunSetup();
     void rejectsInvalidLibraryLocations();
+    void listsLibraryDirectoriesAndCreatesFoldersSafely();
 };
 
 
@@ -216,6 +217,37 @@ void PlatformManagerTest::rejectsInvalidLibraryLocations()
     QVERIFY(!manager.setLibraryDirectory(
         QUrl::fromLocalFile(QDir(temporaryDirectory.path()).filePath("missing"))));
     QVERIFY(!manager.libraryConfigured());
+}
+
+void PlatformManagerTest::listsLibraryDirectoriesAndCreatesFoldersSafely()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString root = temporaryDirectory.path();
+    const QString existing = QDir(root).filePath(QStringLiteral("Existing Games"));
+    QVERIFY(QDir().mkpath(existing));
+
+    PlatformManager manager(QDir(root).filePath(QStringLiteral("app-data")));
+    QVERIFY(manager.initialize());
+
+    QCOMPARE(manager.homeDirectory(), QDir::homePath());
+    QCOMPARE(manager.parentDirectory(existing), QDir(root).absolutePath());
+
+    const QVariantList entries = manager.libraryDirectories(root);
+    QCOMPARE(entries.size(), 1);
+    QCOMPARE(entries.first().toMap().value(QStringLiteral("name")).toString(),
+             QStringLiteral("Existing Games"));
+    QCOMPARE(entries.first().toMap().value(QStringLiteral("path")).toString(),
+             QFileInfo(existing).absoluteFilePath());
+
+    QVERIFY(manager.createLibraryFolder(root, QStringLiteral("New Library")));
+    QVERIFY(QFileInfo(QDir(root).filePath(QStringLiteral("New Library"))).isDir());
+    QVERIFY(!manager.createLibraryFolder(root, QStringLiteral("New Library")));
+    QVERIFY(!manager.createLibraryFolder(root, QStringLiteral("../outside")));
+    QVERIFY(!manager.createLibraryFolder(root, QStringLiteral("nested/name")));
+    QVERIFY(!manager.createLibraryFolder(root, QStringLiteral("")));
+    QVERIFY(!QFileInfo::exists(QDir(temporaryDirectory.path()).filePath("outside")));
 }
 
 QTEST_GUILESS_MAIN(PlatformManagerTest)
