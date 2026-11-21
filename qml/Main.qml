@@ -140,11 +140,13 @@ ApplicationWindow {
                 continue
             const cross = direction === "left" || direction === "right"
                 ? Math.abs(dy) : Math.abs(dx)
-            // Prefer the next visual row/column before choosing the nearest
-            // control within that row. This keeps long settings pages moving
-            // top-to-bottom and bottom-to-top instead of jumping sideways.
+            // Vertical navigation should always move to the nearest
+            // visual row first, then choose the control closest to the
+            // current horizontal position within that row. A strong primary
+            // axis weight prevents long labels or wide controls from pulling
+            // focus diagonally past the immediately adjacent row.
             const score = direction === "up" || direction === "down"
-                ? primary * 4 + cross
+                ? primary * 1000 + cross
                 : primary + cross * 2.2
             if (score < bestScore) {
                 bestScore = score
