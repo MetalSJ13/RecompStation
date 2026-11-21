@@ -76,10 +76,12 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         false
     ).toBool();
 
+    // Console View is the first-run experience. Existing saved selections
+    // remain untouched and continue to take precedence.
     const QString storedLibraryView = settings.value(
-        QStringLiteral("library/view"), QStringLiteral("grid")).toString();
+        QStringLiteral("library/view"), QStringLiteral("carousel")).toString();
     m_libraryView = isSupportedLibraryView(storedLibraryView)
-        ? storedLibraryView : QStringLiteral("grid");
+        ? storedLibraryView : QStringLiteral("carousel");
     const QString storedLibraryDensity = settings.value(
         QStringLiteral("library/density"), QStringLiteral("comfortable")).toString();
     m_libraryDensity = isSupportedLibraryDensity(storedLibraryDensity)
