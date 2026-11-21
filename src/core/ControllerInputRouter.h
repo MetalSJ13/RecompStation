@@ -34,6 +34,7 @@ public:
 
     bool inputEnabled() const;
     void setInputEnabled(bool enabled);
+    void setNavigationAccelerationEnabled(bool enabled);
 
 signals:
     void navigationRequested(const QString &direction);
@@ -46,6 +47,7 @@ signals:
 
 private:
     bool m_inputEnabled = true;
+    bool m_navigationAccelerationEnabled = false;
     bool m_previousSelect = false;
     bool m_previousBack = false;
     bool m_previousMenu = false;
@@ -53,4 +55,5 @@ private:
     bool m_previousNextSection = false;
     QString m_currentDirection;
     qint64 m_lastNavigationMs = 0;
+    qint64 m_directionStartedMs = 0;
 };
