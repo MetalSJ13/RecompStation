@@ -83,7 +83,7 @@ Display behavior must remain under the desktop compositor; the initial compatibi
 
 ### Input behavior
 
-The Library offers Grid, List, and Console/Carousel presentations over the same filtered collection. Console View presents one horizontal row of moderately sized cards with edge fading and horizontal navigation. Mouse and keyboard remain supported. Controller support will include Xbox and PlayStation defaults with user remapping. RecompStation must relinquish controller input while a launched game session is active and resume only after the actual game process/session exits.
+The Library offers Grid, List, and Carousel/Carousel presentations over the same filtered collection. Carousel View presents one horizontal row of moderately sized cards with edge fading and horizontal navigation. Mouse and keyboard remain supported. Controller support will include Xbox and PlayStation defaults with user remapping. RecompStation must relinquish controller input while a launched game session is active and resume only after the actual game process/session exits.
 
 ## Metadata automation direction
 
