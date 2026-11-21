@@ -313,7 +313,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
 - [ ] Complete controller-only navigation across every settings control, dialog, dropdown, and long scrolling page.
 - [x] Validate smooth right-analog-stick scrolling in Library Grid/List (viewport-only movement, tilt-sensitive speed, dead zone, and deceleration on release); user confirmed it works. D-pad navigation remains item-by-item.
-- [ ] Validate progressive navigation acceleration in Library List View for the left analog stick and D-pad: starts deliberately (280 ms repeat), accelerates to 150 ms and then 75 ms while held; selection advances one item per event. Implementation and unit tests added; local controller testing pending.
+- [ ] Validate progressive navigation acceleration in all Library layouts (List, Grid, Carousel) for the left analog stick and D-pad: starts deliberately (280 ms repeat), accelerates to 150 ms and then 75 ms while held; selection advances one item per event. List View behavior confirmed by user; Grid and Carousel extension committed, local controller testing pending.
 - [ ] Persist independent controller profiles keyed by stable SDL hardware GUID (backend foundation complete); apply assignments to the input router and implement interactive remapping/reset
 - [ ] Ensure Xbox/PlayStation defaults and launcher/game-session input ownership remain correct
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
