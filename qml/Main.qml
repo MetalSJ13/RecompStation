@@ -749,8 +749,10 @@ ApplicationWindow {
                 window.navigateToPage("Settings")
         }
         function onRightStickScrollRequested(amount) {
-            if (!controllerManager.inputEnabled)
+            if (!controllerManager.navigationActive) {
+                libraryRightStickScrollTimer.inputAmount = 0
                 return
+            }
 
             if (window.currentPage === "Library" && !window.systemMenuVisible
                     && !gameDetailsPopup.visible
@@ -1154,11 +1156,13 @@ ApplicationWindow {
             let running = Object.assign({}, window.runningLaunchers)
             running[projectId] = true
             window.runningLaunchers = running
+            controllerManager.gameSessionActive = Object.keys(running).length > 0
         }
         function onLaunchFailed(projectId, message) {
             let running = Object.assign({}, window.runningLaunchers)
             delete running[projectId]
             window.runningLaunchers = running
+            controllerManager.gameSessionActive = Object.keys(running).length > 0
             let errors = Object.assign({}, window.launchErrors)
             errors[projectId] = message
             window.launchErrors = errors
@@ -1167,6 +1171,7 @@ ApplicationWindow {
             let running = Object.assign({}, window.runningLaunchers)
             delete running[projectId]
             window.runningLaunchers = running
+            controllerManager.gameSessionActive = Object.keys(running).length > 0
             if (crashed) {
                 let errors = Object.assign({}, window.launchErrors)
                 errors[projectId] = "The game launcher exited unexpectedly."
