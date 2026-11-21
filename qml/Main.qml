@@ -2784,7 +2784,10 @@ ApplicationWindow {
                                         spacing: 10
                                         Button {
                                             text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
-                                            enabled: metadataManager.configured && !metadataMatcher.busy
+                                            enabled: (metadataManager.configured
+                                                || (settingsManager.launchBoxEnabled
+                                                    && launchBoxCatalogManager.catalogAvailable))
+                                                && !metadataMatcher.busy
                                             onClicked: {
                                                 console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
                                                 metadataMatcher.scrapeGame(window.selectedGame.id)
@@ -6122,14 +6125,16 @@ ApplicationWindow {
                                         text: window.universalRefreshPending || metadataMatcher.busy
                                             ? "Refreshing Library…" : "Refresh All Metadata"
                                         highlighted: true
-                                        enabled: metadataManager.configured
+                                        enabled: (metadataManager.configured
+                                            || (settingsManager.launchBoxEnabled
+                                                && launchBoxCatalogManager.catalogAvailable))
                                             && !window.universalRefreshPending
                                             && !metadataMatcher.busy
                                             && !screenshotManager.busy
                                             && !launchBoxCatalogManager.busy
                                         onClicked: {
                                             window.universalRefreshPending = true
-                                            window.scanMessage = "Refreshing metadata, artwork, and screenshots for your library…"
+                                            window.scanMessage = "Refreshing metadata and available artwork for your library…"
                                             metadataMatcher.scrapeLibrary(true, true)
                                         }
                                     }
