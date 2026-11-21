@@ -1243,26 +1243,21 @@ ApplicationWindow {
                     highlightFollowsCurrentItem: false
 
                     Keys.onReturnPressed: {
-                        if (currentIndex >= 0 && currentIndex < count) {
-                            const entry = model[currentIndex]
-                            libraryFolderDialog.navigateTo(entry.path)
-                        }
+                        if (currentItem)
+                            libraryFolderDialog.navigateTo(currentItem.folderPath)
                     }
                     Keys.onEnterPressed: {
-                        if (currentIndex >= 0 && currentIndex < count) {
-                            const entry = model[currentIndex]
-                            libraryFolderDialog.navigateTo(entry.path)
-                        }
+                        if (currentItem)
+                            libraryFolderDialog.navigateTo(currentItem.folderPath)
                     }
                     Keys.onSpacePressed: {
-                        if (currentIndex >= 0 && currentIndex < count) {
-                            const entry = model[currentIndex]
-                            libraryFolderDialog.selectedFolderPath = entry.path
-                        }
+                        if (currentItem)
+                            libraryFolderDialog.selectedFolderPath = currentItem.folderPath
                     }
 
                     delegate: Rectangle {
                         required property var modelData
+                        property string folderPath: modelData.path
                         width: ListView.view.width
                         height: 44
                         radius: 7
