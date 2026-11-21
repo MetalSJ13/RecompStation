@@ -537,6 +537,7 @@ void LibraryMetadataMatcher::processNext()
 
     if (m_queue.isEmpty()) {
         setBusy(false);
+        m_forceArtworkDownload = false;
         setStatus(QStringLiteral("Metadata complete: %1 matched, %2 left unresolved.")
                       .arg(m_matchedCount).arg(m_unresolvedCount));
         emit scrapeFinished(m_matchedCount, m_unresolvedCount);
@@ -556,10 +557,17 @@ void LibraryMetadataMatcher::processNext()
         m_currentGame.value(QStringLiteral("artworkUrl")).toString().trimmed();
     const int localGameId =
         m_currentGame.value(QStringLiteral("id")).toInt();
-    if (hasMetadata && !savedArtworkUrl.isEmpty() && m_artwork) {
+    const bool downloadArtwork = m_forceArtworkDownload
+        || (m_settings && m_settings->automaticArtworkDownloadsEnabled());
+    if (hasMetadata && !savedArtworkUrl.isEmpty() && m_artwork && downloadArtwork) {
         m_artwork->downloadArtwork(localGameId, savedArtworkUrl);
         finishCurrent(true,
             QStringLiteral("Saved metadata found; retrying its artwork download."));
+        return;
+    }
+    if (hasMetadata && !savedArtworkUrl.isEmpty() && !downloadArtwork) {
+        finishCurrent(true,
+            QStringLiteral("Saved metadata found; automatic artwork downloads are disabled."));
         return;
     }
 
