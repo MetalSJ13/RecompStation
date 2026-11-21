@@ -33,7 +33,9 @@ public:
                       qint64 elapsedMs);
 
     bool inputEnabled() const;
+    bool navigationActive() const;
     void setInputEnabled(bool enabled);
+    void setGameSessionActive(bool active);
     void setNavigationAccelerationEnabled(bool enabled);
 
 signals:
@@ -47,6 +49,7 @@ signals:
 
 private:
     bool m_inputEnabled = true;
+    bool m_gameSessionActive = false;
     bool m_navigationAccelerationEnabled = false;
     bool m_previousSelect = false;
     bool m_previousBack = false;
