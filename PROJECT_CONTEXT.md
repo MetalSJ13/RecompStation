@@ -93,7 +93,7 @@ Metadata is a background library service, not a user-facing manual chore. Manual
 
 N64 hash groundwork is now present in `N64RomHash`: detect ROM byte order from magic, canonicalize to big-endian, and calculate MD5/CRC32. TheGamesDB `Games/ByGameHash` request integration remains the next step; hash results must be verified against known-good ROMs before they can override conservative title matching.
 
-Automatic metadata matching after library scans is controlled by the persistent Settings → Metadata preference **Automatically match metadata**, enabled by default. Disabling it skips automatic matching after scans; the manual **Refresh All Metadata** action remains available.
+Automatic metadata matching after library scans and automatic cover-art downloads are independently controlled by persistent Settings → Metadata preferences, both enabled by default. Disabling automatic matching skips matching after scans; disabling automatic artwork downloads suppresses cover downloads during automatic matching. The manual **Refresh All Metadata** action explicitly retries matching and artwork retrieval regardless of these preferences.
 
 The intended workflow is:
 1. Discover a ROM and platform.
