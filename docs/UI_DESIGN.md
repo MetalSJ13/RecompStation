@@ -1,3 +1,9 @@
+### First-run setup visibility and controller pause menu
+- The first-run library setup overlay is visible only while the Library page is active and no library root is configured.
+- Navigating to Settings hides the setup overlay; returning to Library restores it until setup is completed.
+- The controller pause menu takes precedence over first-run setup. The setup overlay reappears after the pause menu closes if still required.
+- Keep the pause panel centered and modestly enlarge its width and internal spacing without allowing it to dominate the screen.
+
 # RecompStation UI and Experience Specification
 
 ## Product identity
