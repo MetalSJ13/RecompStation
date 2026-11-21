@@ -1249,13 +1249,41 @@ ApplicationWindow {
                     keyNavigationEnabled: true
                     highlightFollowsCurrentItem: false
 
+                    function ensureCurrentFolderVisible() {
+                        if (currentIndex < 0 || currentIndex >= count)
+                            return
+                        // Defer until ListView has laid out the newly selected
+                        // delegate; otherwise positionViewAtIndex can run before
+                        // its geometry is updated and leave the viewport in place.
+                        const targetIndex = currentIndex
+                        Qt.callLater(function() {
+                            if (targetIndex !== libraryDirectoryList.currentIndex)
+                                return
+                            libraryDirectoryList.positionViewAtIndex(
+                                targetIndex, ListView.Contain)
+                            const item = libraryDirectoryList.itemAtIndex(targetIndex)
+                            if (item) {
+                                const top = item.y
+                                const bottom = top + item.height
+                                if (top < libraryDirectoryList.contentY)
+                                    libraryDirectoryList.contentY = top
+                                else if (bottom > libraryDirectoryList.contentY
+                                         + libraryDirectoryList.height)
+                                    libraryDirectoryList.contentY =
+                                        bottom - libraryDirectoryList.height
+                            }
+                        })
+                    }
+
+                    onCurrentIndexChanged: ensureCurrentFolderVisible()
+
                     function focusFolderAt(index) {
                         if (count <= 0) {
                             currentIndex = -1
                             return
                         }
                         currentIndex = Math.max(0, Math.min(count - 1, index))
-                        positionViewAtIndex(currentIndex, ListView.Contain)
+                        ensureCurrentFolderVisible()
                         const entry = currentItem
                         if (entry)
                             libraryFolderDialog.selectedFolderPath = entry.folderPath
