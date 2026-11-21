@@ -210,6 +210,12 @@ ApplicationWindow {
     function keyboardDirectionalNavigationAllowed() {
         if (!window.visible)
             return false
+        // Modal dialogs own directional keys while open. In particular, the
+        // application-level Settings shortcuts must not steal arrows from the
+        // Library Folder Picker's own ListView navigation.
+        if (libraryFolderDialog.visible || newLibraryFolderDialog.visible
+                || libraryBackgroundFileDialog.visible)
+            return false
         const focused = window.activeFocusItem
         if (focused && focused.popup && focused.popup.visible)
             return false
@@ -1141,6 +1147,7 @@ ApplicationWindow {
 
         function refreshDirectory() {
             directoryEntries = platformManager.libraryDirectories(currentFolderPath)
+            libraryDirectoryList.currentIndex = directoryEntries.length > 0 ? 0 : -1
             browserMessage = directoryEntries.length === 0
                 ? "No subfolders in this location." : ""
         }
