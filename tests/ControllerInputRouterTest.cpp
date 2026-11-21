@@ -111,10 +111,14 @@ void ControllerInputRouterTest::acceleratesHeldNavigationWhenEnabled()
     QCOMPARE(navigation.count(), 2);
     router.processFrame("down", false, false, false, false, false, 560);
     QCOMPARE(navigation.count(), 3);
-    router.processFrame("down", false, false, false, false, false, 900);
+    router.processFrame("down", false, false, false, false, false, 709);
     QCOMPARE(navigation.count(), 3);
-    router.processFrame("down", false, false, false, false, false, 910);
+    router.processFrame("down", false, false, false, false, false, 710);
     QCOMPARE(navigation.count(), 4);
+    router.processFrame("down", false, false, false, false, false, 974);
+    QCOMPARE(navigation.count(), 4);
+    router.processFrame("down", false, false, false, false, false, 975);
+    QCOMPARE(navigation.count(), 5);
 }
 
 void ControllerInputRouterTest::keepsDefaultNavigationCadenceWhenAccelerationDisabled()
