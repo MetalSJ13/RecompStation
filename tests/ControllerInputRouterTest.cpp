@@ -117,11 +117,14 @@ void ControllerInputRouterTest::acceleratesHeldNavigationWhenEnabled()
     router.processFrame("down", false, false, false, false, false, 650);
     QCOMPARE(navigation.count(), 4);
 
-    // At 900 ms the interval becomes 75 ms.
+    // At 900 ms the interval becomes 75 ms. The first poll at 974 ms
+    // emits because 324 ms have elapsed since the previous event at 650 ms.
     router.processFrame("down", false, false, false, false, false, 974);
-    QCOMPARE(navigation.count(), 4);
-    router.processFrame("down", false, false, false, false, false, 975);
     QCOMPARE(navigation.count(), 5);
+    router.processFrame("down", false, false, false, false, false, 1048);
+    QCOMPARE(navigation.count(), 5);
+    router.processFrame("down", false, false, false, false, false, 1049);
+    QCOMPARE(navigation.count(), 6);
 }
 
 void ControllerInputRouterTest::keepsDefaultNavigationCadenceWhenAccelerationDisabled()
