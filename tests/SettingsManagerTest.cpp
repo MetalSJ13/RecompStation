@@ -22,6 +22,8 @@ private slots:
     void persistsDisplayMode();
     void rejectsUnsupportedDisplayMode();
     void persistsScanOnStartupPreference();
+    void defaultsToUpdateChecksDisabledAndPromptPending();
+    void persistsUpdatePreferenceAndPromptCompletion();
     void defaultsToTheGamesDbEnabled();
     void persistsTheGamesDbEnabledPreference();
     void defaultsToLaunchBoxDisabled();
@@ -137,6 +139,50 @@ void SettingsManagerTest::persistsScanOnStartupPreference()
     QSettings().clear();
 }
 
+
+void SettingsManagerTest::defaultsToUpdateChecksDisabledAndPromptPending()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QVERIFY(!manager.automaticUpdateChecksEnabled());
+    QVERIFY(!manager.updatePreferencePromptCompleted());
+}
+
+void SettingsManagerTest::persistsUpdatePreferenceAndPromptCompletion()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy enabledChanged(&manager, &SettingsManager::automaticUpdateChecksEnabledChanged);
+        QSignalSpy completedChanged(&manager, &SettingsManager::updatePreferencePromptCompletedChanged);
+
+        manager.completeUpdatePreferencePrompt(false);
+        QVERIFY(!manager.automaticUpdateChecksEnabled());
+        QVERIFY(manager.updatePreferencePromptCompleted());
+        QCOMPARE(enabledChanged.count(), 0);
+        QCOMPARE(completedChanged.count(), 1);
+    }
+
+    {
+        SettingsManager reloaded(settingsPath);
+        QVERIFY(!reloaded.automaticUpdateChecksEnabled());
+        QVERIFY(reloaded.updatePreferencePromptCompleted());
+        reloaded.setAutomaticUpdateChecksEnabled(true);
+        QVERIFY(reloaded.automaticUpdateChecksEnabled());
+        QVERIFY(reloaded.updatePreferencePromptCompleted());
+    }
+
+    SettingsManager finalReload(settingsPath);
+    QVERIFY(finalReload.automaticUpdateChecksEnabled());
+    QVERIFY(finalReload.updatePreferencePromptCompleted());
+}
 
 void SettingsManagerTest::defaultsToTheGamesDbEnabled()
 {
