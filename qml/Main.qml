@@ -1401,7 +1401,7 @@ ApplicationWindow {
         width: Math.min(parent.width - 40, 560)
         padding: 26
         closePolicy: platformManager.libraryConfigured ? Popup.CloseOnEscape : Popup.NoAutoClose
-        visible: !platformManager.libraryConfigured
+        visible: !platformManager.libraryConfigured && window.currentPage === "Library" && !window.systemMenuVisible
         standardButtons: Dialog.NoButton
 
         background: Rectangle {
@@ -6049,8 +6049,8 @@ ApplicationWindow {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 220; easing.type: Easing.OutBack }
                 }
-                width: Math.min(parent.width - 48, 480)
-                height: systemMenuContent.implicitHeight + 60
+                width: Math.min(parent.width - 48, 520)
+                height: systemMenuContent.implicitHeight + 68
                 radius: theme.radiusLarge
                 color: theme.sidebarBackground
                 border.color: theme.divider
@@ -6059,8 +6059,8 @@ ApplicationWindow {
                 ColumnLayout {
                     id: systemMenuContent
                     anchors.fill: parent
-                    anchors.margins: 28
-                    spacing: 12
+                    anchors.margins: 32
+                    spacing: 14
 
                     Label {
                         Layout.fillWidth: true
