@@ -103,7 +103,7 @@ private:
     QString m_restoreDisplayMode = QStringLiteral("windowed");
     QString m_fontSize = QStringLiteral("medium");
     bool m_reducedMotion = false;
-    QString m_libraryView = QStringLiteral("grid");
+    QString m_libraryView = QStringLiteral("carousel");
     QString m_libraryDensity = QStringLiteral("comfortable");
     QString m_libraryListDensity = QStringLiteral("comfortable");
     QString m_libraryConsoleDensity = QStringLiteral("spacious");
