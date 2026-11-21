@@ -321,10 +321,13 @@ void ControllerManager::pollController()
     const Sint16 rightY = SDL_GameControllerGetAxis(
         m_controller, SDL_CONTROLLER_AXIS_RIGHTY);
     constexpr int rightStickDeadZone = 8000;
-    if (qAbs(static_cast<int>(rightY)) > rightStickDeadZone) {
-        const qreal scrollAmount = static_cast<qreal>(rightY) / 32767.0;
-        emit rightStickScrollRequested(scrollAmount);
-    }
+    const qreal scrollAmount =
+        qAbs(static_cast<int>(rightY)) > rightStickDeadZone
+            ? qBound(-1.0, static_cast<qreal>(rightY) / 32767.0, 1.0)
+            : 0.0;
+    // Emit zero after the stick returns to its dead zone so the QML scroller
+    // can apply a short, smooth deceleration instead of stopping abruptly.
+    emit rightStickScrollRequested(scrollAmount);
 
     m_inputRouter.processFrame(
         direction,
