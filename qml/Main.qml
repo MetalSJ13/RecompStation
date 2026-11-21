@@ -5473,6 +5473,57 @@ ApplicationWindow {
                                         }
                                     }
 
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: automaticArtworkColumn.implicitHeight + 28
+                                        radius: theme.radiusCard
+                                        color: theme.sidebarBackground
+                                        border.color: settingsManager.automaticArtworkDownloadsEnabled
+                                            ? theme.accent : theme.divider
+                                        ColumnLayout {
+                                            id: automaticArtworkColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            spacing: 8
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                CheckBox {
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: "Automatically download artwork"
+                                                    checked: settingsManager.automaticArtworkDownloadsEnabled
+                                                    onToggled: settingsManager.setAutomaticArtworkDownloadsEnabled(checked)
+                                                    background: Rectangle {
+                                                        radius: 8
+                                                        color: parent.activeFocus
+                                                            ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
+                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                        anchors.margins: -6
+                                                    }
+                                                }
+                                                Item { Layout.fillWidth: true }
+                                                Label {
+                                                    text: settingsManager.automaticArtworkDownloadsEnabled
+                                                        ? "Enabled" : "Disabled"
+                                                    color: settingsManager.automaticArtworkDownloadsEnabled
+                                                        ? "#48C78E" : theme.textMuted
+                                                    font.pixelSize: 10 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                            }
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Download cover artwork automatically when a game is matched. Refresh All Metadata can still retrieve artwork and screenshots manually."
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                        }
+                                    }
+
                                     Label {
                                         text: "AVAILABLE PROVIDERS"
                                         color: theme.textMuted
@@ -5694,7 +5745,7 @@ ApplicationWindow {
                                         onClicked: {
                                             window.universalRefreshPending = true
                                             window.scanMessage = "Refreshing metadata, artwork, and screenshots for your library…"
-                                            metadataMatcher.scrapeLibrary(true)
+                                            metadataMatcher.scrapeLibrary(true, true)
                                         }
                                     }
                                     Label {
