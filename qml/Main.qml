@@ -140,7 +140,12 @@ ApplicationWindow {
                 continue
             const cross = direction === "left" || direction === "right"
                 ? Math.abs(dy) : Math.abs(dx)
-            const score = primary + cross * 2.2
+            // Prefer the next visual row/column before choosing the nearest
+            // control within that row. This keeps long settings pages moving
+            // top-to-bottom and bottom-to-top instead of jumping sideways.
+            const score = direction === "up" || direction === "down"
+                ? primary * 4 + cross
+                : primary + cross * 2.2
             if (score < bestScore) {
                 bestScore = score
                 best = candidate
