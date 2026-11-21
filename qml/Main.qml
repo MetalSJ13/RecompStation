@@ -626,7 +626,10 @@ ApplicationWindow {
     Binding {
         target: controllerManager
         property: "navigationAccelerationEnabled"
-        value: currentPage === "Library" && settingsManager.libraryView === "list"
+        // Keep held left-stick and D-pad navigation consistent across all
+        // Library layouts. Other pages retain the default repeat cadence.
+        value: currentPage === "Library"
+            && ["list", "grid", "carousel"].indexOf(settingsManager.libraryView) >= 0
     }
 
 
