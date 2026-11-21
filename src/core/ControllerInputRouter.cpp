@@ -78,6 +78,22 @@ bool ControllerInputRouter::inputEnabled() const
     return m_inputEnabled;
 }
 
+bool ControllerInputRouter::navigationActive() const
+{
+    return m_inputEnabled && !m_gameSessionActive;
+}
+
+void ControllerInputRouter::setGameSessionActive(bool active)
+{
+    if (m_gameSessionActive == active)
+        return;
+
+    m_gameSessionActive = active;
+    m_currentDirection.clear();
+    m_lastNavigationMs = 0;
+    m_directionStartedMs = 0;
+}
+
 void ControllerInputRouter::setInputEnabled(bool enabled)
 {
     if (m_inputEnabled == enabled)
@@ -111,7 +127,7 @@ void ControllerInputRouter::processFrame(const QString &direction,
 {
     // Always track physical button states while suspended. This prevents a
     // held button from firing unexpectedly when input is re-enabled.
-    if (!m_inputEnabled) {
+    if (!navigationActive()) {
         m_previousSelect = selectPressed;
         m_previousBack = backPressed;
         m_previousMenu = menuPressed;
