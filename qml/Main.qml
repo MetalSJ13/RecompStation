@@ -754,6 +754,8 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         enabled: window.visible && currentPage === "Library"
             && !systemMenuVisible && !gameDetailsPopup.visible
+            && !libraryFolderDialog.visible && !newLibraryFolderDialog.visible
+            && !libraryBackgroundFileDialog.visible && !librarySetupDialog.visible
         onActivated: window.controllerSelect("keyboard")
     }
     Shortcut {
@@ -761,6 +763,8 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         enabled: window.visible && currentPage === "Library"
             && !systemMenuVisible && !gameDetailsPopup.visible
+            && !libraryFolderDialog.visible && !newLibraryFolderDialog.visible
+            && !libraryBackgroundFileDialog.visible && !librarySetupDialog.visible
         onActivated: window.controllerSelect("keyboard")
     }
 
