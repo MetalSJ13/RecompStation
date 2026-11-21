@@ -1249,6 +1249,35 @@ ApplicationWindow {
                     keyNavigationEnabled: true
                     highlightFollowsCurrentItem: false
 
+                    function focusFolderAt(index) {
+                        if (count <= 0) {
+                            currentIndex = -1
+                            return
+                        }
+                        currentIndex = Math.max(0, Math.min(count - 1, index))
+                        positionViewAtIndex(currentIndex, ListView.Contain)
+                        const entry = currentItem
+                        if (entry)
+                            libraryFolderDialog.selectedFolderPath = entry.folderPath
+                    }
+
+                    Keys.onUpPressed: {
+                        focusFolderAt(currentIndex < 0 ? 0 : currentIndex - 1)
+                    }
+                    Keys.onDownPressed: {
+                        focusFolderAt(currentIndex < 0 ? 0 : currentIndex + 1)
+                    }
+                    Keys.onPageUpPressed: {
+                        const step = Math.max(1, Math.floor(height / 47))
+                        focusFolderAt((currentIndex < 0 ? 0 : currentIndex) - step)
+                    }
+                    Keys.onPageDownPressed: {
+                        const step = Math.max(1, Math.floor(height / 47))
+                        focusFolderAt((currentIndex < 0 ? 0 : currentIndex) + step)
+                    }
+                    Keys.onHomePressed: focusFolderAt(0)
+                    Keys.onEndPressed: focusFolderAt(count - 1)
+
                     Keys.onReturnPressed: {
                         if (currentItem)
                             libraryFolderDialog.navigateTo(currentItem.folderPath)
