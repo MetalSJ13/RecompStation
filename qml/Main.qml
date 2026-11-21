@@ -2536,10 +2536,14 @@ ApplicationWindow {
                                             currentIndex: Math.max(0, indexOfValue(
                                                 settingsManager.libraryView === "list"
                                                     ? settingsManager.libraryListDensity
-                                                    : settingsManager.libraryDensity))
+                                                    : settingsManager.libraryView === "carousel"
+                                                        ? settingsManager.libraryConsoleDensity
+                                                        : settingsManager.libraryDensity))
                                             onActivated: {
                                                 if (settingsManager.libraryView === "list")
                                                     settingsManager.libraryListDensity = currentValue
+                                                else if (settingsManager.libraryView === "carousel")
+                                                    settingsManager.libraryConsoleDensity = currentValue
                                                 else
                                                     settingsManager.libraryDensity = currentValue
                                             }
@@ -3182,8 +3186,8 @@ ApplicationWindow {
                             keyNavigationEnabled: false
                             spacing: 24
                             readonly property real cardWidth:
-                                settingsManager.libraryDensity === "compact" ? 210
-                                : settingsManager.libraryDensity === "spacious" ? 270 : 240
+                                settingsManager.libraryConsoleDensity === "compact" ? 220
+                                : settingsManager.libraryConsoleDensity === "comfortable" ? 270 : 320
                             readonly property real cardHeight:
                                 Math.min(Math.max(220, height - 24), cardWidth * 1.48)
                             topMargin: Math.max(8, (height - cardHeight) / 2)
