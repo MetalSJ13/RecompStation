@@ -3166,16 +3166,10 @@ ApplicationWindow {
                                 policy: ScrollBar.AlwaysOff
                             }
                         }
-                        }
 
                         ListView {
                             id: consoleView
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            anchors.topMargin: 30
-                            anchors.bottomMargin: 30
+                            anchors.fill: parent
                             visible: settingsManager.libraryView === "carousel" || opacity > 0
                             opacity: settingsManager.libraryView === "carousel" ? 1 : 0
                             Behavior on opacity {
@@ -3341,6 +3335,7 @@ ApplicationWindow {
                                 }
                             }
                             ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
+                        }
                         }
 
                         Rectangle {
