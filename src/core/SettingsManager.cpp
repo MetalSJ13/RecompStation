@@ -42,6 +42,8 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("application/automaticUpdateChecksEnabled"), false).toBool();
     m_updatePreferencePromptCompleted = settings.value(
         QStringLiteral("application/updatePreferencePromptCompleted"), false).toBool();
+    m_automaticMetadataMatchingEnabled = settings.value(
+        QStringLiteral("metadata/automaticMatchingEnabled"), true).toBool();
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
     m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
     m_launchBoxLastUpdated = settings.value(QStringLiteral("metadata/launchBoxLastUpdated")).toString();
@@ -175,6 +177,29 @@ void SettingsManager::setScanOnStartup(bool enabled)
     emit scanOnStartupChanged();
 }
 
+
+bool SettingsManager::automaticMetadataMatchingEnabled() const
+{
+    return m_automaticMetadataMatchingEnabled;
+}
+
+void SettingsManager::setAutomaticMetadataMatchingEnabled(bool enabled)
+{
+    if (m_automaticMetadataMatchingEnabled == enabled)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("metadata/automaticMatchingEnabled"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist automatic metadata matching preference.";
+        return;
+    }
+
+    m_automaticMetadataMatchingEnabled = enabled;
+    emit automaticMetadataMatchingEnabledChanged();
+    qCInfo(lcSettings) << "Automatic metadata matching enabled:" << m_automaticMetadataMatchingEnabled;
+}
 
 bool SettingsManager::theGamesDbEnabled() const
 {
