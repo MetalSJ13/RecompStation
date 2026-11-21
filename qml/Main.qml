@@ -2505,7 +2505,7 @@ ApplicationWindow {
                                             model: [
                                                 { label: "Grid", value: "grid" },
                                                 { label: "List", value: "list" },
-                                                { label: "Console", value: "carousel" }
+                                                { label: "Carousel", value: "carousel" }
                                             ]
                                             currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
                                             onActivated: settingsManager.libraryView = currentValue
@@ -2789,7 +2789,8 @@ ApplicationWindow {
                                 // letterboxing, but duplicates portrait cover art. Keep
                                 // portrait artwork clean so it does not ghost during fades.
                                 readonly property bool useBlurredArtworkBackdrop:
-                                    gameTileCover.status === Image.Ready
+                                    gameTile.platform !== "N64"
+                                    && gameTileCover.status === Image.Ready
                                     && gameTileCover.sourceSize.width > gameTileCover.sourceSize.height
                                 function openDetails() {
                                     window.selectedGame = {
