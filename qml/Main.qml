@@ -1298,7 +1298,13 @@ ApplicationWindow {
                     Keys.onPressed: function(event) {
                         const step = Math.max(1, Math.floor(height / 47))
                         const current = currentIndex < 0 ? 0 : currentIndex
-                        if (event.key === Qt.Key_PageUp) {
+                        if (event.key === Qt.Key_Up) {
+                            focusFolderAt(current - 1)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Down) {
+                            focusFolderAt(current + 1)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_PageUp) {
                             focusFolderAt(current - step)
                             event.accepted = true
                         } else if (event.key === Qt.Key_PageDown) {
@@ -1310,20 +1316,16 @@ ApplicationWindow {
                         } else if (event.key === Qt.Key_End) {
                             focusFolderAt(count - 1)
                             event.accepted = true
+                        } else if (event.key === Qt.Key_Return
+                                   || event.key === Qt.Key_Enter) {
+                            if (currentItem)
+                                libraryFolderDialog.navigateTo(currentItem.folderPath)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Space) {
+                            if (currentItem)
+                                libraryFolderDialog.selectedFolderPath = currentItem.folderPath
+                            event.accepted = true
                         }
-                    }
-
-                    Keys.onReturnPressed: {
-                        if (currentItem)
-                            libraryFolderDialog.navigateTo(currentItem.folderPath)
-                    }
-                    Keys.onEnterPressed: {
-                        if (currentItem)
-                            libraryFolderDialog.navigateTo(currentItem.folderPath)
-                    }
-                    Keys.onSpacePressed: {
-                        if (currentItem)
-                            libraryFolderDialog.selectedFolderPath = currentItem.folderPath
                     }
 
                     delegate: Rectangle {
