@@ -88,6 +88,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Simplify primary Library/Settings navigation to compact icon-led controls; user approved the appearance.
 - [x] Add configurable Grid/List browsing, title search, platform filtering, and independent view sizing.
 - [ ] Validate the new Console carousel locally: horizontal scrolling, selected-card centering/focus, mouse/keyboard/controller selection, details opening, persistence, and Grid/List regression.
+- [ ] Verify Carousel hover no longer cascades through cards when the pointer is stationary near the screen edges; card selection should follow actual pointer movement.
 - [x] Add coordinated static/animated/custom library background treatments.
 - [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
 - [x] Validate fullscreen startup and the coordinated startup Grid reveal on the user's Wayland desktop; no initial windowed flash or duplicate/late card animation remains.
