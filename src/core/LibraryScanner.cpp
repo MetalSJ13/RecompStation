@@ -38,6 +38,12 @@ LibraryScanner::LibraryScanner(PlatformManager *platformManager,
                 refreshDirectoryWatches();
             else
                 startMonitoring();
+
+            // Selecting or changing the library root is an explicit request
+            // to use that folder. Scan it immediately so existing games appear
+            // without requiring a manual scan or an application restart.
+            if (m_platformManager->libraryConfigured())
+                scanAll();
         });
         if (m_platformManager->libraryConfigured())
             startMonitoring();
