@@ -1114,10 +1114,12 @@ ApplicationWindow {
             window.libraryRevision++
             window.scanMessage = "Metadata complete: " + matched
                 + " matched, " + unresolved + " left unresolved."
-            if (window.universalRefreshPending) {
+            const shouldRefreshScreenshots = window.universalRefreshPending
+                || (settingsManager.automaticArtworkDownloadsEnabled && matched > 0)
+            if (window.universalRefreshPending)
                 window.universalRefreshPending = false
+            if (shouldRefreshScreenshots)
                 screenshotManager.refreshLibraryScreenshots()
-            }
         }
     }
 
@@ -5516,7 +5518,7 @@ ApplicationWindow {
                                             }
                                             Label {
                                                 Layout.fillWidth: true
-                                                text: "Download cover artwork automatically when a game is matched. Refresh All Metadata can still retrieve artwork and screenshots manually."
+                                                text: "Download cover artwork and available gameplay screenshots automatically after games are matched. Refresh All Metadata can still retrieve them manually."
                                                 color: theme.textSecondary
                                                 font.pixelSize: 11 * theme.fontScale
                                                 wrapMode: Text.Wrap
