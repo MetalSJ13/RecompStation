@@ -76,6 +76,45 @@ private slots:
         m_tempDirectory.reset();
     }
 
+    void scansExistingGamesImmediatelyWhenLibraryFolderIsSelected()
+    {
+        auto dataDirectory = std::make_unique<QTemporaryDir>();
+        QVERIFY(dataDirectory->isValid());
+
+        PlatformManager platformManager(dataDirectory->path());
+        QVERIFY(platformManager.initialize());
+
+        const QString libraryRoot = dataDirectory->path() + "/existing-library";
+        const QString n64Directory = libraryRoot + "/N64";
+        QVERIFY(QDir().mkpath(n64Directory));
+
+        QFile gameFile(n64Directory + "/Banjo-Kazooie (USA).z64");
+        QVERIFY(gameFile.open(QIODevice::WriteOnly));
+        gameFile.write("test-rom");
+        gameFile.close();
+
+        DatabaseManager databaseManager;
+        QVERIFY2(databaseManager.initialize(
+                     dataDirectory->path() + "/database/first-run.sqlite"),
+                 qPrintable(databaseManager.lastError()));
+
+        LibraryScanner scanner(&platformManager, &databaseManager);
+        QSignalSpy scanSpy(&scanner, &LibraryScanner::scanCompleted);
+        QVERIFY(scanSpy.isValid());
+        QVERIFY(!platformManager.libraryConfigured());
+
+        QVERIFY(platformManager.setLibraryDirectoryPath(libraryRoot));
+
+        QCOMPARE(scanSpy.count(), 1);
+        QCOMPARE(scanSpy.takeFirst().at(0).toInt(), 1);
+
+        const QVariantList games = databaseManager.games("N64");
+        QCOMPARE(games.size(), 1);
+        const QVariantMap game = games.first().toMap();
+        QCOMPARE(game.value("title").toString(), QString("Banjo-Kazooie (USA)"));
+        QCOMPARE(game.value("path").toString(), QFileInfo(gameFile).absoluteFilePath());
+    }
+
     void discoversSupportedExtensionsForEveryPlatform()
     {
         const QList<QPair<QString, QStringList>> filesByPlatform = {
