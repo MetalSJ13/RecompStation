@@ -275,12 +275,37 @@ ApplicationWindow {
                 consoleView.forceActiveFocus()
                 return
             }
-            const columns = gameGrid.responsiveColumns
-            if (direction === "left") next--
-            else if (direction === "right") next++
-            else if (direction === "up") next -= columns
-            else if (direction === "down") next += columns
-            next = Math.max(0, Math.min(gameGrid.count - 1, next))
+            const columns = Math.max(1, gameGrid.responsiveColumns)
+            const row = Math.floor(next / columns)
+            const column = next % columns
+            const rowCount = Math.ceil(gameGrid.count / columns)
+            let targetRow = row
+            let targetColumn = column
+
+            // Horizontal movement stays within the current row. Do not let
+            // left/right wrap to the previous or next row at its edges.
+            if (direction === "left" && column > 0)
+                targetColumn--
+            else if (direction === "right"
+                     && column < columns - 1 && next + 1 < gameGrid.count)
+                targetColumn++
+            else if (direction === "up" && row > 0)
+                targetRow--
+            else if (direction === "down" && row + 1 < rowCount)
+                targetRow++
+            else
+                return
+
+            // The final row may be incomplete. Preserve the nearest valid
+            // column when moving vertically into or out of that row.
+            const targetRowStart = targetRow * columns
+            const targetRowLength = Math.min(columns, gameGrid.count - targetRowStart)
+            targetColumn = Math.min(targetColumn, Math.max(0, targetRowLength - 1))
+            next = targetRowStart + targetColumn
+
+            if (next === gameGrid.currentIndex)
+                return
+
             gameGrid.currentIndex = next
             gameGrid.positionViewAtIndex(next, GridView.Contain)
             gameGrid.forceActiveFocus()
