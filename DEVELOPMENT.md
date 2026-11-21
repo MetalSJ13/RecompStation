@@ -256,9 +256,9 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Expose TheGamesDB provider status/enablement and one coordinated **Refresh All Metadata** action in Settings → Metadata; separate manual metadata and screenshot buttons have been retired.
 - [ ] Revisit launcher installation/update preferences only when the underlying launcher workflows and higher-priority Settings work are settled; no broad all-launcher GitHub update polling is planned.
 - [ ] Add useful contextual first-run guidance without forcing a lengthy setup wizard.
-- [ ] During initial setup, ask whether the user wants automatic RecompStation application-update checks and persist the choice.
+- [x] During initial setup, ask whether the user wants automatic RecompStation application-update checks and persist the choice; Yes, No, close, and Escape all complete the prompt, with dismissal saved as disabled. The preference is editable in Settings → Application. **Preference UI only:** release checking is not connected and makes no network requests.
 - [ ] Audit Settings so every exposed control has implemented behavior, a clear purpose, and persistent state where appropriate; remove or defer nonfunctional controls.
-- [ ] Add an opt-in automatic application-update check preference and a manual **Check for Updates Now** action; automatic checks must be disabled when the user opts out.
+- [ ] Implement the automatic application-update check workflow and a manual **Check for Updates Now** action; the opt-in preference UI and persistence are in place, but no release checks are performed yet.
 - [ ] Check for application updates periodically (no more than once per day), compare the installed version with GitHub releases, and notify the user when a newer release is available.
 - [ ] Update notifications must direct users to the GitHub release page for manual download; do not automatically download, replace, or install RecompStation. Handle API/network failures quietly and avoid repeating the same release notification.
 
