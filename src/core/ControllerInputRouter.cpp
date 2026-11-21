@@ -86,7 +86,19 @@ void ControllerInputRouter::setInputEnabled(bool enabled)
     m_inputEnabled = enabled;
     m_currentDirection.clear();
     m_lastNavigationMs = 0;
+    m_directionStartedMs = 0;
     emit inputEnabledChanged();
+}
+
+void ControllerInputRouter::setNavigationAccelerationEnabled(bool enabled)
+{
+    if (m_navigationAccelerationEnabled == enabled)
+        return;
+
+    m_navigationAccelerationEnabled = enabled;
+    m_currentDirection.clear();
+    m_lastNavigationMs = 0;
+    m_directionStartedMs = 0;
 }
 
 void ControllerInputRouter::processFrame(const QString &direction,
@@ -107,6 +119,7 @@ void ControllerInputRouter::processFrame(const QString &direction,
         m_previousNextSection = nextSectionPressed;
         m_currentDirection.clear();
         m_lastNavigationMs = 0;
+        m_directionStartedMs = 0;
         return;
     }
 
@@ -130,13 +143,32 @@ void ControllerInputRouter::processFrame(const QString &direction,
     if (direction.isEmpty()) {
         m_currentDirection.clear();
         m_lastNavigationMs = 0;
+        m_directionStartedMs = 0;
         return;
     }
 
-    // A new direction fires immediately. A held direction repeats at a
-    // controlled cadence rather than flooding the UI every polling frame.
-    if (direction != m_currentDirection || elapsedMs - m_lastNavigationMs >= 220) {
+    // A new direction fires immediately. In Library List View, held input
+    // starts deliberately and progressively accelerates without skipping items.
+    if (direction != m_currentDirection) {
         m_currentDirection = direction;
+        m_directionStartedMs = elapsedMs;
+        m_lastNavigationMs = elapsedMs;
+        emit navigationRequested(direction);
+        return;
+    }
+
+    qint64 repeatIntervalMs = 220;
+    if (m_navigationAccelerationEnabled) {
+        const qint64 heldMs = qMax<qint64>(0, elapsedMs - m_directionStartedMs);
+        if (heldMs < 500)
+            repeatIntervalMs = 280;
+        else if (heldMs < 900)
+            repeatIntervalMs = 150;
+        else
+            repeatIntervalMs = 75;
+    }
+
+    if (elapsedMs - m_lastNavigationMs >= repeatIntervalMs) {
         m_lastNavigationMs = elapsedMs;
         emit navigationRequested(direction);
     }
