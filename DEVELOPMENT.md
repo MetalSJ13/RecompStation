@@ -272,7 +272,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Style the first-run library-folder setup overlay and keep it scoped to the Library page.
 - [x] Keep the setup overlay non-modal so the toolbar and Settings remain mouse-accessible; suppress it while the controller pause menu is open.
 - [x] Add automatic filesystem monitoring for configured folders (runtime monitoring/reconciliation behavior confirmed; see Milestone 4 for implementation and validation details).
-- [ ] Automatically scan an existing library immediately when the user selects or changes the library root; populate filename-based cards before metadata is available. Implementation and regression coverage are being added; local first-run validation is pending.
+- [ ] Automatically scan an existing library immediately when the user selects or changes the library root; populate filename-based cards before metadata is available. The scan trigger and regression test are committed; local build/test and first-run validation are pending.
 - [x] Cache gameplay screenshots independently of cover art for games with saved TheGamesDB associations.
 - [x] Expose TheGamesDB provider status/enablement and one coordinated **Refresh All Metadata** action in Settings → Metadata; separate manual metadata and screenshot buttons have been retired.
 - [ ] Revisit launcher installation/update preferences only when the underlying launcher workflows and higher-priority Settings work are settled; no broad all-launcher GitHub update polling is planned.
