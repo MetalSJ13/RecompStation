@@ -845,19 +845,21 @@ ApplicationWindow {
     Shortcut {
         sequence: "Return"
         context: Qt.ApplicationShortcut
-        enabled: window.visible && currentPage === "Library"
+        enabled: window.visible
+            && (currentPage === "Library" || currentPage === "Settings")
             && !systemMenuVisible && !gameDetailsPopup.visible
-            && !libraryFolderDialog.visible && !newLibraryFolderDialog.visible
-            && !libraryBackgroundFileDialog.visible && !librarySetupDialog.visible
+            && !uninstallDialog.visible && !librarySetupDialog.visible
+            && window.keyboardDirectionalNavigationAllowed()
         onActivated: window.controllerSelect("keyboard")
     }
     Shortcut {
         sequence: "Enter"
         context: Qt.ApplicationShortcut
-        enabled: window.visible && currentPage === "Library"
+        enabled: window.visible
+            && (currentPage === "Library" || currentPage === "Settings")
             && !systemMenuVisible && !gameDetailsPopup.visible
-            && !libraryFolderDialog.visible && !newLibraryFolderDialog.visible
-            && !libraryBackgroundFileDialog.visible && !librarySetupDialog.visible
+            && !uninstallDialog.visible && !librarySetupDialog.visible
+            && window.keyboardDirectionalNavigationAllowed()
         onActivated: window.controllerSelect("keyboard")
     }
 
