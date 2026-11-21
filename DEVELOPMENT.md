@@ -318,7 +318,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Complete per-device controller profiles keyed by stable SDL hardware GUID and apply each device's saved assignments to the input router. GUID-based persistence has a backend foundation, but full profile/device management is not yet available.
 - [x] Support adding and removing button mappings and resetting controller mappings. Existing functionality is present.
 - [ ] Polish the button-mapping GUI so controls, dialogs, focus, hover, and selection states consistently follow the active application theme.
-- [ ] Verify Xbox/PlayStation default mappings and implement game-session input ownership: suspend RecompStation navigation while an external game is running, then resume it safely on exit or failed launch. Preserve the user's manual controller-input enable/disable preference.
+- [ ] Verify Xbox/PlayStation default mappings and validate game-session input ownership. **Implementation committed; local build/runtime validation pending:** external game process start/finish/failure now drives a separate session-suspension state, including multiple concurrent launcher processes. RecompStation controller navigation and right-stick UI scrolling are suspended while any managed game process runs; the user's manual controller-input preference is preserved. Regression tests cover session suspension, preference preservation, and held-button release behavior.
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
 - [ ] Add lightweight navigation sounds with volume controls
 - [ ] Check fullscreen, windowed, and multi-display behavior
