@@ -44,6 +44,8 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("application/updatePreferencePromptCompleted"), false).toBool();
     m_automaticMetadataMatchingEnabled = settings.value(
         QStringLiteral("metadata/automaticMatchingEnabled"), true).toBool();
+    m_automaticArtworkDownloadsEnabled = settings.value(
+        QStringLiteral("metadata/automaticArtworkDownloadsEnabled"), true).toBool();
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
     m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
     m_launchBoxLastUpdated = settings.value(QStringLiteral("metadata/launchBoxLastUpdated")).toString();
@@ -199,6 +201,29 @@ void SettingsManager::setAutomaticMetadataMatchingEnabled(bool enabled)
     m_automaticMetadataMatchingEnabled = enabled;
     emit automaticMetadataMatchingEnabledChanged();
     qCInfo(lcSettings) << "Automatic metadata matching enabled:" << m_automaticMetadataMatchingEnabled;
+}
+
+bool SettingsManager::automaticArtworkDownloadsEnabled() const
+{
+    return m_automaticArtworkDownloadsEnabled;
+}
+
+void SettingsManager::setAutomaticArtworkDownloadsEnabled(bool enabled)
+{
+    if (m_automaticArtworkDownloadsEnabled == enabled)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("metadata/automaticArtworkDownloadsEnabled"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist automatic artwork download preference.";
+        return;
+    }
+
+    m_automaticArtworkDownloadsEnabled = enabled;
+    emit automaticArtworkDownloadsEnabledChanged();
+    qCInfo(lcSettings) << "Automatic artwork downloads enabled:" << m_automaticArtworkDownloadsEnabled;
 }
 
 bool SettingsManager::theGamesDbEnabled() const
