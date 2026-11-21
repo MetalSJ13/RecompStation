@@ -74,6 +74,7 @@ QString ControllerManager::controllerName() const { return m_controllerName; }
 QString ControllerManager::controllerType() const { return m_controllerType; }
 QString ControllerManager::controllerGuid() const { return m_controllerGuid; }
 bool ControllerManager::inputEnabled() const { return m_inputRouter.inputEnabled(); }
+bool ControllerManager::navigationAccelerationEnabled() const { return m_navigationAccelerationEnabled; }
 
 void ControllerManager::setSettingsManager(SettingsManager *settingsManager)
 {
@@ -145,6 +146,14 @@ void ControllerManager::loadControllerProfile()
     emit controllerProfileChanged();
     if (!m_controllerProfile.isEmpty())
         qCInfo(lcApplication) << "Loaded controller mappings for GUID:" << m_controllerGuid;
+}
+
+void ControllerManager::setNavigationAccelerationEnabled(bool enabled)
+{
+    if (m_navigationAccelerationEnabled == enabled)
+        return;
+    m_navigationAccelerationEnabled = enabled;
+    m_inputRouter.setNavigationAccelerationEnabled(enabled);
 }
 
 void ControllerManager::setInputEnabled(bool enabled)
