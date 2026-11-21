@@ -558,6 +558,7 @@ ApplicationWindow {
     onHeightChanged: console.info("[Settings Geometry] window height:", height)
 
     property string preFullscreenMode: settingsManager.restoreDisplayMode
+    property bool pendingPreferredSizeApplication: false
 
     function applyDisplayMode(mode) {
         // Apply the preferred geometry before changing the window state.
@@ -607,6 +608,10 @@ ApplicationWindow {
             preFullscreenMode = "windowed"
             if (settingsManager.displayMode !== "windowed")
                 settingsManager.setDisplayMode("windowed")
+            if (window.pendingPreferredSizeApplication) {
+                window.pendingPreferredSizeApplication = false
+                Qt.callLater(function() { window.applyPreferredPresentationSize() })
+            }
         }
     }
 
@@ -662,8 +667,13 @@ ApplicationWindow {
     }
 
     function applyPreferredPresentationSize() {
-        if (window.visibility !== Window.Windowed)
+        if (window.visibility !== Window.Windowed) {
+            // Restore a normal window first. Wait for the window manager to
+            // report the Windowed state before applying the requested geometry.
+            window.pendingPreferredSizeApplication = true
+            window.showNormal()
             return
+        }
 
         const size = settingsManager.preferredPresentationSize
         if (size === "system")
