@@ -3170,7 +3170,12 @@ ApplicationWindow {
 
                         ListView {
                             id: consoleView
-                            anchors.fill: parent
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            anchors.topMargin: 30
+                            anchors.bottomMargin: 30
                             visible: settingsManager.libraryView === "carousel" || opacity > 0
                             opacity: settingsManager.libraryView === "carousel" ? 1 : 0
                             Behavior on opacity {
@@ -3186,11 +3191,13 @@ ApplicationWindow {
                                 settingsManager.libraryDensity === "compact" ? 210
                                 : settingsManager.libraryDensity === "spacious" ? 270 : 240
                             readonly property real cardHeight:
-                                Math.min(Math.max(220, height - 36), cardWidth * 1.55)
-                            topMargin: Math.max(12, (height - cardHeight) / 2)
+                                Math.min(Math.max(220, height - 24), cardWidth * 1.48)
+                            topMargin: Math.max(8, (height - cardHeight) / 2)
                             bottomMargin: topMargin
-                            leftMargin: Math.max(24, (width - cardWidth) / 2)
-                            rightMargin: leftMargin
+                            // Keep the ends compact: the first and last covers should
+                            // sit near the viewport edges instead of floating at center.
+                            leftMargin: 34
+                            rightMargin: 34
                             preferredHighlightBegin: (width - cardWidth) / 2
                             preferredHighlightEnd: preferredHighlightBegin + cardWidth
                             highlightRangeMode: ListView.StrictlyEnforceRange
