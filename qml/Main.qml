@@ -623,6 +623,49 @@ ApplicationWindow {
         id: theme
     }
 
+    // Smoothly scroll the active Library viewport with the right stick.
+    // The selected game index is deliberately left untouched.
+    Timer {
+        id: libraryRightStickScrollTimer
+        interval: 16
+        repeat: true
+        property real inputAmount: 0
+        property real velocity: 0
+        onTriggered: {
+            if (window.currentPage !== "Library" || window.systemMenuVisible
+                    || gameDetailsPopup.visible
+                    || (settingsManager.libraryView !== "grid"
+                        && settingsManager.libraryView !== "list")) {
+                stop()
+                inputAmount = 0
+                velocity = 0
+                return
+            }
+
+            const view = settingsManager.libraryView === "list" ? gameList : gameGrid
+            const maxY = Math.max(0, view.contentHeight - view.height)
+            const targetVelocity = inputAmount * 9.0
+            if (Math.abs(inputAmount) > 0.02)
+                velocity += (targetVelocity - velocity) * 0.32
+            else
+                velocity *= 0.88
+
+            if (Math.abs(velocity) < 0.12 && Math.abs(inputAmount) <= 0.02) {
+                velocity = 0
+                stop()
+                return
+            }
+
+            view.contentY = Math.max(0, Math.min(maxY, view.contentY + velocity))
+            if ((view.contentY <= 0 && velocity < 0)
+                    || (view.contentY >= maxY && velocity > 0)) {
+                velocity = 0
+                if (Math.abs(inputAmount) <= 0.02)
+                    stop()
+            }
+        }
+    }
+
     Connections {
         target: controllerManager
 
@@ -671,9 +714,22 @@ ApplicationWindow {
                 window.navigateToPage("Settings")
         }
         function onRightStickScrollRequested(amount) {
+            if (!controllerManager.inputEnabled)
+                return
+
+            if (window.currentPage === "Library" && !window.systemMenuVisible
+                    && !gameDetailsPopup.visible
+                    && (settingsManager.libraryView === "grid"
+                        || settingsManager.libraryView === "list")) {
+                window.activeInputDevice = "controller"
+                libraryRightStickScrollTimer.inputAmount = amount
+                if (Math.abs(amount) > 0.02)
+                    libraryRightStickScrollTimer.start()
+                return
+            }
+
             if (window.currentPage !== "Settings"
-                || window.systemMenuVisible || gameDetailsPopup.visible
-                || !controllerManager.inputEnabled)
+                    || window.systemMenuVisible || gameDetailsPopup.visible)
                 return
 
             const scrollView = settingsPage.section === "Appearance" ? appearanceContent
@@ -692,7 +748,7 @@ ApplicationWindow {
                 return
 
             window.activeInputDevice = "controller"
-            // Polling runs at ~60 Hz; full deflection scrolls at a comfortable pace.
+            // Keep the existing Settings scrolling behavior unchanged.
             flickable.contentY = Math.max(0, Math.min(maxY,
                 flickable.contentY + amount * 14))
         }
