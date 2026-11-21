@@ -20,9 +20,10 @@ class FakeMetadataProvider : public MetadataProvider
 public:
     QList<GameMetadata> results;
     bool failRequest = false;
+    bool configured = true;
 
     QString providerId() const override { return QStringLiteral("fake"); }
-    bool isConfigured() const override { return true; }
+    bool isConfigured() const override { return configured; }
     void fetchPlatforms() override
     {
         emit platformsLoaded({TheGamesDbPlatform{3, QStringLiteral("Nintendo 64"),
@@ -311,6 +312,33 @@ private slots:
         QCOMPARE(game.value("metadataReleaseDate").toString(), QStringLiteral("1998"));
         QVERIFY(game.value("metadataArtworkUrl").toString().isEmpty());
         QVERIFY(game.value("artworkPath").toString().isEmpty());
+    }
+
+    void usesLaunchBoxDirectlyWhenTheGamesDbIsNotConfigured()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        provider.configured = false;
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+        QSignalSpy finished(&matcher, &LibraryMetadataMatcher::scrapeFinished);
+
+        matcher.scrapeLibrary();
+        QCOMPARE(finished.size(), 1);
+        QCOMPARE(finished.first().at(0).toInt(), 1);
+        QCOMPARE(finished.first().at(1).toInt(), 0);
+        const QVariantMap game = database.games().first().toMap();
+        QCOMPARE(game.value("metadataProvider").toString(), QStringLiteral("launchbox"));
+        QCOMPARE(game.value("metadataGameId").toInt(), 162);
+        QCOMPARE(game.value("metadataTitle").toString(), QStringLiteral("Banjo-Kazooie"));
     }
 
     void usesLaunchBoxTitleFallbackWhenNoFilenameAssociationExists()
