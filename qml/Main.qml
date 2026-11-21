@@ -3186,7 +3186,9 @@ ApplicationWindow {
                                 settingsManager.libraryDensity === "compact" ? 210
                                 : settingsManager.libraryDensity === "spacious" ? 270 : 240
                             readonly property real cardHeight:
-                                Math.min(Math.max(240, height - 36), cardWidth * 1.55)
+                                Math.min(Math.max(220, height - 36), cardWidth * 1.55)
+                            topMargin: Math.max(12, (height - cardHeight) / 2)
+                            bottomMargin: topMargin
                             leftMargin: Math.max(24, (width - cardWidth) / 2)
                             rightMargin: leftMargin
                             preferredHighlightBegin: (width - cardWidth) / 2
