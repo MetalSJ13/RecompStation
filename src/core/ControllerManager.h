@@ -22,6 +22,7 @@ class ControllerManager final : public QObject
     Q_PROPERTY(QString controllerType READ controllerType NOTIFY connectedChanged)
     Q_PROPERTY(QString controllerGuid READ controllerGuid NOTIFY connectedChanged)
     Q_PROPERTY(bool inputEnabled READ inputEnabled WRITE setInputEnabled NOTIFY inputEnabledChanged)
+    Q_PROPERTY(bool navigationAccelerationEnabled READ navigationAccelerationEnabled WRITE setNavigationAccelerationEnabled)
     Q_PROPERTY(bool mappingCaptureActive READ mappingCaptureActive NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(QString mappingCaptureAction READ mappingCaptureAction NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(int profileRevision READ profileRevision NOTIFY controllerProfileChanged)
@@ -36,12 +37,14 @@ public:
     QString controllerType() const;
     QString controllerGuid() const;
     bool inputEnabled() const;
+    bool navigationAccelerationEnabled() const;
     bool mappingCaptureActive() const;
     QString mappingCaptureAction() const;
     int profileRevision() const;
 
 public slots:
     void setInputEnabled(bool enabled);
+    void setNavigationAccelerationEnabled(bool enabled);
     void setSettingsManager(SettingsManager *settingsManager);
     Q_INVOKABLE void reloadControllerProfile();
     Q_INVOKABLE bool startMappingCapture(const QString &action);
@@ -86,5 +89,6 @@ private:
     QString m_controllerType = QStringLiteral("generic");
     QString m_controllerGuid;
     bool m_connected = false;
+    bool m_navigationAccelerationEnabled = false;
     bool m_sdlInitialized = false;
 };
