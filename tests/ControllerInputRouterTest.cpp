@@ -107,14 +107,17 @@ void ControllerInputRouterTest::acceleratesHeldNavigationWhenEnabled()
     QCOMPARE(navigation.count(), 1);
     router.processFrame("down", false, false, false, false, false, 280);
     QCOMPARE(navigation.count(), 2);
+
+    // At 500 ms the repeat interval changes to 150 ms. The prior
+    // navigation was at 280 ms, so the shorter interval is already due.
     router.processFrame("down", false, false, false, false, false, 500);
-    QCOMPARE(navigation.count(), 2);
-    router.processFrame("down", false, false, false, false, false, 560);
     QCOMPARE(navigation.count(), 3);
-    router.processFrame("down", false, false, false, false, false, 709);
+    router.processFrame("down", false, false, false, false, false, 649);
     QCOMPARE(navigation.count(), 3);
-    router.processFrame("down", false, false, false, false, false, 710);
+    router.processFrame("down", false, false, false, false, false, 650);
     QCOMPARE(navigation.count(), 4);
+
+    // At 900 ms the interval becomes 75 ms.
     router.processFrame("down", false, false, false, false, false, 974);
     QCOMPARE(navigation.count(), 4);
     router.processFrame("down", false, false, false, false, false, 975);
