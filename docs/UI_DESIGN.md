@@ -2,7 +2,7 @@
 
 ## Product identity
 
-RecompStation is a dedicated environment for browsing and launching the user's own collection of games that have supported recompilation projects. It is not a storefront and should not imitate an existing console dashboard. The experience should feel polished, responsive, immersive, and distinctly RecompStation.
+RecompStation is a dedicated environment for browsing and launching the user's own collection of games that have supported recompilation projects. It is not a storefront and should not imitate an existing carousel dashboard. The experience should feel polished, responsive, immersive, and distinctly RecompStation.
 
 The library is the center of the application. Users should spend their time browsing and playing games, not maintaining metadata or navigating administrative screens.
 
@@ -22,7 +22,7 @@ Platforms are filters or navigation choices inside the Game Library, not a separ
    - A global system menu is an overlay for application-level actions such as fullscreen and quit; it is not a third content destination.
 2. **Game Library** (default)
    - Collection header with an always-available game-title search field and platform filter. Search applies to the current platform selection, or the entire collection when All Platforms is selected.
-   - Curated Grid/List/Console presentation and view-specific size controls live together in the Library header. Grid and Console share the persistent card-size preference (Compact, Comfortable, Spacious); List row size remains independent. Console uses a single horizontal row of centered cover cards, smooth horizontal navigation, selected-card emphasis, and progressive left/right edge fading. Persist the selected view and both size preferences.
+   - Curated Grid/List/Carousel presentation and view-specific size controls live together in the Library header. Grid and Carousel use independent persistent card-size preferences (Compact, Comfortable, Spacious); List row size remains independent. Carousel uses a single horizontal row of centered cover cards, smooth horizontal navigation, selected-card emphasis, and progressive left/right edge fading. Persist the selected view and both size preferences.
    - Game selection opens the immersive Game Details experience.
 3. **Game Details** (full-window modal experience over the Library)
    - Back to Library is always visible.
@@ -47,11 +47,11 @@ The library should support:
 - Sorting options appropriate to a personal collection (for example title, platform, and recently added).
 - Two curated presentation modes: a cover-art-forward Grid View (the signature default) and a compact, readable List View. Avoid arbitrary layout editors or unrestricted card resizing.
 - Three curated Grid View density presets (Compact (220 px), Comfortable (270 px), Spacious (350 px)) that calculate responsive columns from target card widths and distribute the full available viewport width without a trailing empty strip. Comfortable is the default.
-- Grid cards use a shared 2:3 artwork frame across platforms. Portrait covers remain uncropped and centered; landscape covers remain fully visible over a centered, aspect-preserving blurred/cropped backdrop. Grid and List cards show the platform label without a redundant metadata badge.
+- Grid cards use a shared 2:3 artwork frame across platforms. Portrait covers remain uncropped and centered; landscape covers remain fully visible over a centered, aspect-preserving blurred/cropped backdrop, except N64 artwork, which is displayed cleanly without a blurred fill. Grid and List cards show the platform label without a redundant metadata badge.
 - List View uses a left-aligned panel capped at approximately 52% of the available content width (with a responsive maximum), leaving the remaining library background visible for custom or animated backgrounds. Three independent row-size presets adjust row height and artwork/text scale.
 - List rows use the same restrained selected/hover zoom treatment as Grid cards, with reduced-motion support and elevated stacking so neighboring rows do not visually cover the focused item.
-- Switching between Grid, List, and Console uses a restrained cross-fade. On startup, Grid delegates begin in their hidden entrance state so they cannot flash fully visible before the reveal; the staggered reveal waits for fullscreen layout readiness. Returning to Grid and returning to the Game Library from Settings replay the same bottom-up fade, subtle scale-up, and upward movement from below the background; cards within a row appear from left to right. The sequence is based on the visible viewport rather than the full library, and is disabled by Reduced Motion. Searching, changing the platform filter, and opening or closing Game Details do not replay the entrance.
-- Grid/List/Console and the active view-specific size selector in the Library header; do not duplicate browsing/presentation controls in Settings → Library. Persist the shared Grid/Console card density and List row size independently.
+- Switching between Grid, List, and Carousel uses a restrained cross-fade. On startup, Grid delegates begin in their hidden entrance state so they cannot flash fully visible before the reveal; the staggered reveal waits for fullscreen layout readiness. Returning to Grid and returning to the Game Library from Settings replay the same bottom-up fade, subtle scale-up, and upward movement from below the background; cards within a row appear from left to right. The sequence is based on the visible viewport rather than the full library, and is disabled by Reduced Motion. Searching, changing the platform filter, and opening or closing Game Details do not replay the entrance.
+- Grid/List/Carousel and the active view-specific size selector in the Library header; do not duplicate browsing/presentation controls in Settings → Library. Persist the shared Grid/Carousel card density and List row size independently.
 - A library-only background selector in Settings → Library: static theme-coordinated background (default), subtle optional animated ambience, or a user-selected custom still image (PNG/JPEG/WebP). Keep the background dark enough for legibility and preserve the active theme's accent and surface language.
 - Animated ambience must pause when the window is hidden or minimized and be disabled when Reduced Motion is enabled.
 - Custom backgrounds are still images only; do not turn this into a wallpaper editor or allow unrestricted colors/layout rearrangement.
@@ -178,7 +178,7 @@ The current implementation was reviewed against this specification. This is a de
 | Dialogs and popups | First-run library setup, folder/background pickers, uninstall confirmation, project install prompt, ComboBox popups, and global system/quit overlay | Contextual overlays; must preserve parent context and close in Escape order |
 | Display modes | Windowed, Maximized, Fullscreen; F11 restores prior non-fullscreen mode | Documented accurately |
 | Monitor handling | Current screen is informational; no explicit monitor selector or monitor-mode changes | Safe compositor-respecting baseline; additional selection deferred |
-| Library presentation | Title search, platform filter, Grid/List/Console, configurable density and backgrounds | Search and browsing controls are grouped in the Library; sorting and remaining library states tracked in later milestones |
+| Library presentation | Title search, platform filter, Grid/List/Carousel, configurable density and backgrounds | Search and browsing controls are grouped in the Library; sorting and remaining library states tracked in later milestones |
 
 Audit follow-up: finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.
 
@@ -208,8 +208,8 @@ Audit follow-up: finish complete keyboard/controller focus and accessibility val
 - Reduced Motion disables the scroll-edge fade by keeping cards fully opaque.
 
 
-### Console / Carousel View
-- Add a third Library presentation alongside Grid and List: a single horizontal row of cover cards, inspired by console game-library interfaces.
+### Carousel / Carousel View
+- Add a third Library presentation alongside Grid and List: a single horizontal row of cover cards, inspired by carousel game-library interfaces.
 - Use a consistent, moderate card width so several titles are visible at once; center the selected card and keep its artwork/title treatment legible.
 - Scroll horizontally with smooth flicking and animated directional navigation; selecting a card opens the same Game Details experience as the other views.
 - Reuse the Library card-size preference with carousel-appropriate widths, while keeping card height consistent.
