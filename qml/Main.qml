@@ -34,6 +34,8 @@ ApplicationWindow {
     property bool systemMenuVisible: false
     property bool systemMenuClosing: false
     property bool quitConfirmationVisible: false
+    // Tracks the ComboBox whose popup is currently owned by controller input.
+    property var controllerOpenComboBox: null
 
     Settings {
         id: libraryVisualSettings
@@ -207,8 +209,45 @@ ApplicationWindow {
         }
     }
 
+    function activeControllerComboBox() {
+        const tracked = window.controllerOpenComboBox
+        if (tracked && tracked.popup && tracked.popup.visible)
+            return tracked
+
+        const focused = window.focusedActionItem(window.activeFocusItem)
+        if (focused && focused.popup && focused.popup.visible
+                && typeof focused.incrementCurrentIndex === "function"
+                && typeof focused.decrementCurrentIndex === "function")
+            return focused
+        return null
+    }
+
+    function finishControllerComboBoxSelection(combo, commitSelection) {
+        if (!combo || !combo.popup)
+            return false
+
+        const selectedIndex = combo.highlightedIndex >= 0
+            ? combo.highlightedIndex : combo.currentIndex
+        combo.popup.close()
+        window.controllerOpenComboBox = null
+
+        if (commitSelection && selectedIndex >= 0 && selectedIndex < combo.count) {
+            combo.currentIndex = selectedIndex
+            // Emitting activated preserves each ComboBox's existing onActivated
+            // behavior, including settings persistence and display-mode changes.
+            combo.activated(selectedIndex)
+        }
+
+        Qt.callLater(function() { combo.forceActiveFocus() })
+        return true
+    }
+
     function keyboardDirectionalNavigationAllowed() {
         if (!window.visible)
+            return false
+        // Let an open ComboBox handle keyboard input natively. Application-level
+        // directional shortcuts must not steal arrows or Enter from its popup.
+        if (window.activeControllerComboBox())
             return false
         // Modal dialogs own directional keys while open. In particular, the
         // application-level Settings shortcuts must not steal arrows from the
@@ -227,6 +266,19 @@ ApplicationWindow {
     }
 
     function controllerNavigate(direction) {
+        const openCombo = window.activeControllerComboBox()
+        if (openCombo) {
+            // Qt's ComboBox methods automatically target highlightedIndex while
+            // its popup is open, without changing the committed currentIndex.
+            if (direction === "up")
+                openCombo.decrementCurrentIndex()
+            else if (direction === "down")
+                openCombo.incrementCurrentIndex()
+            // Consume all directions while the popup is open so focus cannot
+            // escape to controls behind it.
+            return
+        }
+
         if (systemMenuVisible) {
             window.moveDirectionalFocus(systemMenuPanel, direction)
             return
@@ -359,6 +411,22 @@ ApplicationWindow {
                 focused.click()
             return
         }
+        const openCombo = window.activeControllerComboBox()
+        if (openCombo) {
+            window.finishControllerComboBoxSelection(openCombo, true)
+            return
+        }
+
+        const focusedAction = window.focusedActionItem(window.activeFocusItem)
+        if (focusedAction && focusedAction.popup
+                && typeof focusedAction.incrementCurrentIndex === "function"
+                && typeof focusedAction.decrementCurrentIndex === "function") {
+            window.controllerOpenComboBox = focusedAction
+            focusedAction.forceActiveFocus()
+            focusedAction.popup.open()
+            return
+        }
+
         if (gameDetailsPopup.visible) {
             const focused = window.focusedActionItem(window.activeFocusItem)
             if (focused && typeof focused.click === "function")
@@ -421,9 +489,9 @@ ApplicationWindow {
             quitConfirmationVisible = false
             return
         }
-        if (currentPage === "Settings" && window.activeFocusItem
-                && window.activeFocusItem.popup && window.activeFocusItem.popup.visible) {
-            window.activeFocusItem.popup.close()
+        const openCombo = window.activeControllerComboBox()
+        if (openCombo) {
+            window.finishControllerComboBoxSelection(openCombo, false)
             return
         }
         if (systemMenuVisible) {
