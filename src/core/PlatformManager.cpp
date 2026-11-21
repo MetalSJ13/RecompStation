@@ -6,6 +6,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDebug>
+#include <QDirIterator>
+#include <QVariantMap>
 
 PlatformManager::PlatformManager(QObject *parent)
     : PlatformManager(QString(), parent)
@@ -163,6 +165,80 @@ bool PlatformManager::setLibraryDirectory(const QUrl &directoryUrl)
     m_libraryDirectory = selectedPath;
     emit libraryDirectoryChanged();
     return true;
+}
+
+bool PlatformManager::setLibraryDirectoryPath(const QString &directoryPath)
+{
+    if (directoryPath.trimmed().isEmpty())
+        return false;
+
+    return setLibraryDirectory(QUrl::fromLocalFile(directoryPath));
+}
+
+QString PlatformManager::homeDirectory() const
+{
+    return QDir::homePath();
+}
+
+QString PlatformManager::parentDirectory(const QString &directoryPath) const
+{
+    const QFileInfo info(directoryPath);
+    if (!info.exists() || !info.isDir())
+        return {};
+
+    QDir parent(info.absoluteFilePath());
+    if (!parent.cdUp())
+        return info.absoluteFilePath();
+
+    return parent.absolutePath();
+}
+
+QVariantList PlatformManager::libraryDirectories(const QString &directoryPath) const
+{
+    QVariantList result;
+    const QFileInfo directoryInfo(directoryPath);
+    if (!directoryInfo.exists() || !directoryInfo.isDir() || !directoryInfo.isReadable())
+        return result;
+
+    const QDir directory(directoryInfo.absoluteFilePath());
+    const QFileInfoList entries = directory.entryInfoList(
+        QDir::Dirs | QDir::NoDotAndDotDot | QDir::Readable | QDir::Hidden,
+        QDir::DirsFirst | QDir::Name | QDir::IgnoreCase);
+
+    for (const QFileInfo &entry : entries) {
+        if (!entry.isDir() || !entry.isReadable())
+            continue;
+
+        QVariantMap item;
+        item.insert(QStringLiteral("name"), entry.fileName());
+        item.insert(QStringLiteral("path"), entry.absoluteFilePath());
+        result.append(item);
+    }
+
+    return result;
+}
+
+bool PlatformManager::createLibraryFolder(
+    const QString &parentPath,
+    const QString &folderName)
+{
+    const QString name = folderName.trimmed();
+    if (name.isEmpty() || name == QStringLiteral(".")
+        || name == QStringLiteral("..")
+        || name.contains(QLatin1Char('/'))
+        || name.contains(QLatin1Char('\\'))
+        || name.contains(QChar::Null))
+        return false;
+
+    const QFileInfo parentInfo(parentPath);
+    if (!parentInfo.exists() || !parentInfo.isDir() || !parentInfo.isWritable())
+        return false;
+
+    QDir parent(parentInfo.absoluteFilePath());
+    if (parent.exists(name))
+        return false;
+
+    return parent.mkdir(name);
 }
 
 QString PlatformManager::platformDirectory(const QString &platform) const
