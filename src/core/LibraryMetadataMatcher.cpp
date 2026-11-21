@@ -344,9 +344,13 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
         return;
     }
 
-    if (!m_metadata->isConfigured()) {
-        qCWarning(lcMetadata) << "Library metadata scan skipped: metadata provider is not configured.";
-        setStatus(QStringLiteral("Metadata is unavailable. Configure a TheGamesDB API key to enable automatic matching."));
+    const bool primaryAvailable = m_metadata->isConfigured();
+    const bool launchBoxAvailable = m_settings && m_settings->launchBoxEnabled()
+        && m_launchBoxCatalog && m_launchBoxCatalog->catalogAvailable()
+        && !m_launchBoxCatalog->busy();
+    if (!primaryAvailable && !launchBoxAvailable) {
+        qCWarning(lcMetadata) << "Library metadata scan skipped: no metadata provider is available.";
+        setStatus(QStringLiteral("No metadata provider is available. Configure TheGamesDB or enable LaunchBox and install its catalog."));
         return;
     }
 
@@ -386,8 +390,12 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
         setStatus(QStringLiteral("A valid library game is required."));
         return;
     }
-    if (!m_metadata->isConfigured()) {
-        setStatus(QStringLiteral("Metadata is unavailable. Configure a TheGamesDB API key to enable matching."));
+    const bool primaryAvailable = m_metadata->isConfigured();
+    const bool launchBoxAvailable = m_settings && m_settings->launchBoxEnabled()
+        && m_launchBoxCatalog && m_launchBoxCatalog->catalogAvailable()
+        && !m_launchBoxCatalog->busy();
+    if (!primaryAvailable && !launchBoxAvailable) {
+        setStatus(QStringLiteral("No metadata provider is available. Configure TheGamesDB or enable LaunchBox and install its catalog."));
         return;
     }
 
@@ -574,8 +582,18 @@ void LibraryMetadataMatcher::processNext()
 
     const QString platform =
         m_currentGame.value(QStringLiteral("platform")).toString();
+    // When TheGamesDB is not configured, bypass its platform catalog entirely
+    // and use the local LaunchBox catalog as the primary available provider.
+    if (!m_metadata->isConfigured()) {
+        if (tryLaunchBoxFallback(QStringLiteral("TheGamesDB is not configured.")))
+            return;
+        return;
+    }
+
     const int platformId = m_metadata->metadataPlatformId(platform);
     if (platformId <= 0) {
+        if (tryLaunchBoxFallback(QStringLiteral("TheGamesDB has no platform mapping.")))
+            return;
         if (m_metadata->platformsLoading()) {
             setStatus(QStringLiteral("Waiting for the metadata platform catalog."));
             m_queue.prepend(m_currentGame);
