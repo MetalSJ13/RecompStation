@@ -41,9 +41,9 @@ Keep the application buildable after each focused change. Preserve working backe
 ## Recent implementation notes (2026-11-21)
 
 ### Metadata matching preference
-- [x] Add a persistent Settings → Metadata option to enable or disable automatic metadata matching after library scans; default it to enabled to preserve the existing workflow.
-- [x] Keep the manual **Refresh All Metadata** workflow available regardless of the automatic-matching preference.
-- [ ] Build and run locally; verify the preference persists across restarts, disabled scans skip matching, and manual refresh still works.
+- [x] Add persistent Settings → Metadata options to enable or disable automatic metadata matching and automatic cover-art downloads; both default to enabled to preserve the existing workflow.
+- [x] Keep the manual **Refresh All Metadata** workflow available regardless of either automatic preference; manual refresh explicitly retries matching and artwork retrieval.
+- [ ] Build and run locally; verify both preferences persist across restarts, disabled scans skip matching, automatic cover downloads respect their preference, and manual refresh overrides both preferences.
 
 ### First-run experience and library setup
 - [x] Add the optional automatic application-update preference prompt before library-folder setup. Yes, No, closing the prompt, and Escape all complete the preference; dismissal is saved as disabled, and the choice can later be changed in Settings → Application. This is preference UI only: release checks are not connected and no network requests are made.
