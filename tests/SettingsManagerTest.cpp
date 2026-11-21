@@ -24,6 +24,8 @@ private slots:
     void persistsScanOnStartupPreference();
     void defaultsToUpdateChecksDisabledAndPromptPending();
     void persistsUpdatePreferenceAndPromptCompletion();
+    void defaultsToAutomaticMetadataMatchingEnabled();
+    void persistsAutomaticMetadataMatchingPreference();
     void defaultsToTheGamesDbEnabled();
     void persistsTheGamesDbEnabledPreference();
     void defaultsToLaunchBoxDisabled();
@@ -182,6 +184,41 @@ void SettingsManagerTest::persistsUpdatePreferenceAndPromptCompletion()
     SettingsManager finalReload(settingsPath);
     QVERIFY(finalReload.automaticUpdateChecksEnabled());
     QVERIFY(finalReload.updatePreferencePromptCompleted());
+}
+
+void SettingsManagerTest::defaultsToAutomaticMetadataMatchingEnabled()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+
+    SettingsManager manager(settingsPath);
+    QVERIFY(manager.automaticMetadataMatchingEnabled());
+}
+
+void SettingsManagerTest::persistsAutomaticMetadataMatchingPreference()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        QSignalSpy changed(&manager, &SettingsManager::automaticMetadataMatchingEnabledChanged);
+        manager.setAutomaticMetadataMatchingEnabled(false);
+        QVERIFY(!manager.automaticMetadataMatchingEnabled());
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QVERIFY(!reloaded.automaticMetadataMatchingEnabled());
+    QSignalSpy changed(&reloaded, &SettingsManager::automaticMetadataMatchingEnabledChanged);
+    reloaded.setAutomaticMetadataMatchingEnabled(false);
+    QCOMPARE(changed.count(), 0);
+    reloaded.setAutomaticMetadataMatchingEnabled(true);
+    QVERIFY(reloaded.automaticMetadataMatchingEnabled());
+    QCOMPARE(changed.count(), 1);
 }
 
 void SettingsManagerTest::defaultsToTheGamesDbEnabled()
