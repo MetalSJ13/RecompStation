@@ -623,6 +623,13 @@ ApplicationWindow {
         id: theme
     }
 
+    Binding {
+        target: controllerManager
+        property: "navigationAccelerationEnabled"
+        value: currentPage === "Library" && settingsManager.libraryView === "list"
+    }
+
+
     // Smoothly scroll the active Library viewport with the right stick.
     // The selected game index is deliberately left untouched.
     Timer {
