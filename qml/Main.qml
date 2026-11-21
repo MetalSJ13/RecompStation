@@ -430,6 +430,11 @@ ApplicationWindow {
 
             if (inContent) {
                 if (direction === "left") {
+                    // Keep left/right movement within the custom-background
+                    // action row before allowing left to return to the category rail.
+                    if (window.isDescendantOf(focused, customBackgroundActionsRow)
+                            && window.moveDirectionalFocus(settingsContentCard, direction))
+                        return
                     window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
                     return
                 }
@@ -5312,6 +5317,7 @@ ApplicationWindow {
                                         }
                                     }
                                     RowLayout {
+                                        id: customBackgroundActionsRow
                                         visible: settingsManager.libraryBackgroundType === "custom"
                                         Layout.fillWidth: true
                                         spacing: 10
