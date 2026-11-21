@@ -3391,6 +3391,16 @@ ApplicationWindow {
                                             font.letterSpacing: 0.8
                                         }
                                         ComboBox {
+                                            background: Rectangle {
+                                                radius: 7
+                                                color: parent.activeFocus
+                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
+                                                              theme.accent.b, 0.18)
+                                                    : theme.surface
+                                                border.color: parent.activeFocus
+                                                    ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.fillWidth: true
@@ -3422,6 +3432,16 @@ ApplicationWindow {
                                             font.letterSpacing: 0.8
                                         }
                                         ComboBox {
+                                            background: Rectangle {
+                                                radius: 7
+                                                color: parent.activeFocus
+                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
+                                                              theme.accent.b, 0.18)
+                                                    : theme.surface
+                                                border.color: parent.activeFocus
+                                                    ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.fillWidth: true
@@ -3450,6 +3470,16 @@ ApplicationWindow {
                                             font.letterSpacing: 0.8
                                         }
                                         ComboBox {
+                                            background: Rectangle {
+                                                radius: 7
+                                                color: parent.activeFocus
+                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
+                                                              theme.accent.b, 0.18)
+                                                    : theme.surface
+                                                border.color: parent.activeFocus
+                                                    ? theme.accent : theme.divider
+                                                border.width: parent.activeFocus ? 2 : 1
+                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             Layout.fillWidth: true
