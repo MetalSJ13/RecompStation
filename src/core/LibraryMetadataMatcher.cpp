@@ -237,6 +237,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         m_completedCount += 1 + m_queue.size();
         m_queue.clear();
         m_currentGame.clear();
+        m_forceArtworkDownload = false;
         emit progressChanged();
         setStatus(QStringLiteral("Metadata lookup stopped: %1").arg(message));
         setBusy(false);
