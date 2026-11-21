@@ -1396,7 +1396,7 @@ ApplicationWindow {
     Dialog {
         id: librarySetupDialog
         title: ""
-        modal: true
+        modal: false
         anchors.centerIn: parent
         width: Math.min(parent.width - 40, 560)
         padding: 26
