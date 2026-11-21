@@ -1129,6 +1129,7 @@ ApplicationWindow {
         property string selectedFolderPath: ""
         property var directoryEntries: []
         property string browserMessage: ""
+        property string newFolderParentPath: ""
 
         function refreshDirectory() {
             directoryEntries = platformManager.libraryDirectories(currentFolderPath)
@@ -1183,6 +1184,7 @@ ApplicationWindow {
                     text: "New Folder"
                     highlighted: true
                     onClicked: {
+                        libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
                         newLibraryFolderName.text = ""
                         newLibraryFolderDialog.open()
                         newLibraryFolderName.forceActiveFocus()
@@ -1197,6 +1199,15 @@ ApplicationWindow {
                 border.color: theme.divider
                 radius: 10
                 clip: true
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.RightButton
+                    onClicked: {
+                        libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
+                        emptyFolderContextMenu.popup()
+                    }
+                }
 
                 ListView {
                     id: libraryDirectoryList
@@ -1322,6 +1333,20 @@ ApplicationWindow {
             MenuItem {
                 text: "Create New Folder"
                 onTriggered: {
+                    libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
+                    newLibraryFolderName.text = ""
+                    newLibraryFolderDialog.open()
+                    newLibraryFolderName.forceActiveFocus()
+                }
+            }
+        }
+
+        Menu {
+            id: emptyFolderContextMenu
+            MenuItem {
+                text: "Create New Folder"
+                onTriggered: {
+                    libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
                     newLibraryFolderName.text = ""
                     newLibraryFolderDialog.open()
                     newLibraryFolderName.forceActiveFocus()
@@ -1340,11 +1365,12 @@ ApplicationWindow {
         onOpened: newLibraryFolderName.forceActiveFocus()
         onAccepted: {
             if (platformManager.createLibraryFolder(
-                    libraryFolderDialog.currentFolderPath,
+                    libraryFolderDialog.newFolderParentPath,
                     newLibraryFolderName.text)) {
-                libraryFolderDialog.refreshDirectory()
+                if (libraryFolderDialog.newFolderParentPath === libraryFolderDialog.currentFolderPath)
+                    libraryFolderDialog.refreshDirectory()
                 libraryFolderDialog.selectedFolderPath =
-                    libraryFolderDialog.currentFolderPath + "/" + newLibraryFolderName.text.trim()
+                    libraryFolderDialog.newFolderParentPath + "/" + newLibraryFolderName.text.trim()
                 libraryFolderDialog.browserMessage = "Folder created."
             } else {
                 libraryFolderDialog.browserMessage =
