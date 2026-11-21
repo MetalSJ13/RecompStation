@@ -1295,16 +1295,23 @@ ApplicationWindow {
                     Keys.onDownPressed: {
                         focusFolderAt(currentIndex < 0 ? 0 : currentIndex + 1)
                     }
-                    Keys.onPageUpPressed: {
+                    Keys.onPressed: function(event) {
                         const step = Math.max(1, Math.floor(height / 47))
-                        focusFolderAt((currentIndex < 0 ? 0 : currentIndex) - step)
+                        const current = currentIndex < 0 ? 0 : currentIndex
+                        if (event.key === Qt.Key_PageUp) {
+                            focusFolderAt(current - step)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_PageDown) {
+                            focusFolderAt(current + step)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Home) {
+                            focusFolderAt(0)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_End) {
+                            focusFolderAt(count - 1)
+                            event.accepted = true
+                        }
                     }
-                    Keys.onPageDownPressed: {
-                        const step = Math.max(1, Math.floor(height / 47))
-                        focusFolderAt((currentIndex < 0 ? 0 : currentIndex) + step)
-                    }
-                    Keys.onHomePressed: focusFolderAt(0)
-                    Keys.onEndPressed: focusFolderAt(count - 1)
 
                     Keys.onReturnPressed: {
                         if (currentItem)
