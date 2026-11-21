@@ -38,6 +38,10 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         ? storedTheme
         : kDefaultTheme;
     m_scanOnStartup = settings.value(QStringLiteral("library/scanOnStartup"), true).toBool();
+    m_automaticUpdateChecksEnabled = settings.value(
+        QStringLiteral("application/automaticUpdateChecksEnabled"), false).toBool();
+    m_updatePreferencePromptCompleted = settings.value(
+        QStringLiteral("application/updatePreferencePromptCompleted"), false).toBool();
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
     m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
     m_launchBoxLastUpdated = settings.value(QStringLiteral("metadata/launchBoxLastUpdated")).toString();
@@ -112,6 +116,46 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
 bool SettingsManager::scanOnStartup() const
 {
     return m_scanOnStartup;
+}
+
+bool SettingsManager::automaticUpdateChecksEnabled() const
+{
+    return m_automaticUpdateChecksEnabled;
+}
+
+bool SettingsManager::updatePreferencePromptCompleted() const
+{
+    return m_updatePreferencePromptCompleted;
+}
+
+void SettingsManager::setAutomaticUpdateChecksEnabled(bool enabled)
+{
+    if (m_automaticUpdateChecksEnabled == enabled && m_updatePreferencePromptCompleted)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("application/automaticUpdateChecksEnabled"), enabled);
+    settings.setValue(QStringLiteral("application/updatePreferencePromptCompleted"), true);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist application update preferences.";
+        return;
+    }
+
+    const bool enabledChanged = m_automaticUpdateChecksEnabled != enabled;
+    const bool completionChanged = !m_updatePreferencePromptCompleted;
+    m_automaticUpdateChecksEnabled = enabled;
+    m_updatePreferencePromptCompleted = true;
+    if (enabledChanged)
+        emit automaticUpdateChecksEnabledChanged();
+    if (completionChanged)
+        emit updatePreferencePromptCompletedChanged();
+    qCInfo(lcSettings) << "Automatic application update checks preference:" << enabled;
+}
+
+void SettingsManager::completeUpdatePreferencePrompt(bool enabled)
+{
+    setAutomaticUpdateChecksEnabled(enabled);
 }
 
 void SettingsManager::setScanOnStartup(bool enabled)
