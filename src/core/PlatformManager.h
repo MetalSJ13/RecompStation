@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QUrl>
 #include <QHash>
+#include <QVariantList>
 
 class PlatformManager : public QObject
 {
@@ -38,6 +39,11 @@ public:
     Q_INVOKABLE QStringList platforms() const;
 
     Q_INVOKABLE bool setLibraryDirectory(const QUrl &directoryUrl);
+    Q_INVOKABLE bool setLibraryDirectoryPath(const QString &directoryPath);
+    Q_INVOKABLE QString homeDirectory() const;
+    Q_INVOKABLE QString parentDirectory(const QString &directoryPath) const;
+    Q_INVOKABLE QVariantList libraryDirectories(const QString &directoryPath) const;
+    Q_INVOKABLE bool createLibraryFolder(const QString &parentPath, const QString &folderName);
 
     Q_INVOKABLE QString platformDirectory(
         const QString &platform
