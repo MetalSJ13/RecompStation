@@ -13,6 +13,8 @@ private slots:
     void respectsAnalogDeadZone();
     void emitsButtonActionsOnlyOnPressEdges();
     void emitsNavigationImmediatelyAndRepeatsAtCadence();
+    void acceleratesHeldNavigationWhenEnabled();
+    void keepsDefaultNavigationCadenceWhenAccelerationDisabled();
     void changingDirectionNavigatesImmediately();
     void releasingDirectionResetsRepeatTimer();
     void suspendedInputDoesNotEmitActions();
@@ -92,6 +94,39 @@ void ControllerInputRouterTest::emitsNavigationImmediatelyAndRepeatsAtCadence()
     router.processFrame("down", false, false, false, false, false, 220);
     QCOMPARE(navigation.count(), 2);
     QCOMPARE(navigation.at(1).at(0).toString(), QStringLiteral("down"));
+}
+
+void ControllerInputRouterTest::acceleratesHeldNavigationWhenEnabled()
+{
+    ControllerInputRouter router;
+    router.setNavigationAccelerationEnabled(true);
+    QSignalSpy navigation(&router, &ControllerInputRouter::navigationRequested);
+
+    router.processFrame("down", false, false, false, false, false, 0);
+    router.processFrame("down", false, false, false, false, false, 279);
+    QCOMPARE(navigation.count(), 1);
+    router.processFrame("down", false, false, false, false, false, 280);
+    QCOMPARE(navigation.count(), 2);
+    router.processFrame("down", false, false, false, false, false, 500);
+    QCOMPARE(navigation.count(), 2);
+    router.processFrame("down", false, false, false, false, false, 560);
+    QCOMPARE(navigation.count(), 3);
+    router.processFrame("down", false, false, false, false, false, 900);
+    QCOMPARE(navigation.count(), 3);
+    router.processFrame("down", false, false, false, false, false, 910);
+    QCOMPARE(navigation.count(), 4);
+}
+
+void ControllerInputRouterTest::keepsDefaultNavigationCadenceWhenAccelerationDisabled()
+{
+    ControllerInputRouter router;
+    QSignalSpy navigation(&router, &ControllerInputRouter::navigationRequested);
+
+    router.processFrame("down", false, false, false, false, false, 0);
+    router.processFrame("down", false, false, false, false, false, 219);
+    QCOMPARE(navigation.count(), 1);
+    router.processFrame("down", false, false, false, false, false, 220);
+    QCOMPARE(navigation.count(), 2);
 }
 
 void ControllerInputRouterTest::changingDirectionNavigatesImmediately()
