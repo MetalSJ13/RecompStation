@@ -9,6 +9,7 @@ class ControllerInputRouterTest : public QObject
 
 private slots:
     void mapsAnalogStickDirections();
+    void detectsTriggerThreshold();
     void handlesExtremeAnalogAxisValues();
     void respectsAnalogDeadZone();
     void emitsButtonActionsOnlyOnPressEdges();
@@ -36,6 +37,16 @@ void ControllerInputRouterTest::mapsAnalogStickDirections()
     QCOMPARE(ControllerInputRouter::directionFromAxes(0, 20000), QStringLiteral("down"));
     QCOMPARE(ControllerInputRouter::directionFromAxes(12000, 22000), QStringLiteral("down"));
     QCOMPARE(ControllerInputRouter::directionFromAxes(-22000, 12000), QStringLiteral("left"));
+}
+
+void ControllerInputRouterTest::detectsTriggerThreshold()
+{
+    QVERIFY(!ControllerInputRouter::triggerPressed(0));
+    QVERIFY(!ControllerInputRouter::triggerPressed(15999));
+    QVERIFY(ControllerInputRouter::triggerPressed(16000));
+    QVERIFY(ControllerInputRouter::triggerPressed(32767));
+    QVERIFY(!ControllerInputRouter::triggerPressed(100, 200));
+    QVERIFY(ControllerInputRouter::triggerPressed(200, 200));
 }
 
 void ControllerInputRouterTest::handlesExtremeAnalogAxisValues()
@@ -307,11 +318,14 @@ void ControllerInputRouterTest::supportsMultipleInputsForOneAction()
 {
     const QVariantMap profile{
         {QStringLiteral("select"), QVariantList{
-             QStringLiteral("a"), QStringLiteral("rightshoulder")}}
+             QStringLiteral("a"), QStringLiteral("rightshoulder"),
+             QStringLiteral("lefttrigger")}}
     };
 
     QVERIFY(ControllerInputRouter::actionPressed(
         profile, QStringLiteral("select"), {QStringLiteral("rightshoulder")}));
+    QVERIFY(ControllerInputRouter::actionPressed(
+        profile, QStringLiteral("select"), {QStringLiteral("lefttrigger")}));
 }
 
 QTEST_GUILESS_MAIN(ControllerInputRouterTest)
