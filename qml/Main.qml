@@ -3338,31 +3338,37 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Label {
-                                    text: selectedPlatform === "All Platforms" ? "Your Collection" : selectedPlatform
-                                    font.pixelSize: 32 * theme.fontScale
-                                    font.bold: true
-                                    color: theme.textPrimary
-                                }
                                 RowLayout {
-                                    spacing: 8
+                                    spacing: 12
+                                    Layout.alignment: Qt.AlignLeft
                                     Label {
-                                        text: gameGrid.count + (gameGrid.count === 1 ? " GAME" : " GAMES")
-                                        color: theme.accentHover
-                                        font.pixelSize: 11 * theme.fontScale
+                                        text: selectedPlatform === "All Platforms" ? "Your Collection" : selectedPlatform
+                                        font.pixelSize: 32 * theme.fontScale
                                         font.bold: true
+                                        color: theme.textPrimary
                                     }
                                     Rectangle {
-                                        width: 4
-                                        height: 4
-                                        radius: 2
-                                        color: theme.textMuted
+                                        Layout.alignment: Qt.AlignVCenter
+                                        radius: 10
+                                        color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.12)
+                                        border.color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.28)
+                                        border.width: 1
+                                        implicitWidth: collectionCountLabel.implicitWidth + 18
+                                        implicitHeight: collectionCountLabel.implicitHeight + 8
+                                        Label {
+                                            id: collectionCountLabel
+                                            anchors.centerIn: parent
+                                            text: gameGrid.count + (gameGrid.count === 1 ? " GAME" : " GAMES")
+                                            color: theme.accentHover
+                                            font.pixelSize: 10 * theme.fontScale
+                                            font.bold: true
+                                        }
                                     }
-                                    Label {
-                                        text: "Your recompiled game library"
-                                        color: theme.textMuted
-                                        font.pixelSize: 13 * theme.fontScale
-                                    }
+                                }
+                                Label {
+                                    text: "Your recompiled game library"
+                                    color: theme.textMuted
+                                    font.pixelSize: 13 * theme.fontScale
                                 }
                             }
 
