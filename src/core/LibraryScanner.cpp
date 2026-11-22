@@ -55,6 +55,16 @@ int LibraryScanner::lastScanCount() const
     return m_lastScanCount;
 }
 
+int LibraryScanner::lastUnsupportedCount() const
+{
+    return m_lastUnsupportedCount;
+}
+
+bool LibraryScanner::scanning() const
+{
+    return m_asyncScanActive || m_scanningAll;
+}
+
 QString LibraryScanner::lastError() const
 {
     return m_lastError;
@@ -193,14 +203,19 @@ bool LibraryScanner::isDiscCompanionFile(const QString &filePath) const
 
 int LibraryScanner::scanAll()
 {
+    if (m_asyncScanActive)
+        return m_lastScanCount;
     qCInfo(lcLibrary) << "Starting full library scan.";
+    emit scanStarted();
     m_scanningAll = true;
 
     int totalFound = 0;
+    int totalUnsupported = 0;
     QStringList errors;
 
     for (const QString &platform : m_platformManager->platforms()) {
         totalFound += scanPlatform(platform);
+        totalUnsupported += m_lastUnsupportedCount;
 
         if (!m_lastError.isEmpty())
             errors.append(m_lastError);
@@ -208,6 +223,7 @@ int LibraryScanner::scanAll()
 
     m_scanningAll = false;
     m_lastScanCount = totalFound;
+    m_lastUnsupportedCount = totalUnsupported;
     m_lastError = errors.join("\\n");
 
     qCInfo(lcLibrary) << "Full library scan finished. Registered games:" << m_lastScanCount;
@@ -223,6 +239,7 @@ int LibraryScanner::scanPlatform(const QString &platform)
 {
     qCDebug(lcLibrary) << "Scanning platform:" << platform;
     m_lastScanCount = 0;
+    m_lastUnsupportedCount = 0;
     m_lastError.clear();
 
     const QString directoryPath =
@@ -262,9 +279,10 @@ int LibraryScanner::scanPlatform(const QString &platform)
         const QFileInfo info(filePath);
         const QString extension = info.suffix().toLower();
 
-        if (!acceptedExtensions.contains(extension))
+        if (!acceptedExtensions.contains(extension)) {
+            ++m_lastUnsupportedCount;
             continue;
-
+        }
         if (isDiscCompanionFile(filePath))
             continue;
 
@@ -298,4 +316,71 @@ int LibraryScanner::scanPlatform(const QString &platform)
         emit scanCompleted(m_lastScanCount);
 
     return m_lastScanCount;
+}
+
+bool LibraryScanner::scanAllAsync()
+{
+    if (m_asyncScanActive || m_scanningAll || !m_platformManager)
+        return false;
+
+    m_asyncPlatforms = m_platformManager->platforms();
+    m_asyncPlatformIndex = 0;
+    m_asyncTotalFound = 0;
+    m_asyncUnsupportedCount = 0;
+    m_asyncErrors.clear();
+    m_lastScanCount = 0;
+    m_lastUnsupportedCount = 0;
+    m_lastError.clear();
+    m_asyncScanActive = true;
+
+    qCInfo(lcLibrary) << "Starting asynchronous library scan across"
+                      << m_asyncPlatforms.size() << "platforms.";
+    emit scanStateChanged();
+    emit scanStarted();
+    QTimer::singleShot(0, this, &LibraryScanner::scanNextPlatformAsync);
+    return true;
+}
+
+void LibraryScanner::scanNextPlatformAsync()
+{
+    if (!m_asyncScanActive)
+        return;
+
+    if (m_asyncPlatformIndex >= m_asyncPlatforms.size()) {
+        m_lastScanCount = m_asyncTotalFound;
+        m_lastUnsupportedCount = m_asyncUnsupportedCount;
+        m_lastError = m_asyncErrors.join("\\n");
+        m_asyncScanActive = false;
+        refreshDirectoryWatches();
+
+        qCInfo(lcLibrary) << "Asynchronous library scan finished. Registered:"
+                          << m_lastScanCount << "unsupported files:"
+                          << m_lastUnsupportedCount;
+        if (!m_lastError.isEmpty())
+            qCWarning(lcLibrary) << "Asynchronous library scan errors:" << m_lastError;
+
+        emit scanStateChanged();
+        emit scanCompleted(m_lastScanCount);
+        return;
+    }
+
+    const QString platform = m_asyncPlatforms.at(m_asyncPlatformIndex);
+    const int platformCount = m_asyncPlatforms.size();
+    const int platformIndex = m_asyncPlatformIndex + 1;
+    emit platformScanStarted(platform, platformIndex, platformCount);
+
+    m_scanningAll = true;
+    const int found = scanPlatform(platform);
+    const int unsupported = m_lastUnsupportedCount;
+    const QString error = m_lastError;
+    m_scanningAll = false;
+
+    m_asyncTotalFound += found;
+    m_asyncUnsupportedCount += unsupported;
+    if (!error.isEmpty())
+        m_asyncErrors.append(platform + ": " + error);
+
+    emit platformScanCompleted(platform, found, unsupported);
+    ++m_asyncPlatformIndex;
+    QTimer::singleShot(0, this, &LibraryScanner::scanNextPlatformAsync);
 }
