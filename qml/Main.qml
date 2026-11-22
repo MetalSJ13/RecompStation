@@ -557,6 +557,8 @@ ApplicationWindow {
     }
 
     onCurrentPageChanged: {
+        if (controllerManager.mappingCaptureActive && currentPage !== "Settings")
+            controllerManager.cancelMappingCapture()
         if (currentPage === "Settings")
             Qt.callLater(function() { appearanceNavigationButton.forceActiveFocus() })
     }
@@ -4420,7 +4422,11 @@ ApplicationWindow {
                 Item {
                     id: settingsPage
                     property string section: "Appearance"
-                    onSectionChanged: console.info("[Settings QML] Section changed:", section)
+                    onSectionChanged: {
+                        console.info("[Settings QML] Section changed:", section)
+                        if (controllerManager.mappingCaptureActive && section !== "Controller")
+                            controllerManager.cancelMappingCapture()
+                    }
 
                     RowLayout {
                         id: settingsLayoutRow
