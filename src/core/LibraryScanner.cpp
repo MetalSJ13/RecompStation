@@ -207,6 +207,7 @@ int LibraryScanner::scanAll()
     if (m_asyncScanActive)
         return m_lastScanCount;
     qCInfo(lcLibrary) << "Starting full library scan.";
+    emit scanStateChanged();
     emit scanStarted();
     m_scanningAll = true;
 
@@ -223,6 +224,7 @@ int LibraryScanner::scanAll()
     }
 
     m_scanningAll = false;
+    emit scanStateChanged();
     m_lastScanCount = totalFound;
     m_lastUnsupportedCount = totalUnsupported;
     m_lastError = errors.join("\n");
