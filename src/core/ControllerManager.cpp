@@ -311,6 +311,10 @@ void ControllerManager::pollController()
     addButton(SDL_CONTROLLER_BUTTON_BACK, QStringLiteral("back"));
     addButton(SDL_CONTROLLER_BUTTON_GUIDE, QStringLiteral("guide"));
     addButton(SDL_CONTROLLER_BUTTON_START, QStringLiteral("start"));
+    // Give stick clicks distinct tokens while retaining the legacy aliases
+    // so existing controller profiles continue to work.
+    addButton(SDL_CONTROLLER_BUTTON_LEFTSTICK, QStringLiteral("leftstick-click"));
+    addButton(SDL_CONTROLLER_BUTTON_RIGHTSTICK, QStringLiteral("rightstick-click"));
     addButton(SDL_CONTROLLER_BUTTON_LEFTSTICK, QStringLiteral("leftstick"));
     addButton(SDL_CONTROLLER_BUTTON_RIGHTSTICK, QStringLiteral("rightstick"));
     addButton(SDL_CONTROLLER_BUTTON_LEFTSHOULDER, QStringLiteral("leftshoulder"));
