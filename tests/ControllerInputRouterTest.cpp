@@ -10,6 +10,7 @@ class ControllerInputRouterTest : public QObject
 private slots:
     void mapsAnalogStickDirections();
     void detectsTriggerThreshold();
+    void recognizesLeftAndRightStickClickMappings();
     void handlesExtremeAnalogAxisValues();
     void respectsAnalogDeadZone();
     void emitsButtonActionsOnlyOnPressEdges();
@@ -47,6 +48,22 @@ void ControllerInputRouterTest::detectsTriggerThreshold()
     QVERIFY(ControllerInputRouter::triggerPressed(32767));
     QVERIFY(!ControllerInputRouter::triggerPressed(100, 200));
     QVERIFY(ControllerInputRouter::triggerPressed(200, 200));
+}
+
+void ControllerInputRouterTest::recognizesLeftAndRightStickClickMappings()
+{
+    const QVariantMap profile{
+        {QStringLiteral("select"), QVariantList{QStringLiteral("leftstick-click")}},
+        {QStringLiteral("back"), QVariantList{QStringLiteral("rightstick-click")}}
+    };
+    QVERIFY(ControllerInputRouter::actionPressed(
+        profile, QStringLiteral("select"), {QStringLiteral("leftstick-click")}));
+    QVERIFY(ControllerInputRouter::actionPressed(
+        profile, QStringLiteral("back"), {QStringLiteral("rightstick-click")}));
+    QCOMPARE(ControllerInputRouter::firstNewInput(
+        {QStringLiteral("leftstick-click")}, {}), QStringLiteral("leftstick-click"));
+    QCOMPARE(ControllerInputRouter::firstNewInput(
+        {QStringLiteral("rightstick-click")}, {}), QStringLiteral("rightstick-click"));
 }
 
 void ControllerInputRouterTest::handlesExtremeAnalogAxisValues()
