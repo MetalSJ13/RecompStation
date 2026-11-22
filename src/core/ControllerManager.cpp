@@ -147,6 +147,7 @@ void ControllerManager::cancelMappingCapture()
     m_mappingCaptureAction.clear();
     m_mappingCaptureReplaceExisting = false;
     m_previousActiveInputs.clear();
+    m_captureInputsAwaitingRelease.clear();
     emit mappingCaptureStateChanged();
 }
 
@@ -341,6 +342,25 @@ void ControllerManager::pollController()
     if (!leftStickDirection.isEmpty())
         activeInputs.append(QStringLiteral("leftstick-") + leftStickDirection);
 
+    // A captured press belongs exclusively to the mapping operation. Keep its
+    // physical input (including legacy stick-click aliases) out of normal
+    // action routing until the user releases it.
+    if (!m_captureInputsAwaitingRelease.isEmpty()) {
+        bool capturedInputStillHeld = false;
+        for (const QString &token : std::as_const(m_captureInputsAwaitingRelease)) {
+            if (activeInputs.contains(token)) {
+                capturedInputStillHeld = true;
+                break;
+            }
+        }
+        if (capturedInputStillHeld) {
+            for (const QString &token : std::as_const(m_captureInputsAwaitingRelease))
+                activeInputs.removeAll(token);
+        } else {
+            m_captureInputsAwaitingRelease.clear();
+        }
+    }
+
     if (m_mappingCaptureActive) {
         if (m_captureAwaitingRelease) {
             if (activeInputs.isEmpty())
@@ -363,6 +383,15 @@ void ControllerManager::pollController()
                         m_mappingCaptureAction.clear();
                         m_mappingCaptureReplaceExisting = false;
                         m_previousActiveInputs.clear();
+                        m_captureInputsAwaitingRelease = {input};
+                        if (input == QStringLiteral("leftstick-click"))
+                            m_captureInputsAwaitingRelease.append(QStringLiteral("leftstick"));
+                        else if (input == QStringLiteral("rightstick-click"))
+                            m_captureInputsAwaitingRelease.append(QStringLiteral("rightstick"));
+                        else if (input == QStringLiteral("leftstick"))
+                            m_captureInputsAwaitingRelease.append(QStringLiteral("leftstick-click"));
+                        else if (input == QStringLiteral("rightstick"))
+                            m_captureInputsAwaitingRelease.append(QStringLiteral("rightstick-click"));
                         loadControllerProfile();
                         emit mappingCaptureStateChanged();
                         emit mappingCaptured(capturedAction, input);
