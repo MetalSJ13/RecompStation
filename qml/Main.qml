@@ -3630,6 +3630,9 @@ ApplicationWindow {
                                 NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
                             }
                             clip: true
+                            // Library movement is driven by keyboard/controller navigation.
+                            // Keep pointer wheel and drag gestures from scrolling the grid.
+                            interactive: false
                             // Keep scaled cards and their focus glow inside the viewport,
                             // including the first and last rows.
                             topMargin: 10
@@ -4297,6 +4300,9 @@ ApplicationWindow {
                             }
                             orientation: ListView.Horizontal
                             clip: true
+                            // Keep carousel movement under keyboard/controller navigation;
+                            // pointer wheel and drag gestures must not move the game row.
+                            interactive: false
                             model: gameGrid.model
                             keyNavigationEnabled: false
                             spacing: 24
@@ -4325,38 +4331,6 @@ ApplicationWindow {
                             highlightMoveDuration: settingsManager.reducedMotion ? 0 : 230
                             snapMode: ListView.NoSnap
                             currentIndex: gameGrid.currentIndex
-                            // Mouse-wheel navigation complements hover selection.
-                            // This is especially important with left-anchored selection:
-                            // earlier cards may be off-screen when the final card is active.
-                            property real wheelAccumulator: 0
-                            WheelHandler {
-                                target: null
-                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                onWheel: function(event) {
-                                    const delta = event.angleDelta.x !== 0 ? event.angleDelta.x
-                                        : event.angleDelta.y !== 0 ? event.angleDelta.y
-                                        : event.pixelDelta.x !== 0 ? event.pixelDelta.x * 4
-                                        : event.pixelDelta.y * 4
-                                    if (delta === 0 || consoleView.count <= 0)
-                                        return
-
-                                    // Horizontal wheel right advances; vertical wheel up
-                                    // moves toward earlier cards. Accumulation avoids making
-                                    // high-resolution touchpad gestures jump one card per event.
-                                    consoleView.wheelAccumulator += delta
-                                    const steps = Math.trunc(consoleView.wheelAccumulator / 120)
-                                    if (steps !== 0) {
-                                        const horizontal = event.angleDelta.x !== 0
-                                            || event.pixelDelta.x !== 0
-                                        const direction = horizontal ? 1 : -1
-                                        consoleView.currentIndex = Math.max(0, Math.min(
-                                            consoleView.count - 1,
-                                            consoleView.currentIndex + direction * steps))
-                                        consoleView.wheelAccumulator -= steps * 120
-                                    }
-                                    event.accepted = true
-                                }
-                            }
                             Component.onCompleted: {
                                 if (currentIndex < 0 && count > 0)
                                     currentIndex = 0
