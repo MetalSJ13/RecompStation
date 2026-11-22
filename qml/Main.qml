@@ -4352,8 +4352,12 @@ ApplicationWindow {
                                 // scroll position, where the first card is intentionally inset.
                                 readonly property real leftEdgeDistance:
                                     consoleTile.x + consoleTile.width / 2 - consoleView.contentX
+                                // Begin fading when the card's trailing edge approaches
+                                // the viewport boundary, so it is already transparent as
+                                // clipping begins instead of fading too late from its center.
                                 readonly property real rightEdgeDistance:
-                                    consoleView.width - leftEdgeDistance
+                                    consoleView.width
+                                    - (consoleTile.x + consoleTile.width - consoleView.contentX)
                                 readonly property real edgeFadeDistance:
                                     Math.max(180, consoleView.cardWidth)
                                 readonly property real leftEdgeProgress:
