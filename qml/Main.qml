@@ -3940,14 +3940,21 @@ ApplicationWindow {
                                             Rectangle {
                                                 id: gameTileArtworkFrame
                                                 anchors.centerIn: parent
+                                                // Keep a clear gutter between the artwork frame
+                                                // and the outer card edge in every density.
+                                                readonly property real frameInset: 4
+                                                readonly property real availableWidth:
+                                                    Math.max(1, parent.width - frameInset * 2)
+                                                readonly property real availableHeight:
+                                                    Math.max(1, parent.height - frameInset * 2)
                                                 readonly property real coverRatio:
                                                     gameTileCover.status === Image.Ready
                                                     && gameTileCover.sourceSize.height > 0
                                                     && gameTileCover.sourceSize.width < gameTileCover.sourceSize.height
                                                         ? gameTileCover.sourceSize.width / gameTileCover.sourceSize.height
-                                                        : parent.width / Math.max(1, parent.height)
-                                                width: Math.min(parent.width, parent.height * coverRatio)
-                                                height: Math.min(parent.height, parent.width / Math.max(0.01, coverRatio))
+                                                        : availableWidth / availableHeight
+                                                width: Math.min(availableWidth, availableHeight * coverRatio)
+                                                height: Math.min(availableHeight, availableWidth / Math.max(0.01, coverRatio))
                                                 radius: theme.radiusSmall
                                                 color: theme.sidebarBackground
                                                 border.width: 1
@@ -4385,14 +4392,21 @@ ApplicationWindow {
                                         Rectangle {
                                             id: consoleArtworkFrame
                                             anchors.centerIn: parent
+                                            // Match Grid's inset so the artwork frame never
+                                            // crowds or touches the outer carousel card border.
+                                            readonly property real frameInset: 4
+                                            readonly property real availableWidth:
+                                                Math.max(1, parent.width - frameInset * 2)
+                                            readonly property real availableHeight:
+                                                Math.max(1, parent.height - frameInset * 2)
                                             readonly property real coverRatio:
                                                 consoleCover.status === Image.Ready
                                                 && consoleCover.sourceSize.height > 0
                                                 && consoleCover.sourceSize.width < consoleCover.sourceSize.height
                                                     ? consoleCover.sourceSize.width / consoleCover.sourceSize.height
-                                                    : parent.width / Math.max(1, parent.height)
-                                            width: Math.min(parent.width, parent.height * coverRatio)
-                                            height: Math.min(parent.height, parent.width / Math.max(0.01, coverRatio))
+                                                    : availableWidth / availableHeight
+                                            width: Math.min(availableWidth, availableHeight * coverRatio)
+                                            height: Math.min(availableHeight, availableWidth / Math.max(0.01, coverRatio))
                                             radius: theme.radiusSmall
                                             color: theme.sidebarBackground
                                             border.width: 1
