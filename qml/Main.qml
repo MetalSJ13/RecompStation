@@ -6432,8 +6432,7 @@ ApplicationWindow {
                                                         border.width: resetControllerProfileButton.activeFocus ? 2 : 1
                                                     }
                                                     onClicked: {
-                                                        settingsManager.resetControllerProfile(controllerManager.controllerGuid)
-                                                        controllerManager.reloadControllerProfile()
+                                                        controllerManager.resetConnectedControllerProfile()
                                                     }
                                                 }
                                             }
@@ -6583,7 +6582,11 @@ ApplicationWindow {
                                                     id: actionBindingButton
                                                     text: controllerManager.mappingCaptureActive
                                                         && controllerManager.mappingCaptureAction === modelData.key
-                                                        ? "Listening…" : "Add binding"
+                                                        ? "Listening…"
+                                                        : controllerManager.mappingCaptureReplaceExisting
+                                                            && controllerManager.mappingCaptureAction === modelData.key
+                                                            ? "Replacing…"
+                                                            : "Add binding"
                                                     enabled: controllerManager.connected
                                                         && (!controllerManager.mappingCaptureActive
                                                             || controllerManager.mappingCaptureAction === modelData.key)
@@ -6597,7 +6600,22 @@ ApplicationWindow {
                                                             ? theme.accent : theme.divider
                                                         border.width: actionBindingButton.activeFocus ? 2 : 1
                                                     }
-                                                    onClicked: controllerManager.startMappingCapture(modelData.key)
+                                                    onClicked: controllerManager.startMappingCapture(modelData.key, false)
+                                                }
+                                                Button {
+                                                    text: "Replace"
+                                                    enabled: controllerManager.connected
+                                                        && (!controllerManager.mappingCaptureActive
+                                                            || controllerManager.mappingCaptureAction === modelData.key)
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    background: Rectangle {
+                                                        radius: theme.radiusSmall
+                                                        color: activeFocus ? theme.elevatedSurface : theme.surface
+                                                        border.color: activeFocus ? theme.accent : theme.divider
+                                                        border.width: activeFocus ? 2 : 1
+                                                    }
+                                                    onClicked: controllerManager.startMappingCapture(modelData.key, true)
                                                 }
                                             }
                                         }
