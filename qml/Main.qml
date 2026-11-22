@@ -3595,7 +3595,9 @@ ApplicationWindow {
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             anchors.horizontalCenter: parent.horizontalCenter
-                            width: parent.width
+                            // Constrain the GridView itself to the intended column
+                            // block. Margins alone do not limit GridView's layout width.
+                            width: Math.min(parent.width, visibleColumns * gridCellWidth)
                             onCountChanged: {
                                 if (count > 0 && window.initialGridRevealPending
                                         && settingsManager.libraryView === "grid") {
@@ -3648,8 +3650,6 @@ ApplicationWindow {
                             readonly property int visibleColumns:
                                 parent.width >= 3000
                                     ? Math.min(8, responsiveColumns) : responsiveColumns
-                            readonly property real centeredOuterMargin:
-                                Math.max(8, (parent.width - visibleColumns * gridCellWidth) / 2)
                             function logGridGeometry(reason) {
                                 console.info("[Grid Geometry]", reason,
                                     "density:", settingsManager.libraryDensity,
@@ -3677,8 +3677,8 @@ ApplicationWindow {
                                     })
                                 }
                             }
-                            leftMargin: centeredOuterMargin
-                            rightMargin: centeredOuterMargin
+                            leftMargin: 0
+                            rightMargin: 0
                             cellWidth: gridCellWidth
                             // Match the card height to its actual content: a 2:3
                             // artwork frame (the card width minus its 20 px inner
