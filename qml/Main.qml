@@ -4095,14 +4095,23 @@ ApplicationWindow {
                                     settingsManager.libraryListDensity === "compact" ? 104
                                     : settingsManager.libraryListDensity === "spacious" ? 144 : 128
                                 height: rowHeight
-                                // Match Grid View's scroll-edge treatment so both
-                                // presentations share the same 140 px fade zone.
-                                opacity: settingsManager.reducedMotion ? 1
-                                    : Math.max(0, Math.min(1,
-                                        Math.min(
-                                            (listTile.y + listTile.height / 2 - gameList.contentY) / 140,
-                                            (gameList.contentY + gameList.height
-                                                - (listTile.y + listTile.height / 2)) / 140)))
+                                // Use a shorter eased fade than Grid View because List
+                                // rows are much shorter, while keeping the same minimum
+                                // edge visibility and Reduced Motion behavior.
+                                readonly property real scrollEdgeDistance: Math.min(
+                                    listTile.y + listTile.height / 2 - gameList.contentY,
+                                    gameList.contentY + gameList.height
+                                        - (listTile.y + listTile.height / 2))
+                                readonly property real scrollEdgeProgress: settingsManager.reducedMotion
+                                    ? 1
+                                    : Math.max(0, Math.min(1, scrollEdgeDistance / 120))
+                                readonly property real scrollEdgeEase:
+                                    scrollEdgeProgress * scrollEdgeProgress
+                                    * (3 - 2 * scrollEdgeProgress)
+                                readonly property real scrollEdgeOpacity:
+                                    settingsManager.reducedMotion ? 1
+                                    : 0.18 + 0.82 * scrollEdgeEase
+                                opacity: scrollEdgeOpacity
                                 focus: ListView.isCurrentItem
                                 z: highlighted ? 2 : 1
                                 scale: highlighted ? 1.035 : 1.0
