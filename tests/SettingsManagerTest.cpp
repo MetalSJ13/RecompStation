@@ -36,6 +36,7 @@ private slots:
     void controllerProfilesDefaultPerGuidAndPersistIndependently();
     void rejectsInvalidControllerProfiles();
     void persistsTriggerControllerBindings();
+    void persistsStickClickControllerBindings();
     void persistsPreferencesInExplicitConfigFile();
     void rejectsUnsupportedTheme();
     void rejectsUnsupportedPresentationSize();
@@ -429,6 +430,25 @@ void SettingsManagerTest::persistsTriggerControllerBindings()
              QStringList{QStringLiteral("lefttrigger")});
     QCOMPARE(reloaded.value(QStringLiteral("nextSection")).toStringList(),
              QStringList{QStringLiteral("righttrigger")});
+}
+
+void SettingsManagerTest::persistsStickClickControllerBindings()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+    const QString guid = QStringLiteral("abcdef0123456789abcdef0123456789");
+    SettingsManager manager(settingsPath);
+    QVariantMap profile = SettingsManager::defaultControllerProfile();
+    profile[QStringLiteral("select")] = QVariantList{QStringLiteral("leftstick-click")};
+    profile[QStringLiteral("back")] = QVariantList{QStringLiteral("rightstick-click")};
+    QVERIFY(manager.saveControllerProfile(guid, profile));
+    const QVariantMap reloaded = manager.controllerProfile(guid);
+    QCOMPARE(reloaded.value(QStringLiteral("select")).toStringList(),
+             QStringList{QStringLiteral("leftstick-click")});
+    QCOMPARE(reloaded.value(QStringLiteral("back")).toStringList(),
+             QStringList{QStringLiteral("rightstick-click")});
 }
 
 void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
