@@ -4398,12 +4398,36 @@ ApplicationWindow {
                                     anchors.fill: parent
                                     radius: theme.radiusCard + 3
                                     color: consoleTile.highlighted ? theme.elevatedSurface : theme.surface
+                                    Behavior on color {
+                                        enabled: !settingsManager.reducedMotion
+                                        ColorAnimation {
+                                            duration: 170
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
                                     opacity: consoleTile.highlighted ? 0.96 : 0.72
+                                    Behavior on opacity {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation {
+                                            duration: 170
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
                                     border.width: consoleTile.highlighted ? 2 : 1
+                                    Behavior on border.width {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation {
+                                            duration: 160
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
                                     border.color: consoleTile.highlighted ? theme.accent : theme.divider
                                     Behavior on border.color {
                                         enabled: !settingsManager.reducedMotion
-                                        ColorAnimation { duration: 170 }
+                                        ColorAnimation {
+                                            duration: 170
+                                            easing.type: Easing.OutCubic
+                                        }
                                     }
                                 }
                                 ColumnLayout {
