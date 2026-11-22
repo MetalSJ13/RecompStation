@@ -5,9 +5,9 @@ This document is the authoritative development status and implementation order f
 ## Project status
 
 ### Current focus
-- **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream is functionally complete and user-validated on 2026-11-21. The latest stabilization build completed successfully and all 19/19 CTest suites passed on 2026-11-21; runtime startup, five-platform scanning, filesystem monitoring initialization, controller detection, and LaunchBox artwork processing were also confirmed. Milestone 7 remains open for folder-picker/modal controller-only validation, controller-interface polish, accessibility review, and multi-display validation.
+- **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream and Controller settings/hardware-validation workstream are complete and user-validated. The latest build completed successfully and all 19/19 CTest suites passed on 2026-11-22. Milestone 7 remains open for folder-picker/modal controller-only validation, broader accessibility review, and multi-display validation.
 - **Current UI work:** Responsive Library presentation refinement is active on `ui/interface-redesign`. The responsive sizing foundation and Grid/List presentation passes are substantially complete and user-validated. Phase 4 — Carousel View — is in progress: the viewport edge fade has been refined and accepted as a baseline; selection/scrolling behavior and clipping remain to be reviewed. Keep the existing Carousel card-sizing formula, density values, and artwork proportions unchanged during this pass.
-- **Next technical focus:** Validate the implemented controller profile routing, button capture/remapping, per-device reset, and newly added analog trigger capture/persistence on physical hardware; then build and visually verify the revised Controller page in connected and disconnected states. Phase 5 — Full Library composition is intentionally deferred until later and must remain open. The remaining Carousel review and other Milestone 7 accessibility, folder-picker/modal, and multi-display items also remain open; do not imply they are complete.
+- **Next technical focus:** Continue the responsive Library presentation pass, including the remaining Carousel review. Phase 5 — Full Library composition is intentionally deferred until later and must remain open. Milestone 7's folder-picker/modal, accessibility, and multi-display items also remain open; do not imply they are complete.
 
 ### Implemented foundations
 - **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
@@ -105,9 +105,9 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Expose the existing controller-input enable/disable setting.
 - [x] Document current navigation bindings as read-only rather than presenting them as editable.
 - [x] Expose stable SDL controller GUIDs and persist validated logical-action profiles independently per GUID.
-- [ ] Validate saved profile mappings in the input router on hardware, including remapped navigation/actions, button capture/replacement, per-device reset, left/right trigger capture/use, and L3/R3 stick-click capture/use. Implementation now routes saved profiles and recognizes/persists SDL trigger axes and distinct stick-click tokens; legacy stick-click profile tokens remain supported.
+- [x] Validate saved profile mappings in the input router on hardware, including remapped navigation/actions, button capture/replacement, per-device reset, left/right trigger capture/use, and L3/R3 stick-click capture/use. User confirmed remapped actions, trigger mappings, L3/R3 mappings, and persistence after application restart on 2026-11-22. Capture consumes the assigned physical input until release.
 - [x] Build and verify Settings category navigation and visible focus styling across the tested categories and controls.
-- [ ] Build and visually verify the revised Controller page with connected and disconnected controller states; confirm trigger and L3/R3 labels and capture guidance.
+- [x] Build and visually verify the revised Controller page with connected and disconnected controller states; confirm trigger and L3/R3 labels and capture guidance. User verified both connected and disconnected presentations on 2026-11-22.
 
 ### Settings foundation
 - [x] Normalize Appearance and Application settings content into scrollable panels consistent with the other Settings categories.
@@ -344,7 +344,7 @@ The following notes record focused implementation and user-validation updates. T
 
 ### Milestone 7: Input, accessibility, and regression pass
 
-**Navigation and Focus workstream: functionally complete (user-validated 2026-11-21).** Keyboard/controller focus movement across the Library and Settings, including Application settings and custom-background actions, has been exercised successfully. The remaining Milestone 7 work is broader controller-interface polish, accessibility/scaling review, display validation, and a fresh full regression pass. Folder-picker keyboard validation remains a separate open item. Per-device controller profiles are intentionally deferred because they are not currently a user priority.
+**Navigation and Focus workstream: functionally complete (user-validated 2026-11-21). Controller settings and hardware-validation workstream: complete (user-validated 2026-11-22).** Saved per-device profiles, button capture/remapping, reset, trigger and L3/R3 mappings, capture cancellation/input suppression, restart persistence, connection status, and connected/disconnected page presentation have been validated. Remaining Milestone 7 work includes folder-picker/modal controller-only validation, broader accessibility/scaling review, and multi-display validation.
 
 - [x] Add application-level arrow-key navigation for the Game Library Grid View and Enter/Return game selection
 - [x] Support Escape to return from immersive game details to the Game Library
@@ -357,7 +357,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Complete controller-only validation of modal dialogs and file-picker interactions, including focus entry, action selection, cancellation, and focus restoration.
 - [x] Validate smooth right-analog-stick scrolling in Library Grid/List (viewport-only movement, tilt-sensitive speed, dead zone, and deceleration on release); user confirmed it works. D-pad navigation remains item-by-item.
 - [x] Validate progressive navigation acceleration in all Library layouts (List, Grid, Carousel) for the left analog stick and D-pad: starts deliberately (280 ms repeat), accelerates to 150 ms and then 75 ms while held; selection advances one item per event. User confirmed accelerated navigation works well across all three views.
-- [ ] Controller profile application, button capture/remapping, per-device reset, and left/right trigger support are tracked in the authoritative **Controller settings** checklist above. Implementation now consumes saved mappings in the input router and reads SDL trigger axes; local build and physical-hardware validation remain pending.
+- [x] Controller profile application, button capture/remapping, per-device reset, left/right trigger support, and L3/R3 stick-click mappings are complete and hardware-validated; see the **Controller settings** checklist above. Capture completion consumes the captured physical input until release, and leaving Controller settings cancels active capture.
 - [x] Support adding and removing button mappings and resetting controller mappings. Existing functionality is present.
 - [ ] Polish the button-mapping GUI so controls, dialogs, focus, hover, and selection states consistently follow the active application theme.
 - [ ] Verify Xbox/PlayStation default controller mappings.
@@ -366,7 +366,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Add lightweight navigation sounds with volume controls
 - [x] Validate Windowed, Fullscreen, and Maximized display modes and applying the preferred custom window size. User confirmed all four behaviors work.
 - [ ] Validate multi-display behavior and compositor placement across monitors.
-- [x] Run the full build and regression suite; manually exercise existing workflows. **User-confirmed 2026-11-21:** `./scripts/build.sh --test` completed successfully with all 19/19 CTest suites passing; `./scripts/run.sh` started normally, initialized the database and filesystem monitoring, scanned all five configured platforms, detected the Xbox controller, and completed the LaunchBox artwork queue (40 downloaded, 0 skipped, 0 failed). The non-fatal `WrapVulkanHeaders` warning remains.
+- [x] Run the full build and regression suite; manually exercise existing workflows. **User-confirmed 2026-11-22:** `./scripts/build.sh --test` completed successfully; all 19/19 CTest suites passed and the executable was produced. SDL2 controller support was enabled. The non-fatal `WrapVulkanHeaders` missing-header warning remains.
 - [ ] Fix regressions before considering the UI milestone complete
 
 ### Milestone 8: Complete launcher lifecycle
