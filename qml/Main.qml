@@ -1307,19 +1307,32 @@ ApplicationWindow {
 
     Connections {
         target: libraryScanner
+        function onScanStarted() {
+            window.scanMessage = "Scanning your game library..."
+        }
+        function onPlatformScanStarted(platform, platformIndex, platformCount) {
+            window.scanMessage = "Scanning " + platform + " (" + platformIndex
+                + " of " + platformCount + ")..."
+        }
+        function onPlatformScanCompleted(platform, gamesFound, unsupportedFiles) {
+            window.scanMessage = platform + " scanned: " + gamesFound
+                + " new game(s), " + unsupportedFiles + " unsupported file(s) ignored."
+        }
         function onScanCompleted(gamesFound) {
             window.libraryRevision++
             if (settingsManager.automaticMetadataMatchingEnabled) {
                 window.scanMessage = libraryScanner.lastError.length > 0
                     ? libraryScanner.lastError + "\nChecking metadata for discovered games..."
-                    : gamesFound + " new game(s) found. Checking metadata..."
+                    : gamesFound + " new game(s) found. " + libraryScanner.lastUnsupportedCount
+                        + " unsupported file(s) ignored. Checking metadata..."
                 // A problem with one platform folder must not block metadata for
                 // games successfully discovered on other platforms.
                 metadataMatcher.scrapeLibrary()
             } else {
                 window.scanMessage = libraryScanner.lastError.length > 0
                     ? libraryScanner.lastError + "\nAutomatic metadata matching is disabled."
-                    : gamesFound + " new game(s) found. Automatic metadata matching is disabled."
+                    : gamesFound + " new game(s) found. " + libraryScanner.lastUnsupportedCount
+                        + " unsupported file(s) ignored. Automatic metadata matching is disabled."
             }
         }
     }
@@ -1662,7 +1675,7 @@ ApplicationWindow {
                             window.scanMessage = "Library folder saved. Scanning platform folders..."
                             libraryFolderDialog.accept()
                             librarySetupDialog.close()
-                            libraryScanner.scanAll()
+                            libraryScanner.scanAllAsync()
                         } else {
                             libraryFolderDialog.browserMessage =
                                 "Could not use that folder. Check that it exists and is writable."
@@ -4588,7 +4601,7 @@ ApplicationWindow {
                                 Label {
                                     Layout.fillWidth: true
                                     visible: window.librarySearchText.trim().length === 0
-                                    text: "Add game files to one of your platform folders, then scan your library to discover them."
+                                    text: "Place supported game files in your platform folders. RecompStation discovers them automatically and keeps your collection up to date."
                                     color: theme.textSecondary
                                     font.pixelSize: 13 * theme.fontScale
                                     horizontalAlignment: Text.AlignHCenter
@@ -5723,6 +5736,14 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         text: "Place game files inside their matching platform folders. RecompStation monitors these folders and updates your library when games are added or removed."
                                         color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: window.scanMessage
+                                        visible: window.scanMessage.length > 0
+                                        color: theme.textSecondary
+                                        font.pixelSize: 11 * theme.fontScale
+                                        wrapMode: Text.Wrap
                                     }
                                 }
                             }
