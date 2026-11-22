@@ -35,6 +35,7 @@ private slots:
     void persistsLaunchBoxLastUpdatedTimestamp();
     void controllerProfilesDefaultPerGuidAndPersistIndependently();
     void rejectsInvalidControllerProfiles();
+    void persistsTriggerControllerBindings();
     void persistsPreferencesInExplicitConfigFile();
     void rejectsUnsupportedTheme();
     void rejectsUnsupportedPresentationSize();
@@ -407,6 +408,27 @@ void SettingsManagerTest::rejectsInvalidControllerProfiles()
     invalid[QStringLiteral("select")] = QVariantList{QStringLiteral("unknown-button")};
     QVERIFY(!manager.saveControllerProfile(guid, invalid));
     QVERIFY(!manager.saveControllerProfile(guid, {}));
+}
+
+void SettingsManagerTest::persistsTriggerControllerBindings()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    const QString guid = QStringLiteral("0123456789abcdef0123456789abcdef");
+    SettingsManager manager(settingsPath);
+    QVariantMap profile = SettingsManager::defaultControllerProfile();
+    profile[QStringLiteral("previousSection")] = QVariantList{QStringLiteral("lefttrigger")};
+    profile[QStringLiteral("nextSection")] = QVariantList{QStringLiteral("righttrigger")};
+    QVERIFY(manager.saveControllerProfile(guid, profile));
+
+    const QVariantMap reloaded = manager.controllerProfile(guid);
+    QCOMPARE(reloaded.value(QStringLiteral("previousSection")).toStringList(),
+             QStringList{QStringLiteral("lefttrigger")});
+    QCOMPARE(reloaded.value(QStringLiteral("nextSection")).toStringList(),
+             QStringList{QStringLiteral("righttrigger")});
 }
 
 void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
