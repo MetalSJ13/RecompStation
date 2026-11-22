@@ -4351,8 +4351,12 @@ ApplicationWindow {
                                     consoleTile.x + consoleTile.width / 2 - consoleView.contentX,
                                     consoleView.contentX + consoleView.width
                                         - (consoleTile.x + consoleTile.width / 2))
+                                // Scale the fade zone with card width so each density
+                                // setting transitions at a consistent visual proportion.
+                                readonly property real edgeFadeDistance:
+                                    Math.max(140, consoleView.cardWidth * 0.65)
                                 readonly property real edgeProgress: settingsManager.reducedMotion
-                                    ? 1 : Math.max(0, Math.min(1, edgeDistance / 190))
+                                    ? 1 : Math.max(0, Math.min(1, edgeDistance / edgeFadeDistance))
                                 readonly property real edgeEase:
                                     edgeProgress * edgeProgress * (3 - 2 * edgeProgress)
                                 opacity: settingsManager.reducedMotion ? 1 : 0.18 + 0.82 * edgeEase
