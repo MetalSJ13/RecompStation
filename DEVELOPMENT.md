@@ -6,8 +6,8 @@ This document is the authoritative development status and implementation order f
 
 ### Current focus
 - **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream is functionally complete and user-validated on 2026-11-21. The latest stabilization build completed successfully and all 19/19 CTest suites passed on 2026-11-21; runtime startup, five-platform scanning, filesystem monitoring initialization, controller detection, and LaunchBox artwork processing were also confirmed. Milestone 7 remains open for folder-picker/modal controller-only validation, controller-interface polish, accessibility review, and multi-display validation.
-- **Current UI work:** The Carousel presentation is the first-run default, with persistent user-selected view preferences and independent sizing. Navigation and Focus is functionally complete. Remaining Milestone 7 work is focused on folder-picker/modal controller-only validation, button-mapping GUI polish, accessibility/scaling, controller mapping checks, and multi-display validation.
-- **Next technical focus:** Stabilization pass is complete; the user will choose the next work item. Keep the remaining Milestone 7 checklist and deferred metadata/provider work visible without assuming the next priority. Per-device controller profiles and navigation sounds remain deferred.
+- **Current UI work:** Responsive Library presentation refinement is active on `ui/interface-redesign`. The responsive sizing foundation and Grid/List presentation passes are substantially complete and user-validated. Phase 4 — Carousel View — is in progress: the viewport edge fade has been refined and accepted as a baseline; selection/scrolling behavior and clipping remain to be reviewed. Keep the existing Carousel card-sizing formula, density values, and artwork proportions unchanged during this pass.
+- **Next technical focus:** Continue the focused Carousel review (selection and scrolling first, then clipping), then move to Phase 5 — Full Library composition. Preserve the separate remaining Milestone 7 accessibility, controller, folder-picker/modal, and multi-display checklist; do not imply those items are complete.
 
 ### Implemented foundations
 - **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
@@ -37,6 +37,19 @@ Keep the application buildable after each focused change. Preserve working backe
 - [x] Restrict folder creation to a single child name in the current writable directory; selecting the library root delegates platform-subfolder creation and persistence to PlatformManager.
 - [x] Add regression coverage for directory listing, safe folder creation, duplicate names, and path traversal rejection.
 - [x] User-confirmed local build/run and UI interaction: the browser opens and can create folders.
+
+## Recent UI presentation progress (2026-11-22)
+
+The responsive Library presentation work is being tracked as a focused five-phase pass. These notes record the current user-validated state; they do not close Milestone 7 or replace its broader accessibility/controller checklist.
+
+- [x] **Phase 1 — Responsive sizing foundation:** Establish separate width/height constraints, density limits, and responsive calculations. User validation covered 1920×1080, 2560×1080, and 3440×1440 at 100% OS scaling.
+- [x] **Phase 2 — Grid View:** Refine responsive column limits, card proportions, and centered layout. User confirmed the intended row density at 4K and 2560×1080, including Compact (10), Comfortable (8), and Spacious (6) at 4K.
+- [x] **Phase 3 — List View:** Refine comfortable artwork sizing, viewport-edge fading, and selection/transition behavior. User confirmed the artwork sizing and smoother edge fade; existing selection scaling/transitions were reviewed and retained.
+- [ ] **Phase 4 — Carousel View:** In progress. Refine viewport-edge fading, selection/scrolling response, and clipping without changing the current card-sizing formula, density values, or artwork proportions.
+  - [x] Establish a softer two-sided viewport fade while preserving the first card at the initial scroll position; refine the right fade to respond to the card's trailing edge. User reviewed the result and said it looks good.
+  - [ ] Review selected-card emphasis and horizontal scrolling/navigation animations.
+  - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
+- [ ] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable.
 
 ## Recent stabilization notes (2026-11-21)
 
@@ -108,8 +121,11 @@ The following notes record focused implementation and user-validation updates. T
 ### Library and navigation polish
 - [x] Simplify primary Library/Settings navigation to compact icon-led controls; user approved the appearance.
 - [x] Add configurable Grid/List browsing, title search, platform filtering, and independent view sizing.
-- [ ] Complete Carousel validation: verify selected-card centering/focus, mouse/keyboard/controller selection, details opening, preference persistence, and Grid/List regression. Horizontal controller navigation has been exercised; remaining checks are not yet fully confirmed.
-- [ ] Verify Carousel hover no longer cascades through cards when the pointer is stationary near the screen edges; card selection should follow actual pointer movement. User previously reported excessive edge sensitivity, so this remains open.
+- [ ] Complete Carousel validation: verify selected-card focus, mouse/keyboard/controller selection, details opening, preference persistence, and Grid/List regression. Horizontal controller navigation has been exercised; remaining checks are not yet fully confirmed.
+- [x] Refine Carousel viewport-edge fading, including the left-edge initial-position exception and trailing-edge-based right fade. User reviewed the result and accepted it as a good baseline on 2026-11-22.
+- [ ] Review Carousel selected-card emphasis and horizontal scrolling/navigation animations; preserve the current card sizing and density calculations during this pass.
+- [ ] Verify Carousel clipping at both viewport edges, including enlarged selected cards and card borders.
+- [ ] Verify Carousel hover does not cascade through cards when the pointer is stationary near screen edges; selection should follow actual pointer movement.
 - [x] Add coordinated static/animated/custom library background treatments.
 - [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
 - [x] Validate fullscreen startup and the coordinated startup Grid reveal on the user's Wayland desktop; no initial windowed flash or duplicate/late card animation remains.
