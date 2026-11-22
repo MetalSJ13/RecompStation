@@ -134,15 +134,14 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Confirm controller hot-plug detection and adaptive input hints when controller input is used.
 - [ ] Complete accessibility and controller-only validation across all screens and controls.
 
-### N64 project catalog
-- [x] Add Star Fox 64, Donkey Kong 64, Mario Kart 64, Mario Party, Mario Party 2, Mario Party 3, and Super Smash Bros. projects.
-- [x] Add HarbourMasters Ghostship, Banjo-Tooie: Recompiled, and PaperBoat (Paper Mario).
-- [x] Restrict release matching to published Linux ZIP/TAR.GZ packages and supported CPU architectures; exclude Windows and Flatpak assets.
-- [x] Record project-specific ROM requirements, including documented revision and SHA-1 requirements where available.
-- [x] Allow multiple projects to match one game and provide a project selector in Game Details (notably Super Mario 64).
-- [x] Add catalog regression coverage for title matching, multiple Super Mario 64 projects, and Linux asset filtering.
-- [x] User-confirmed build/run and launch checks for representative projects: Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat.
-- [ ] Complete install/launch/uninstall checks for every remaining catalog project.
+### Recompilation and native-port project catalog
+- [x] Add the initial N64 project catalog and subsequent N64 projects, including Star Fox 64, Donkey Kong 64, Mario Kart 64, Mario Party trilogy, Super Smash Bros., Ghostship, Banjo-Tooie, and PaperBoat.
+- [x] Add ten further projects: DinoTale (Yoshi's Story), Mega Man 64, F-Zero X, Mario Golf, Zelda 64: Recompiled (Majora's Mask), Ship of Harkinian (Ocarina of Time), Open Nectar (Pikmin 1 and 2), Strikers (Super Mario Strikers), Dusklight (Twilight Princess), and Luigi's Mansion Recompiled.
+- [x] Map each project to its original console platform and known game-title aliases; Open Nectar covers both Pikmin titles.
+- [x] Restrict release matching to verified native Linux AppImage, ZIP, and TAR.GZ assets for supported CPU architectures; exclude Windows, macOS, Android, and Flatpak assets.
+- [x] Record project-specific game-data requirements and known ROM/disc revisions or hashes where documented. Zelda 64: Recompiled currently targets Majora's Mask; Ocarina of Time is not represented by that entry.
+- [x] Add regression coverage for the new title/platform matches and representative Linux asset names, including rejection of Flatpak and Windows packages.
+- [ ] Build and run the updated application, then verify install/launch/uninstall for the newly added projects; preserve user ROM/disc data during uninstall.
 
 ### Linux launcher execution and archive handling
 - [x] Support release ZIPs that wrap a single TAR.GZ/TGZ payload; safely extract the nested archive into the requested staging destination.
