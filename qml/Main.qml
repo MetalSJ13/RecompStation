@@ -5738,7 +5738,7 @@ ApplicationWindow {
                                         Layout.preferredWidth: 210
                                         Layout.preferredHeight: 44
                                         text: "Scan Library Now"; highlighted: true
-                                        enabled: platformManager.libraryConfigured
+                                        enabled: platformManager.libraryConfigured && !libraryScanner.scanning
                                         onClicked: { libraryScanner.scanAllAsync() }
                                     }
                                     Label {
