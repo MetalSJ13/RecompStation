@@ -347,14 +347,14 @@ void ControllerManager::pollController()
     // action routing until the user releases it.
     if (!m_captureInputsAwaitingRelease.isEmpty()) {
         bool capturedInputStillHeld = false;
-        for (const QString &token : std::as_const(m_captureInputsAwaitingRelease)) {
+        for (const QString &token : m_captureInputsAwaitingRelease) {
             if (activeInputs.contains(token)) {
                 capturedInputStillHeld = true;
                 break;
             }
         }
         if (capturedInputStillHeld) {
-            for (const QString &token : std::as_const(m_captureInputsAwaitingRelease))
+            for (const QString &token : m_captureInputsAwaitingRelease)
                 activeInputs.removeAll(token);
         } else {
             m_captureInputsAwaitingRelease.clear();
