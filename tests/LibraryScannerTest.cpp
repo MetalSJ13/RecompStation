@@ -76,6 +76,35 @@ private slots:
         m_tempDirectory.reset();
     }
 
+    void asynchronousScanReportsLifecycleAndUnsupportedFiles()
+    {
+        QVERIFY(writeGameFile("N64", "Mario.z64"));
+        QVERIFY(writeGameFile("N64", "notes.txt"));
+        QVERIFY(writeGameFile("PS1", "FinalFantasy.chd"));
+
+        QSignalSpy startedSpy(m_scanner.get(), &LibraryScanner::scanStarted);
+        QSignalSpy platformStartedSpy(m_scanner.get(), &LibraryScanner::platformScanStarted);
+        QSignalSpy platformCompletedSpy(m_scanner.get(), &LibraryScanner::platformScanCompleted);
+        QSignalSpy completedSpy(m_scanner.get(), &LibraryScanner::scanCompleted);
+        QVERIFY(startedSpy.isValid());
+        QVERIFY(platformStartedSpy.isValid());
+        QVERIFY(platformCompletedSpy.isValid());
+        QVERIFY(completedSpy.isValid());
+
+        QVERIFY(m_scanner->scanAllAsync());
+        QVERIFY(m_scanner->scanning());
+        QVERIFY(!m_scanner->scanAllAsync());
+        QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 5000);
+
+        QCOMPARE(startedSpy.count(), 1);
+        QCOMPARE(platformStartedSpy.count(), 5);
+        QCOMPARE(platformCompletedSpy.count(), 5);
+        QCOMPARE(completedSpy.takeFirst().at(0).toInt(), 2);
+        QCOMPARE(m_scanner->lastUnsupportedCount(), 1);
+        QVERIFY(!m_scanner->scanning());
+        QCOMPARE(m_databaseManager->games().size(), 2);
+    }
+
     void scansExistingGamesImmediatelyWhenLibraryFolderIsSelected()
     {
         auto dataDirectory = std::make_unique<QTemporaryDir>();
