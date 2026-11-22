@@ -105,9 +105,9 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Expose the existing controller-input enable/disable setting.
 - [x] Document current navigation bindings as read-only rather than presenting them as editable.
 - [x] Expose stable SDL controller GUIDs and persist validated logical-action profiles independently per GUID.
-- [ ] Validate saved profile mappings in the input router on hardware, including remapped navigation/actions, button capture/replacement, per-device reset, and left/right trigger capture and use. Implementation now routes saved profiles and recognizes/persists SDL trigger axes.
+- [ ] Validate saved profile mappings in the input router on hardware, including remapped navigation/actions, button capture/replacement, per-device reset, left/right trigger capture/use, and L3/R3 stick-click capture/use. Implementation now routes saved profiles and recognizes/persists SDL trigger axes and distinct stick-click tokens; legacy stick-click profile tokens remain supported.
 - [x] Build and verify Settings category navigation and visible focus styling across the tested categories and controls.
-- [ ] Build and visually verify the revised Controller page with connected and disconnected controller states; confirm trigger labels and capture guidance.
+- [ ] Build and visually verify the revised Controller page with connected and disconnected controller states; confirm trigger and L3/R3 labels and capture guidance.
 
 ### Settings foundation
 - [x] Normalize Appearance and Application settings content into scrollable panels consistent with the other Settings categories.
