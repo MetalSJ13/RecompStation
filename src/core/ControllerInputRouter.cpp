@@ -33,6 +33,13 @@ QString ControllerInputRouter::directionFromAxes(qint16 x, qint16 y, int deadZon
 }
 
 
+bool ControllerInputRouter::triggerPressed(qint16 value, int threshold)
+{
+    // SDL GameController trigger axes are normalized to [0, 32767].
+    // Treat the upper half of travel as a deliberate digital press.
+    return value >= qBound(1, threshold, 32767);
+}
+
 QString ControllerInputRouter::firstNewInput(const QStringList &activeInputs,
                                                 const QStringList &previousInputs)
 {
