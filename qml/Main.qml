@@ -3329,7 +3329,12 @@ ApplicationWindow {
                 Item {
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 18
+                        // Tighten only the Grid heading-to-card gap as density decreases.
+                        // List and Carousel retain their existing spacing.
+                        spacing: settingsManager.libraryView === "grid"
+                            ? (settingsManager.libraryDensity === "compact" ? 6
+                                : settingsManager.libraryDensity === "comfortable" ? 10 : 16)
+                            : 18
 
                         RowLayout {
                             Layout.fillWidth: true
