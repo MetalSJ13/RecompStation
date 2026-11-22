@@ -3421,9 +3421,33 @@ ApplicationWindow {
                                 NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
                             }
                             clip: true
-                            // Library movement is driven by keyboard/controller navigation.
-                            // Keep pointer wheel and drag gestures from scrolling the grid.
+                            // Keep drag gestures disabled; mouse-wheel scrolling is
+                            // handled separately so pointer navigation does not interfere
+                            // with keyboard/controller focus movement.
                             interactive: false
+                            WheelHandler {
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                onWheel: function(event) {
+                                    if (settingsManager.libraryView !== "grid"
+                                            || gameGrid.contentHeight <= gameGrid.height) {
+                                        event.accepted = true
+                                        return
+                                    }
+
+                                    // Use precise trackpad deltas when available. Standard
+                                    // mouse wheels report 120 units per notch, so translate
+                                    // those into a comfortable fraction of one grid row.
+                                    const delta = event.pixelDelta.y !== 0
+                                        ? event.pixelDelta.y
+                                        : (event.angleDelta.y / 120)
+                                            * gameGrid.cellHeight * 0.85
+                                    const maxContentY = Math.max(
+                                        0, gameGrid.contentHeight - gameGrid.height)
+                                    gameGrid.contentY = Math.max(0, Math.min(
+                                        maxContentY, gameGrid.contentY - delta))
+                                    event.accepted = true
+                                }
+                            }
                             // Keep scaled cards and their focus glow inside the viewport,
                             // including the first and last rows.
                             // Combined with the outer layout gap, this produces
