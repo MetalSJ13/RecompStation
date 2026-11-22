@@ -275,6 +275,11 @@ void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForTenNewProjects()
     QVERIFY(accepts("twilight-princess-dusklight", "aarch64", "Dusklight-v2.0.3-linux-arm64.AppImage"));
     QVERIFY(accepts("luigis-mansion-recompiled", "x86_64", "LuigisMansionRecompiled-1.1.6-linux-x86_64.tar.gz"));
     QVERIFY(!accepts("luigis-mansion-recompiled", "x86_64", "LuigisMansionRecompiled-1.1.6-windows-x64.zip"));
+    const QVariantMap luigisMansion = catalog.project(QStringLiteral("luigis-mansion-recompiled"));
+    const QVariantMap luigisMansionRule = luigisMansion.value(QStringLiteral("architectures"))
+        .toMap().value(QStringLiteral("x86_64")).toMap();
+    QCOMPARE(luigisMansionRule.value(QStringLiteral("executablePath")).toString(),
+             QStringLiteral("LuigisMansionRecompiled.sh"));
 }
 
 void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForNewProjects()
