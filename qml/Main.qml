@@ -4174,10 +4174,12 @@ ApplicationWindow {
                                     anchors.left: parent.left
                                     anchors.leftMargin: 12
                                     anchors.verticalCenter: parent.verticalCenter
+                                    // Comfortable density gives portrait covers a little
+                                    // more vertical presence while preserving the row height.
                                     width: settingsManager.libraryListDensity === "compact" ? 68
-                                        : settingsManager.libraryListDensity === "spacious" ? 94 : 86
+                                        : settingsManager.libraryListDensity === "spacious" ? 94 : 80
                                     height: settingsManager.libraryListDensity === "compact" ? 82
-                                        : settingsManager.libraryListDensity === "spacious" ? 116 : 104
+                                        : settingsManager.libraryListDensity === "spacious" ? 116 : 112
                                     Image {
                                         id: listCoverImage
                                         anchors.fill: parent
@@ -4199,7 +4201,7 @@ ApplicationWindow {
                                 ColumnLayout {
                                     anchors.left: parent.left
                                     anchors.leftMargin: settingsManager.libraryListDensity === "compact" ? 90
-                                        : settingsManager.libraryListDensity === "spacious" ? 122 : 114
+                                        : settingsManager.libraryListDensity === "spacious" ? 122 : 108
                                     anchors.right: parent.right
                                     anchors.rightMargin: 18
                                     anchors.verticalCenter: parent.verticalCenter
