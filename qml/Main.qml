@@ -3606,6 +3606,33 @@ ApplicationWindow {
                                     ? Math.min(8, responsiveColumns) : responsiveColumns
                             readonly property real centeredOuterMargin:
                                 Math.max(8, (width - visibleColumns * gridCellWidth) / 2)
+                            function logGridGeometry(reason) {
+                                console.info("[Grid Geometry]", reason,
+                                    "density:", settingsManager.libraryDensity,
+                                    "viewport:", parent.width, "x", parent.height,
+                                    "grid:", width, "x", height,
+                                    "targetCardWidth:", targetCardWidth,
+                                    "cellWidth:", cellWidth,
+                                    "responsiveColumns:", responsiveColumns,
+                                    "visibleColumns:", visibleColumns,
+                                    "leftMargin:", leftMargin,
+                                    "rightMargin:", rightMargin)
+                            }
+                            Component.onCompleted: Qt.callLater(function() {
+                                gameGrid.logGridGeometry("completed")
+                            })
+                            onWidthChanged: logGridGeometry("grid width changed")
+                            onCellWidthChanged: logGridGeometry("cell width changed")
+                            onLeftMarginChanged: logGridGeometry("left margin changed")
+                            onRightMarginChanged: logGridGeometry("right margin changed")
+                            Connections {
+                                target: settingsManager
+                                function onLibraryDensityChanged() {
+                                    Qt.callLater(function() {
+                                        gameGrid.logGridGeometry("density changed")
+                                    })
+                                }
+                            }
                             leftMargin: centeredOuterMargin
                             rightMargin: centeredOuterMargin
                             cellWidth: gridCellWidth
