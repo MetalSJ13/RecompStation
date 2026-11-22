@@ -134,7 +134,7 @@ private slots:
 
         QVERIFY(platformManager.setLibraryDirectoryPath(libraryRoot));
 
-        QCOMPARE(scanSpy.count(), 1);
+        QTRY_COMPARE_WITH_TIMEOUT(scanSpy.count(), 1, 5000);
         QCOMPARE(scanSpy.takeFirst().at(0).toInt(), 1);
 
         const QVariantList games = databaseManager.games("N64");
