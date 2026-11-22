@@ -4377,7 +4377,10 @@ ApplicationWindow {
                             Layout.fillHeight: true
                             visible: gameGrid.count === 0
                             radius: theme.radiusLarge
-                            color: theme.surface
+                            // Apply transparency to the panel fill only. Child text
+                            // retains its own fully opaque theme colors.
+                            color: Qt.rgba(theme.surface.r, theme.surface.g,
+                                           theme.surface.b, 0.78)
                             border.color: theme.divider
                             ColumnLayout {
                                 anchors.centerIn: parent
