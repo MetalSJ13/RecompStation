@@ -28,7 +28,7 @@ LibraryScanner::LibraryScanner(PlatformManager *platformManager,
             return;
 
         qCInfo(lcLibrary) << "Filesystem changes settled; starting automatic library scan.";
-        scanAll();
+        scanAllAsync();
     });
 
     if (m_platformManager) {
@@ -43,7 +43,7 @@ LibraryScanner::LibraryScanner(PlatformManager *platformManager,
             // to use that folder. Scan it immediately so existing games appear
             // without requiring a manual scan or an application restart.
             if (m_platformManager->libraryConfigured())
-                scanAll();
+                scanAllAsync();
         });
         if (m_platformManager->libraryConfigured())
             startMonitoring();
@@ -224,7 +224,7 @@ int LibraryScanner::scanAll()
     m_scanningAll = false;
     m_lastScanCount = totalFound;
     m_lastUnsupportedCount = totalUnsupported;
-    m_lastError = errors.join("\\n");
+    m_lastError = errors.join("\n");
 
     qCInfo(lcLibrary) << "Full library scan finished. Registered games:" << m_lastScanCount;
     if (!m_lastError.isEmpty())
@@ -349,7 +349,7 @@ void LibraryScanner::scanNextPlatformAsync()
     if (m_asyncPlatformIndex >= m_asyncPlatforms.size()) {
         m_lastScanCount = m_asyncTotalFound;
         m_lastUnsupportedCount = m_asyncUnsupportedCount;
-        m_lastError = m_asyncErrors.join("\\n");
+        m_lastError = m_asyncErrors.join("\n");
         m_asyncScanActive = false;
         refreshDirectoryWatches();
 
