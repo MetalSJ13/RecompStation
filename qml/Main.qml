@@ -758,7 +758,7 @@ ApplicationWindow {
     property int selectedLocalGameId: 0
     property string metadataAssociationMessage: ""
     property string artworkMessage: ""
-    property string scanMessage: "Scan your platform folders to discover games."
+    property string scanMessage: "Your library updates automatically when supported game files are added."
     property var pendingReleaseRequests: ({})
     property var releaseStates: ({})
     property var pendingDownloadRequests: ({})
@@ -4604,6 +4604,15 @@ ApplicationWindow {
                                     text: "Place supported game files in your platform folders. RecompStation discovers them automatically and keeps your collection up to date."
                                     color: theme.textSecondary
                                     font.pixelSize: 13 * theme.fontScale
+                                    horizontalAlignment: Text.AlignHCenter
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: libraryScanner.scanning
+                                    text: window.scanMessage
+                                    color: theme.accent
+                                    font.pixelSize: 12 * theme.fontScale
                                     horizontalAlignment: Text.AlignHCenter
                                     wrapMode: Text.Wrap
                                 }
