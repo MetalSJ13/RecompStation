@@ -17,6 +17,7 @@ public:
     explicit ControllerInputRouter(QObject *parent = nullptr);
 
     static QString directionFromAxes(qint16 x, qint16 y, int deadZone = 16000);
+    static bool triggerPressed(qint16 value, int threshold = 16000);
     static QString firstNewInput(const QStringList &activeInputs,
                                   const QStringList &previousInputs);
     static bool actionPressed(const QVariantMap &profile, const QString &action,
