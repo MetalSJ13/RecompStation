@@ -15,6 +15,8 @@ private slots:
     void rejectsMalformedCatalog();
     void matchesGameByTitleAndPlatform();
     void matchesNewN64ProjectsAndMultiplePorts();
+    void matchesTenNewProjectsAndPlatforms();
+    void selectsOnlyPublishedLinuxPackagesForTenNewProjects();
     void selectsOnlyPublishedLinuxPackagesForNewProjects();
     void selectsOnlyCompatibleLinuxAssets();
     void normalizesArchitectures();
@@ -112,7 +114,7 @@ void ProjectCatalogTest::derivesSupportedPlatformsFromProjects()
 {
     ProjectCatalog catalog;
     QVERIFY(catalog.isLoaded());
-    QCOMPARE(catalog.supportedPlatforms(), QStringList{QStringLiteral("N64")});
+    QCOMPARE(catalog.supportedPlatforms(), (QStringList{QStringLiteral("N64"), QStringLiteral("GameCube")}));
 }
 
 void ProjectCatalogTest::rejectsUnknownDevelopmentStatus()
@@ -215,6 +217,64 @@ void ProjectCatalogTest::matchesNewN64ProjectsAndMultiplePorts()
         QVERIFY2(matches.size() == 1, qPrintable(item.first));
         QCOMPARE(matches.first().toMap().value(QStringLiteral("id")).toString(), item.second);
     }
+}
+
+void ProjectCatalogTest::matchesTenNewProjectsAndPlatforms()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.isLoaded());
+    const QList<QPair<QString, QString>> expected = {
+        {QStringLiteral("Yoshi's Story"), QStringLiteral("yoshis-story-dinotale")},
+        {QStringLiteral("Mega Man 64"), QStringLiteral("mega-man-64-recompiled")},
+        {QStringLiteral("F-Zero X"), QStringLiteral("f-zero-x-recompiled")},
+        {QStringLiteral("Mario Golf"), QStringLiteral("mario-golf-64-recompiled")},
+        {QStringLiteral("The Legend of Zelda: Majora's Mask"), QStringLiteral("zelda64recomp-majoras-mask")},
+        {QStringLiteral("The Legend of Zelda: Ocarina of Time"), QStringLiteral("ship-of-harkinian-ocarina-of-time")},
+        {QStringLiteral("Pikmin"), QStringLiteral("open-nectar-pikmin")},
+        {QStringLiteral("Pikmin 2"), QStringLiteral("open-nectar-pikmin")},
+        {QStringLiteral("Super Mario Strikers"), QStringLiteral("super-mario-strikers-recompiled")},
+        {QStringLiteral("The Legend of Zelda: Twilight Princess"), QStringLiteral("twilight-princess-dusklight")},
+        {QStringLiteral("Luigi's Mansion"), QStringLiteral("luigis-mansion-recompiled")}
+    };
+    for (const auto &item : expected) {
+        const QString platform = (item.second == QStringLiteral("open-nectar-pikmin")
+            || item.second == QStringLiteral("super-mario-strikers-recompiled")
+            || item.second == QStringLiteral("twilight-princess-dusklight")
+            || item.second == QStringLiteral("luigis-mansion-recompiled"))
+            ? QStringLiteral("GameCube") : QStringLiteral("N64");
+        const QVariantList matches = catalog.projectsForGame(item.first, platform);
+        QVERIFY2(matches.size() == 1, qPrintable(item.first));
+        QCOMPARE(matches.first().toMap().value(QStringLiteral("id")).toString(), item.second);
+    }
+    QVERIFY(catalog.projectsForGame(QStringLiteral("The Legend of Zelda: Ocarina of Time"),
+                                    QStringLiteral("GameCube")).isEmpty());
+}
+
+void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForTenNewProjects()
+{
+    ProjectCatalog catalog;
+    const auto accepts = [&catalog](const QString &id, const QString &arch,
+                                    const QString &asset) {
+        return catalog.isAssetCompatible(id, arch, asset);
+    };
+    QVERIFY(accepts("yoshis-story-dinotale", "x86_64", "DinoTale-0.1.8-linux.tar.gz"));
+    QVERIFY(!accepts("yoshis-story-dinotale", "x86_64", "DinoTale-0.1.8-windows.zip"));
+    QVERIFY(accepts("mega-man-64-recompiled", "x86_64", "MegaMan64Recompiled-v0.9.1-Linux-X64.zip"));
+    QVERIFY(accepts("mega-man-64-recompiled", "aarch64", "MegaMan64Recompiled-v0.9.1-Linux-ARM64.zip"));
+    QVERIFY(!accepts("mega-man-64-recompiled", "x86_64", "MegaMan64Recompiled-v0.9.1-Flatpak-X64.zip"));
+    QVERIFY(accepts("f-zero-x-recompiled", "x86_64", "FZeroXRecompiled-v0.1.16-linux-x64.tar.gz"));
+    QVERIFY(accepts("mario-golf-64-recompiled", "x86_64", "MarioGolfRecompiled-v0.1.74-linux-x64.tar.gz"));
+    QVERIFY(accepts("zelda64recomp-majoras-mask", "x86_64", "Zelda64Recompiled-v1.2.2-Linux-X64.zip"));
+    QVERIFY(accepts("zelda64recomp-majoras-mask", "aarch64", "Zelda64Recompiled-v1.2.2-Linux-ARM64.zip"));
+    QVERIFY(!accepts("zelda64recomp-majoras-mask", "x86_64", "Zelda64Recompiled-v1.2.2-Linux-Flatpak-X64.zip"));
+    QVERIFY(accepts("ship-of-harkinian-ocarina-of-time", "x86_64", "SoH-Dewey-Bravo.appimage"));
+    QVERIFY(accepts("open-nectar-pikmin", "x86_64", "Open_Nectar-x86_64.AppImage"));
+    QVERIFY(accepts("super-mario-strikers-recompiled", "x86_64", "strikers-linux-x86_64.AppImage"));
+    QVERIFY(accepts("super-mario-strikers-recompiled", "aarch64", "strikers-linux-arm64.AppImage"));
+    QVERIFY(accepts("twilight-princess-dusklight", "x86_64", "Dusklight-v2.0.3-linux-x86_64.AppImage"));
+    QVERIFY(accepts("twilight-princess-dusklight", "aarch64", "Dusklight-v2.0.3-linux-arm64.AppImage"));
+    QVERIFY(accepts("luigis-mansion-recompiled", "x86_64", "LuigisMansionRecompiled-1.1.6-linux-x86_64.tar.gz"));
+    QVERIFY(!accepts("luigis-mansion-recompiled", "x86_64", "LuigisMansionRecompiled-1.1.6-windows-x64.zip"));
 }
 
 void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForNewProjects()
