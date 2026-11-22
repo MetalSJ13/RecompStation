@@ -3546,7 +3546,12 @@ ApplicationWindow {
 
                             GridView {
                             id: gameGrid
-                            anchors.fill: parent
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: parent.width >= 3000
+                                ? Math.min(parent.width, visibleColumns * gridCellWidth + 16)
+                                : parent.width
                             onCountChanged: {
                                 if (count > 0 && window.initialGridRevealPending
                                         && settingsManager.libraryView === "grid") {
@@ -3591,10 +3596,16 @@ ApplicationWindow {
                                 : settingsManager.libraryDensity === "spacious" ? 350 : 270
                             readonly property real gridCellWidth: targetCardWidth + 14
                             readonly property int responsiveColumns:
-                                Math.max(1, Math.floor(Math.max(0, width - 16)
+                                Math.max(1, Math.floor(Math.max(0, parent.width - 16)
                                     / Math.max(1, gridCellWidth)))
+                            // Keep 4K ultrawide grids visually balanced instead of
+                            // allowing the full width to become an excessive number of columns.
+                            // Smaller reference resolutions retain their natural column count.
+                            readonly property int visibleColumns:
+                                parent.width >= 3000
+                                    ? Math.min(8, responsiveColumns) : responsiveColumns
                             readonly property real centeredOuterMargin:
-                                Math.max(8, (width - responsiveColumns * gridCellWidth) / 2)
+                                Math.max(8, (width - visibleColumns * gridCellWidth) / 2)
                             leftMargin: centeredOuterMargin
                             rightMargin: centeredOuterMargin
                             cellWidth: gridCellWidth
