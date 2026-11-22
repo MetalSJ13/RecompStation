@@ -364,6 +364,7 @@ bool SettingsManager::saveControllerProfile(const QString &guid, const QVariantM
         QStringLiteral("back"), QStringLiteral("guide"), QStringLiteral("start"),
         QStringLiteral("leftstick"), QStringLiteral("rightstick"),
         QStringLiteral("leftshoulder"), QStringLiteral("rightshoulder"),
+        QStringLiteral("lefttrigger"), QStringLiteral("righttrigger"),
         QStringLiteral("dpad-up"), QStringLiteral("dpad-down"),
         QStringLiteral("dpad-left"), QStringLiteral("dpad-right"),
         QStringLiteral("leftstick-up"), QStringLiteral("leftstick-down"),
