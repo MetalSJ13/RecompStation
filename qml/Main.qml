@@ -6617,26 +6617,24 @@ ApplicationWindow {
                                                     }
                                                     onClicked: controllerManager.startMappingCapture(modelData.key, true)
                                                 }
+                                                Button {
+                                                    id: cancelMappingCaptureButton
+                                                    text: "Cancel"
+                                                    visible: controllerManager.mappingCaptureActive
+                                                        && controllerManager.mappingCaptureAction === modelData.key
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    background: Rectangle {
+                                                        radius: theme.radiusSmall
+                                                        color: cancelMappingCaptureButton.activeFocus
+                                                            ? theme.elevatedSurface : theme.surface
+                                                        border.color: cancelMappingCaptureButton.activeFocus
+                                                            ? theme.accent : theme.divider
+                                                        border.width: cancelMappingCaptureButton.activeFocus ? 2 : 1
+                                                    }
+                                                    onClicked: controllerManager.cancelMappingCapture()
+                                                }
                                             }
-                                        }
-                                    }
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        visible: controllerManager.mappingCaptureActive
-                                        Button {
-                                            id: cancelMappingCaptureButton
-                                            text: "Cancel capture"
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            background: Rectangle {
-                                                radius: theme.radiusSmall
-                                                color: cancelMappingCaptureButton.activeFocus
-                                                    ? theme.elevatedSurface : theme.surface
-                                                border.color: cancelMappingCaptureButton.activeFocus
-                                                    ? theme.accent : theme.divider
-                                                border.width: cancelMappingCaptureButton.activeFocus ? 2 : 1
-                                            }
-                                            onClicked: controllerManager.cancelMappingCapture()
                                         }
                                     }
                                 }
