@@ -420,7 +420,7 @@ void SettingsManagerTest::persistsTriggerControllerBindings()
 
     const QString guid = QStringLiteral("0123456789abcdef0123456789abcdef");
     SettingsManager manager(settingsPath);
-    QVariantMap profile = SettingsManager::defaultControllerProfile();
+    QVariantMap profile = manager.controllerProfile(guid);
     profile[QStringLiteral("previousSection")] = QVariantList{QStringLiteral("lefttrigger")};
     profile[QStringLiteral("nextSection")] = QVariantList{QStringLiteral("righttrigger")};
     QVERIFY(manager.saveControllerProfile(guid, profile));
@@ -440,7 +440,7 @@ void SettingsManagerTest::persistsStickClickControllerBindings()
     QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
     const QString guid = QStringLiteral("abcdef0123456789abcdef0123456789");
     SettingsManager manager(settingsPath);
-    QVariantMap profile = SettingsManager::defaultControllerProfile();
+    QVariantMap profile = manager.controllerProfile(guid);
     profile[QStringLiteral("select")] = QVariantList{QStringLiteral("leftstick-click")};
     profile[QStringLiteral("back")] = QVariantList{QStringLiteral("rightstick-click")};
     QVERIFY(manager.saveControllerProfile(guid, profile));
