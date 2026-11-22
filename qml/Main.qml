@@ -3523,8 +3523,35 @@ ApplicationWindow {
                                                     ? settingsManager.libraryListDensity
                                                     : settingsManager.libraryView === "carousel"
                                                         ? settingsManager.libraryConsoleDensity
-                                                        : settingsManager.libraryDensity))
+                                                        : settingsManager.libraryDensity)
+                                            )
+                                            Component.onCompleted: {
+                                                console.info("[Density Toolbar] initialized",
+                                                    "view:", settingsManager.libraryView,
+                                                    "currentIndex:", currentIndex,
+                                                    "currentValue:", currentValue,
+                                                    "indexOfStoredValue:", indexOfValue(
+                                                        settingsManager.libraryView === "list"
+                                                            ? settingsManager.libraryListDensity
+                                                            : settingsManager.libraryView === "carousel"
+                                                                ? settingsManager.libraryConsoleDensity
+                                                                : settingsManager.libraryDensity),
+                                                    "gridDensity:", settingsManager.libraryDensity,
+                                                    "listDensity:", settingsManager.libraryListDensity,
+                                                    "carouselDensity:", settingsManager.libraryConsoleDensity)
+                                            }
+                                            onCurrentIndexChanged: {
+                                                console.info("[Density Toolbar] currentIndex changed",
+                                                    "view:", settingsManager.libraryView,
+                                                    "currentIndex:", currentIndex,
+                                                    "currentValue:", currentValue,
+                                                    "gridDensity:", settingsManager.libraryDensity)
+                                            }
                                             onActivated: {
+                                                console.info("[Density Toolbar] activated",
+                                                    "view:", settingsManager.libraryView,
+                                                    "index:", currentIndex,
+                                                    "value:", currentValue)
                                                 if (settingsManager.libraryView === "list")
                                                     settingsManager.libraryListDensity = currentValue
                                                 else if (settingsManager.libraryView === "carousel")
