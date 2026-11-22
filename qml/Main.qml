@@ -4171,22 +4171,28 @@ ApplicationWindow {
                             model: gameGrid.model
                             keyNavigationEnabled: false
                             spacing: 24
+                            // Scale card dimensions gently with the available carousel
+                            // height. This preserves the density choices on smaller windows
+                            // while giving fullscreen/high-resolution layouts more presence.
+                            readonly property real layoutScale:
+                                Math.min(1.2, Math.max(0.9, height / 900))
                             readonly property real cardWidth:
-                                settingsManager.libraryConsoleDensity === "compact" ? 220
-                                : settingsManager.libraryConsoleDensity === "comfortable" ? 270 : 320
-                            // Keep a clear vertical safety area around the cards so
-                            // hover/focus scaling never clips their top or bottom borders.
+                                (settingsManager.libraryConsoleDensity === "compact" ? 220
+                                : settingsManager.libraryConsoleDensity === "comfortable" ? 270 : 320)
+                                * layoutScale
+                            // Keep the complete hover enlargement inside the viewport.
+                            // The ListView itself is positioned by the Library layout, so
+                            // this centers cards in the usable area below the toolbar.
                             readonly property real cardHeight:
-                                Math.min(cardWidth * 1.48, Math.max(220, height - 112))
+                                Math.min(cardWidth * 1.48, Math.max(220, height - 64))
                             topMargin: Math.max(24, (height - cardHeight) / 2)
                             bottomMargin: topMargin
-                            // Center the selected card while navigating the collection,
-                            // but give both endpoints a deliberate left-aligned resting
-                            // position. The trailing space lets the final card reach the
-                            // same left inset as the first card.
+                            // Pin the current card to the same left inset throughout
+                            // navigation. Matching trailing space allows the final card
+                            // to settle on that exact inset too.
                             leftMargin: 34
                             rightMargin: Math.max(leftMargin, width - leftMargin - cardWidth)
-                            preferredHighlightBegin: (width - cardWidth) / 2
+                            preferredHighlightBegin: leftMargin
                             preferredHighlightEnd: preferredHighlightBegin + cardWidth
                             highlightRangeMode: ListView.StrictlyEnforceRange
                             highlightMoveDuration: settingsManager.reducedMotion ? 0 : 230
