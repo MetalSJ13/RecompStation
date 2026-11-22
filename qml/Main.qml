@@ -360,7 +360,7 @@ ApplicationWindow {
                 consoleView.forceActiveFocus()
                 return
             }
-            const columns = Math.max(1, gameGrid.responsiveColumns)
+            const columns = Math.max(1, gameGrid.visibleColumns)
             const row = Math.floor(next / columns)
             if (direction === "up" && row === 0) {
                 const toolbarItems = []
@@ -3549,9 +3549,7 @@ ApplicationWindow {
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             anchors.horizontalCenter: parent.horizontalCenter
-                            width: parent.width >= 3000
-                                ? Math.min(parent.width, visibleColumns * gridCellWidth + 16)
-                                : parent.width
+                            width: parent.width
                             onCountChanged: {
                                 if (count > 0 && window.initialGridRevealPending
                                         && settingsManager.libraryView === "grid") {
@@ -3605,7 +3603,7 @@ ApplicationWindow {
                                 parent.width >= 3000
                                     ? Math.min(8, responsiveColumns) : responsiveColumns
                             readonly property real centeredOuterMargin:
-                                Math.max(8, (width - visibleColumns * gridCellWidth) / 2)
+                                Math.max(8, (parent.width - visibleColumns * gridCellWidth) / 2)
                             function logGridGeometry(reason) {
                                 console.info("[Grid Geometry]", reason,
                                     "density:", settingsManager.libraryDensity,
