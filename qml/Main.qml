@@ -3324,7 +3324,7 @@ ApplicationWindow {
                 anchors.leftMargin: 30
                 anchors.rightMargin: 30
                 anchors.bottomMargin: 30
-                anchors.topMargin: 82
+                anchors.topMargin: 98
                 currentIndex: currentPage === "Settings" ? 1 : 0
                 Item {
                     ColumnLayout {
@@ -3366,235 +3366,7 @@ ApplicationWindow {
                                 }
                             }
 
-                            Rectangle {
-                                id: libraryFilterPanel
-                                // Keep the filter strip visually compact while the
-                                // collection heading absorbs the flexible space to its left.
-                                Layout.minimumWidth: 520
-                                Layout.preferredWidth: 1080
-                                Layout.maximumWidth: 1080
-                                Layout.preferredHeight: 76
-                                radius: 10
-                                color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.82)
-                                border.color: theme.divider
-                                border.width: 1
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 9
-                                    spacing: 9
-
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        Layout.minimumWidth: 130
-                                        spacing: 3
-                                        Label {
-                                            text: "SEARCH GAMES"
-                                            color: theme.textMuted
-                                            font.pixelSize: 9 * theme.fontScale
-                                            font.bold: true
-                                            font.letterSpacing: 0.8
-                                        }
-                                        TextField {
-                                            Layout.fillWidth: true
-                                            Layout.preferredHeight: 34
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            placeholderText: "Enter a game title"
-                                            selectByMouse: true
-                                            color: theme.textPrimary
-                                            font.pixelSize: 12 * theme.fontScale
-                                            leftPadding: 10
-                                            rightPadding: 10
-                                            onTextChanged: {
-                                                window.librarySearchText = text
-                                                gameGrid.currentIndex = 0
-                                            }
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: theme.surface
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                        }
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.preferredWidth: 230
-                                        Layout.minimumWidth: 160
-                                        spacing: 3
-                                        Label {
-                                            text: "PLATFORM"
-                                            color: theme.textMuted
-                                            font.pixelSize: 9 * theme.fontScale
-                                            font.bold: true
-                                            font.letterSpacing: 0.8
-                                        }
-                                        ComboBox {
-                                            background: Rectangle {
-                                                radius: 7
-                                                color: parent.activeFocus
-                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
-                                                              theme.accent.b, 0.18)
-                                                    : theme.surface
-                                                border.color: parent.activeFocus
-                                                    ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.fillWidth: true
-                                            Layout.preferredHeight: 34
-                                            model: ["All Platforms"].concat(platformManager.platforms())
-                                            currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
-                                            onActivated: {
-                                                window.selectedPlatform = currentText
-                                                gameGrid.currentIndex = 0
-                                            }
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        Layout.fillHeight: true
-                                        Layout.preferredWidth: 1
-                                        color: theme.divider
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.preferredWidth: 150
-                                        Layout.minimumWidth: 105
-                                        spacing: 3
-                                        Label {
-                                            text: "VIEW"
-                                            color: theme.textMuted
-                                            font.pixelSize: 9 * theme.fontScale
-                                            font.bold: true
-                                            font.letterSpacing: 0.8
-                                        }
-                                        ComboBox {
-                                            background: Rectangle {
-                                                radius: 7
-                                                color: parent.activeFocus
-                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
-                                                              theme.accent.b, 0.18)
-                                                    : theme.surface
-                                                border.color: parent.activeFocus
-                                                    ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.fillWidth: true
-                                            Layout.preferredHeight: 34
-                                            textRole: "label"
-                                            valueRole: "value"
-                                            model: [
-                                                { label: "Grid", value: "grid" },
-                                                { label: "List", value: "list" },
-                                                { label: "Carousel", value: "carousel" }
-                                            ]
-                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
-                                            onActivated: settingsManager.libraryView = currentValue
-                                        }
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.preferredWidth: 170
-                                        Layout.minimumWidth: 125
-                                        spacing: 3
-                                        Label {
-                                            text: settingsManager.libraryView === "list" ? "ROW SIZE" : "CARD SIZE"
-                                            color: theme.textMuted
-                                            font.pixelSize: 9 * theme.fontScale
-                                            font.bold: true
-                                            font.letterSpacing: 0.8
-                                        }
-                                        ComboBox {
-                                            background: Rectangle {
-                                                radius: 7
-                                                color: parent.activeFocus
-                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
-                                                              theme.accent.b, 0.18)
-                                                    : theme.surface
-                                                border.color: parent.activeFocus
-                                                    ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.fillWidth: true
-                                            Layout.preferredHeight: 34
-                                            textRole: "label"
-                                            valueRole: "value"
-                                            model: [
-                                                { label: "Compact", value: "compact" },
-                                                { label: "Comfortable", value: "comfortable" },
-                                                { label: "Spacious", value: "spacious" }
-                                            ]
-                                            id: libraryDensityComboBox
-                                            function syncDensitySelection() {
-                                                const storedDensity =
-                                                    settingsManager.libraryView === "list"
-                                                        ? settingsManager.libraryListDensity
-                                                        : settingsManager.libraryView === "carousel"
-                                                            ? settingsManager.libraryConsoleDensity
-                                                            : settingsManager.libraryDensity
-                                                const storedIndex = indexOfValue(storedDensity)
-                                                if (storedIndex >= 0 && currentIndex !== storedIndex)
-                                                    currentIndex = storedIndex
-                                            }
-                                            Component.onCompleted: {
-                                                syncDensitySelection()
-                                                console.info("[Density Toolbar] initialized",
-                                                    "view:", settingsManager.libraryView,
-                                                    "currentIndex:", currentIndex,
-                                                    "currentValue:", currentValue,
-                                                    "gridDensity:", settingsManager.libraryDensity,
-                                                    "listDensity:", settingsManager.libraryListDensity,
-                                                    "carouselDensity:", settingsManager.libraryConsoleDensity)
-                                            }
-                                            Connections {
-                                                target: settingsManager
-                                                function onLibraryViewChanged() {
-                                                    libraryDensityComboBox.syncDensitySelection()
-                                                }
-                                                function onLibraryDensityChanged() {
-                                                    if (settingsManager.libraryView !== "list"
-                                                            && settingsManager.libraryView !== "carousel")
-                                                        libraryDensityComboBox.syncDensitySelection()
-                                                }
-                                                function onLibraryListDensityChanged() {
-                                                    if (settingsManager.libraryView === "list")
-                                                        libraryDensityComboBox.syncDensitySelection()
-                                                }
-                                                function onLibraryConsoleDensityChanged() {
-                                                    if (settingsManager.libraryView === "carousel")
-                                                        libraryDensityComboBox.syncDensitySelection()
-                                                }
-                                            }
-                                            onCurrentIndexChanged: {
-                                                console.info("[Density Toolbar] currentIndex changed",
-                                                    "view:", settingsManager.libraryView,
-                                                    "currentIndex:", currentIndex,
-                                                    "currentValue:", currentValue,
-                                                    "gridDensity:", settingsManager.libraryDensity)
-                                            }
-                                            onActivated: {
-                                                console.info("[Density Toolbar] activated",
-                                                    "view:", settingsManager.libraryView,
-                                                    "index:", currentIndex,
-                                                    "value:", currentValue)
-                                                if (settingsManager.libraryView === "list")
-                                                    settingsManager.libraryListDensity = currentValue
-                                                else if (settingsManager.libraryView === "carousel")
-                                                    settingsManager.libraryConsoleDensity = currentValue
-                                                else
-                                                    settingsManager.libraryDensity = currentValue
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                
                         }
 
                         Item {
@@ -6869,7 +6641,7 @@ ApplicationWindow {
             }
             anchors.left: parent.left
             anchors.right: parent.right
-            height: 66
+            height: 88
             color: Qt.rgba(theme.sidebarBackground.r,
                            theme.sidebarBackground.g,
                            theme.sidebarBackground.b, 0.72)
@@ -6902,6 +6674,238 @@ ApplicationWindow {
                         font.bold: true
                     }
                 }
+
+                            Rectangle {
+                                                id: libraryFilterPanel
+                                                // Keep the filter strip visually compact while the
+                                                // collection heading absorbs the flexible space to its left.
+                                                Layout.minimumWidth: 430
+                                                Layout.preferredWidth: 850
+                                                Layout.maximumWidth: 1080
+                                                Layout.preferredHeight: 72
+                                                radius: 9
+                                visible: currentPage === "Library"
+                                                color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.82)
+                                                border.color: theme.divider
+                                                border.width: 1
+                
+                                                RowLayout {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 9
+                                                    spacing: 9
+                
+                                                    ColumnLayout {
+                                                        Layout.fillWidth: true
+                                                        Layout.minimumWidth: 130
+                                                        spacing: 3
+                                                        Label {
+                                                            text: "SEARCH GAMES"
+                                                            color: theme.textMuted
+                                                            font.pixelSize: 9 * theme.fontScale
+                                                            font.bold: true
+                                                            font.letterSpacing: 0.8
+                                                        }
+                                                        TextField {
+                                                            Layout.fillWidth: true
+                                                            Layout.preferredHeight: 34
+                                                            activeFocusOnTab: true
+                                                            focusPolicy: Qt.StrongFocus
+                                                            placeholderText: "Enter a game title"
+                                                            selectByMouse: true
+                                                            color: theme.textPrimary
+                                                            font.pixelSize: 12 * theme.fontScale
+                                                            leftPadding: 10
+                                                            rightPadding: 10
+                                                            onTextChanged: {
+                                                                window.librarySearchText = text
+                                                                gameGrid.currentIndex = 0
+                                                            }
+                                                            background: Rectangle {
+                                                                radius: 8
+                                                                color: theme.surface
+                                                                border.color: parent.activeFocus ? theme.accent : theme.divider
+                                                                border.width: parent.activeFocus ? 2 : 1
+                                                            }
+                                                        }
+                                                    }
+                
+                                                    ColumnLayout {
+                                                        Layout.preferredWidth: 230
+                                                        Layout.minimumWidth: 160
+                                                        spacing: 3
+                                                        Label {
+                                                            text: "PLATFORM"
+                                                            color: theme.textMuted
+                                                            font.pixelSize: 9 * theme.fontScale
+                                                            font.bold: true
+                                                            font.letterSpacing: 0.8
+                                                        }
+                                                        ComboBox {
+                                                            background: Rectangle {
+                                                                radius: 7
+                                                                color: parent.activeFocus
+                                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
+                                                                              theme.accent.b, 0.18)
+                                                                    : theme.surface
+                                                                border.color: parent.activeFocus
+                                                                    ? theme.accent : theme.divider
+                                                                border.width: parent.activeFocus ? 2 : 1
+                                                            }
+                                                            activeFocusOnTab: true
+                                                            focusPolicy: Qt.StrongFocus
+                                                            Layout.fillWidth: true
+                                                            Layout.preferredHeight: 34
+                                                            model: ["All Platforms"].concat(platformManager.platforms())
+                                                            currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
+                                                            onActivated: {
+                                                                window.selectedPlatform = currentText
+                                                                gameGrid.currentIndex = 0
+                                                            }
+                                                        }
+                                                    }
+                
+                                                    Rectangle {
+                                                        Layout.fillHeight: true
+                                                        Layout.preferredWidth: 1
+                                                        color: theme.divider
+                                                    }
+                
+                                                    ColumnLayout {
+                                                        Layout.preferredWidth: 150
+                                                        Layout.minimumWidth: 105
+                                                        spacing: 3
+                                                        Label {
+                                                            text: "VIEW"
+                                                            color: theme.textMuted
+                                                            font.pixelSize: 9 * theme.fontScale
+                                                            font.bold: true
+                                                            font.letterSpacing: 0.8
+                                                        }
+                                                        ComboBox {
+                                                            background: Rectangle {
+                                                                radius: 7
+                                                                color: parent.activeFocus
+                                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
+                                                                              theme.accent.b, 0.18)
+                                                                    : theme.surface
+                                                                border.color: parent.activeFocus
+                                                                    ? theme.accent : theme.divider
+                                                                border.width: parent.activeFocus ? 2 : 1
+                                                            }
+                                                            activeFocusOnTab: true
+                                                            focusPolicy: Qt.StrongFocus
+                                                            Layout.fillWidth: true
+                                                            Layout.preferredHeight: 34
+                                                            textRole: "label"
+                                                            valueRole: "value"
+                                                            model: [
+                                                                { label: "Grid", value: "grid" },
+                                                                { label: "List", value: "list" },
+                                                                { label: "Carousel", value: "carousel" }
+                                                            ]
+                                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
+                                                            onActivated: settingsManager.libraryView = currentValue
+                                                        }
+                                                    }
+                
+                                                    ColumnLayout {
+                                                        Layout.preferredWidth: 170
+                                                        Layout.minimumWidth: 125
+                                                        spacing: 3
+                                                        Label {
+                                                            text: settingsManager.libraryView === "list" ? "ROW SIZE" : "CARD SIZE"
+                                                            color: theme.textMuted
+                                                            font.pixelSize: 9 * theme.fontScale
+                                                            font.bold: true
+                                                            font.letterSpacing: 0.8
+                                                        }
+                                                        ComboBox {
+                                                            background: Rectangle {
+                                                                radius: 7
+                                                                color: parent.activeFocus
+                                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
+                                                                              theme.accent.b, 0.18)
+                                                                    : theme.surface
+                                                                border.color: parent.activeFocus
+                                                                    ? theme.accent : theme.divider
+                                                                border.width: parent.activeFocus ? 2 : 1
+                                                            }
+                                                            activeFocusOnTab: true
+                                                            focusPolicy: Qt.StrongFocus
+                                                            Layout.fillWidth: true
+                                                            Layout.preferredHeight: 34
+                                                            textRole: "label"
+                                                            valueRole: "value"
+                                                            model: [
+                                                                { label: "Compact", value: "compact" },
+                                                                { label: "Comfortable", value: "comfortable" },
+                                                                { label: "Spacious", value: "spacious" }
+                                                            ]
+                                                            id: libraryDensityComboBox
+                                                            function syncDensitySelection() {
+                                                                const storedDensity =
+                                                                    settingsManager.libraryView === "list"
+                                                                        ? settingsManager.libraryListDensity
+                                                                        : settingsManager.libraryView === "carousel"
+                                                                            ? settingsManager.libraryConsoleDensity
+                                                                            : settingsManager.libraryDensity
+                                                                const storedIndex = indexOfValue(storedDensity)
+                                                                if (storedIndex >= 0 && currentIndex !== storedIndex)
+                                                                    currentIndex = storedIndex
+                                                            }
+                                                            Component.onCompleted: {
+                                                                syncDensitySelection()
+                                                                console.info("[Density Toolbar] initialized",
+                                                                    "view:", settingsManager.libraryView,
+                                                                    "currentIndex:", currentIndex,
+                                                                    "currentValue:", currentValue,
+                                                                    "gridDensity:", settingsManager.libraryDensity,
+                                                                    "listDensity:", settingsManager.libraryListDensity,
+                                                                    "carouselDensity:", settingsManager.libraryConsoleDensity)
+                                                            }
+                                                            Connections {
+                                                                target: settingsManager
+                                                                function onLibraryViewChanged() {
+                                                                    libraryDensityComboBox.syncDensitySelection()
+                                                                }
+                                                                function onLibraryDensityChanged() {
+                                                                    if (settingsManager.libraryView !== "list"
+                                                                            && settingsManager.libraryView !== "carousel")
+                                                                        libraryDensityComboBox.syncDensitySelection()
+                                                                }
+                                                                function onLibraryListDensityChanged() {
+                                                                    if (settingsManager.libraryView === "list")
+                                                                        libraryDensityComboBox.syncDensitySelection()
+                                                                }
+                                                                function onLibraryConsoleDensityChanged() {
+                                                                    if (settingsManager.libraryView === "carousel")
+                                                                        libraryDensityComboBox.syncDensitySelection()
+                                                                }
+                                                            }
+                                                            onCurrentIndexChanged: {
+                                                                console.info("[Density Toolbar] currentIndex changed",
+                                                                    "view:", settingsManager.libraryView,
+                                                                    "currentIndex:", currentIndex,
+                                                                    "currentValue:", currentValue,
+                                                                    "gridDensity:", settingsManager.libraryDensity)
+                                                            }
+                                                            onActivated: {
+                                                                console.info("[Density Toolbar] activated",
+                                                                    "view:", settingsManager.libraryView,
+                                                                    "index:", currentIndex,
+                                                                    "value:", currentValue)
+                                                                if (settingsManager.libraryView === "list")
+                                                                    settingsManager.libraryListDensity = currentValue
+                                                                else if (settingsManager.libraryView === "carousel")
+                                                                    settingsManager.libraryConsoleDensity = currentValue
+                                                                else
+                                                                    settingsManager.libraryDensity = currentValue
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
 
                 Item { Layout.fillWidth: true }
 
