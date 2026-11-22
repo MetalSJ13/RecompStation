@@ -3332,8 +3332,8 @@ ApplicationWindow {
                         // Tighten only the Grid heading-to-card gap as density decreases.
                         // List and Carousel retain their existing spacing.
                         spacing: settingsManager.libraryView === "grid"
-                            ? (settingsManager.libraryDensity === "compact" ? 6
-                                : settingsManager.libraryDensity === "comfortable" ? 10 : 16)
+                            ? (settingsManager.libraryDensity === "compact" ? 0
+                                : settingsManager.libraryDensity === "comfortable" ? 2 : 8)
                             : 18
 
                         RowLayout {
@@ -3431,7 +3431,9 @@ ApplicationWindow {
                             interactive: false
                             // Keep scaled cards and their focus glow inside the viewport,
                             // including the first and last rows.
-                            topMargin: 10
+                            // Combined with the outer layout gap, this produces
+                            // an 8 / 10 / 16 px heading-to-card gap by density.
+                            topMargin: 8
                             bottomMargin: 10
                             // Keep card widths fixed for each density. Center the complete
                             // column block with equal outer margins; GridView keeps a
