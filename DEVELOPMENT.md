@@ -64,7 +64,8 @@ Keep the application buildable after each focused change. Preserve working backe
 - [x] Keep the manual **Refresh All Metadata** workflow available regardless of either automatic preference; manual refresh explicitly retries matching and artwork retrieval.
 - [x] Add persistent automatic metadata-matching and automatic artwork-download preferences, both enabled by default; preserve manual **Refresh All Metadata** as an explicit override.
 - [x] User visually confirmed the new Metadata settings are present.
-- [ ] Build and run locally; verify both preferences persist across restarts, disabled scans skip matching, automatic cover/screenshot downloads respect their preference, and manual refresh overrides both preferences.
+- [x] Build and run locally; verify automatic metadata-matching and automatic artwork-download preferences persist across restarts, including disabled and re-enabled states. **User-confirmed 2026-11-21.**
+- [ ] Verify disabled scans skip matching, automatic cover/screenshot downloads respect the artwork preference, and manual refresh overrides both preferences.
 
 ### First-run experience and library setup
 - [x] Add the optional automatic application-update preference prompt before library-folder setup. Yes, No, closing the prompt, and Escape all complete the preference; dismissal is saved as disabled, and the choice can later be changed in Settings → Application. This is preference UI only: release checks are not connected and no network requests are made.
@@ -276,8 +277,8 @@ The following notes record focused implementation and user-validation updates. T
 **Scope and completion rule:** This work extends Milestone 4's automatic metadata maintenance. The checklist remains planned until the implementation, full automated regression suite, local build, and relevant runtime checks are completed and confirmed. Do not mark tasks complete based solely on code being committed.
 
 - [x] Use one shared discovery/matching pipeline for manual and automatic scans (automatic post-scan scraping and the new manual **Refresh All Metadata** action use the same `LibraryMetadataMatcher` queue; user-confirmed runtime behavior)
-- [x] Add recursive filesystem monitoring for configured platform folders, with a 750 ms debounce and automatic full-library reconciliation (implementation and regression tests committed; runtime scan/reconciliation behavior confirmed; latest full regression run still pending)
-- [x] Detect added and removed games, including newly created nested folders; preserve unavailable database records and avoid duplicate registration (runtime scan behavior and duplicate-safe reconciliation confirmed; latest full regression run still pending)
+- [x] Add recursive filesystem monitoring for configured platform folders, with a 750 ms debounce and automatic full-library reconciliation (implementation, regression tests, runtime scan/reconciliation, and latest full regression run confirmed)
+- [x] Detect added and removed games, including newly created nested folders; preserve unavailable database records and avoid duplicate registration (runtime scan behavior, duplicate-safe reconciliation, and latest full regression run confirmed)
 - [x] Automatically identify metadata using conservative title and platform matching (runtime matching confirmed for representative titles; ambiguous matches remain unresolved for fallback handling and broader confidence-rule tests)
 - [ ] Define and test conservative match-confidence rules; keep ambiguous matches unresolved
 - [x] Add an isolated N64 ROM hashing utility with byte-order detection and MD5/CRC32 calculation. **Verified:** its regression coverage was included in the user-confirmed 18/18 CTest pass on 2026-11-20.
@@ -382,7 +383,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Decouple game-library platform discovery and folder creation from the recompilation-project catalog, so a platform can be scanned even when no native recompilation project exists for it
 - [ ] Verify end-to-end GameCube game detection and ensure a dedicated GameCube folder is created under the configured RecompStation library root
 - [ ] Verify end-to-end Wii game detection and ensure a dedicated Wii folder is created under the configured RecompStation library root
-- [x] Add original Xbox as a first-class library platform with a dedicated folder and recursive .iso/.xiso candidate detection; local build/runtime verification pending. .iso must contain an Xbox XISO image, not an arbitrary or unconverted full-disc dump.
+- [x] Add original Xbox as a first-class library platform with a dedicated folder and recursive .iso/.xiso candidate detection; latest local build and runtime scan confirmed. .iso must contain an Xbox XISO image, not an arbitrary or unconverted full-disc dump.
 - [ ] Investigate Xbox 360 library support; first establish the correct supported disc/container format(s), naming/layout conventions, and reliable detection rules before implementing scanner support or creating the platform folder
 - [ ] Define and test platform-specific file extensions, directory naming, and duplicate-detection rules; do not classify an unknown or unsupported file as a game
 - [ ] Keep library detection support distinct from native recompilation-project availability and launcher compatibility
