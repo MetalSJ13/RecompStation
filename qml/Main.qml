@@ -3894,76 +3894,93 @@ ApplicationWindow {
                                         anchors.margins: 10
                                         spacing: 9
 
-                                        Rectangle {
+                                        Item {
                                             Layout.fillWidth: true
                                             Layout.fillHeight: true
-                                            // Every platform uses the same portrait
-                                            // artwork window. Landscape covers remain
-                                            // uncropped in front of a fitted blurred fill.
                                             Layout.preferredHeight: Math.round((gameTile.width - 20) * 1.5)
                                             Layout.minimumHeight: 96
                                             Layout.maximumHeight: Math.round((gameTile.width - 20) * 1.5)
-                                            radius: theme.radiusSmall
-                                            color: theme.sidebarBackground
-                                            border.width: 1
-                                            border.color: gameTile.highlighted
-                                                ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.78)
-                                                : Qt.rgba(theme.divider.r, theme.divider.g,
-                                                          theme.divider.b, 0.34)
-                                            Behavior on border.color {
-                                                enabled: !settingsManager.reducedMotion
-                                                ColorAnimation { duration: 170; easing.type: Easing.OutCubic }
-                                            }
-                                            clip: true
 
-                                            Image {
-                                                id: artworkBackdrop
-                                                anchors.fill: parent
-                                                source: gameTile.artworkPath
-                                                fillMode: Image.PreserveAspectCrop
-                                                horizontalAlignment: Image.AlignHCenter
-                                                verticalAlignment: Image.AlignVCenter
-                                                asynchronous: true
-                                                cache: true
-                                                visible: gameTile.useBlurredArtworkBackdrop
-                                                opacity: 0.42
-                                            }
-                                            MultiEffect {
-                                                anchors.fill: parent
-                                                source: artworkBackdrop
-                                                blurEnabled: true
-                                                blur: 0.8
-                                                autoPaddingEnabled: false
-                                                visible: gameTile.useBlurredArtworkBackdrop
-                                            }
                                             Rectangle {
                                                 anchors.fill: parent
-                                                color: theme.artworkOverlay
-                                                visible: gameTile.artworkPath.length > 0
+                                                radius: theme.radiusSmall
+                                                color: theme.sidebarBackground
+                                                clip: true
+                                                Image {
+                                                    id: artworkBackdrop
+                                                    anchors.fill: parent
+                                                    source: gameTile.artworkPath
+                                                    fillMode: Image.PreserveAspectCrop
+                                                    horizontalAlignment: Image.AlignHCenter
+                                                    verticalAlignment: Image.AlignVCenter
+                                                    asynchronous: true
+                                                    cache: true
+                                                    visible: gameTile.useBlurredArtworkBackdrop
+                                                    opacity: 0.42
+                                                }
+                                                MultiEffect {
+                                                    anchors.fill: parent
+                                                    source: artworkBackdrop
+                                                    blurEnabled: true
+                                                    blur: 0.8
+                                                    autoPaddingEnabled: false
+                                                    visible: gameTile.useBlurredArtworkBackdrop
+                                                }
+                                                Rectangle {
+                                                    anchors.fill: parent
+                                                    color: theme.artworkOverlay
+                                                    visible: gameTile.artworkPath.length > 0
+                                                }
                                             }
-                                            Image {
-                                                id: gameTileCover
-                                                anchors.fill: parent
-                                                // Preserve the complete cover artwork. The frame
-                                                // background can show through any small aspect-ratio
-                                                // difference instead of cropping the image edges.
-                                                anchors.margins: 0
-                                                source: gameTile.artworkPath
-                                                fillMode: Image.PreserveAspectFit
-                                                asynchronous: true
-                                                cache: true
-                                                smooth: true
-                                                mipmap: true
-                                                visible: status === Image.Ready
-                                            }
-                                            Image {
-                                                anchors.fill: parent
-                                                anchors.margins: 5
-                                                source: "qrc:/icons/game-artwork-unavailable.png"
-                                                fillMode: Image.PreserveAspectFit
-                                                asynchronous: true
-                                                cache: true
-                                                visible: gameTileCover.status !== Image.Ready
+
+                                            // Portrait frame follows the cover's own aspect ratio,
+                                            // bounded by the available artwork viewport. This keeps
+                                            // the complete cover visible without empty bands inside
+                                            // the frame. Landscape artwork keeps the full viewport.
+                                            Rectangle {
+                                                id: gameTileArtworkFrame
+                                                anchors.centerIn: parent
+                                                readonly property real coverRatio:
+                                                    gameTileCover.status === Image.Ready
+                                                    && gameTileCover.sourceSize.height > 0
+                                                    && gameTileCover.sourceSize.width < gameTileCover.sourceSize.height
+                                                        ? gameTileCover.sourceSize.width / gameTileCover.sourceSize.height
+                                                        : parent.width / Math.max(1, parent.height)
+                                                width: Math.min(parent.width, parent.height * coverRatio)
+                                                height: Math.min(parent.height, parent.width / Math.max(0.01, coverRatio))
+                                                radius: theme.radiusSmall
+                                                color: theme.sidebarBackground
+                                                border.width: 1
+                                                border.color: gameTile.highlighted
+                                                    ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.78)
+                                                    : Qt.rgba(theme.divider.r, theme.divider.g,
+                                                              theme.divider.b, 0.34)
+                                                clip: true
+                                                Behavior on border.color {
+                                                    enabled: !settingsManager.reducedMotion
+                                                    ColorAnimation { duration: 170; easing.type: Easing.OutCubic }
+                                                }
+                                                Image {
+                                                    id: gameTileCover
+                                                    anchors.fill: parent
+                                                    anchors.margins: 0
+                                                    source: gameTile.artworkPath
+                                                    fillMode: Image.PreserveAspectFit
+                                                    asynchronous: true
+                                                    cache: true
+                                                    smooth: true
+                                                    mipmap: true
+                                                    visible: status === Image.Ready
+                                                }
+                                                Image {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 5
+                                                    source: "qrc:/icons/game-artwork-unavailable.png"
+                                                    fillMode: Image.PreserveAspectFit
+                                                    asynchronous: true
+                                                    cache: true
+                                                    visible: gameTileCover.status !== Image.Ready
+                                                }
                                             }
                                         }
 
@@ -4353,35 +4370,55 @@ ApplicationWindow {
                                     anchors.fill: parent
                                     anchors.margins: 11
                                     spacing: 9
-                                    Rectangle {
+                                    Item {
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
-                                        radius: theme.radiusSmall
-                                        color: theme.sidebarBackground
-                                        clip: true
-                                        Image {
-                                            id: consoleCover
+
+                                        Rectangle {
                                             anchors.fill: parent
-                                            // Preserve the complete cover artwork. The frame
-                                            // background can show through any small aspect-ratio
-                                            // difference instead of cropping the image edges.
-                                            anchors.margins: 0
-                                            source: consoleTile.artworkPath
-                                            fillMode: Image.PreserveAspectFit
-                                            asynchronous: true
-                                            cache: true
-                                            smooth: true
-                                            mipmap: true
-                                            visible: status === Image.Ready
+                                            radius: theme.radiusSmall
+                                            color: theme.sidebarBackground
                                         }
-                                        Image {
-                                            anchors.fill: parent
-                                            anchors.margins: 5
-                                            source: "qrc:/icons/game-artwork-unavailable.png"
-                                            fillMode: Image.PreserveAspectFit
-                                            asynchronous: true
-                                            cache: true
-                                            visible: consoleCover.status !== Image.Ready
+
+                                        // Match Grid: the inner frame adapts to each portrait
+                                        // cover's native ratio while remaining within the viewport.
+                                        Rectangle {
+                                            id: consoleArtworkFrame
+                                            anchors.centerIn: parent
+                                            readonly property real coverRatio:
+                                                consoleCover.status === Image.Ready
+                                                && consoleCover.sourceSize.height > 0
+                                                && consoleCover.sourceSize.width < consoleCover.sourceSize.height
+                                                    ? consoleCover.sourceSize.width / consoleCover.sourceSize.height
+                                                    : parent.width / Math.max(1, parent.height)
+                                            width: Math.min(parent.width, parent.height * coverRatio)
+                                            height: Math.min(parent.height, parent.width / Math.max(0.01, coverRatio))
+                                            radius: theme.radiusSmall
+                                            color: theme.sidebarBackground
+                                            border.width: 1
+                                            border.color: consoleTile.highlighted ? theme.accent : theme.divider
+                                            clip: true
+                                            Image {
+                                                id: consoleCover
+                                                anchors.fill: parent
+                                                anchors.margins: 0
+                                                source: consoleTile.artworkPath
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                                cache: true
+                                                smooth: true
+                                                mipmap: true
+                                                visible: status === Image.Ready
+                                            }
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 5
+                                                source: "qrc:/icons/game-artwork-unavailable.png"
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                                cache: true
+                                                visible: consoleCover.status !== Image.Ready
+                                            }
                                         }
                                     }
                                     Label {
