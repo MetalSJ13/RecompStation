@@ -6458,8 +6458,8 @@ ApplicationWindow {
                                     Label {
                                         Layout.fillWidth: true
                                         text: controllerManager.mappingCaptureActive
-                                            ? "Press the controller input you want to add. Release the button used to start capture first; capture cancels after 15 seconds."
-                                            : "Choose Add binding, then press a button, D-pad direction, or left-stick direction. Existing bindings are kept."
+                                            ? "Press the controller input you want to add, including a trigger. Release the input used to start capture first; capture cancels after 15 seconds."
+                                            : "Choose Add binding, then press a button, trigger, D-pad direction, or left-stick direction. Existing bindings are kept."
                                         color: controllerManager.mappingCaptureActive ? theme.accent : theme.textSecondary
                                         font.pixelSize: 11 * theme.fontScale
                                         wrapMode: Text.Wrap
