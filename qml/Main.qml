@@ -6685,9 +6685,10 @@ ApplicationWindow {
                                                 Layout.preferredHeight: 72
                                                 radius: 9
                                 visible: currentPage === "Library"
-                                                color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.82)
-                                                border.color: theme.divider
-                                                border.width: 1
+                                                color: Qt.rgba(theme.sidebarBackground.r,
+                                                               theme.sidebarBackground.g,
+                                                               theme.sidebarBackground.b, 0.72)
+                                                border.width: 0
                 
                                                 RowLayout {
                                                     anchors.fill: parent
