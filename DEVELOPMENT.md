@@ -335,7 +335,6 @@ The following notes record focused implementation and user-validation updates. T
 ### Milestone 6: Launcher experience
 
 - [x] Present supported project discovery and installation contextually from game details. **Runtime verified:** the Banjo Recompiled workflow exposed the compatible launcher, completed installation, and successfully launched it through the game workflow.
-- [ ] Derive and display one accurate Playable/Beta/Alpha status per game from curated project/launcher compatibility data (intentionally deferred until the core library experience is settled)
 - [x] Make the Game Details launcher discovery action context-aware: show **Find Compatible Launcher** when no launcher is installed and **Check for Updates** when one is installed. Clarify compatible-release availability and version/platform information. **User-confirmed 2026-11-21:** discovery and installation buttons work in the revised layout; existing launcher actions remain functional.
 - [ ] Refine release/asset selection and architecture compatibility explanations
 - [ ] Improve download progress, cancellation, extraction, installation, and failure feedback. **Partially runtime verified:** Banjo Recompiled archive download, extraction, installation, and Play Game were exercised successfully; cancellation and failure-path feedback still require dedicated validation.
