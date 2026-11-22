@@ -7,7 +7,7 @@ This document is the authoritative development status and implementation order f
 ### Current focus
 - **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream is functionally complete and user-validated on 2026-11-21. The latest stabilization build completed successfully and all 19/19 CTest suites passed on 2026-11-21; runtime startup, five-platform scanning, filesystem monitoring initialization, controller detection, and LaunchBox artwork processing were also confirmed. Milestone 7 remains open for folder-picker/modal controller-only validation, controller-interface polish, accessibility review, and multi-display validation.
 - **Current UI work:** Responsive Library presentation refinement is active on `ui/interface-redesign`. The responsive sizing foundation and Grid/List presentation passes are substantially complete and user-validated. Phase 4 — Carousel View — is in progress: the viewport edge fade has been refined and accepted as a baseline; selection/scrolling behavior and clipping remain to be reviewed. Keep the existing Carousel card-sizing formula, density values, and artwork proportions unchanged during this pass.
-- **Next technical focus:** Resume Milestone 7 controller work: first apply saved profile mappings in the input router, implement button capture/remapping, and add per-device reset controls; then build and visually verify the revised Controller page in connected and disconnected states. Phase 5 — Full Library composition is intentionally deferred until later and must remain open. The remaining Carousel review and other Milestone 7 accessibility, folder-picker/modal, and multi-display items also remain open; do not imply they are complete.
+- **Next technical focus:** Validate the implemented controller profile routing, button capture/remapping, per-device reset, and newly added analog trigger capture/persistence on physical hardware; then build and visually verify the revised Controller page in connected and disconnected states. Phase 5 — Full Library composition is intentionally deferred until later and must remain open. The remaining Carousel review and other Milestone 7 accessibility, folder-picker/modal, and multi-display items also remain open; do not imply they are complete.
 
 ### Implemented foundations
 - **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
@@ -105,9 +105,9 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Expose the existing controller-input enable/disable setting.
 - [x] Document current navigation bindings as read-only rather than presenting them as editable.
 - [x] Expose stable SDL controller GUIDs and persist validated logical-action profiles independently per GUID.
-- [ ] Apply saved profile mappings in the input router; implement button capture/remapping and per-device reset controls.
+- [ ] Validate saved profile mappings in the input router on hardware, including remapped navigation/actions, button capture/replacement, per-device reset, and left/right trigger capture and use. Implementation now routes saved profiles and recognizes/persists SDL trigger axes.
 - [x] Build and verify Settings category navigation and visible focus styling across the tested categories and controls.
-- [ ] Build and visually verify the revised Controller page with connected and disconnected controller states.
+- [ ] Build and visually verify the revised Controller page with connected and disconnected controller states; confirm trigger labels and capture guidance.
 
 ### Settings foundation
 - [x] Normalize Appearance and Application settings content into scrollable panels consistent with the other Settings categories.
@@ -357,7 +357,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Complete controller-only validation of modal dialogs and file-picker interactions, including focus entry, action selection, cancellation, and focus restoration.
 - [x] Validate smooth right-analog-stick scrolling in Library Grid/List (viewport-only movement, tilt-sensitive speed, dead zone, and deceleration on release); user confirmed it works. D-pad navigation remains item-by-item.
 - [x] Validate progressive navigation acceleration in all Library layouts (List, Grid, Carousel) for the left analog stick and D-pad: starts deliberately (280 ms repeat), accelerates to 150 ms and then 75 ms while held; selection advances one item per event. User confirmed accelerated navigation works well across all three views.
-- [ ] Per-device controller profile application, button capture/remapping, and reset are tracked in the authoritative **Controller settings** checklist above; do not treat the earlier GUID-persistence foundation as completion. The active implementation pass adds explicit replacement capture and centralized active-profile reset; local build and hardware validation remain pending.
+- [ ] Controller profile application, button capture/remapping, per-device reset, and left/right trigger support are tracked in the authoritative **Controller settings** checklist above. Implementation now consumes saved mappings in the input router and reads SDL trigger axes; local build and physical-hardware validation remain pending.
 - [x] Support adding and removing button mappings and resetting controller mappings. Existing functionality is present.
 - [ ] Polish the button-mapping GUI so controls, dialogs, focus, hover, and selection states consistently follow the active application theme.
 - [ ] Verify Xbox/PlayStation default controller mappings.
