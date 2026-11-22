@@ -2633,23 +2633,12 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignTop
                 radius: theme.radiusCard
                 color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.12)
-                border.color: theme.textPrimary
-                border.width: 2
                 clip: true
-
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 3
-                    radius: Math.max(0, parent.radius - 2)
-                    color: "transparent"
-                    border.color: theme.accent
-                    border.width: 1
-                }
 
                 Image {
                     id: gameCoverImage
                     anchors.fill: parent
-                    anchors.margins: 5
+                    anchors.margins: 0
                     source: window.selectedGame ? window.selectedGame.artworkPath : ""
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
@@ -2657,7 +2646,7 @@ ApplicationWindow {
                 }
                 Image {
                     anchors.fill: parent
-                    anchors.margins: 5
+                    anchors.margins: 0
                     source: "qrc:/icons/game-artwork-unavailable.png"
                     fillMode: Image.PreserveAspectFit
                     visible: !window.selectedGame
