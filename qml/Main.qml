@@ -4347,19 +4347,30 @@ ApplicationWindow {
                                 height: consoleView.cardHeight
                                 readonly property bool highlighted:
                                     ListView.isCurrentItem || consoleTileMouse.containsMouse
-                                readonly property real edgeDistance: Math.min(
-                                    consoleTile.x + consoleTile.width / 2 - consoleView.contentX,
-                                    consoleView.contentX + consoleView.width
-                                        - (consoleTile.x + consoleTile.width / 2))
-                                // Scale the fade zone with card width so each density
-                                // setting transitions at a consistent visual proportion.
+                                // Fade cards symmetrically as they pass either viewport
+                                // edge. Keep the leading edge fully visible at the initial
+                                // scroll position, where the first card is intentionally inset.
+                                readonly property real leftEdgeDistance:
+                                    consoleTile.x + consoleTile.width / 2 - consoleView.contentX
+                                readonly property real rightEdgeDistance:
+                                    consoleView.width - leftEdgeDistance
                                 readonly property real edgeFadeDistance:
-                                    Math.max(140, consoleView.cardWidth * 0.65)
-                                readonly property real edgeProgress: settingsManager.reducedMotion
-                                    ? 1 : Math.max(0, Math.min(1, edgeDistance / edgeFadeDistance))
-                                readonly property real edgeEase:
-                                    edgeProgress * edgeProgress * (3 - 2 * edgeProgress)
-                                opacity: settingsManager.reducedMotion ? 1 : 0.18 + 0.82 * edgeEase
+                                    Math.max(180, consoleView.cardWidth)
+                                readonly property real leftEdgeProgress:
+                                    Math.max(0, Math.min(1, leftEdgeDistance / edgeFadeDistance))
+                                readonly property real rightEdgeProgress:
+                                    Math.max(0, Math.min(1, rightEdgeDistance / edgeFadeDistance))
+                                readonly property real leftEdgeEase:
+                                    leftEdgeProgress * leftEdgeProgress
+                                    * (3 - 2 * leftEdgeProgress)
+                                readonly property real rightEdgeEase:
+                                    rightEdgeProgress * rightEdgeProgress
+                                    * (3 - 2 * rightEdgeProgress)
+                                readonly property real leftEdgeOpacity:
+                                    consoleView.contentX <= 0 ? 1 : leftEdgeEase
+                                readonly property real rightEdgeOpacity: rightEdgeEase
+                                opacity: settingsManager.reducedMotion ? 1
+                                    : Math.min(leftEdgeOpacity, rightEdgeOpacity)
                                 scale: highlighted ? 1.045 : 1
                                 z: highlighted ? 2 : 1
                                 Behavior on scale {
