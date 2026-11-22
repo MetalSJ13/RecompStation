@@ -109,6 +109,12 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
     m_customLibraryBackground = settings.value(
         QStringLiteral("appearance/customLibraryBackground")).toString();
 
+    qCInfo(lcSettings) << "Loaded library settings:"
+                          << "file:" << m_settingsFilePath
+                          << "view:" << m_libraryView
+                          << "grid density:" << m_libraryDensity
+                          << "list density:" << m_libraryListDensity
+                          << "carousel density:" << m_libraryConsoleDensity;
     qCInfo(lcSettings) << "Loaded theme:" << m_themeName;
     qCInfo(lcSettings) << "Loaded preferred presentation size:" << m_preferredPresentationSize;
     qCInfo(lcSettings) << "Loaded display mode:" << m_displayMode;
