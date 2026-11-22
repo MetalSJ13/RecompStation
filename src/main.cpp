@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     // Reconcile after QML is loaded so the library refresh and metadata-scrape
     // connections receive the scan-completed signal.
     if (settingsManager.scanOnStartup() && platformManager.libraryConfigured())
-        libraryScanner.scanAll();
+        libraryScanner.scanAllAsync();
     else if (!platformManager.libraryConfigured())
         qCInfo(lcApplication) << "Library setup is required before the first scan.";
     else
