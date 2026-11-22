@@ -6533,7 +6533,9 @@ ApplicationWindow {
                                                                     anchors.rightMargin: 4
                                                                     spacing: 5
                                                                     Label {
-                                                                        text: modelData
+                                                                        text: modelData === "lefttrigger" ? "Left trigger"
+                                                                            : modelData === "righttrigger" ? "Right trigger"
+                                                                            : modelData
                                                                         color: theme.textSecondary
                                                                         font.pixelSize: 10 * theme.fontScale
                                                                     }
