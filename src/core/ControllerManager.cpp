@@ -107,7 +107,12 @@ int ControllerManager::profileRevision() const
     return m_profileRevision;
 }
 
-bool ControllerManager::startMappingCapture(const QString &action)
+bool ControllerManager::mappingCaptureReplaceExisting() const
+{
+    return m_mappingCaptureReplaceExisting;
+}
+
+bool ControllerManager::startMappingCapture(const QString &action, bool replaceExisting)
 {
     static const QStringList actions = {
         QStringLiteral("navigateUp"), QStringLiteral("navigateDown"),
@@ -119,6 +124,7 @@ bool ControllerManager::startMappingCapture(const QString &action)
         return false;
 
     m_mappingCaptureAction = action;
+    m_mappingCaptureReplaceExisting = replaceExisting;
     m_mappingCaptureActive = true;
     m_captureAwaitingRelease = true;
     m_previousActiveInputs.clear();
@@ -139,8 +145,21 @@ void ControllerManager::cancelMappingCapture()
     m_mappingCaptureActive = false;
     m_captureAwaitingRelease = false;
     m_mappingCaptureAction.clear();
+    m_mappingCaptureReplaceExisting = false;
     m_previousActiveInputs.clear();
     emit mappingCaptureStateChanged();
+}
+
+bool ControllerManager::resetConnectedControllerProfile()
+{
+    if (!m_connected || !m_settingsManager || m_controllerGuid.isEmpty())
+        return false;
+
+    if (!m_settingsManager->resetControllerProfile(m_controllerGuid))
+        return false;
+
+    loadControllerProfile();
+    return true;
 }
 
 void ControllerManager::loadControllerProfile()
@@ -319,7 +338,8 @@ void ControllerManager::pollController()
                 activeInputs, m_previousActiveInputs);
             if (!input.isEmpty()) {
                     QVariantMap updatedProfile = m_controllerProfile;
-                    QVariantList bindings = updatedProfile.value(m_mappingCaptureAction).toList();
+                    QVariantList bindings = m_mappingCaptureReplaceExisting
+                        ? QVariantList{} : updatedProfile.value(m_mappingCaptureAction).toList();
                     if (!bindings.contains(input))
                         bindings.append(input);
                     updatedProfile.insert(m_mappingCaptureAction, bindings);
@@ -329,6 +349,7 @@ void ControllerManager::pollController()
                         m_mappingCaptureActive = false;
                         m_captureAwaitingRelease = false;
                         m_mappingCaptureAction.clear();
+                        m_mappingCaptureReplaceExisting = false;
                         m_previousActiveInputs.clear();
                         loadControllerProfile();
                         emit mappingCaptureStateChanged();
