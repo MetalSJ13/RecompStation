@@ -3518,27 +3518,46 @@ ApplicationWindow {
                                                 { label: "Comfortable", value: "comfortable" },
                                                 { label: "Spacious", value: "spacious" }
                                             ]
-                                            currentIndex: Math.max(0, indexOfValue(
-                                                settingsManager.libraryView === "list"
-                                                    ? settingsManager.libraryListDensity
-                                                    : settingsManager.libraryView === "carousel"
-                                                        ? settingsManager.libraryConsoleDensity
-                                                        : settingsManager.libraryDensity)
-                                            )
+                                            id: libraryDensityComboBox
+                                            function syncDensitySelection() {
+                                                const storedDensity =
+                                                    settingsManager.libraryView === "list"
+                                                        ? settingsManager.libraryListDensity
+                                                        : settingsManager.libraryView === "carousel"
+                                                            ? settingsManager.libraryConsoleDensity
+                                                            : settingsManager.libraryDensity
+                                                const storedIndex = indexOfValue(storedDensity)
+                                                if (storedIndex >= 0 && currentIndex !== storedIndex)
+                                                    currentIndex = storedIndex
+                                            }
                                             Component.onCompleted: {
+                                                syncDensitySelection()
                                                 console.info("[Density Toolbar] initialized",
                                                     "view:", settingsManager.libraryView,
                                                     "currentIndex:", currentIndex,
                                                     "currentValue:", currentValue,
-                                                    "indexOfStoredValue:", indexOfValue(
-                                                        settingsManager.libraryView === "list"
-                                                            ? settingsManager.libraryListDensity
-                                                            : settingsManager.libraryView === "carousel"
-                                                                ? settingsManager.libraryConsoleDensity
-                                                                : settingsManager.libraryDensity),
                                                     "gridDensity:", settingsManager.libraryDensity,
                                                     "listDensity:", settingsManager.libraryListDensity,
                                                     "carouselDensity:", settingsManager.libraryConsoleDensity)
+                                            }
+                                            Connections {
+                                                target: settingsManager
+                                                function onLibraryViewChanged() {
+                                                    libraryDensityComboBox.syncDensitySelection()
+                                                }
+                                                function onLibraryDensityChanged() {
+                                                    if (settingsManager.libraryView !== "list"
+                                                            && settingsManager.libraryView !== "carousel")
+                                                        libraryDensityComboBox.syncDensitySelection()
+                                                }
+                                                function onLibraryListDensityChanged() {
+                                                    if (settingsManager.libraryView === "list")
+                                                        libraryDensityComboBox.syncDensitySelection()
+                                                }
+                                                function onLibraryConsoleDensityChanged() {
+                                                    if (settingsManager.libraryView === "carousel")
+                                                        libraryDensityComboBox.syncDensitySelection()
+                                                }
                                             }
                                             onCurrentIndexChanged: {
                                                 console.info("[Density Toolbar] currentIndex changed",
