@@ -3944,9 +3944,17 @@ ApplicationWindow {
                                             Image {
                                                 id: gameTileCover
                                                 anchors.fill: parent
-                                                anchors.margins: 5
+                                                // Portrait covers should fill the artwork frame.
+                                                // Crop only the excess edge when their aspect ratio
+                                                // differs from the shared 2:3 window. Landscape
+                                                // covers retain their inset, fitted presentation.
+                                                readonly property bool isPortraitArtwork:
+                                                    sourceSize.height > sourceSize.width
+                                                anchors.margins: isPortraitArtwork ? 1 : 5
                                                 source: gameTile.artworkPath
-                                                fillMode: Image.PreserveAspectFit
+                                                fillMode: isPortraitArtwork
+                                                    ? Image.PreserveAspectCrop
+                                                    : Image.PreserveAspectFit
                                                 asynchronous: true
                                                 cache: true
                                                 visible: status === Image.Ready
