@@ -3634,9 +3634,13 @@ ApplicationWindow {
                             leftMargin: centeredOuterMargin
                             rightMargin: centeredOuterMargin
                             cellWidth: gridCellWidth
-                            // Reserve enough vertical room for the shared 2:3 artwork
-                            // frame plus the title and platform footer.
-                            cellHeight: Math.round(cellWidth * 1.76)
+                            // Match the card height to its actual content: a 2:3
+                            // artwork frame (the card width minus its 20 px inner
+                            // horizontal margins), plus the title/platform footer,
+                            // layout spacing, and outer vertical padding.
+                            readonly property real gridCardHeight:
+                                Math.round((targetCardWidth - 20) * 1.5 + 72)
+                            cellHeight: gridCardHeight + 14
                             // Window-level shortcuts own directional movement so
                             // keyboard input cannot be processed twice by the view.
                             keyNavigationEnabled: false
