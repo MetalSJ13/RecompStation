@@ -4174,14 +4174,18 @@ ApplicationWindow {
                             readonly property real cardWidth:
                                 settingsManager.libraryConsoleDensity === "compact" ? 220
                                 : settingsManager.libraryConsoleDensity === "comfortable" ? 270 : 320
+                            // Keep a clear vertical safety area around the cards so
+                            // hover/focus scaling never clips their top or bottom borders.
                             readonly property real cardHeight:
-                                Math.min(Math.max(220, height - 24), cardWidth * 1.48)
-                            topMargin: Math.max(8, (height - cardHeight) / 2)
+                                Math.min(cardWidth * 1.48, Math.max(220, height - 112))
+                            topMargin: Math.max(24, (height - cardHeight) / 2)
                             bottomMargin: topMargin
-                            // Keep the ends compact: the first and last covers should
-                            // sit near the viewport edges instead of floating at center.
+                            // Center the selected card while navigating the collection,
+                            // but give both endpoints a deliberate left-aligned resting
+                            // position. The trailing space lets the final card reach the
+                            // same left inset as the first card.
                             leftMargin: 34
-                            rightMargin: 34
+                            rightMargin: Math.max(leftMargin, width - leftMargin - cardWidth)
                             preferredHighlightBegin: (width - cardWidth) / 2
                             preferredHighlightEnd: preferredHighlightBegin + cardWidth
                             highlightRangeMode: ListView.StrictlyEnforceRange
