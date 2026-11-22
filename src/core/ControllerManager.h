@@ -92,6 +92,7 @@ private:
     QVariantMap m_controllerProfile;
     QString m_mappingCaptureAction;
     QStringList m_previousActiveInputs;
+    QStringList m_captureInputsAwaitingRelease;
     bool m_mappingCaptureActive = false;
     bool m_mappingCaptureReplaceExisting = false;
     bool m_captureAwaitingRelease = false;
