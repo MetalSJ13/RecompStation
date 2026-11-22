@@ -3947,10 +3947,13 @@ ApplicationWindow {
                                                     Math.max(1, parent.width - frameInset * 2)
                                                 readonly property real availableHeight:
                                                     Math.max(1, parent.height - frameInset * 2)
+                                                // Follow the real aspect ratio for every platform,
+                                                // not just portrait covers. This lets GameCube, Wii,
+                                                // and Xbox artwork meet all four inner-frame edges.
                                                 readonly property real coverRatio:
                                                     gameTileCover.status === Image.Ready
+                                                    && gameTileCover.sourceSize.width > 0
                                                     && gameTileCover.sourceSize.height > 0
-                                                    && gameTileCover.sourceSize.width < gameTileCover.sourceSize.height
                                                         ? gameTileCover.sourceSize.width / gameTileCover.sourceSize.height
                                                         : availableWidth / availableHeight
                                                 width: Math.min(availableWidth, availableHeight * coverRatio)
@@ -4399,10 +4402,12 @@ ApplicationWindow {
                                                 Math.max(1, parent.width - frameInset * 2)
                                             readonly property real availableHeight:
                                                 Math.max(1, parent.height - frameInset * 2)
+                                            // Use the actual cover ratio for portrait and
+                                            // landscape artwork alike, matching Grid exactly.
                                             readonly property real coverRatio:
                                                 consoleCover.status === Image.Ready
+                                                && consoleCover.sourceSize.width > 0
                                                 && consoleCover.sourceSize.height > 0
-                                                && consoleCover.sourceSize.width < consoleCover.sourceSize.height
                                                     ? consoleCover.sourceSize.width / consoleCover.sourceSize.height
                                                     : availableWidth / availableHeight
                                             width: Math.min(availableWidth, availableHeight * coverRatio)
