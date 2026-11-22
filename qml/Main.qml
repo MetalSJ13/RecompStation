@@ -4185,8 +4185,13 @@ ApplicationWindow {
                             // this centers cards in the usable area below the toolbar.
                             readonly property real cardHeight:
                                 Math.min(cardWidth * 1.48, Math.max(220, height - 64))
-                            topMargin: Math.max(24, (height - cardHeight) / 2)
-                            bottomMargin: topMargin
+                            // Add breathing room below the library toolbar without
+                            // relying on a fixed window-position offset. The extra spacing
+                            // scales with the carousel viewport on different displays.
+                            readonly property real verticalOffset:
+                                Math.min(64, Math.max(32, height * 0.06))
+                            topMargin: Math.max(24, (height - cardHeight) / 2) + verticalOffset
+                            bottomMargin: Math.max(24, (height - cardHeight) / 2)
                             // Pin the current card to the same left inset throughout
                             // navigation. Matching trailing space allows the final card
                             // to settle on that exact inset too.
