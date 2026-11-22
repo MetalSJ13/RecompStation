@@ -600,7 +600,7 @@
         "x86_64": {
           "assetNameRegex": "^LuigisMansionRecompiled-[0-9.]+-linux-x86_64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
-          "executablePath": "LuigisMansionRecompiled"
+          "executablePath": "LuigisMansionRecompiled.sh"
         }
       }
     }
