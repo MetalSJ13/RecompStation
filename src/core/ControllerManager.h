@@ -27,6 +27,7 @@ class ControllerManager final : public QObject
     Q_PROPERTY(bool navigationAccelerationEnabled READ navigationAccelerationEnabled WRITE setNavigationAccelerationEnabled)
     Q_PROPERTY(bool mappingCaptureActive READ mappingCaptureActive NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(QString mappingCaptureAction READ mappingCaptureAction NOTIFY mappingCaptureStateChanged)
+    Q_PROPERTY(bool mappingCaptureReplaceExisting READ mappingCaptureReplaceExisting NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(int profileRevision READ profileRevision NOTIFY controllerProfileChanged)
 
 public:
@@ -44,6 +45,7 @@ public:
     bool navigationAccelerationEnabled() const;
     bool mappingCaptureActive() const;
     QString mappingCaptureAction() const;
+    bool mappingCaptureReplaceExisting() const;
     int profileRevision() const;
 
 public slots:
@@ -52,7 +54,8 @@ public slots:
     void setNavigationAccelerationEnabled(bool enabled);
     void setSettingsManager(SettingsManager *settingsManager);
     Q_INVOKABLE void reloadControllerProfile();
-    Q_INVOKABLE bool startMappingCapture(const QString &action);
+    Q_INVOKABLE bool startMappingCapture(const QString &action, bool replaceExisting = false);
+    Q_INVOKABLE bool resetConnectedControllerProfile();
     Q_INVOKABLE void cancelMappingCapture();
 
 signals:
@@ -90,6 +93,7 @@ private:
     QString m_mappingCaptureAction;
     QStringList m_previousActiveInputs;
     bool m_mappingCaptureActive = false;
+    bool m_mappingCaptureReplaceExisting = false;
     bool m_captureAwaitingRelease = false;
     int m_profileRevision = 0;
     QString m_controllerName;
