@@ -28,7 +28,8 @@ LibraryScanner::LibraryScanner(PlatformManager *platformManager,
             return;
 
         qCInfo(lcLibrary) << "Filesystem changes settled; starting automatic library scan.";
-        scanAllAsync();
+        if (!scanAllAsync())
+            m_watchDebounceTimer.start();
     });
 
     if (m_platformManager) {
