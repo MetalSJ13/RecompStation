@@ -4365,9 +4365,15 @@ ApplicationWindow {
                                         Image {
                                             id: consoleCover
                                             anchors.fill: parent
-                                            anchors.margins: 5
+                                            // Match Grid: portrait covers fill the inner frame,
+                                            // while landscape covers keep their inset fitted layout.
+                                            readonly property bool isPortraitArtwork:
+                                                sourceSize.height > sourceSize.width
+                                            anchors.margins: isPortraitArtwork ? 1 : 5
                                             source: consoleTile.artworkPath
-                                            fillMode: Image.PreserveAspectFit
+                                            fillMode: isPortraitArtwork
+                                                ? Image.PreserveAspectCrop
+                                                : Image.PreserveAspectFit
                                             asynchronous: true
                                             cache: true
                                             visible: status === Image.Ready
