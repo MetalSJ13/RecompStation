@@ -126,7 +126,7 @@ The following notes record focused implementation and user-validation updates. T
 - [x] Refine Carousel viewport-edge fading, including the left-edge initial-position exception and trailing-edge-based right fade. User reviewed the result and accepted it as a good baseline on 2026-11-22.
 - [ ] Review Carousel selected-card emphasis and horizontal scrolling/navigation animations; preserve the current card sizing and density calculations during this pass.
 - [ ] Verify Carousel clipping at both viewport edges, including enlarged selected cards and card borders.
-- [ ] Verify Carousel hover does not cascade through cards when the pointer is stationary near screen edges; selection should follow actual pointer movement.
+- [x] Verify Carousel hover does not cascade through cards when the pointer is stationary near screen edges; selection should follow actual pointer movement.
 - [x] Add coordinated static/animated/custom library background treatments.
 - [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
 - [x] Validate fullscreen startup and the coordinated startup Grid reveal on the user's Wayland desktop; no initial windowed flash or duplicate/late card animation remains.
