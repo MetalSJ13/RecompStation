@@ -5730,7 +5730,7 @@ ApplicationWindow {
                                         Layout.preferredHeight: 44
                                         text: "Scan Library Now"; highlighted: true
                                         enabled: platformManager.libraryConfigured
-                                        onClicked: { window.scanMessage = "Scanning configured game folders..."; libraryScanner.scanAll() }
+                                        onClicked: { libraryScanner.scanAllAsync() }
                                     }
                                     Label {
                                         Layout.fillWidth: true
