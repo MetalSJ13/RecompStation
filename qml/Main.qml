@@ -2966,7 +2966,9 @@ ApplicationWindow {
                                         && !window.pendingReleaseRequestsForProject(
                                             gameDetailsPopup.selectedProject.id)
                                     text: gameDetailsPopup.releaseState.loading
-                                        ? "Checking…" : "Check for Updates"
+                                        ? "Checking…"
+                                        : gameDetailsPopup.installedProject !== null
+                                            ? "Check for Updates" : "Find Compatible Launcher"
                                     onClicked: window.checkProjectRelease(
                                         gameDetailsPopup.selectedProject)
                                 }
@@ -2994,7 +2996,19 @@ ApplicationWindow {
                                         && !!gameDetailsPopup.releaseInfo
                                         && gameDetailsPopup.selectedAsset !== null
                                         && gameDetailsPopup.installedProject === null
-                                    text: "Available " + gameDetailsPopup.releaseTag
+                                    text: "Compatible launcher available"
+                                    color: theme.success
+                                    font.pixelSize: 12 * theme.fontScale
+                                    font.bold: true
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: gameDetailsPopup.selectedProject !== null
+                                        && !!gameDetailsPopup.releaseInfo
+                                        && gameDetailsPopup.selectedAsset !== null
+                                        && gameDetailsPopup.installedProject === null
+                                    text: "Version " + gameDetailsPopup.releaseTag
                                         + "    •    Linux / " + projectCatalog.currentArchitecture
                                         + "\n" + gameDetailsPopup.selectedAssetName
                                     color: theme.textSecondary
