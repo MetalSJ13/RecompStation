@@ -370,6 +370,239 @@
           "executablePath": "Paperboat.AppImage"
         }
       }
+    },
+    {
+      "id": "yoshis-story-dinotale",
+      "name": "DinoTale (Yoshi's Story)",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Yoshi's Story",
+        "Yoshi Story",
+        "DinoTale"
+      ],
+      "repositoryOwner": "wootbeer",
+      "repositoryName": "dinotale",
+      "romRequirements": "Requires the USA Yoshi's Story ROM (SHA-1 B13072FEF6C6DF48C07D8822C01E5BC59036F6DA). The project does not include game files; later levels and boss fights are still being tested.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^DinoTale-[0-9.]+-linux\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "DinoTale"
+        }
+      }
+    },
+    {
+      "id": "mega-man-64-recompiled",
+      "name": "Mega Man 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Mega Man 64",
+        "MegaMan 64",
+        "Mega Man 64: Recompiled"
+      ],
+      "repositoryOwner": "MegaMan64Recomp",
+      "repositoryName": "MegaMan64Recompiled",
+      "romRequirements": "Requires your own supported Mega Man 64 ROM; the project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MegaMan64Recompiled-v[0-9.]+-Linux-X64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MegaMan64Recompiled"
+        },
+        "aarch64": {
+          "assetNameRegex": "^MegaMan64Recompiled-v[0-9.]+-Linux-ARM64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MegaMan64Recompiled"
+        }
+      }
+    },
+    {
+      "id": "f-zero-x-recompiled",
+      "name": "F-Zero X: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "F-Zero X",
+        "F Zero X",
+        "F-Zero X: Recompiled"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "f-zero-x-recomp",
+      "romRequirements": "Requires the USA first-release F-Zero X ROM (big-endian .z64, 16 MiB, SHA-1 5f658e88ffa9de23cba6986a8fd3d3a90d7b4340). Other regions, revisions and the 64DD Expansion Kit are not supported.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^FZeroXRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "FZeroXRecompiled"
+        }
+      }
+    },
+    {
+      "id": "mario-golf-64-recompiled",
+      "name": "Mario Golf: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Mario Golf",
+        "Mario Golf 64",
+        "Mario Golf: Recompiled"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "mario-golf-recomp",
+      "romRequirements": "Requires the USA Mario Golf ROM as a big-endian .z64 (32 MiB, SHA-1 e2c4e7a905b29529b49a1619a401fe699224829b), or the supported 24 MiB dump. Other regions and revisions are not supported.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MarioGolfRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "MarioGolfRecompiled"
+        }
+      }
+    },
+    {
+      "id": "zelda64recomp-majoras-mask",
+      "name": "The Legend of Zelda: Majora's Mask (Zelda 64: Recompiled)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "The Legend of Zelda: Majora's Mask",
+        "Zelda: Majora's Mask",
+        "Majora's Mask",
+        "Zelda 64: Recompiled"
+      ],
+      "repositoryOwner": "Zelda64Recomp",
+      "repositoryName": "Zelda64Recomp",
+      "romRequirements": "Requires the North American Majora's Mask ROM. The project does not include game assets. Note: this release is for Majora's Mask; Ocarina of Time support is still in development.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Zelda64Recompiled-v[0-9.]+-Linux-X64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Zelda64Recompiled"
+        },
+        "aarch64": {
+          "assetNameRegex": "^Zelda64Recompiled-v[0-9.]+-Linux-ARM64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Zelda64Recompiled"
+        }
+      }
+    },
+    {
+      "id": "ship-of-harkinian-ocarina-of-time",
+      "name": "Ship of Harkinian (Ocarina of Time)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "The Legend of Zelda: Ocarina of Time",
+        "Zelda: Ocarina of Time",
+        "Ocarina of Time",
+        "Ship of Harkinian"
+      ],
+      "repositoryOwner": "HarbourMasters",
+      "repositoryName": "Shipwright",
+      "romRequirements": "Requires a legally acquired supported Ocarina of Time ROM. The Linux AppImage does not include the original game's copyrighted assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^SoH-.*\\.appimage$",
+          "packageFormat": "appimage",
+          "executablePath": "ShipOfHarkinian.AppImage"
+        }
+      }
+    },
+    {
+      "id": "open-nectar-pikmin",
+      "name": "Open Nectar (Pikmin & Pikmin 2)",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Pikmin",
+        "Pikmin 1",
+        "Pikmin 2",
+        "Pikmin: New Play Control"
+      ],
+      "repositoryOwner": "SSunnKing",
+      "repositoryName": "Open-Nectar---Pikmin-Native-PC-Mobile-Port",
+      "romRequirements": "Supports legally obtained Pikmin and Pikmin 2 GameCube discs. The project does not include game data; install each game from your own disc image through the Open Nectar launcher. Linux AppImage requires x86-64 and glibc 2.29 or newer.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Open_Nectar-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Open_Nectar.AppImage"
+        }
+      }
+    },
+    {
+      "id": "super-mario-strikers-recompiled",
+      "name": "Super Mario Strikers (Strikers)",
+      "platform": "GameCube",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Super Mario Strikers",
+        "Mario Strikers",
+        "Strikers"
+      ],
+      "repositoryOwner": "new-coke",
+      "repositoryName": "strikers",
+      "romRequirements": "Requires game data from your own supported Super Mario Strikers disc image. Linux AppImages are available for x86-64 and ARM64; the release also provides Linux tar.gz archives.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^strikers-linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Strikers.AppImage"
+        },
+        "aarch64": {
+          "assetNameRegex": "^strikers-linux-arm64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Strikers.AppImage"
+        }
+      }
+    },
+    {
+      "id": "twilight-princess-dusklight",
+      "name": "The Legend of Zelda: Twilight Princess (Dusklight)",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "The Legend of Zelda: Twilight Princess",
+        "Zelda: Twilight Princess",
+        "Twilight Princess",
+        "Dusklight"
+      ],
+      "repositoryOwner": "TwilitRealm",
+      "repositoryName": "dusklight",
+      "romRequirements": "Requires your own Twilight Princess disc image. Dusklight accepts commercial GameCube and Wii discs except the Korean Wii release, but is based on the GameCube decompilation and presents the GameCube version's HUD and related behavior. Linux AppImages are published for x86-64 and ARM64.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Dusklight-v[0-9.]+-linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Dusklight.AppImage"
+        },
+        "aarch64": {
+          "assetNameRegex": "^Dusklight-v[0-9.]+-linux-arm64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Dusklight.AppImage"
+        }
+      }
+    },
+    {
+      "id": "luigis-mansion-recompiled",
+      "name": "Luigi's Mansion Recompiled",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Luigi's Mansion",
+        "Luigi's Mansion: Recompiled"
+      ],
+      "repositoryOwner": "rob646464",
+      "repositoryName": "luigis-mansion-recompiled",
+      "romRequirements": "Requires your own USA (GLME01) and/or European (GLMP01) Luigi's Mansion disc image. No game data is included.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^LuigisMansionRecompiled-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "LuigisMansionRecompiled"
+        }
+      }
     }
   ]
 }
