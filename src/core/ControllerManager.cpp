@@ -315,6 +315,14 @@ void ControllerManager::pollController()
     addButton(SDL_CONTROLLER_BUTTON_RIGHTSTICK, QStringLiteral("rightstick"));
     addButton(SDL_CONTROLLER_BUTTON_LEFTSHOULDER, QStringLiteral("leftshoulder"));
     addButton(SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, QStringLiteral("rightshoulder"));
+    const Sint16 leftTrigger = SDL_GameControllerGetAxis(
+        m_controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+    const Sint16 rightTrigger = SDL_GameControllerGetAxis(
+        m_controller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+    if (ControllerInputRouter::triggerPressed(leftTrigger))
+        activeInputs.append(QStringLiteral("lefttrigger"));
+    if (ControllerInputRouter::triggerPressed(rightTrigger))
+        activeInputs.append(QStringLiteral("righttrigger"));
     addButton(SDL_CONTROLLER_BUTTON_DPAD_UP, QStringLiteral("dpad-up"));
     addButton(SDL_CONTROLLER_BUTTON_DPAD_DOWN, QStringLiteral("dpad-down"));
     addButton(SDL_CONTROLLER_BUTTON_DPAD_LEFT, QStringLiteral("dpad-left"));
