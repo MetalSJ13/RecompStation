@@ -88,7 +88,7 @@ The responsive Library presentation work is being tracked as a focused five-phas
 - [x] Make the library-folder setup overlay non-modal so mouse users can still use the toolbar and navigate to Settings while setup remains incomplete.
 - [x] User exercised the reset/setup flow, selected an existing library root, corrected an initially incorrect folder path, and confirmed that the subsequent scan discovers the games and automatically starts metadata matching.
 - [ ] Complete validation of both empty-library and populated-library presentation after a full reset; only the populated-library scan/matching path has been confirmed in this pass.
-- [ ] Revisit the empty-library presentation only after observing the complete reset/first-run flow. A trial that hid the empty state until a library folder was configured was reverted at the user's request; current behavior is intentionally unchanged.
+- [x] Revisit the empty-library presentation after reset/first-run testing. The trial that hid the empty state until a library folder was configured was reverted at the user's request; current behavior is intentionally unchanged.
 
 ### Library folder browser
 - [x] Replace the native folder picker with the in-app browser shared by first-run setup and Settings.
