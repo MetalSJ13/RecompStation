@@ -4183,18 +4183,8 @@ ApplicationWindow {
                             // Keep the complete hover enlargement inside the viewport.
                             readonly property real cardHeight:
                                 Math.min(cardWidth * 1.48, Math.max(220, height - 64))
-                            // Treat the carousel as a spacious console presentation:
-                            // keep a deliberately large open area between the library
-                            // toolbar/header and the artwork row. Position the cards in the
-                            // lower portion of the available screen, not directly beneath
-                            // the controls. Proportional placement adapts to fullscreen
-                            // and windowed sizes without a fixed pixel offset.
-                            readonly property real cardCenterY: height * 0.72
-                            readonly property real verticalFreeSpace:
-                                Math.max(0, height - cardHeight)
-                            topMargin: Math.max(0, Math.min(verticalFreeSpace,
-                                cardCenterY - cardHeight / 2))
-                            bottomMargin: Math.max(0, verticalFreeSpace - topMargin)
+                            topMargin: Math.max(24, (height - cardHeight) / 2)
+                            bottomMargin: topMargin
                             // Pin the current card to the same left inset throughout
                             // navigation. Matching trailing space allows the final card
                             // to settle on that exact inset too.
