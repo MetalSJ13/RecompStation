@@ -3370,11 +3370,6 @@ ApplicationWindow {
                                         }
                                     }
                                 }
-                                Label {
-                                    text: "Your recompiled game library"
-                                    color: theme.textMuted
-                                    font.pixelSize: 13 * theme.fontScale
-                                }
                             }
 
                 
