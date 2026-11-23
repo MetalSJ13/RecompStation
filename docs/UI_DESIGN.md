@@ -32,7 +32,7 @@ Platforms are filters or navigation choices inside the Game Library, not a separ
    - A global system menu is an overlay for application-level actions such as fullscreen and quit; it is not a third content destination.
 2. **Game Library** (default)
    - Collection header with an always-available game-title search field and platform filter. Search applies to the current platform selection, or the entire collection when All Platforms is selected.
-   - Curated Grid/List/Carousel presentation and view-specific size controls live together in the Library header. Grid and Carousel use independent persistent card-size preferences (Compact, Comfortable, Spacious); List row size remains independent. Carousel uses a single horizontal row of centered cover cards, smooth horizontal navigation, selected-card emphasis, and progressive left/right edge fading. Persist the selected view and both size preferences.
+   - Curated Shelves/Grid/List/Carousel presentation and view-specific size controls live together in the Library header. Grid and Carousel use independent persistent card-size preferences (Compact, Comfortable, Spacious); List row size remains independent. Shelves shows a spotlight panel above one horizontal shelf per platform; Carousel is a hero carousel over the selected game's full-window screenshot (see the Carousel section). Persist the selected view and both size preferences.
    - Game selection opens the immersive Game Details experience.
 3. **Game Details** (full-window modal experience over the Library)
    - Back to Library is always visible.
@@ -218,10 +218,10 @@ Audit follow-up: finish complete keyboard/controller focus and accessibility val
 - Reduced Motion disables the scroll-edge fade by keeping cards fully opaque.
 
 
-### Carousel / Carousel View
-- Add a third Library presentation alongside Grid and List: a single horizontal row of cover cards, inspired by carousel game-library interfaces.
-- Use a consistent, moderate card width so several titles are visible at once; center the selected card and keep its artwork/title treatment legible.
-- Scroll horizontally with smooth flicking and animated directional navigation; selecting a card opens the same Game Details experience as the other views.
-- Reuse the Library card-size preference with carousel-appropriate widths, while keeping card height consistent.
-- Fade cards progressively near the left and right viewport edges to reinforce the carousel depth/continuity. Reduced Motion disables this fade.
-- Keep the view choice persistent and reuse the same filtered library model, platform filter, and search results as Grid and List.
+### Carousel / Carousel View (hero carousel, updated 2026-11-22)
+- The selected game's first screenshot fills the window behind the page and header; a blurred, dimmed cover is used when no screenshot exists. Backdrops cross-fade between selections, under a gradient that keeps the header and details legible. The collection heading is hidden in this view.
+- One edge-to-edge row in library order. The selected cover is centered and about 1.43× larger; covers use their platform frame shapes (N64 7:5, PS1 1:1, disc cases 5:7), carry the outer focus ring when selected, and fade toward the window edges. The row and the details beneath it are centered together as one block, slightly below the middle.
+- The Carousel size preference (Compact / Comfortable / Spacious) sets the row height (170 / 210 / 250 px base), scaled gently with window height.
+- Beneath the selection: platform, recompilation status, and position ("N of M") chips; metadata title; release year and rating (numeric community scores shown as "★ 4.8"); Play when the recompilation is installed, and Details.
+- A / Enter / clicking the selected cover plays an installed recompilation and otherwise opens Game Details. The Details action (Y by default, remappable; `I` on the keyboard) opens Game Details from any Library view. Hover highlights without changing the selection, because the row recenters under the pointer; clicking another cover or using the wheel changes it.
+- Positions animate with Reduced Motion respected. The view keeps the shared filtered model, platform filter, search results, and selection used by the other views, and the choice persists.
