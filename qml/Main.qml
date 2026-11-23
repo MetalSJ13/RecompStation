@@ -4281,9 +4281,18 @@ ApplicationWindow {
                                     shelvesFlick.contentY, shelvesFlick.height,
                                     shelvesFlick.contentHeight)
                                 const row = shelfRepeater.itemAt(s)
-                                if (row && row.shelfList)
-                                    row.shelfList.positionViewAtIndex(
-                                        index - sections[s].start, ListView.Contain)
+                                if (row && row.shelfList) {
+                                    const list = row.shelfList
+                                    const local = index - sections[s].start
+                                    list.positionViewAtIndex(local, ListView.Contain)
+                                    // Keep the shelf's margins at either end so the
+                                    // first and last cards align with the other shelves.
+                                    if (local === 0)
+                                        list.contentX = -list.leftMargin
+                                    else if (local === sections[s].count - 1)
+                                        list.contentX = Math.max(-list.leftMargin,
+                                            list.contentWidth + list.rightMargin - list.width)
+                                }
                             }
 
                             // Spotlight panel.
@@ -4293,7 +4302,7 @@ ApplicationWindow {
                                 anchors.topMargin: 8
                                 anchors.left: parent.left
                                 anchors.right: parent.right
-                                height: Math.round(Math.max(230, Math.min(360, shelvesView.height * 0.4)))
+                                height: Math.round(Math.max(220, Math.min(300, shelvesView.height * 0.34)))
                                 radius: theme.radiusLarge
                                 color: theme.sidebarBackground
                                 clip: true
@@ -4565,6 +4574,7 @@ ApplicationWindow {
                                             height: shelvesView.rowHeight
 
                                             Row {
+                                                x: shelvesView.cardPadding
                                                 height: shelvesView.headerHeight
                                                 spacing: 10
                                                 Label {
@@ -4599,6 +4609,9 @@ ApplicationWindow {
                                                 keyNavigationEnabled: false
                                                 boundsBehavior: Flickable.StopAtBounds
                                                 model: shelfRow.modelData.count
+                                                // Start at the leading margin so every shelf's first
+                                                // card lines up with its header.
+                                                Component.onCompleted: contentX = -leftMargin
 
                                                 delegate: Item {
                                                     id: shelfCard
@@ -7520,9 +7533,12 @@ ApplicationWindow {
                             }
                         }
 
+                        // Grows to fit the pills and clips them only when the
+                        // window is too narrow, so RB stays right after them.
                         Item {
                             Layout.fillWidth: true
                             Layout.minimumWidth: 120
+                            Layout.maximumWidth: platformPillRow.implicitWidth
                             Layout.preferredHeight: 36
                             clip: true
 
@@ -7603,6 +7619,8 @@ ApplicationWindow {
                                 border.color: theme.divider
                             }
                         }
+
+                        Item { Layout.fillWidth: true }
 
                         // Search: a round button that expands into a field. It stays
                         // open while it has focus or holds text.
