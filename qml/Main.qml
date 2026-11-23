@@ -90,7 +90,7 @@ ApplicationWindow {
             return [
                 { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
                 { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
-                { icon: "", key: "PgUp / PgDn", label: "Platform", color: "#A9B7CA", round: false },
+                { icon: "", key: "Q / E", label: "Platform", color: "#A9B7CA", round: false },
                 { icon: "", key: "/", label: "Search", color: "#A9B7CA", round: false },
                 { icon: "", key: "F11", label: "Fullscreen", color: "#A9B7CA", round: false },
                 { icon: "", key: "Ctrl+Q", label: "Quit", color: "#A9B7CA", round: false }
@@ -741,11 +741,11 @@ ApplicationWindow {
             window.scrollSettingsContent("up", Math.max(120, settingsContentCard.height * 0.72))
         }
     }
-    // Library keyboard shortcuts, matching the controller: PgUp/PgDn or Q/E
-    // cycle platform filters (LB/RB), "/" or Ctrl+F opens search. They are
+    // Library keyboard shortcuts, matching the controller: Q/E cycle platform
+    // filters (LB/RB), "/" or Ctrl+F opens search. They are
     // disabled while a text field or open popup owns the keyboard.
     Shortcut {
-        sequences: ["PageUp", "Q"]
+        sequence: "Q"
         context: Qt.ApplicationShortcut
         enabled: window.libraryKeyboardShortcutsAllowed()
         onActivated: {
@@ -754,7 +754,7 @@ ApplicationWindow {
         }
     }
     Shortcut {
-        sequences: ["PageDown", "E"]
+        sequence: "E"
         context: Qt.ApplicationShortcut
         enabled: window.libraryKeyboardShortcutsAllowed()
         onActivated: {
