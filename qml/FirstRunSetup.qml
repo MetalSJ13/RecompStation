@@ -82,11 +82,12 @@ Popup {
             anchors.top: parent.top
             anchors.margins: 28
             Image {
-                source: "qrc:/qt/qml/RecompStation/assets/images/recompstation-controller.png"
-                sourceSize: Qt.size(96, 64)
-                Layout.preferredWidth: 34
-                Layout.preferredHeight: 24
+                source: "qrc:/qt/qml/RecompStation/assets/logo/recompstation-mark.svg"
+                sourceSize: Qt.size(128, 128)
+                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30
                 fillMode: Image.PreserveAspectFit
+                Accessible.ignored: true
             }
             Label {
                 text: "RecompStation"

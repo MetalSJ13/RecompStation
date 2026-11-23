@@ -119,7 +119,14 @@ qt_add_qml_module(RecompStationApp
         qml/LaunchBoxProgress.qml
         qml/LaunchOverlay.qml
     RESOURCES
-        assets/images/recompstation-controller.png
+        assets/logo/recompstation-mark.svg
+        assets/logo/png/recompstation-icon-16.png
+        assets/logo/png/recompstation-icon-24.png
+        assets/logo/png/recompstation-icon-32.png
+        assets/logo/png/recompstation-icon-48.png
+        assets/logo/png/recompstation-icon-64.png
+        assets/logo/png/recompstation-icon-128.png
+        assets/logo/png/recompstation-icon-256.png
 )
 
 # Library wave background shader, compiled to .qsb (Qt Shader Tools) and

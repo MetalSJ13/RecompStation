@@ -7688,13 +7688,13 @@ ApplicationWindow {
                 RowLayout {
                     spacing: 10
                     Image {
-                        source: "qrc:/qt/qml/RecompStation/assets/images/recompstation-controller.png"
-                        sourceSize: Qt.size(384, 256)
+                        source: "qrc:/qt/qml/RecompStation/assets/logo/recompstation-mark.svg"
+                        sourceSize: Qt.size(128, 128)
                         fillMode: Image.PreserveAspectFit
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 28
+                        Layout.preferredWidth: 32
+                        Layout.preferredHeight: 32
                         smooth: true
-                        mipmap: true
+                        Accessible.ignored: true
                     }
                     Label {
                         text: "RecompStation"

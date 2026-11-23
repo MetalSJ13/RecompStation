@@ -1,4 +1,5 @@
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDateTime>
@@ -103,6 +104,15 @@ int main(int argc, char *argv[])
     QGuiApplication::setOrganizationName("RecompStation");
     QGuiApplication::setApplicationName("RecompStation");
     QGuiApplication::setApplicationVersion("0.1.0");
+
+    // Window and taskbar icon (the app icon: pixel d-pad on a dark tile).
+    QIcon applicationIcon;
+    for (int size : {16, 24, 32, 48, 64, 128, 256}) {
+        applicationIcon.addFile(
+            QStringLiteral(":/qt/qml/RecompStation/assets/logo/png/recompstation-icon-%1.png").arg(size),
+            QSize(size, size));
+    }
+    QGuiApplication::setWindowIcon(applicationIcon);
 
     ProjectCatalog projectCatalog;
     if (!projectCatalog.isLoaded())

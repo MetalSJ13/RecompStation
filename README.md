@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/images/recompstation-controller.png" alt="RecompStation" width="120">
+<img src="assets/logo/recompstation-mark.svg" alt="RecompStation logo: a d-pad whose left arm breaks up into pixels" width="128">
 
 # RecompStation
 
