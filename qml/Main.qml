@@ -5,6 +5,7 @@ import QtQuick.Effects
 import QtQuick.Dialogs
 import QtCore
 import "ArtworkLayout.js" as ArtworkLayout
+import "LibraryGridLayout.js" as LibraryGridLayout
 
 ApplicationWindow {
     id: window
@@ -320,8 +321,13 @@ ApplicationWindow {
                 window.moveDirectionalFocus(libraryFilterPanel, direction)
             } else if (direction === "down") {
                 gameGrid.currentIndex = Math.max(0, gameGrid.currentIndex)
-                gameGrid.forceActiveFocus()
-                gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
+                if (window.sectionedLibraryGrid) {
+                    sectionedGrid.forceActiveFocus()
+                    sectionedGrid.positionAtIndex(gameGrid.currentIndex)
+                } else {
+                    gameGrid.forceActiveFocus()
+                    gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
+                }
             }
             return
         }
@@ -359,6 +365,23 @@ ApplicationWindow {
                 gameGrid.currentIndex = next
                 consoleView.currentIndex = next
                 consoleView.forceActiveFocus()
+                return
+            }
+            if (window.sectionedLibraryGrid) {
+                const moved = LibraryGridLayout.moveIndex(
+                    sectionedGrid.layout.sections, sectionedGrid.columns, next, direction)
+                if (moved === LibraryGridLayout.leaveToToolbar) {
+                    const toolbarItems = []
+                    window.collectFocusableItems(libraryFilterPanel, toolbarItems, [])
+                    if (toolbarItems.length > 0)
+                        toolbarItems[0].forceActiveFocus()
+                    return
+                }
+                if (moved < 0 || moved === gameGrid.currentIndex)
+                    return
+                gameGrid.currentIndex = moved
+                sectionedGrid.positionAtIndex(moved)
+                sectionedGrid.forceActiveFocus()
                 return
             }
             const columns = Math.max(1, gameGrid.visibleColumns)
@@ -489,6 +512,8 @@ ApplicationWindow {
                 const tile = consoleView.itemAtIndex(index)
                 if (tile && tile.openDetails)
                     tile.openDetails()
+            } else if (window.sectionedLibraryGrid) {
+                window.openLibraryGameDetails(gameGrid.model[index])
             } else {
                 const tile = gameGrid.itemAtIndex(index)
                 if (tile && tile.openDetails)
@@ -803,7 +828,8 @@ ApplicationWindow {
                 return
             }
 
-            const view = settingsManager.libraryView === "list" ? gameList : gameGrid
+            const view = settingsManager.libraryView === "list" ? gameList
+                : window.sectionedLibraryGrid ? sectionedGrid : gameGrid
             const maxY = Math.max(0, view.contentHeight - view.height)
             const targetVelocity = inputAmount * 9.0
             if (Math.abs(inputAmount) > 0.02)
@@ -1042,6 +1068,31 @@ ApplicationWindow {
                 window.navigationTransitionRunning = false
             }
         }
+    }
+
+    // All Platforms in Grid view uses the sectioned grid: one section per
+    // platform, each with its own row height. Platform filters keep the
+    // single GridView. gameGrid.currentIndex stays the shared selection.
+    readonly property bool sectionedLibraryGrid:
+        settingsManager.libraryView === "grid" && selectedPlatform === "All Platforms"
+
+    // Open Game Details for an entry of the Library model (gameGrid.model).
+    function openLibraryGameDetails(game) {
+        if (!game)
+            return
+        window.selectedGame = {
+            id: game.id,
+            title: game.title,
+            platform: game.platform,
+            path: game.path,
+            artworkPath: game.artworkPath,
+            screenshots: game.screenshots,
+            metadataTitle: game.metadataTitle,
+            metadataOverview: game.metadataOverview,
+            metadataReleaseDate: game.metadataReleaseDate,
+            metadataRating: game.metadataRating
+        }
+        gameDetailsPopup.open()
     }
 
     // Project ids with a managed launcher installation. installedLaunchers()
@@ -2322,6 +2373,8 @@ ApplicationWindow {
                     gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
                 else if (settingsManager.libraryView === "carousel")
                     consoleView.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+                else if (window.sectionedLibraryGrid)
+                    sectionedGrid.positionAtIndex(gameGrid.currentIndex)
                 else
                     gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
 
@@ -3417,8 +3470,12 @@ ApplicationWindow {
                                     window.initialGridRevealPending = false
                                 }
                             }
-                            visible: settingsManager.libraryView === "grid" || opacity > 0
-                            opacity: settingsManager.libraryView === "grid" ? 1 : 0
+                            // Hidden while the sectioned All Platforms grid is shown;
+                            // it still owns the model and the shared selection.
+                            visible: (settingsManager.libraryView === "grid"
+                                      && !window.sectionedLibraryGrid) || opacity > 0
+                            opacity: settingsManager.libraryView === "grid"
+                                && !window.sectionedLibraryGrid ? 1 : 0
                             Behavior on opacity {
                                 enabled: !settingsManager.reducedMotion
                                 NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
@@ -3723,68 +3780,18 @@ ApplicationWindow {
                                     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                                 }
 
-                                // Recompilation status for the caption's second line.
-                                readonly property var supportedProject: {
-                                    const projects = projectCatalog.projectsForGame(
-                                        gameTile.metadataTitle.length > 0
-                                            ? gameTile.metadataTitle : gameTile.title,
-                                        gameTile.platform)
-                                    return projects.length > 0 ? projects[0] : null
-                                }
-                                readonly property bool launcherInstalled:
-                                    gameTile.supportedProject !== null
-                                    && window.installedLauncherProjectIds[
-                                        gameTile.supportedProject.id] === true
-
-                                GameArtwork {
-                                    id: gameTileArtwork
-                                    anchors.top: parent.top
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    height: gameGrid.gridArtworkHeight
-                                    source: gameTile.artworkPath
+                                LibraryCoverCard {
+                                    anchors.fill: parent
+                                    title: gameTile.title
                                     platform: gameTile.platform
-                                    highlighted: gameTile.highlighted
+                                    artworkPath: gameTile.artworkPath
+                                    metadataTitle: gameTile.metadataTitle
+                                    artworkHeight: gameGrid.gridArtworkHeight
                                     focused: gameTile.GridView.isCurrentItem
                                     hovered: tileMouse.containsMouse
                                     reducedMotion: settingsManager.reducedMotion
                                     themeTokens: theme
-                                    frameMode: "platform"
-                                    frameAlignment: "bottom"
-                                    frameInset: 0
-                                    showViewportBackground: false
-                                    showFocusRing: true
-                                }
-
-                                Column {
-                                    anchors.top: gameTileArtwork.bottom
-                                    anchors.topMargin: 9
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    spacing: 3
-
-                                    Label {
-                                        width: parent.width
-                                        text: gameTile.title
-                                        color: theme.textPrimary
-                                        font.pixelSize: 16 * theme.fontScale
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Label {
-                                        width: parent.width
-                                        text: gameTile.launcherInstalled
-                                            ? gameTile.supportedProject.name + " · Installed"
-                                            : gameTile.supportedProject !== null
-                                                ? "Recompilation available"
-                                                : gameTile.platform
-                                        color: gameTile.launcherInstalled ? theme.success
-                                            : gameTile.supportedProject !== null ? theme.accentHover
-                                            : theme.textSecondary
-                                        font.pixelSize: 12 * theme.fontScale
-                                        font.bold: gameTile.supportedProject !== null
-                                        elide: Text.ElideRight
-                                    }
+                                    installedProjectIds: window.installedLauncherProjectIds
                                 }
 
                                 MouseArea {
@@ -3806,6 +3813,274 @@ ApplicationWindow {
                             }
                             ScrollBar.vertical: ScrollBar {
                                 policy: ScrollBar.AlwaysOff
+                            }
+                        }
+
+                        // All Platforms Grid: one section per platform, each with a
+                        // header and its own row height (N64 7:5, PS1 1:1, disc
+                        // cases 5:7). Geometry and navigation come from
+                        // LibraryGridLayout.js. Selection is gameGrid.currentIndex.
+                        Flickable {
+                            id: sectionedGrid
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: gameGrid.width
+                            visible: window.sectionedLibraryGrid || opacity > 0
+                            opacity: window.sectionedLibraryGrid ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                            }
+                            clip: true
+                            // Pointer drags are disabled as in the Grid; the mouse
+                            // wheel is handled below.
+                            interactive: false
+                            contentWidth: width
+                            contentHeight: layout.contentHeight
+                            boundsBehavior: Flickable.StopAtBounds
+
+                            readonly property int columns: Math.max(1, gameGrid.visibleColumns)
+                            readonly property real cardWidth: gameGrid.targetCardWidth
+                            readonly property real cellWidth: gameGrid.gridCellWidth
+                            readonly property real headerHeight: Math.ceil(44 * theme.fontScale)
+                            readonly property var layout: LibraryGridLayout.layoutSections(
+                                LibraryGridLayout.buildSections(gameGrid.model || []), {
+                                    columns: columns,
+                                    cardWidth: cardWidth,
+                                    gap: 14,
+                                    captionHeight: gameGrid.gridCaptionHeight,
+                                    headerHeight: headerHeight,
+                                    sectionSpacing: 26,
+                                    topMargin: gameGrid.topMargin,
+                                    bottomMargin: gameGrid.bottomMargin
+                                })
+
+                            function positionAtIndex(index) {
+                                const rect = LibraryGridLayout.cardRect(
+                                    layout.sections, columns, cellWidth, cardWidth,
+                                    headerHeight, index)
+                                contentY = LibraryGridLayout.contentYForCard(
+                                    rect, contentY, height, contentHeight,
+                                    gameGrid.topMargin, gameGrid.bottomMargin)
+                            }
+
+                            // Keep the scroll position valid when the library,
+                            // search results, or card size change.
+                            onLayoutChanged: contentY = Math.max(0, Math.min(
+                                contentY, Math.max(0, contentHeight - height)))
+
+                            Keys.onReturnPressed: window.openLibraryGameDetails(
+                                gameGrid.model[Math.max(0, gameGrid.currentIndex)])
+                            Keys.onEnterPressed: window.openLibraryGameDetails(
+                                gameGrid.model[Math.max(0, gameGrid.currentIndex)])
+
+                            WheelHandler {
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                onWheel: function(event) {
+                                    if (!window.sectionedLibraryGrid
+                                            || sectionedGrid.contentHeight <= sectionedGrid.height) {
+                                        event.accepted = true
+                                        return
+                                    }
+                                    const delta = event.pixelDelta.y !== 0
+                                        ? event.pixelDelta.y
+                                        : (event.angleDelta.y / 120)
+                                            * gameGrid.cellHeight * 0.85
+                                    const maxContentY = Math.max(
+                                        0, sectionedGrid.contentHeight - sectionedGrid.height)
+                                    sectionedGrid.contentY = Math.max(0, Math.min(
+                                        maxContentY, sectionedGrid.contentY - delta))
+                                    event.accepted = true
+                                }
+                            }
+
+                            Repeater {
+                                model: sectionedGrid.layout.sections
+                                delegate: Item {
+                                    id: gridSection
+                                    required property var modelData
+                                    x: 0
+                                    y: modelData.top
+                                    width: sectionedGrid.width
+                                    height: modelData.height
+
+                                    Row {
+                                        id: sectionHeader
+                                        height: sectionedGrid.headerHeight
+                                        spacing: 10
+                                        Label {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: ({ "N64": "Nintendo 64", "PS1": "PlayStation",
+                                                     "GameCube": "GameCube", "Wii": "Wii",
+                                                     "Xbox": "Xbox" })[gridSection.modelData.platform]
+                                                  || gridSection.modelData.platform
+                                            color: theme.textPrimary
+                                            font.pixelSize: 20 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                        Label {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: gridSection.modelData.count
+                                                + (gridSection.modelData.count === 1 ? " game" : " games")
+                                            color: theme.textMuted
+                                            font.pixelSize: 13 * theme.fontScale
+                                        }
+                                    }
+
+                                    Repeater {
+                                        model: gridSection.modelData.count
+                                        delegate: Item {
+                                            id: sectionCard
+                                            required property int index
+                                            readonly property int gameIndex:
+                                                gridSection.modelData.start + index
+                                            readonly property var game: gameGrid.model
+                                                ? gameGrid.model[gameIndex] : null
+                                            readonly property int row:
+                                                Math.floor(index / sectionedGrid.columns)
+                                            readonly property int column:
+                                                index % sectionedGrid.columns
+                                            readonly property bool isCurrent:
+                                                gameGrid.currentIndex === gameIndex
+                                            x: column * sectionedGrid.cellWidth
+                                            y: sectionedGrid.headerHeight
+                                                + row * gridSection.modelData.rowPitch
+                                            width: sectionedGrid.cardWidth
+                                            height: gridSection.modelData.cardHeight
+                                            z: isCurrent ? 2 : 1
+                                            scale: isCurrent ? 1.035 : 1.0
+                                            Behavior on scale {
+                                                enabled: !settingsManager.reducedMotion
+                                                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                                            }
+
+                                            // Same edge fade as the Grid: smoothstep on the
+                                            // card center's distance from the viewport edges.
+                                            readonly property real contentTop: gridSection.y + y
+                                            readonly property real scrollEdgeDistance: Math.min(
+                                                contentTop + height / 2 - sectionedGrid.contentY,
+                                                sectionedGrid.contentY + sectionedGrid.height
+                                                    - (contentTop + height / 2))
+                                            readonly property real scrollEdgeProgress:
+                                                settingsManager.reducedMotion ? 1
+                                                : Math.max(0, Math.min(1, scrollEdgeDistance / 240))
+                                            readonly property real scrollEdgeOpacity:
+                                                settingsManager.reducedMotion ? 1
+                                                : 0.18 + 0.82 * scrollEdgeProgress * scrollEdgeProgress
+                                                    * (3 - 2 * scrollEdgeProgress)
+
+                                            // Startup / view-switch reveal, matching the Grid:
+                                            // bottom visible rows first, then upward, left to right.
+                                            property real revealOpacity:
+                                                window.initialGridRevealPending
+                                                    && window.sectionedLibraryGrid ? 0 : 1
+                                            property real revealScale:
+                                                window.initialGridRevealPending
+                                                    && window.sectionedLibraryGrid ? 0.94 : 1
+                                            property real revealOffsetY:
+                                                window.initialGridRevealPending
+                                                    && window.sectionedLibraryGrid ? 26 : 0
+                                            readonly property int revealDelayMs: {
+                                                const viewportBottom = sectionedGrid.contentY + sectionedGrid.height
+                                                const rowsFromBottom = Math.max(0, Math.floor(
+                                                    (viewportBottom - contentTop - height)
+                                                    / Math.max(1, gridSection.modelData.rowPitch)))
+                                                const delay = rowsFromBottom * 115 + column * 38
+                                                return isFinite(delay) ? Math.max(0, Math.round(delay)) : 0
+                                            }
+                                            opacity: revealOpacity * scrollEdgeOpacity
+                                            transform: Translate { y: sectionCard.revealOffsetY }
+
+                                            Timer {
+                                                id: sectionRevealFailsafe
+                                                interval: Math.max(1200, sectionCard.revealDelayMs + 900)
+                                                repeat: false
+                                                onTriggered: {
+                                                    if (sectionCard.revealOpacity < 1) {
+                                                        sectionRevealAnimation.stop()
+                                                        sectionCard.revealOpacity = 1
+                                                        sectionCard.revealScale = 1
+                                                        sectionCard.revealOffsetY = 0
+                                                    }
+                                                }
+                                            }
+                                            Connections {
+                                                target: window
+                                                function onGridRevealTokenChanged() {
+                                                    if (!window.sectionedLibraryGrid)
+                                                        return
+                                                    if (settingsManager.reducedMotion) {
+                                                        sectionRevealFailsafe.stop()
+                                                        sectionCard.revealOpacity = 1
+                                                        sectionCard.revealScale = 1
+                                                        sectionCard.revealOffsetY = 0
+                                                        return
+                                                    }
+                                                    sectionCard.revealOpacity = 0
+                                                    sectionCard.revealScale = 0.94
+                                                    sectionCard.revealOffsetY = 26
+                                                    sectionRevealFailsafe.restart()
+                                                    sectionRevealAnimation.restart()
+                                                }
+                                            }
+                                            SequentialAnimation {
+                                                id: sectionRevealAnimation
+                                                PauseAnimation { duration: sectionCard.revealDelayMs }
+                                                ParallelAnimation {
+                                                    NumberAnimation {
+                                                        target: sectionCard; property: "revealOpacity"
+                                                        to: 1; duration: 460; easing.type: Easing.OutCubic
+                                                    }
+                                                    NumberAnimation {
+                                                        target: sectionCard; property: "revealScale"
+                                                        to: 1; duration: 520; easing.type: Easing.OutCubic
+                                                    }
+                                                    NumberAnimation {
+                                                        target: sectionCard; property: "revealOffsetY"
+                                                        to: 0; duration: 520; easing.type: Easing.OutCubic
+                                                    }
+                                                }
+                                                onFinished: sectionRevealFailsafe.stop()
+                                            }
+                                            Component.onCompleted: {
+                                                if (window.initialGridRevealPending
+                                                        && window.sectionedLibraryGrid)
+                                                    sectionRevealFailsafe.start()
+                                            }
+
+                                            LibraryCoverCard {
+                                                anchors.fill: parent
+                                                scale: sectionCard.revealScale
+                                                title: sectionCard.game ? sectionCard.game.title : ""
+                                                platform: sectionCard.game ? sectionCard.game.platform : ""
+                                                artworkPath: sectionCard.game ? sectionCard.game.artworkPath : ""
+                                                metadataTitle: sectionCard.game && sectionCard.game.metadataTitle
+                                                    ? sectionCard.game.metadataTitle : ""
+                                                artworkHeight: gridSection.modelData.artworkHeight
+                                                focused: sectionCard.isCurrent
+                                                hovered: sectionCardMouse.containsMouse
+                                                reducedMotion: settingsManager.reducedMotion
+                                                themeTokens: theme
+                                                installedProjectIds: window.installedLauncherProjectIds
+                                            }
+
+                                            MouseArea {
+                                                id: sectionCardMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                onEntered: {
+                                                    gameGrid.currentIndex = sectionCard.gameIndex
+                                                    window.activeInputDevice = "mouse"
+                                                }
+                                                onClicked: {
+                                                    gameGrid.currentIndex = sectionCard.gameIndex
+                                                    window.openLibraryGameDetails(sectionCard.game)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
