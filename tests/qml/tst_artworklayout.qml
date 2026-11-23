@@ -39,6 +39,13 @@ TestCase {
         compare(ArtworkLayout.frameAspectRatio("platform", "Wii", 1.33, 0.66), 1.33)
     }
 
+    function test_platformRatioToleranceBoundary() {
+        // Within 12% the cover is cropped to the platform frame...
+        compare(ArtworkLayout.frameAspectRatio("platform", "PS1", 1.10, 0.66), 1)
+        // ...beyond it the cover keeps its own shape rather than lose more art.
+        compare(ArtworkLayout.frameAspectRatio("platform", "PS1", 1.15, 0.66), 1.15)
+    }
+
     function test_platformModeWithoutImageUsesPlatformShape() {
         fuzzyCompare(ArtworkLayout.frameAspectRatio("platform", "N64", 0, 0.66), 1.4, 0.0001)
     }

@@ -4,7 +4,9 @@
 
 // A measured image ratio more than this far (relative) from the platform's
 // expected shape is treated as a different box format and keeps its own ratio.
-var platformRatioTolerance = 0.18
+// Within the tolerance the image is cropped to the platform frame, so this
+// also caps how much of a cover can be trimmed (about 6% per edge).
+var platformRatioTolerance = 0.12
 
 // Typical North American box-art shapes (width / height). Returns 0 for
 // platforms without a defined shape so callers fall back to the image.

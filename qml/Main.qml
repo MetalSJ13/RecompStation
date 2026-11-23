@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Effects
 import QtQuick.Dialogs
 import QtCore
+import "ArtworkLayout.js" as ArtworkLayout
 
 ApplicationWindow {
     id: window
@@ -1041,6 +1042,17 @@ ApplicationWindow {
                 window.navigationTransitionRunning = false
             }
         }
+    }
+
+    // Project ids with a managed launcher installation. installedLaunchers()
+    // reads the launcher directories from disk, so Library cards share this
+    // single lookup instead of querying once per card.
+    readonly property var installedLauncherProjectIds: {
+        launcherRevision
+        const ids = {}
+        for (const entry of launcherDownloadManager.installedLaunchers())
+            ids[entry.projectId] = true
+        return ids
     }
 
     function installedLauncher(projectId) {
@@ -3443,8 +3455,11 @@ ApplicationWindow {
                             // including the first and last rows.
                             // Combined with the outer layout gap, this produces
                             // an 8 / 10 / 16 px heading-to-card gap by density.
-                            topMargin: 8
-                            bottomMargin: 10
+                            // The focused card scales slightly and its focus ring sits
+                            // outside the artwork, so leave room for both in the first
+                            // and last rows.
+                            topMargin: 16
+                            bottomMargin: 18
                             // Keep card widths fixed for each density. Center the complete
                             // column block with equal outer margins; GridView keeps a
                             // partially filled final row aligned to the first column.
@@ -3491,12 +3506,28 @@ ApplicationWindow {
                             leftMargin: 0
                             rightMargin: 0
                             cellWidth: gridCellWidth
-                            // Match the card height to its actual content: a 2:3
-                            // artwork frame (the card width minus its 20 px inner
-                            // horizontal margins), plus the title/platform footer,
-                            // layout spacing, and outer vertical padding.
+                            // Artwork-forward cards: the cover art is the card. The
+                            // artwork area takes the frame shape of the selected
+                            // platform (N64 7:5, PS1 1:1, disc cases 5:7). With All
+                            // Platforms it uses the tallest shape (5:7), and each cover
+                            // sits in its own platform frame on a shared bottom edge so
+                            // the captions line up.
+                            readonly property real gridFrameRatio: {
+                                if (selectedPlatform !== "All Platforms") {
+                                    const ratio = ArtworkLayout.platformAspectRatio(selectedPlatform)
+                                    if (ratio > 0)
+                                        return ratio
+                                }
+                                return 5 / 7
+                            }
+                            readonly property real gridArtworkHeight:
+                                Math.round(targetCardWidth / gridFrameRatio)
+                            // Two caption lines (title and status) plus spacing,
+                            // scaled with the user's font size preference.
+                            readonly property real gridCaptionHeight:
+                                Math.ceil(12 + 38 * theme.fontScale)
                             readonly property real gridCardHeight:
-                                Math.round((targetCardWidth - 20) * 1.5 + 72)
+                                gridArtworkHeight + gridCaptionHeight
                             cellHeight: gridCardHeight + 14
                             // Window-level shortcuts own directional movement so
                             // keyboard input cannot be processed twice by the view.
@@ -3692,95 +3723,67 @@ ApplicationWindow {
                                     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                                 }
 
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.margins: -4
-                                    radius: theme.radiusCard + 4
-                                    color: theme.accent
-                                    opacity: gameTile.GridView.isCurrentItem ? 0.16
-                                        : tileMouse.containsMouse ? 0.07 : 0
-                                    Behavior on opacity {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-                                    }
+                                // Recompilation status for the caption's second line.
+                                readonly property var supportedProject: {
+                                    const projects = projectCatalog.projectsForGame(
+                                        gameTile.metadataTitle.length > 0
+                                            ? gameTile.metadataTitle : gameTile.title,
+                                        gameTile.platform)
+                                    return projects.length > 0 ? projects[0] : null
+                                }
+                                readonly property bool launcherInstalled:
+                                    gameTile.supportedProject !== null
+                                    && window.installedLauncherProjectIds[
+                                        gameTile.supportedProject.id] === true
+
+                                GameArtwork {
+                                    id: gameTileArtwork
+                                    anchors.top: parent.top
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: gameGrid.gridArtworkHeight
+                                    source: gameTile.artworkPath
+                                    platform: gameTile.platform
+                                    highlighted: gameTile.highlighted
+                                    focused: gameTile.GridView.isCurrentItem
+                                    hovered: tileMouse.containsMouse
+                                    reducedMotion: settingsManager.reducedMotion
+                                    themeTokens: theme
+                                    frameMode: "platform"
+                                    frameAlignment: "bottom"
+                                    frameInset: 0
+                                    showViewportBackground: false
+                                    showFocusRing: true
                                 }
 
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: theme.radiusCard
-                                    gradient: Gradient {
-                                        GradientStop {
-                                            position: 0.0
-                                            color: gameTile.highlighted ? theme.elevatedSurface
-                                                : Qt.rgba(theme.surface.r, theme.surface.g,
-                                                          theme.surface.b, 0.46)
-                                        }
-                                        GradientStop {
-                                            position: 1.0
-                                            color: gameTile.highlighted ? theme.surface
-                                                : Qt.rgba(theme.surface.r, theme.surface.g,
-                                                          theme.surface.b, 0.38)
-                                        }
+                                Column {
+                                    anchors.top: gameTileArtwork.bottom
+                                    anchors.topMargin: 9
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    spacing: 3
+
+                                    Label {
+                                        width: parent.width
+                                        text: gameTile.title
+                                        color: theme.textPrimary
+                                        font.pixelSize: 16 * theme.fontScale
+                                        font.bold: true
+                                        elide: Text.ElideRight
                                     }
-                                    Behavior on opacity {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
-                                    }
-                                    border.width: gameTile.highlighted ? 2 : 1
-                                    border.color: gameTile.highlighted ? theme.accent
-                                        : Qt.rgba(theme.divider.r, theme.divider.g,
-                                                  theme.divider.b, 0.24)
-                                    Behavior on border.color {
-                                        enabled: !settingsManager.reducedMotion
-                                        ColorAnimation { duration: 140 }
-                                    }
-                                    Behavior on border.width {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation { duration: 140 }
-                                    }
-
-                                    ColumnLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 10
-                                        spacing: 9
-
-                                        Item {
-                                            Layout.fillWidth: true
-                                            Layout.fillHeight: true
-                                            Layout.preferredHeight: Math.round((gameTile.width - 20) * 1.5)
-                                            Layout.minimumHeight: 96
-                                            Layout.maximumHeight: Math.round((gameTile.width - 20) * 1.5)
-
-                                            GameArtwork {
-                                                id: gameTileArtwork
-                                                anchors.fill: parent
-                                                source: gameTile.artworkPath
-                                                platform: gameTile.platform
-                                                highlighted: gameTile.highlighted
-                                                reducedMotion: settingsManager.reducedMotion
-                                                themeTokens: theme
-                                            }
-                                        }
-
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: gameTile.title
-                                            color: theme.textPrimary
-                                            font.pixelSize: 16 * theme.fontScale
-                                            font.bold: true
-                                            elide: Text.ElideRight
-                                        }
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: gameTile.platform
-                                                color: theme.textSecondary
-                                                font.pixelSize: 12 * theme.fontScale
-                                                elide: Text.ElideRight
-                                            }
-
-                                        }
+                                    Label {
+                                        width: parent.width
+                                        text: gameTile.launcherInstalled
+                                            ? gameTile.supportedProject.name + " · Installed"
+                                            : gameTile.supportedProject !== null
+                                                ? "Recompilation available"
+                                                : gameTile.platform
+                                        color: gameTile.launcherInstalled ? theme.success
+                                            : gameTile.supportedProject !== null ? theme.accentHover
+                                            : theme.textSecondary
+                                        font.pixelSize: 12 * theme.fontScale
+                                        font.bold: gameTile.supportedProject !== null
+                                        elide: Text.ElideRight
                                     }
                                 }
 

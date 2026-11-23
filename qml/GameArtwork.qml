@@ -13,8 +13,9 @@ import "ArtworkLayout.js" as ArtworkLayout
 //   "platform"           - the frame follows the platform's typical box-art
 //                          shape (see ArtworkLayout.js), unless the image's
 //                          measured ratio clearly differs, such as a PAL
-//                          portrait N64 box. Reserved for the artwork-forward
-//                          Grid (Library presentation redesign, step 2).
+//                          portrait N64 box. In this mode the image fills the
+//                          frame edge to edge (small differences are cropped).
+//                          Used by the artwork-forward Grid.
 //
 // Colors come from the application Theme object passed in themeTokens, so the
 // component has no hidden dependency on ids declared in Main.qml.
@@ -34,6 +35,15 @@ Item {
     property real placeholderMargin: 5
     // Viewport background, blurred landscape backdrop and theme overlay.
     property bool showViewportBackground: true
+    // "center" or "bottom": where the frame sits inside the viewport. Bottom
+    // alignment lets mixed-shape covers share a baseline above their captions.
+    property string frameAlignment: "center"
+    // Focus ring drawn outside the frame (artwork-forward cards).
+    property bool showFocusRing: false
+    property bool focused: false
+    property bool hovered: false
+    property real focusRingGap: 4
+    property real focusRingWidth: 3
 
     // Outputs
     readonly property bool ready: cover.status === Image.Ready
@@ -94,9 +104,12 @@ Item {
 
     Rectangle {
         id: frame
-        anchors.centerIn: parent
         width: root.frameSize.width
         height: root.frameSize.height
+        x: Math.round((root.width - width) / 2)
+        y: root.frameAlignment === "bottom"
+            ? Math.round(root.height - root.frameInset - height)
+            : Math.round((root.height - height) / 2)
         radius: root.themeTokens ? root.themeTokens.radiusSmall : 6
         color: root.themeTokens ? root.themeTokens.sidebarBackground : "transparent"
         border.width: 1
@@ -116,7 +129,8 @@ Item {
             id: cover
             anchors.fill: parent
             source: root.source
-            fillMode: Image.PreserveAspectFit
+            fillMode: root.frameMode === "platform"
+                ? Image.PreserveAspectCrop : Image.PreserveAspectFit
             asynchronous: true
             cache: true
             smooth: true
@@ -131,6 +145,24 @@ Item {
             asynchronous: true
             cache: true
             visible: cover.status !== Image.Ready
+        }
+    }
+
+    Rectangle {
+        id: focusRing
+        visible: root.showFocusRing
+        x: frame.x - root.focusRingGap - root.focusRingWidth
+        y: frame.y - root.focusRingGap - root.focusRingWidth
+        width: frame.width + (root.focusRingGap + root.focusRingWidth) * 2
+        height: frame.height + (root.focusRingGap + root.focusRingWidth) * 2
+        radius: frame.radius + root.focusRingGap + root.focusRingWidth
+        color: "transparent"
+        border.width: root.focusRingWidth
+        border.color: root.themeTokens ? root.themeTokens.accent : "white"
+        opacity: root.focused ? 1 : root.hovered ? 0.4 : 0
+        Behavior on opacity {
+            enabled: !root.reducedMotion
+            NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
         }
     }
 }
