@@ -87,6 +87,7 @@ qt_add_qml_module(RecompStationApp
         qml/Main.qml
         qml/Theme.qml
         qml/GameArtwork.qml
+        qml/ArtworkLayout.js
     RESOURCES
         assets/library-waves.svg
         assets/library-waves-violet.svg
