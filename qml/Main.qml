@@ -3125,88 +3125,6 @@ ApplicationWindow {
                     && window.active && window.visibility !== Window.Minimized
             }
 
-            // Hero carousel backdrop: the selected game's first screenshot fills
-            // the window (or its blurred cover when it has none). Two layers
-            // cross-fade when the selection changes.
-            Item {
-                id: carouselHeroBackdrop
-                anchors.fill: parent
-                readonly property bool active: currentPage === "Library"
-                    && settingsManager.libraryView === "carousel" && gameGrid.count > 0
-                visible: opacity > 0
-                opacity: active ? 1 : 0
-                Behavior on opacity {
-                    enabled: !settingsManager.reducedMotion
-                    NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
-                }
-                readonly property var game: consoleView.currentGame
-                readonly property bool hasScreenshot: game !== null
-                    && game.screenshots !== undefined && game.screenshots.length > 0
-                readonly property string source: !game ? ""
-                    : hasScreenshot ? game.screenshots[0] : game.artworkPath
-                property bool showFirst: true
-                Component.onCompleted: {
-                    heroLayerA.source = source
-                    heroLayerA.blurred = !hasScreenshot
-                }
-                onSourceChanged: {
-                    if (showFirst) {
-                        heroLayerB.source = source
-                        heroLayerB.blurred = !hasScreenshot
-                    } else {
-                        heroLayerA.source = source
-                        heroLayerA.blurred = !hasScreenshot
-                    }
-                    showFirst = !showFirst
-                }
-
-                Repeater {
-                    model: 2
-                    delegate: Item {
-                        required property int index
-                        anchors.fill: parent
-                        opacity: (index === 0) === carouselHeroBackdrop.showFirst ? 1 : 0
-                        Behavior on opacity {
-                            enabled: !settingsManager.reducedMotion
-                            NumberAnimation { duration: 420; easing.type: Easing.InOutQuad }
-                        }
-                        Image {
-                            id: heroLayerImage
-                            anchors.fill: parent
-                            source: index === 0 ? heroLayerA.source : heroLayerB.source
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            cache: true
-                            visible: false
-                        }
-                        MultiEffect {
-                            anchors.fill: parent
-                            source: heroLayerImage
-                            blurEnabled: index === 0 ? heroLayerA.blurred : heroLayerB.blurred
-                            blur: 1.0
-                            blurMax: 64
-                            autoPaddingEnabled: false
-                            opacity: heroLayerImage.status === Image.Ready
-                                ? ((index === 0 ? heroLayerA.blurred : heroLayerB.blurred) ? 0.5 : 1) : 0
-                        }
-                    }
-                }
-                QtObject { id: heroLayerA; property string source: ""; property bool blurred: false }
-                QtObject { id: heroLayerB; property string source: ""; property bool blurred: false }
-
-                // Keep the header and the details under the row legible.
-                Rectangle {
-                    anchors.fill: parent
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.78) }
-                        GradientStop { position: 0.22; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.18) }
-                        GradientStop { position: 0.45; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.28) }
-                        GradientStop { position: 0.72; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.88) }
-                        GradientStop { position: 1.0; color: Qt.rgba(theme.backgroundBottom.r, theme.backgroundBottom.g, theme.backgroundBottom.b, 0.98) }
-                    }
-                }
-            }
-
             StackLayout {
                 id: mainPageStack
                 anchors.fill: parent
@@ -4880,8 +4798,8 @@ ApplicationWindow {
                             }
                         }
 
-                        // Hero carousel: the selected game's screenshot fills the
-                        // window (carouselHeroBackdrop), one row of covers crosses the
+                        // Hero carousel: drawn over the Library background the user
+                        // chose (waves, image or gradient); one row of covers crosses the
                         // screen with the selected cover centered and enlarged, and the
                         // selected game's details and actions sit beneath it. Card
                         // positions come from LibraryGridLayout.carouselPositions.

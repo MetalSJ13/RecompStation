@@ -68,15 +68,15 @@ RecompStation brings them together in a single library that you can use from the
 
 ## Screenshots
 
+**Game Details:** cover, description, screenshots, and the recompilation project for the game, ready to install and play.
+
+![Game Details](docs/screenshots/game-details.png)
+
 | Library: Shelves | Library: Grid |
 | :---: | :---: |
 | ![Shelves view](docs/screenshots/library-shelves.png) | ![Grid view](docs/screenshots/library-grid.png) |
 | **Library: List** | **Library: Carousel** |
 | ![List view](docs/screenshots/library-list.png) | ![Carousel view](docs/screenshots/library-carousel.png) |
-| **Game Details** | **Settings** |
-| ![Game Details](docs/screenshots/game-details.png) | ![Settings](docs/screenshots/settings.png) |
-| **First-time setup** | **Adding games** |
-| ![First-time setup](docs/screenshots/first-time-setup.png) | ![Adding games](docs/screenshots/add-games.png) |
 
 ## Supported systems and projects
 
