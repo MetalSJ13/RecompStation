@@ -112,6 +112,7 @@ qt_add_qml_module(RecompStationApp
         qml/ControllerOutline.qml
         qml/ImportGamesPanel.qml
         qml/FirstRunSetup.qml
+        qml/LaunchBoxProgress.qml
     RESOURCES
         assets/images/recompstation-controller.png
 )

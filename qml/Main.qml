@@ -1262,20 +1262,46 @@ ApplicationWindow {
     }
     property string launchBoxStatusMessage: launchBoxCatalogManager.catalogAvailable ? "LaunchBox catalog is ready." : ""
     property bool universalRefreshPending: false
+    // LaunchBox catalog update: "", "downloading", "extracting", "indexing",
+    // "ready", "failed" or "cancelled" (see LaunchBoxProgress.qml).
+    property string launchBoxStage: ""
+    property real launchBoxReceivedBytes: 0
+    property real launchBoxTotalBytes: 0
     Connections {
         target: launchBoxCatalogManager
+        function onDownloadProgress(received, total) {
+            window.launchBoxStage = "downloading"
+            window.launchBoxReceivedBytes = received
+            window.launchBoxTotalBytes = total > 0 ? total : 0
+        }
         function onUpdateProgress(stage, percent) {
             launchBoxStatusMessage = stage
             launchBoxProgressPercent = percent
+            if (stage.indexOf("Downloading") === 0) {
+                if (window.launchBoxStage !== "downloading") {
+                    window.launchBoxStage = "downloading"
+                    window.launchBoxReceivedBytes = 0
+                    window.launchBoxTotalBytes = 0
+                }
+            } else if (stage.indexOf("Extracting") === 0) {
+                window.launchBoxStage = "extracting"
+            } else if (stage.indexOf("ready") >= 0) {
+                window.launchBoxStage = "ready"
+            } else {
+                window.launchBoxStage = "indexing"
+            }
         }
         function onUpdateCompleted(platforms, files, games) {
             launchBoxProgressPercent = 100
+            window.launchBoxStage = "ready"
             launchBoxStatusMessage = "Catalog updated: " + games + " games for your platforms. Unmatched games in your library are being checked against it now."
         }
         function onUpdateFailed(message) {
+            window.launchBoxStage = "failed"
             launchBoxStatusMessage = "Update failed: " + message
         }
         function onUpdateCancelled() {
+            window.launchBoxStage = "cancelled"
             launchBoxStatusMessage = "Catalog update cancelled. The previous catalog was preserved."
         }
     }
@@ -6621,7 +6647,7 @@ ApplicationWindow {
                                                 }
                                                 StatusPill {
                                                     text: !settingsManager.launchBoxEnabled ? "Off"
-                                                        : launchBoxCatalogManager.busy ? "Updating " + window.launchBoxProgressPercent + "%"
+                                                        : launchBoxCatalogManager.busy ? "Working…"
                                                         : launchBoxCatalogManager.catalogAvailable
                                                             ? "● Installed · " + window.formatBytes(launchBoxCatalogManager.catalogSizeBytes)
                                                             : "Not downloaded"
@@ -6706,6 +6732,9 @@ ApplicationWindow {
                                                     rightPadding: 16
                                                     implicitHeight: 38
                                                 }
+                                            }
+                                            LaunchBoxProgress {
+                                                Layout.fillWidth: true
                                             }
                                             Label {
                                                 Layout.fillWidth: true

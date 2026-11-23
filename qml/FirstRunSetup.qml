@@ -33,7 +33,8 @@ Popup {
         Qt.callLater(function() {
             if (step === 0) useSuggestedButton.forceActiveFocus()
             else if (step === 1) importPanel.focusFirst()
-            else if (step === 2) launchBoxDownloadButton.forceActiveFocus()
+            else if (step === 2) (launchBoxDownloadButton.visible && launchBoxDownloadButton.enabled
+                                  ? launchBoxDownloadButton : continueButton).forceActiveFocus()
             else finishButton.forceActiveFocus()
         })
     }
@@ -299,25 +300,61 @@ Popup {
                     font.pixelSize: 14.5 * theme.fontScale
                     wrapMode: Text.Wrap
                 }
-                SettingRow {
-                    title: "LaunchBox Games Database · recommended"
-                    description: launchBoxCatalogManager.busy
-                        ? (window.launchBoxStatusMessage.length > 0 ? window.launchBoxStatusMessage : "Downloading…")
-                        : launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled
-                            ? "Installed. Games are matched offline."
-                            : "Offline catalog: no account or key. Downloads about 106 MB once, then matches games without internet."
-                    SetupButton {
-                        id: launchBoxDownloadButton
-                        highlighted: !launchBoxCatalogManager.catalogAvailable
-                        enabled: !launchBoxCatalogManager.busy
-                            && !(launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled)
-                        text: launchBoxCatalogManager.busy ? "Downloading " + window.launchBoxProgressPercent + "%"
-                            : launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled ? "✓ Ready"
-                            : launchBoxCatalogManager.catalogAvailable ? "Turn on" : "Download"
-                        onClicked: {
-                            settingsManager.setLaunchBoxEnabled(true)
-                            if (!launchBoxCatalogManager.catalogAvailable)
-                                launchBoxCatalogManager.updateCatalog()
+                Rectangle {
+                    id: launchBoxSetupCard
+                    Layout.fillWidth: true
+                    implicitHeight: launchBoxSetupColumn.implicitHeight + 28
+                    radius: 12
+                    color: theme.sidebarBackground
+                    border.width: window.isDescendantOf(window.activeFocusItem, launchBoxSetupCard) ? 2 : 0
+                    border.color: theme.accent
+                    ColumnLayout {
+                        id: launchBoxSetupColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 14
+                        anchors.leftMargin: 18
+                        spacing: 10
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 14
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 3
+                                Label {
+                                    text: "LaunchBox Games Database · recommended"
+                                    color: theme.textPrimary
+                                    font.pixelSize: 14.5 * theme.fontScale
+                                    font.weight: Font.DemiBold
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled
+                                            && !launchBoxCatalogManager.busy
+                                        ? "Installed (" + window.formatBytes(launchBoxCatalogManager.catalogSizeBytes) + "). Games are matched offline."
+                                        : "Offline catalog: no account or key. Downloads about 106 MB once, then matches games without internet."
+                                    color: theme.textMuted
+                                    font.pixelSize: 12 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                            }
+                            SetupButton {
+                                id: launchBoxDownloadButton
+                                visible: !launchBoxCatalogManager.busy
+                                highlighted: !launchBoxCatalogManager.catalogAvailable
+                                enabled: !(launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled)
+                                text: launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled ? "✓ Ready"
+                                    : launchBoxCatalogManager.catalogAvailable ? "Turn on" : "Download"
+                                onClicked: {
+                                    settingsManager.setLaunchBoxEnabled(true)
+                                    if (!launchBoxCatalogManager.catalogAvailable)
+                                        launchBoxCatalogManager.updateCatalog()
+                                }
+                            }
+                        }
+                        LaunchBoxProgress {
+                            Layout.fillWidth: true
                         }
                     }
                 }
@@ -398,6 +435,7 @@ Popup {
                         onClicked: setup.goBack()
                     }
                     SetupButton {
+                        id: continueButton
                         text: "Continue"
                         highlighted: true
                         onClicked: window.firstRunStep = 3
