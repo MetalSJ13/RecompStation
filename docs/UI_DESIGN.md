@@ -118,9 +118,14 @@ Provide three distinct background/theme types:
 2. **Optional animated themes** — subtle ambient gradients or particles, with motion paused while the app is minimized or inactive and disabled when reduced motion is enabled.
 3. **Custom still-image backgrounds** — user-selected PNG, JPEG, or WebP images, automatically scaled/cropped and previewed before applying.
 
-A theme is a complete visual system, not just an accent-color choice. It coordinates the background, layered surfaces, controls, dividers, text hierarchy, status colors, and artwork overlays. Start with a small set of carefully designed presets and a clear default. The current static foundation provides Midnight Violet, Electric Blue, and Ember with coordinated semantic color tokens and a subtle background gradient. Selecting a preset previews it across the interface immediately; applying it saves the choice.
+A theme is a complete visual system, not just an accent-color choice. It coordinates the background, layered surfaces, controls, dividers, text hierarchy, status colors, and artwork overlays. Start with a small set of carefully designed presets and a clear default. The presets are Electric Blue, Midnight Violet, Aurora (deep teal, mint accent) and Carbon (neutral graphite, crimson accent); Ember was retired in November 2026 and saved Ember settings move to Electric Blue. Themes are tiles with a miniature Library in their own colors; the preview pane follows the focused tile, and selecting a tile applies and saves it (no separate Apply step).
 
-Keep theme selection and applying a preset explicit. Later background types should extend the same theme-selection experience rather than create a separate settings workflow. Animated backgrounds must remain optional and lightweight. Bundle only original, public-domain, or appropriately licensed artwork.
+Backgrounds (Settings → Background):
+- **Gradient:** static, in the theme's colors.
+- **Waves:** two ribbons of thin glowing lines drawn live by a GPU shader (`shaders/waves.frag`, `WaveBackground.qml`), chosen over pre-rendered video: no extra files, any color, sharp at any resolution. Color presets plus the theme accent and a custom hue; Motion (Calm / Normal / Lively); Quality (Auto, High, Balanced at 75% resolution, Low at half resolution and 30 fps). The animation pauses on its current frame under Reduced motion, while a game runs, and when the window is inactive or minimized. Qt's software renderer falls back to the gradient.
+- **Image:** the user's wallpaper, decoded at screen size; Fill (crop to cover) or Fit (whole image over a blurred copy of itself) and an adjustable Dim.
+
+Animated backgrounds must remain optional and lightweight. Bundle only original, public-domain, or appropriately licensed artwork.
 
 Do not begin with an overwhelming theme editor or dozens of arbitrary color controls.
 
@@ -144,12 +149,15 @@ Do not begin with an overwhelming theme editor or dozens of arbitrary color cont
 
 ## Settings organization
 
+Layout (redesigned November 2026): a category rail on the left where each entry shows a one-line summary of its current values; setting rows in the middle, capped at 880 px; and, when the window is wide enough, a preview or reference pane on the right (Appearance, Display, Background, Metadata). Choices are ◀ value ▶ rows (`ValueCycler.qml`: D-pad or arrow keys change the value; left at the first value returns to the rail), on/off switches (`ToggleSwitch.qml`), or tiles. There are no dropdowns and no separate Apply buttons. LB/RB (Q/E on the keyboard) switch sections.
+
 Current categories:
 
-- **Appearance:** built-in theme, background treatment, accent preset, motion preferences.
-- **Display:** implemented Windowed/Maximized/Fullscreen modes, current-screen information, and preferred application window-size presets. Explicit monitor selection and borderless mode are deferred.
-- **Library:** configurable library/platform folders, startup scan preference, manual scan action, and library background selection. Grid/List and grid-density controls are exclusive to the Game Library page.
-- **Metadata:** provider configuration/status and metadata refresh behavior. Additional providers, field selection, and independent artwork-source management remain future work.
+- **Appearance:** theme tiles, text size, reduced motion.
+- **Display:** interface scale (Auto from the screen's logical height, or 75–200%; applied at startup, so changing it offers a restart that reopens this page), Windowed/Maximized/Fullscreen, and window-size presets (active in Windowed mode). Explicit monitor selection and borderless mode are deferred.
+- **Background:** Gradient, Waves or Image, with their options (see Themes and backgrounds).
+- **Library:** library folder, platform folders, startup scan preference and manual scan. Grid/List and grid-density controls are exclusive to the Game Library page.
+- **Metadata:** provider cards (TheGamesDB with the API key entered in the app and stored privately, connection status and requests left; LaunchBox with catalog download/update and size), which provider is asked first (LaunchBox by default), automation toggles, and Refresh all metadata. Additional providers, field selection, and independent artwork-source management remain future work.
   - Keep manual metadata refresh and gameplay-screenshot download actions in Settings → Metadata, alongside provider configuration. Settings → Library is limited to ROM folders and library scanning.
 - **Controller:** connected-device status, controller-input enablement, active/default profile presentation, and navigation binding summary. Interactive remapping and per-device application remain future work.
 - **Application:** application-level preferences and diagnostics/logging where implemented.

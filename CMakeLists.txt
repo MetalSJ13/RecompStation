@@ -103,6 +103,7 @@ qt_add_qml_module(RecompStationApp
         qml/WaveBackground.qml
         qml/ColorSwatchPicker.qml
         qml/StatusPill.qml
+        qml/ToggleSwitch.qml
     RESOURCES
         assets/images/recompstation-controller.png
 )

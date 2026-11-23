@@ -5092,7 +5092,7 @@ ApplicationWindow {
                                     SettingRow {
                                         title: "Reduced motion"
                                         description: "Turns off animated backgrounds, carousel slides and screenshot cycling."
-                                        Switch {
+                                        ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             checked: settingsManager.reducedMotion
@@ -5560,7 +5560,7 @@ ApplicationWindow {
                                     SettingRow {
                                         title: "Scan library on startup"
                                         description: "Check the platform folders for new or removed games when RecompStation starts. Folders are also watched while it runs."
-                                        Switch {
+                                        ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             checked: settingsManager.scanOnStartup
@@ -5676,7 +5676,7 @@ ApplicationWindow {
                                                     wrapMode: Text.Wrap
                                                 }
                                             }
-                                            Switch {
+                                            ToggleSwitch {
                                                 activeFocusOnTab: true
                                                 focusPolicy: Qt.StrongFocus
                                                 checked: settingsManager.automaticUpdateChecksEnabled
@@ -5980,7 +5980,7 @@ ApplicationWindow {
                                                         : theGamesDbCard.connection === "connected" ? "good"
                                                         : theGamesDbCard.connection === "error" ? "bad" : "warning"
                                                 }
-                                                Switch {
+                                                ToggleSwitch {
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
                                                     checked: settingsManager.theGamesDbEnabled
@@ -6270,7 +6270,7 @@ ApplicationWindow {
                                                     tone: !settingsManager.launchBoxEnabled ? "neutral"
                                                         : launchBoxCatalogManager.catalogAvailable ? "good" : "warning"
                                                 }
-                                                Switch {
+                                                ToggleSwitch {
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
                                                     checked: settingsManager.launchBoxEnabled
@@ -6379,7 +6379,7 @@ ApplicationWindow {
                                     SettingRow {
                                         title: "Match new games automatically"
                                         description: "After every scan, including when files are added while RecompStation is open. Games skipped because a provider was unreachable are retried an hour later."
-                                        Switch {
+                                        ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             checked: settingsManager.automaticMetadataMatchingEnabled
@@ -6390,7 +6390,7 @@ ApplicationWindow {
                                     SettingRow {
                                         title: "Download covers and screenshots"
                                         description: "Right after a game is matched."
-                                        Switch {
+                                        ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             checked: settingsManager.automaticArtworkDownloadsEnabled
@@ -6599,14 +6599,7 @@ ApplicationWindow {
                                                         wrapMode: Text.Wrap
                                                     }
                                                 }
-                                                Switch {
-                                                    background: Rectangle {
-                                                        radius: 8
-                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-                                                        border.width: parent.activeFocus ? 2 : 0
-                                                        anchors.margins: -6
-                                                    }
+                                                ToggleSwitch {
                                         activeFocusOnTab: true
                                         focusPolicy: Qt.StrongFocus
                                                     checked: controllerManager.inputEnabled

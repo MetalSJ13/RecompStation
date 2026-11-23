@@ -104,6 +104,8 @@ Direction chosen by the user from design mockups (Settings today; proposed Appea
 - [x] Tests: provider order, key save/permissions/clear/validation/environment priority, allowance parsing, `setApiKey`, LaunchBox-first preference, LaunchBox after a provider failure, failure without LaunchBox, platform-filtered catalog.
 - [x] User validation (2026-11-23): all 20 test suites pass (after two test-only fixes); a game added while the app was running was matched and appeared in the Library without a manual refresh; removing it updated the Library. The page shows TheGamesDB switched off (which explains the earlier "No providers enabled") and LaunchBox installed at 498 MB, indexed before the platform filter.
 - [ ] Remaining: Update catalog and compare its size with 498 MB; add a TheGamesDB key in the app and Test it.
+- [x] Polish: new `qml/ToggleSwitch.qml` replaces Qt's default switches across Settings: a pill track that fills with the accent when on, a sliding knob, and an accent focus ring. The Controller page's old focus background on its switch is removed.
+- [x] Merged `ui/settings` into `ui/interface-redesign` at the user's request (2026-11-23); `docs/UI_DESIGN.md` updated (themes and backgrounds, Settings organization).
 
 **Step 5: Fix match** — planned: Game Details action to search either provider and pick the right game.
 
