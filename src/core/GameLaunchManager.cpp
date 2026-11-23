@@ -6,10 +6,91 @@
 #include "projects/ProjectCatalog.h"
 
 #include <QDir>
+#include <QFile>
+#include <cstdio>
 #include <QFileInfo>
 #include <QProcess>
+#include <QDateTime>
+#include <QElapsedTimer>
 #include <QProcessEnvironment>
+#include <memory>
 #include <QVariantMap>
+
+namespace {
+// A launcher's own output (stdout and stderr): written in full to
+// logs/launchers/<project>.log (the previous run is kept as .previous.log),
+// echoed to the terminal, and the last lines kept in memory so a crash can
+// be explained in runtime.log.
+struct LauncherOutput
+{
+    static constexpr int TailLines = 40;
+    QFile file;
+    QStringList tail;
+    QByteArray partial;
+    QElapsedTimer timer;
+
+    void open(const QString &projectId, const QString &program)
+    {
+        timer.start();
+        const QString directory = RecompLogging::logDirectory();
+        if (directory.isEmpty())
+            return;
+        const QString folder = QDir(directory).filePath(QStringLiteral("launchers"));
+        QDir().mkpath(folder);
+        const QString path = QDir(folder).filePath(projectId + QStringLiteral(".log"));
+        const QString previous = QDir(folder).filePath(projectId + QStringLiteral(".previous.log"));
+        QFile::remove(previous);
+        QFile::rename(path, previous);
+        file.setFileName(path);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            file.write(RecompLogging::redactHome(
+                QStringLiteral("# %1 started %2\n# %3\n")
+                    .arg(projectId, QDateTime::currentDateTime().toString(Qt::ISODate), program)).toUtf8());
+            file.flush();
+        }
+    }
+
+    void append(const QByteArray &data)
+    {
+        fwrite(data.constData(), 1, size_t(data.size()), stderr);
+        partial += data;
+        int newline;
+        while ((newline = partial.indexOf('\n')) >= 0) {
+            addLine(QString::fromUtf8(partial.left(newline)));
+            partial.remove(0, newline + 1);
+        }
+        // Very long output without newlines (progress bars) is cut into lines.
+        if (partial.size() > 4096) {
+            addLine(QString::fromUtf8(partial));
+            partial.clear();
+        }
+    }
+
+    void addLine(QString line)
+    {
+        if (line.endsWith(QLatin1Char('\r')))
+            line.chop(1);
+        line = RecompLogging::redactHome(line);
+        if (file.isOpen()) {
+            file.write(line.toUtf8());
+            file.write("\n");
+            file.flush();
+        }
+        tail.append(line);
+        if (tail.size() > TailLines)
+            tail.removeFirst();
+    }
+
+    void finish()
+    {
+        if (!partial.isEmpty()) {
+            addLine(QString::fromUtf8(partial));
+            partial.clear();
+        }
+        file.close();
+    }
+};
+}
 
 GameLaunchManager::GameLaunchManager(
     LauncherDownloadManager *launcherDownloadManager,
@@ -96,7 +177,8 @@ bool GameLaunchManager::launchProject(const QString &projectId)
 
 bool GameLaunchManager::launchGame(const QString &projectId, const QString &gamePath)
 {
-    qCInfo(lcGameLaunch) << "Launch requested for project:" << projectId;
+    qCInfo(lcGameLaunch).noquote() << "Play" << projectId << "· game file"
+        << (gamePath.isEmpty() ? QStringLiteral("none") : RecompLogging::redactHome(gamePath));
     if (!m_launcherDownloadManager || projectId.trimmed().isEmpty())
         return false;
 
@@ -125,6 +207,12 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
             plan = m_preparer.prepare(project, gamePath, workingDirectory, preparationOptions(projectId));
         if (plan.defaultFullscreenApplied && m_settingsManager)
             m_settingsManager->markDefaultFullscreenApplied(projectId);
+    }
+    if (!plan.steps.isEmpty()) {
+        QStringList titles;
+        for (const QVariant &step : std::as_const(plan.steps))
+            titles << step.toMap().value(QStringLiteral("title")).toString();
+        qCInfo(lcGameLaunch).noquote() << projectId << "prepared:" << titles.join(QStringLiteral("; "));
     }
     emit launchPrepared(projectId, plan.steps);
 
@@ -155,12 +243,17 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
     } else {
         process->setProgram(executableInfo.absoluteFilePath());
     }
-    process->setProcessChannelMode(QProcess::ForwardedChannels);
+    process->setProcessChannelMode(QProcess::MergedChannels);
     m_processes.insert(projectId, process);
 
+    auto output = std::make_shared<LauncherOutput>();
+    output->open(projectId, executableInfo.absoluteFilePath());
+    connect(process, &QProcess::readyReadStandardOutput, this, [process, output]() {
+        output->append(process->readAllStandardOutput());
+    });
+
     connect(process, &QProcess::started, this, [this, projectId, process]() {
-        qCInfo(lcGameLaunch) << "Process started for" << projectId
-                             << "PID:" << process->processId();
+        qCInfo(lcGameLaunch).noquote() << projectId << "started, process" << process->processId();
         emit launchStarted(projectId, process->processId());
     });
 
@@ -179,12 +272,28 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
     connect(process,
             qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
             this,
-            [this, projectId, process](int exitCode, QProcess::ExitStatus exitStatus) {
+            [this, projectId, process, output](int exitCode, QProcess::ExitStatus exitStatus) {
         if (m_processes.value(projectId) == process)
             m_processes.remove(projectId);
-        qCInfo(lcGameLaunch) << "Process finished for" << projectId
-                             << "exit code:" << exitCode
-                             << "crashed:" << (exitStatus == QProcess::CrashExit);
+        output->append(process->readAllStandardOutput());
+        output->finish();
+        const qint64 seconds = output->timer.elapsed() / 1000;
+        const bool crashed = exitStatus == QProcess::CrashExit;
+        if (crashed || exitCode != 0) {
+            // The launcher's last words are usually the explanation.
+            qCWarning(lcGameLaunch).noquote()
+                << projectId << (crashed ? QStringLiteral("crashed") : QStringLiteral("exited with code %1").arg(exitCode))
+                << QStringLiteral("after %1 s; its last %2 lines of output (full output in %3):")
+                       .arg(seconds).arg(output->tail.size())
+                       .arg(RecompLogging::redactHome(output->file.fileName()));
+            QStringList excerpt;
+            for (const QString &line : std::as_const(output->tail))
+                excerpt << QStringLiteral("    | ") + line;
+            RecompLogging::writeBlock(excerpt);
+        } else {
+            qCInfo(lcGameLaunch).noquote() << projectId << "closed normally after"
+                                           << seconds << "s";
+        }
         emit processFinished(projectId, exitCode,
                              exitStatus == QProcess::CrashExit);
         process->deleteLater();

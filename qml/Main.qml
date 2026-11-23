@@ -27,7 +27,7 @@ ApplicationWindow {
     // Explicitly terminate the Qt event loop when the desktop window's close
     // button is used. This ensures scripts/run.sh returns to the shell prompt.
     onClosing: function(close) {
-        console.info("[Application] Main window close requested; quitting.")
+        console.debug("[Application] Main window close requested; quitting.")
         close.accepted = true
         Qt.quit()
     }
@@ -770,8 +770,6 @@ ApplicationWindow {
             Qt.callLater(function() { window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus() })
     }
 
-    onWidthChanged: console.info("[Settings Geometry] window width:", width)
-    onHeightChanged: console.info("[Settings Geometry] window height:", height)
 
     property string preFullscreenMode: settingsManager.restoreDisplayMode
     property bool pendingPreferredSizeApplication: false
@@ -1383,10 +1381,10 @@ ApplicationWindow {
         function onConnectedChanged() {
             if (controllerManager.connected) {
                 window.activeInputDevice = "controller"
-                console.info("[Input] Controller available:", controllerManager.controllerName)
+                console.debug("[Input] Controller available:", controllerManager.controllerName)
             } else {
                 window.activeInputDevice = "keyboard"
-                console.info("[Input] No controller connected; using keyboard hints")
+                console.debug("[Input] No controller connected; using keyboard hints")
             }
         }
         function onNavigationRequested(direction) {
@@ -1559,7 +1557,7 @@ ApplicationWindow {
         target: settingsManager
         function onThemeNameChanged() {
             pendingThemeName = settingsManager.themeName
-            console.info("[Settings QML] Applied theme changed:", settingsManager.themeName)
+            console.debug("[Settings QML] Applied theme changed:", settingsManager.themeName)
         }
     }
 
@@ -3066,8 +3064,6 @@ ApplicationWindow {
                     }
                 }
             }
-            Component.onCompleted: console.info("[Settings Geometry] main content panel:", width, "x", height)
-            onWidthChanged: console.info("[Settings Geometry] main content panel width:", width)
 
             // A stable, understated theme backdrop keeps the library visually
             // consistent while games are browsed. Selected artwork belongs to
@@ -3128,8 +3124,6 @@ ApplicationWindow {
             StackLayout {
                 id: mainPageStack
                 anchors.fill: parent
-                Component.onCompleted: console.info("[Settings Geometry] main page stack:", width, "x", height)
-                onWidthChanged: console.info("[Settings Geometry] main page stack width:", width)
                 anchors.leftMargin: 30
                 anchors.rightMargin: 30
                 anchors.bottomMargin: 30
@@ -3300,7 +3294,7 @@ ApplicationWindow {
                                     ? Math.min(wideScreenColumnCap, responsiveColumns)
                                     : responsiveColumns
                             function logGridGeometry(reason) {
-                                console.info("[Grid Geometry]", reason,
+                                console.debug("[Grid Geometry]", reason,
                                     "density:", settingsManager.libraryDensity,
                                     "viewport:", parent.width, "x", parent.height,
                                     "grid:", width, "x", height,
@@ -5160,7 +5154,7 @@ ApplicationWindow {
                     id: settingsPage
                     property string section: "Appearance"
                     onSectionChanged: {
-                        console.info("[Settings QML] Section changed:", section)
+                        console.debug("[Settings QML] Section changed:", section)
                         window.previewThemeId = settingsManager.themeName
                         if (section === "Application")
                             storageUsage.refresh()
@@ -6159,7 +6153,7 @@ ApplicationWindow {
                                     SettingsGroupLabel { text: "DIAGNOSTICS" }
                                     SettingRow {
                                         title: "Runtime log"
-                                        description: "Records library, metadata, controller and launcher activity. Rotates at 5 MiB and keeps three older logs. Attach it when reporting a problem."
+                                        description: "runtime.log records what RecompStation does; each game's own output is in logs/launchers. Your home folder is written as ~. Attach both when reporting a problem."
                                         Button {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -6184,6 +6178,17 @@ ApplicationWindow {
                                             leftPadding: 16
                                             rightPadding: 16
                                             implicitHeight: 38
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Detailed logging"
+                                        description: "Adds step-by-step details to the log, for tracking down a problem. Leave it off otherwise; the log grows faster."
+                                        ToggleSwitch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            checked: settingsManager.detailedLogging
+                                            onToggled: settingsManager.setDetailedLogging(checked)
+                                            Accessible.name: "Detailed logging"
                                         }
                                     }
 
@@ -8019,7 +8024,7 @@ ApplicationWindow {
                         }
                         enabled: !window.navigationTransitionRunning
                         onClicked: {
-                            console.info("[UI] Navigation: Game Library")
+                            console.debug("[UI] Navigation: Game Library")
                             window.navigateToPage("Library")
                         }
                     }
@@ -8066,7 +8071,7 @@ ApplicationWindow {
                         }
                         enabled: !window.navigationTransitionRunning
                         onClicked: {
-                            console.info("[UI] Navigation: Settings")
+                            console.debug("[UI] Navigation: Settings")
                             window.navigateToPage("Settings")
                         }
                     }

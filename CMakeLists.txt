@@ -127,6 +127,19 @@ target_link_libraries(recompstation_core PUBLIC
     LibArchive::LibArchive
 )
 
+# Commit the app was built from, shown at the top of each session in the log.
+find_package(Git QUIET)
+set(RECOMPSTATION_BUILD_ID "unknown")
+if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+    execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --dirty --abbrev=10
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                    OUTPUT_VARIABLE RECOMPSTATION_BUILD_ID
+                    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if(NOT RECOMPSTATION_BUILD_ID)
+        set(RECOMPSTATION_BUILD_ID "unknown")
+    endif()
+endif()
+
 qt_add_executable(RecompStationApp
     src/main.cpp
     src/core/ControllerManager.h
@@ -191,6 +204,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
     target_compile_options(recompstation_core PRIVATE -Wno-sfinae-incomplete)
     target_compile_options(RecompStationApp PRIVATE -Wno-sfinae-incomplete)
 endif()
+
+target_compile_definitions(RecompStationApp PRIVATE
+    RECOMPSTATION_BUILD_ID="${RECOMPSTATION_BUILD_ID} ${CMAKE_BUILD_TYPE}"
+)
 
 target_link_libraries(RecompStationApp PRIVATE
     recompstation_core

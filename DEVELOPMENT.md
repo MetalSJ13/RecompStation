@@ -101,6 +101,9 @@ The core is done (see What is done). Remaining:
 - [x] Fixed waits removed from the slowest tests without changing what they check: the library watcher's debounce is 50 ms in tests (750 ms in the app), and the launch tests' scripts sleep 0.3 s instead of 1 s.
 - [ ] Measure again with the printed times; if Main.qml's QML compilation (qmlcachegen, 8,000 lines) dominates, split it into components (Library, Settings pages) so changes recompile less.
 
+### 5b. Runtime log — done
+`runtime.log` is written for whoever reads a bug report: a session header (version and commit, system, desktop and session type, display, settings, library counts, installed launchers, data and log paths) and footer, one line per event (`2026-11-23 15:14:02.239 INFO  launch    …`), the home folder written as `~`, and the renderer (graphics API and OpenGL driver) once the window is up. Per-frame and per-request chatter (geometry, screenshot rotation, every metadata query) is debug-only; debug is off unless Settings › Application › Detailed logging is on or `RECOMPSTATION_DEBUG=1` (`QT_LOGGING_RULES` still overrides). Launcher output is captured to `logs/launchers/<project>.log` and, when a launcher crashes or exits with an error, its last 40 lines are copied into `runtime.log`.
+
 ### 6. Input, accessibility and regression
 - [ ] Contrast, accessible names, tab order and scaling review across all pages.
 - [ ] Theme polish of the button-mapping capture states.

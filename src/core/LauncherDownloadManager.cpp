@@ -502,7 +502,6 @@ int LauncherDownloadManager::installDownloadedAsset(
 
         QFile::remove(archivePath);
         qCInfo(lcLauncher) << "Launcher installed:" << projectId;
-        qCInfo(lcLauncher) << "Launcher installed:" << projectId;
         emit installationCompleted(requestId, projectId, executablePath);
     });
 

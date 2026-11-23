@@ -298,13 +298,6 @@ Popup {
         previousScreenshotIndex = -1
         screenshotLayerA = true
         installPromptVisible = false
-        const screenshotCount = window.selectedGame && window.selectedGame.screenshots
-            ? window.selectedGame.screenshots.length : 0
-        console.info("[Details Screenshots] Opened:", window.selectedGame
-            ? window.selectedGame.title : "no selection",
-            "count:", screenshotCount,
-            "reduced motion:", settingsManager.reducedMotion,
-            "window active:", window.active)
         if (selectedProject)
             window.loadCachedProjectRelease(selectedProject)
     }
@@ -465,14 +458,11 @@ Popup {
                 && !settingsManager.reducedMotion && window.selectedGame
                 && window.selectedGame.screenshots
                 && window.selectedGame.screenshots.length > 1)
-            onRunningChanged: console.info("[Details Screenshots] Rotation timer running:", running)
             onTriggered: {
                 const count = window.selectedGame.screenshots.length
                 gameDetailsPopup.previousScreenshotIndex = gameDetailsPopup.screenshotIndex
                 gameDetailsPopup.screenshotIndex = (gameDetailsPopup.screenshotIndex + 1) % count
                 gameDetailsPopup.screenshotLayerA = !gameDetailsPopup.screenshotLayerA
-                console.info("[Details Screenshots] Advanced to image:",
-                    gameDetailsPopup.screenshotIndex, "of", count)
             }
         }
 
@@ -493,7 +483,6 @@ Popup {
                 if (status === Image.Error)
                     console.warn("[Details Screenshots] Image failed:", source)
                 else if (status === Image.Ready) {
-                    console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
                     if (gameDetailsPopup.screenshotLayerA)
                         gameDetailsPopup.revealSwitchedBackground()
                 }
@@ -522,7 +511,6 @@ Popup {
                 if (status === Image.Error)
                     console.warn("[Details Screenshots] Image failed:", source)
                 else if (status === Image.Ready) {
-                    console.info("[Details Screenshots] Image ready:", source, sourceSize.width, "x", sourceSize.height)
                     if (!gameDetailsPopup.screenshotLayerA)
                         gameDetailsPopup.revealSwitchedBackground()
                 }

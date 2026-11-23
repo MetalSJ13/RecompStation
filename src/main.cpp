@@ -10,6 +10,11 @@
 #include <QSettings>
 #include <QSysInfo>
 #include <QStandardPaths>
+#include <QElapsedTimer>
+#include <QOpenGLContext>
+#include <QOpenGLFunctions>
+#include <QQuickWindow>
+#include <QSGRendererInterface>
 
 #include "core/Logging.h"
 #include "core/ControllerManager.h"
@@ -32,6 +37,84 @@
 #include "projects/ProjectCatalog.h"
 
 namespace {
+#ifndef RECOMPSTATION_BUILD_ID
+#define RECOMPSTATION_BUILD_ID "unknown"
+#endif
+
+QString onOff(bool value)
+{
+    return value ? QStringLiteral("on") : QStringLiteral("off");
+}
+
+// The block at the top of every session in runtime.log: what someone
+// reading a bug report needs before the first event line.
+QStringList sessionHeader(const PlatformManager &platformManager,
+                          const SettingsManager &settingsManager,
+                          const DatabaseManager &databaseManager,
+                          const LauncherDownloadManager &launcherDownloadManager,
+                          const ProjectCatalog &projectCatalog,
+                          const QVariantMap &interfaceScaleInfo,
+                          const QString &interfaceScaleSetting)
+{
+    QStringList lines;
+    const QString rule(72, QLatin1Char('='));
+    lines << QString() << rule
+          << QStringLiteral("RecompStation %1 (build %2) · session started %3")
+                 .arg(QCoreApplication::applicationVersion(),
+                      QStringLiteral(RECOMPSTATION_BUILD_ID),
+                      QDateTime::currentDateTime().toString(Qt::ISODate));
+    lines << QStringLiteral("System:    %1 · kernel %2 · %3 · Qt %4")
+                 .arg(QSysInfo::prettyProductName(), QSysInfo::kernelVersion(),
+                      QSysInfo::currentCpuArchitecture(), QString::fromLatin1(qVersion()));
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+    const QString session = qEnvironmentVariable("XDG_SESSION_TYPE");
+    lines << QStringLiteral("Desktop:   %1 · %2 session · Qt platform %3%4")
+                 .arg(desktop.isEmpty() ? QStringLiteral("unknown") : desktop,
+                      session.isEmpty() ? QStringLiteral("unknown") : session,
+                      QGuiApplication::platformName(),
+                      qEnvironmentVariableIsSet("SteamDeck") ? QStringLiteral(" · Steam Deck") : QString());
+    if (QScreen *screen = QGuiApplication::primaryScreen()) {
+        lines << QStringLiteral("Display:   %1 %2x%3 @ %4 Hz · device pixel ratio %5 · %6 screen(s) · interface scale %7, applied %8 percent")
+                     .arg(screen->name())
+                     .arg(screen->geometry().width()).arg(screen->geometry().height())
+                     .arg(qRound(screen->refreshRate()))
+                     .arg(screen->devicePixelRatio())
+                     .arg(QGuiApplication::screens().size())
+                     .arg(interfaceScaleSetting)
+                     .arg(interfaceScaleInfo.value(QStringLiteral("applied")).toInt());
+    }
+    lines << QStringLiteral("Settings:  theme %1 · window %2 · background %3 · reduced motion %4 · metadata %5 first, LaunchBox %6, TheGamesDB %7 (key: %8) · prepare games %9 · fullscreen games %10")
+                 .arg(settingsManager.themeName(), settingsManager.displayMode(),
+                      settingsManager.libraryBackgroundType(), onOff(settingsManager.reducedMotion()),
+                      settingsManager.metadataProviderOrder(), onOff(settingsManager.launchBoxEnabled()),
+                      onOff(settingsManager.theGamesDbEnabled()), settingsManager.theGamesDbKeySource(),
+                      onOff(settingsManager.prepareGameFiles()))
+                 .arg(onOff(settingsManager.startGamesFullscreen()));
+
+    QStringList counts;
+    for (const QString &platform : platformManager.platforms())
+        counts << QStringLiteral("%1 %2").arg(platform).arg(databaseManager.games(platform).size());
+    lines << QStringLiteral("Library:   %1 · %2")
+                 .arg(platformManager.libraryConfigured() ? platformManager.libraryDirectory()
+                                                          : QStringLiteral("not set up"),
+                      counts.join(QStringLiteral(", ")));
+
+    QStringList launchers;
+    for (const QVariant &entry : launcherDownloadManager.installedLaunchers())
+        launchers << entry.toMap().value(QStringLiteral("projectId")).toString();
+    lines << QStringLiteral("Launchers: %1 installed%2 · catalog of %3 projects%4")
+                 .arg(launchers.size())
+                 .arg(launchers.isEmpty() ? QString() : QStringLiteral(" (%1)").arg(launchers.join(QStringLiteral(", "))))
+                 .arg(projectCatalog.projects().size())
+                 .arg(projectCatalog.isLoaded() ? QString()
+                                               : QStringLiteral(" (failed to load: %1)").arg(projectCatalog.errorString()));
+    lines << QStringLiteral("Data:      %1 · log %2 · detailed logging %3")
+                 .arg(platformManager.dataDirectory(), RecompLogging::logFilePath(),
+                      onOff(RecompLogging::detailedLogging()));
+    lines << rule;
+    return lines;
+}
+
 // Interface scale is applied with QT_SCALE_FACTOR, which Qt reads while
 // QGuiApplication is constructed. Everything here runs before that.
 struct InterfaceScaleStartup {
@@ -125,16 +208,21 @@ int main(int argc, char *argv[])
         qCritical() << "Failed to initialize application directories.";
         return 1;
     }
-    qInfo() << "Configured library platforms:" << platformManager.platforms();
 
     const QString logDirectory = platformManager.dataDirectory() + "/logs";
     if (!RecompLogging::initialize(logDirectory))
         qWarning() << "Could not initialize the persistent log file. Continuing with Qt's default logger.";
 
-    qCInfo(lcApplication) << "Starting RecompStation" << QCoreApplication::applicationVersion();
-    qCInfo(lcApplication) << "Application data directory:" << platformManager.dataDirectory();
+    QElapsedTimer sessionTimer;
+    sessionTimer.start();
 
     SettingsManager settingsManager(platformManager.settingsFilePath());
+    if (settingsManager.detailedLogging())
+        RecompLogging::setDetailedLogging(true);
+    QObject::connect(&settingsManager, &SettingsManager::detailedLoggingChanged, &app,
+                     [&settingsManager]() {
+        RecompLogging::setDetailedLogging(settingsManager.detailedLogging());
+    });
 
     // Measure the screen in logical pixels (after desktop scaling, before
     // ours) and work out what Auto should be.
@@ -158,7 +246,7 @@ int main(int argc, char *argv[])
         interfaceScaleInfo.insert(QStringLiteral("logicalHeight"), logical.height());
         interfaceScaleInfo.insert(QStringLiteral("devicePixelRatio"),
                                   screen ? screen->devicePixelRatio() / ours : 1.0);
-        qCInfo(lcApplication) << "Interface scale:" << interfaceScale.setting
+        qCDebug(lcApplication) << "Interface scale:" << interfaceScale.setting
                               << "applied" << interfaceScale.appliedPercent << "%"
                               << "auto" << autoPercent << "%"
                               << "screen" << logical << "external" << interfaceScale.external;
@@ -198,7 +286,6 @@ int main(int argc, char *argv[])
                                   << databaseManager.lastError();
         return 1;
     }
-    qCInfo(lcApplication) << "Library database initialized.";
 
     LibraryScanner libraryScanner(&platformManager, &databaseManager);
     TheGamesDbClient metadataProvider(settingsManager.theGamesDbApiKey());
@@ -282,9 +369,9 @@ int main(int argc, char *argv[])
     ControllerManager controllerManager;
     controllerManager.setSettingsManager(&settingsManager);
 
-    if (projectCatalog.isLoaded())
-        qCInfo(lcApplication) << "Project catalog loaded with supported platforms:"
-                              << projectCatalog.supportedPlatforms();
+    RecompLogging::writeBlock(sessionHeader(platformManager, settingsManager, databaseManager,
+                                            launcherDownloadManager, projectCatalog,
+                                            interfaceScaleInfo, interfaceScale.setting));
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
@@ -314,8 +401,12 @@ int main(int argc, char *argv[])
         qCCritical(lcUI) << "QML root object creation failed.";
         QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
-    QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
-        qCInfo(lcApplication) << "RecompStation is shutting down.";
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, [&sessionTimer]() {
+        const qint64 seconds = sessionTimer.elapsed() / 1000;
+        RecompLogging::writeBlock({
+            QStringLiteral("==== session ended %1 after %2 h %3 min %4 s ====")
+                .arg(QDateTime::currentDateTime().toString(Qt::ISODate))
+                .arg(seconds / 3600).arg((seconds / 60) % 60).arg(seconds % 60)});
     });
 
     engine.loadFromModule("RecompStation", "Main");
@@ -324,7 +415,28 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    qCInfo(lcUI) << "Main QML interface loaded.";
+    qCInfo(lcUI) << "Interface loaded.";
+    // Which graphics API Qt Quick ended up with (and, for OpenGL, which
+    // driver): the first thing to know about drawing problems.
+    if (auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst())) {
+        QObject::connect(window, &QQuickWindow::sceneGraphInitialized, window, [window]() {
+            QString api;
+            switch (window->rendererInterface()->graphicsApi()) {
+            case QSGRendererInterface::OpenGL: api = QStringLiteral("OpenGL"); break;
+            case QSGRendererInterface::Vulkan: api = QStringLiteral("Vulkan"); break;
+            case QSGRendererInterface::Software: api = QStringLiteral("software"); break;
+            default: api = QStringLiteral("other"); break;
+            }
+            QString driver;
+            if (QOpenGLContext *context = QOpenGLContext::currentContext()) {
+                QOpenGLFunctions *gl = context->functions();
+                driver = QStringLiteral(" · %1 · %2").arg(
+                    QString::fromLatin1(reinterpret_cast<const char *>(gl->glGetString(GL_RENDERER))),
+                    QString::fromLatin1(reinterpret_cast<const char *>(gl->glGetString(GL_VERSION))));
+            }
+            qCInfo(lcUI).noquote() << "Renderer:" << api + driver;
+        }, Qt::DirectConnection);
+    }
     // Reconcile after QML is loaded so the library refresh and metadata-scrape
     // connections receive the scan-completed signal.
     if (settingsManager.scanOnStartup() && platformManager.libraryConfigured())

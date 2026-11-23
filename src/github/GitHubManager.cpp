@@ -86,7 +86,7 @@ int GitHubManager::fetchRepository(const QString &owner,
     const int requestId = m_nextRequestId++;
     const QString cleanOwner = owner.trimmed();
     const QString cleanRepository = repository.trimmed();
-    qCInfo(lcGitHub) << "Repository request:" << cleanOwner << "/" << cleanRepository;
+    qCDebug(lcGitHub) << "Repository request:" << cleanOwner << "/" << cleanRepository;
 
     if (!isValidRepositoryIdentifier(cleanOwner, cleanRepository)) {
         emit requestFailed(requestId,
@@ -137,7 +137,7 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
     const int requestId = m_nextRequestId++;
     const QString cleanOwner = owner.trimmed();
     const QString cleanRepository = repository.trimmed();
-    qCInfo(lcGitHub) << "Latest release request:" << cleanOwner << "/" << cleanRepository;
+    qCDebug(lcGitHub) << "Latest release request:" << cleanOwner << "/" << cleanRepository;
 
     if (!isValidRepositoryIdentifier(cleanOwner, cleanRepository)) {
         emit requestFailed(requestId,

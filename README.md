@@ -146,7 +146,11 @@ To run the regression tests while building, add `--test`: `./scripts/build.sh Re
 | Your games | The library folder you chose (never modified) |
 | Saves and settings of each launcher | The launcher's own folder, for example `~/.config/BanjoRecompiled/` or `~/.local/share/soh/` |
 
-The runtime log is at `~/.local/share/RecompStation/RecompStation/logs/runtime.log`. Please attach it when reporting a problem.
+Logs are in `~/.local/share/RecompStation/RecompStation/logs/` (Settings › Application › Open log folder):
+- `runtime.log`: what RecompStation did. Each session starts with a summary of your system, display, settings and library, and your home folder is written as `~`.
+- `launchers/<project>.log`: the output of a game's launcher from its last run (the run before is kept as `.previous.log`).
+
+Please attach both when reporting a problem. For a hard-to-reproduce problem, turn on **Detailed logging** in Settings › Application first, or start RecompStation with `RECOMPSTATION_DEBUG=1`.
 
 ## Uninstalling
 

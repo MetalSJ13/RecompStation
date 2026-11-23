@@ -32,6 +32,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString libraryListDensity READ libraryListDensity WRITE setLibraryListDensity NOTIFY libraryListDensityChanged)
     Q_PROPERTY(QString libraryConsoleDensity READ libraryConsoleDensity WRITE setLibraryConsoleDensity NOTIFY libraryConsoleDensityChanged)
     Q_PROPERTY(QString libraryBackgroundType READ libraryBackgroundType WRITE setLibraryBackgroundType NOTIFY libraryBackgroundTypeChanged)
+    Q_PROPERTY(bool detailedLogging READ detailedLogging WRITE setDetailedLogging NOTIFY detailedLoggingChanged)
     Q_PROPERTY(bool prepareGameFiles READ prepareGameFiles WRITE setPrepareGameFiles NOTIFY launchSettingsChanged)
     Q_PROPERTY(bool startGamesFullscreen READ startGamesFullscreen WRITE setStartGamesFullscreen NOTIFY launchSettingsChanged)
     Q_PROPERTY(int launchSettingsRevision READ launchSettingsRevision NOTIFY launchSettingsChanged)
@@ -134,6 +135,10 @@ public:
     QString customLibraryBackground() const;
     Q_INVOKABLE void setCustomLibraryBackground(const QString &path);
 
+    // Application › Diagnostics: debug lines in runtime.log.
+    bool detailedLogging() const;
+    Q_INVOKABLE void setDetailedLogging(bool enabled);
+
     // Playing: handing game files to launchers (see LaunchPreparer).
     bool prepareGameFiles() const;
     Q_INVOKABLE void setPrepareGameFiles(bool enabled);
@@ -149,6 +154,7 @@ public:
 
 signals:
     void launchSettingsChanged();
+    void detailedLoggingChanged();
     void themeNameChanged();
     void scanOnStartupChanged();
     void automaticUpdateChecksEnabledChanged();
@@ -198,6 +204,7 @@ private:
     bool m_theGamesDbEnabled = true;
     bool m_launchBoxEnabled = false;
     bool m_prepareGameFiles = true;
+    bool m_detailedLogging = false;
     bool m_startGamesFullscreen = true;
     int m_launchSettingsRevision = 0;
     QString m_launchBoxLastUpdated;

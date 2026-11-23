@@ -139,7 +139,7 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
             // unrelated or cross-platform search results.
             for (const QVariant &entry : results) {
                 const QVariantMap candidate = entry.toMap();
-                qCInfo(lcMetadata) << "Metadata candidate:"
+                qCDebug(lcMetadata) << "Metadata candidate:"
                                    << candidate.value(QStringLiteral("title")).toString()
                                    << "provider ID:"
                                    << candidate.value(QStringLiteral("providerGameId")).toInt()
@@ -591,7 +591,7 @@ void LibraryMetadataMatcher::processNext()
     }
 
     m_currentGame = m_queue.dequeue();
-    qCInfo(lcMetadata) << "Processing metadata for:"
+    qCDebug(lcMetadata) << "Processing metadata for:"
                        << m_currentGame.value(QStringLiteral("title")).toString()
                        << "platform:" << m_currentGame.value(QStringLiteral("platform")).toString();
 
@@ -678,7 +678,7 @@ void LibraryMetadataMatcher::processNext()
     const QString searchTitle = normalizedTitle(localTitle);
     setStatus(QStringLiteral("Checking %1...")
                   .arg(localTitle));
-    qCInfo(lcMetadata) << "Searching TheGamesDB using normalized title:"
+    qCDebug(lcMetadata) << "Searching TheGamesDB using normalized title:"
                        << searchTitle << "(local title:" << localTitle << ")";
     // Normalize only the provider query. The local game title and ROM path
     // remain unchanged, including any region/revision tags in the filename.

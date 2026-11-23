@@ -206,7 +206,7 @@ int LibraryScanner::scanAll()
 {
     if (m_asyncScanActive)
         return m_lastScanCount;
-    qCInfo(lcLibrary) << "Starting full library scan.";
+    qCDebug(lcLibrary) << "Starting full library scan.";
     emit scanStateChanged();
     emit scanStarted();
     m_scanningAll = true;
@@ -310,7 +310,7 @@ int LibraryScanner::scanPlatform(const QString &platform)
         m_lastError = m_databaseManager->lastError();
     }
 
-    qCInfo(lcLibrary) << "Platform scan finished:" << platform
+    qCDebug(lcLibrary) << "Platform scan finished:" << platform
                       << "registered:" << m_lastScanCount
                       << "discovered:" << discoveredPaths.size();
     if (!m_lastError.isEmpty())
@@ -336,7 +336,7 @@ bool LibraryScanner::scanAllAsync()
     m_lastError.clear();
     m_asyncScanActive = true;
 
-    qCInfo(lcLibrary) << "Starting asynchronous library scan across"
+    qCDebug(lcLibrary) << "Starting asynchronous library scan across"
                       << m_asyncPlatforms.size() << "platforms.";
     emit scanStateChanged();
     emit scanStarted();

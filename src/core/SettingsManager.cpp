@@ -62,6 +62,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
     m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
     m_prepareGameFiles = settings.value(QStringLiteral("launch/prepareGameFiles"), true).toBool();
+    m_detailedLogging = settings.value(QStringLiteral("application/detailedLogging"), false).toBool();
     m_startGamesFullscreen = settings.value(QStringLiteral("launch/startGamesFullscreen"), true).toBool();
     const QString storedOrder = settings.value(
         QStringLiteral("metadata/providerOrder"), QStringLiteral("launchbox")).toString();
@@ -128,18 +129,18 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
     m_customLibraryBackground = settings.value(
         QStringLiteral("appearance/customLibraryBackground")).toString();
 
-    qCInfo(lcSettings) << "Loaded library settings:"
+    qCDebug(lcSettings) << "Loaded library settings:"
                           << "file:" << m_settingsFilePath
                           << "view:" << m_libraryView
                           << "grid density:" << m_libraryDensity
                           << "list density:" << m_libraryListDensity
                           << "carousel density:" << m_libraryConsoleDensity;
-    qCInfo(lcSettings) << "Loaded theme:" << m_themeName;
-    qCInfo(lcSettings) << "Loaded preferred presentation size:" << m_preferredPresentationSize;
-    qCInfo(lcSettings) << "Loaded display mode:" << m_displayMode;
-    qCInfo(lcSettings) << "Loaded restore display mode:" << m_restoreDisplayMode;
-    qCInfo(lcSettings) << "Loaded font size:" << m_fontSize;
-    qCInfo(lcSettings) << "Loaded reduced motion:" << m_reducedMotion;
+    qCDebug(lcSettings) << "Loaded theme:" << m_themeName;
+    qCDebug(lcSettings) << "Loaded preferred presentation size:" << m_preferredPresentationSize;
+    qCDebug(lcSettings) << "Loaded display mode:" << m_displayMode;
+    qCDebug(lcSettings) << "Loaded restore display mode:" << m_restoreDisplayMode;
+    qCDebug(lcSettings) << "Loaded font size:" << m_fontSize;
+    qCDebug(lcSettings) << "Loaded reduced motion:" << m_reducedMotion;
 }
 
 bool SettingsManager::scanOnStartup() const
@@ -559,7 +560,7 @@ QString SettingsManager::themeName() const
 
 void SettingsManager::setThemeName(const QString &themeName)
 {
-    qCInfo(lcSettings) << "Theme change requested:" << themeName
+    qCDebug(lcSettings) << "Theme change requested:" << themeName
                        << "current:" << m_themeName;
     if (!isSupportedTheme(themeName)) {
         qCWarning(lcSettings) << "Rejected unsupported theme:" << themeName;
@@ -1152,4 +1153,24 @@ void SettingsManager::markDefaultFullscreenApplied(const QString &projectId)
     QSettings settings(m_settingsFilePath, QSettings::IniFormat);
     settings.setValue(QStringLiteral("launch/fullscreenApplied/") + projectId, true);
     settings.sync();
+}
+
+bool SettingsManager::detailedLogging() const
+{
+    return m_detailedLogging;
+}
+
+void SettingsManager::setDetailedLogging(bool enabled)
+{
+    if (m_detailedLogging == enabled)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("application/detailedLogging"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist the detailed logging preference.";
+        return;
+    }
+    m_detailedLogging = enabled;
+    emit detailedLoggingChanged();
 }

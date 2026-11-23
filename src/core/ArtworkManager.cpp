@@ -40,7 +40,7 @@ ArtworkManager::ArtworkManager(DatabaseManager *database,
 
 void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
 {
-    qCInfo(lcArtwork) << "Artwork download requested for library game:" << gameId;
+    qCDebug(lcArtwork) << "Artwork download requested for library game:" << gameId;
     const QUrl url(artworkUrl);
     if (!m_database || gameId <= 0 || !url.isValid()
         || url.scheme() != QStringLiteral("https") || url.host().isEmpty()) {
@@ -100,7 +100,7 @@ void ArtworkManager::downloadArtwork(int gameId, const QString &artworkUrl)
             return;
         }
 
-        qCInfo(lcArtwork) << "Artwork saved for game" << gameId;
+        qCDebug(lcArtwork) << "Artwork saved for game" << gameId;
         emit artworkSaved(gameId, path);
     });
 }
