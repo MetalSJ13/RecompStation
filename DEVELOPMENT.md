@@ -51,7 +51,7 @@ The responsive Library presentation work is being tracked as a focused five-phas
   - [x] Establish a softer two-sided viewport fade while preserving the first card at the initial scroll position; refine the right fade to respond to the card's trailing edge. User reviewed the result and said it looks good.
   - [ ] Review selected-card emphasis and horizontal scrolling/navigation animations.
   - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
-- [x] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The planned Shelves view and spotlight panel (Library presentation redesign, step 4 below) are the intended direction for this phase.
+- [ ] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The planned Shelves view and spotlight panel (Library presentation redesign, step 4 below) are the intended direction for this phase.
 
 ## Library presentation redesign (planned, 2026-11-22)
 
