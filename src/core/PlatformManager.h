@@ -42,6 +42,7 @@ public:
     Q_INVOKABLE bool setLibraryDirectory(const QUrl &directoryUrl);
     Q_INVOKABLE bool setLibraryDirectoryPath(const QString &directoryPath);
     Q_INVOKABLE QString homeDirectory() const;
+    Q_INVOKABLE bool pathExists(const QString &path) const;
     // Default library location for first-time setup: ~/Games/RecompStation
     // when ~/Games already exists (a new folder inside it, so nothing there is
     // touched), otherwise ~/RecompStation. Returns { path, exists, freeBytes }.

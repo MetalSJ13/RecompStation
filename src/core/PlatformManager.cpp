@@ -306,3 +306,8 @@ bool PlatformManager::isValidProjectId(const QString &projectId)
 
     return projectIdPattern.match(projectId).hasMatch();
 }
+
+bool PlatformManager::pathExists(const QString &path) const
+{
+    return !path.isEmpty() && QFileInfo::exists(path);
+}

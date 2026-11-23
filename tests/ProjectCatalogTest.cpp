@@ -21,6 +21,8 @@ private slots:
     void selectsOnlyCompatibleLinuxAssets();
     void normalizesArchitectures();
     void filtersReleaseAssetsForCurrentArchitecture();
+    void parsesLaunchRecipes();
+    void bundledLaunchRecipesAreComplete();
 };
 
 void ProjectCatalogTest::parsesValidCatalog()
@@ -428,6 +430,73 @@ void ProjectCatalogTest::normalizesArchitectures()
     QCOMPARE(ProjectCatalog::normalizeArchitecture(QStringLiteral("arm64")),
              QStringLiteral("aarch64"));
     QVERIFY(ProjectCatalog::normalizeArchitecture(QStringLiteral("riscv64")).isEmpty());
+}
+
+namespace {
+QByteArray catalogWithLaunch(const QByteArray &launch)
+{
+    return QByteArray(R"({"schemaVersion": 1, "projects": [{
+        "id": "sample-project", "name": "Sample Recompiled", "developmentStatus": "playable",
+        "platform": "N64", "gameTitles": ["Sample Game"],
+        "repositoryOwner": "ExampleOrg", "repositoryName": "SampleProject",
+        "architectures": {"x86_64": {"assetNameRegex": "^sample\\.tar\\.gz$",
+                                      "packageFormat": "tar.gz", "executablePath": "sample"}})")
+        + (launch.isEmpty() ? QByteArray() : QByteArray(", \"launch\": ") + launch)
+        + QByteArray("}]}");
+}
+}
+
+void ProjectCatalogTest::parsesLaunchRecipes()
+{
+    QVariantList projects;
+    QString error;
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch({}), &projects, &error), qPrintable(error));
+    QCOMPARE(projects.first().toMap().value("launch").toMap().value("method").toString(),
+             QStringLiteral("manual"));
+
+    const QByteArray valid = R"({"method": "n64recomp", "dataFolder": "SampleRecompiled",
+        "romFileName": "sample.n64.us.1.0.z64", "romName": "SAMPLE", "romXxh3": "1b67585d56e07f8c",
+        "romVersion": "North America 1.0", "graphicsFile": "graphics.json"})";
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(valid), &projects, &error), qPrintable(error));
+    const QVariantMap launch = projects.first().toMap().value("launch").toMap();
+    QCOMPARE(launch.value("dataFolder").toString(), QStringLiteral("SampleRecompiled"));
+    QCOMPARE(launch.value("romXxh3").toString(), QStringLiteral("1B67585D56E07F8C"));
+
+    const QList<QByteArray> invalid = {
+        R"({"method": "script"})",
+        R"({"method": "n64recomp", "dataFolder": "../evil", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C"})",
+        R"({"method": "n64recomp", "dataFolder": ".config", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C"})",
+        R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "sub/a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C"})",
+        R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.exe", "romName": "A", "romXxh3": "1B67585D56E07F8C"})",
+        R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A"})",
+        R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "XYZ"})",
+        R"({"method": "harbourmasters", "dataFolder": "ok", "romFileName": "a.z64", "romName": "A", "dataFiles": ["../saves"]})",
+        R"("n64recomp")"
+    };
+    for (const QByteArray &launchJson : invalid)
+        QVERIFY2(!ProjectCatalog::parseCatalog(catalogWithLaunch(launchJson), &projects, &error),
+                 launchJson.constData());
+}
+
+void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
+{
+    ProjectCatalog catalog;
+    QVERIFY2(catalog.isLoaded(), qPrintable(catalog.errorString()));
+    int prepared = 0;
+    for (const QVariant &entry : catalog.projects()) {
+        const QVariantMap launch = entry.toMap().value("launch").toMap();
+        const QString method = launch.value("method").toString();
+        QVERIFY(!method.isEmpty());
+        if (method == QStringLiteral("n64recomp")) {
+            QVERIFY(!launch.value("romXxh3").toString().isEmpty());
+            QVERIFY(!launch.value("romVersion").toString().isEmpty());
+            ++prepared;
+        }
+    }
+    QVERIFY(prepared >= 16);
+    QCOMPARE(catalog.project(QStringLiteral("banjo-kazooie-recompiled"))
+                 .value("launch").toMap().value("romFileName").toString(),
+             QStringLiteral("bk.n64.us.1.0.z64"));
 }
 
 QTEST_GUILESS_MAIN(ProjectCatalogTest)

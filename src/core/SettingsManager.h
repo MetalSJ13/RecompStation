@@ -32,6 +32,9 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString libraryListDensity READ libraryListDensity WRITE setLibraryListDensity NOTIFY libraryListDensityChanged)
     Q_PROPERTY(QString libraryConsoleDensity READ libraryConsoleDensity WRITE setLibraryConsoleDensity NOTIFY libraryConsoleDensityChanged)
     Q_PROPERTY(QString libraryBackgroundType READ libraryBackgroundType WRITE setLibraryBackgroundType NOTIFY libraryBackgroundTypeChanged)
+    Q_PROPERTY(bool prepareGameFiles READ prepareGameFiles WRITE setPrepareGameFiles NOTIFY launchSettingsChanged)
+    Q_PROPERTY(bool startGamesFullscreen READ startGamesFullscreen WRITE setStartGamesFullscreen NOTIFY launchSettingsChanged)
+    Q_PROPERTY(int launchSettingsRevision READ launchSettingsRevision NOTIFY launchSettingsChanged)
     Q_PROPERTY(QString customLibraryBackground READ customLibraryBackground WRITE setCustomLibraryBackground NOTIFY customLibraryBackgroundChanged)
 
 public:
@@ -131,7 +134,18 @@ public:
     QString customLibraryBackground() const;
     Q_INVOKABLE void setCustomLibraryBackground(const QString &path);
 
+    // Playing: handing game files to launchers (see LaunchPreparer).
+    bool prepareGameFiles() const;
+    Q_INVOKABLE void setPrepareGameFiles(bool enabled);
+    bool startGamesFullscreen() const;
+    Q_INVOKABLE void setStartGamesFullscreen(bool enabled);
+    // Per game: "default", "fullscreen" or "windowed".
+    Q_INVOKABLE QString launchWindowMode(const QString &projectId) const;
+    Q_INVOKABLE void setLaunchWindowMode(const QString &projectId, const QString &mode);
+    int launchSettingsRevision() const;
+
 signals:
+    void launchSettingsChanged();
     void themeNameChanged();
     void scanOnStartupChanged();
     void automaticUpdateChecksEnabledChanged();
@@ -180,6 +194,9 @@ private:
     bool m_automaticArtworkDownloadsEnabled = true;
     bool m_theGamesDbEnabled = true;
     bool m_launchBoxEnabled = false;
+    bool m_prepareGameFiles = true;
+    bool m_startGamesFullscreen = true;
+    int m_launchSettingsRevision = 0;
     QString m_launchBoxLastUpdated;
     static QVariantMap defaultControllerProfile();
     static bool isValidControllerGuid(const QString &guid);

@@ -61,6 +61,8 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("metadata/automaticArtworkDownloadsEnabled"), true).toBool();
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
     m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
+    m_prepareGameFiles = settings.value(QStringLiteral("launch/prepareGameFiles"), true).toBool();
+    m_startGamesFullscreen = settings.value(QStringLiteral("launch/startGamesFullscreen"), true).toBool();
     const QString storedOrder = settings.value(
         QStringLiteral("metadata/providerOrder"), QStringLiteral("launchbox")).toString();
     m_metadataProviderOrder = storedOrder == QStringLiteral("thegamesdb")
@@ -771,7 +773,7 @@ bool SettingsManager::resetPreferences()
 {
     QSettings settings(m_settingsFilePath, QSettings::IniFormat);
     for (const QString &group : {QStringLiteral("appearance"), QStringLiteral("display"),
-                                 QStringLiteral("controllers")})
+                                 QStringLiteral("controllers"), QStringLiteral("launch")})
         settings.remove(group);
     for (const QString &key : {QStringLiteral("library/view"), QStringLiteral("library/density"),
                                QStringLiteral("library/listDensity"), QStringLiteral("library/consoleDensity"),
@@ -1054,4 +1056,84 @@ bool SettingsManager::isSupportedFontSize(const QString &size)
     };
 
     return supportedSizes.contains(size);
+}
+
+bool SettingsManager::prepareGameFiles() const
+{
+    return m_prepareGameFiles;
+}
+
+void SettingsManager::setPrepareGameFiles(bool enabled)
+{
+    if (m_prepareGameFiles == enabled)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("launch/prepareGameFiles"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist the prepare-game-files preference.";
+        return;
+    }
+    m_prepareGameFiles = enabled;
+    ++m_launchSettingsRevision;
+    emit launchSettingsChanged();
+}
+
+bool SettingsManager::startGamesFullscreen() const
+{
+    return m_startGamesFullscreen;
+}
+
+void SettingsManager::setStartGamesFullscreen(bool enabled)
+{
+    if (m_startGamesFullscreen == enabled)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("launch/startGamesFullscreen"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist the fullscreen preference.";
+        return;
+    }
+    m_startGamesFullscreen = enabled;
+    ++m_launchSettingsRevision;
+    emit launchSettingsChanged();
+}
+
+QString SettingsManager::launchWindowMode(const QString &projectId) const
+{
+    static const QRegularExpression idPattern(QStringLiteral("^[a-z0-9][a-z0-9-]*$"));
+    if (!idPattern.match(projectId).hasMatch())
+        return QStringLiteral("default");
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    const QString mode = settings.value(QStringLiteral("launch/windowMode/") + projectId).toString();
+    return mode == QStringLiteral("fullscreen") || mode == QStringLiteral("windowed")
+        ? mode : QStringLiteral("default");
+}
+
+void SettingsManager::setLaunchWindowMode(const QString &projectId, const QString &mode)
+{
+    static const QRegularExpression idPattern(QStringLiteral("^[a-z0-9][a-z0-9-]*$"));
+    if (!idPattern.match(projectId).hasMatch()
+        || !QStringList{QStringLiteral("default"), QStringLiteral("fullscreen"),
+                        QStringLiteral("windowed")}.contains(mode)
+        || launchWindowMode(projectId) == mode)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    if (mode == QStringLiteral("default"))
+        settings.remove(QStringLiteral("launch/windowMode/") + projectId);
+    else
+        settings.setValue(QStringLiteral("launch/windowMode/") + projectId, mode);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist the window mode for" << projectId;
+        return;
+    }
+    ++m_launchSettingsRevision;
+    emit launchSettingsChanged();
+}
+
+int SettingsManager::launchSettingsRevision() const
+{
+    return m_launchSettingsRevision;
 }

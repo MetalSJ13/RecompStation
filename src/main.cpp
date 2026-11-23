@@ -267,6 +267,8 @@ int main(int argc, char *argv[])
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
+    gameLaunchManager.setProjectCatalog(&projectCatalog);
+    gameLaunchManager.setSettingsManager(&settingsManager);
     ControllerManager controllerManager;
     controllerManager.setSettingsManager(&settingsManager);
 

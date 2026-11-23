@@ -11,7 +11,7 @@
       ],
       "repositoryOwner": "BanjoRecomp",
       "repositoryName": "BanjoRecomp",
-      "romRequirements": "Requires a North American 1.0 copy of Banjo-Kazooie. RecompStation currently matches the associated game metadata; it does not yet verify the ROM revision.",
+      "romRequirements": "Requires a North American 1.0 copy of Banjo-Kazooie.",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^BanjoRecompiled-.*-Linux-X64\\.tar\\.gz$",
@@ -23,6 +23,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "BanjoRecompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "BanjoRecompiled",
+        "romFileName": "bk.n64.us.1.0.z64",
+        "romName": "Banjo-Kazooie",
+        "romXxh3": "1B67585D56E07F8C",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       },
       "developmentStatus": "playable"
     },
@@ -119,6 +128,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "SuperMario64Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "SuperMario64Recompiled",
+        "romFileName": "sm64.n64.us.1.0.z64",
+        "romName": "SUPER MARIO 64",
+        "romXxh3": "8A90DAA33E09A265",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -139,6 +157,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "PerfectDarkRecompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "PerfectDarkRecompiled",
+        "romFileName": "pd.n64.us.1.z64",
+        "romName": "Perfect Dark",
+        "romXxh3": "7F97EB141007861E",
+        "romVersion": "North America 1.1",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -166,6 +193,15 @@
           "packageFormat": "zip",
           "executablePath": "Starfox64Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "Starfox64Recompiled",
+        "romFileName": "sf64.n64.us.1.1.z64",
+        "romName": "STARFOX64",
+        "romXxh3": "163FD3FC3813F54E",
+        "romVersion": "North America 1.1",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -193,6 +229,15 @@
           "packageFormat": "zip",
           "executablePath": "DK64Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "DK64Recompiled",
+        "romFileName": "DK64.z64",
+        "romName": "DONKEY KONG 64",
+        "romXxh3": "4D876060F09B3FC5",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -220,6 +265,15 @@
           "packageFormat": "zip",
           "executablePath": "MarioKart64Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MarioKart64Recompiled",
+        "romFileName": "mk64.us.z64",
+        "romName": "MARIOKART64",
+        "romXxh3": "54572403569B87C1",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -241,6 +295,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "MarioPartyRecompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MarioPartyRecompiled",
+        "romFileName": "marioparty.n64.us.1.0.z64",
+        "romName": "MarioParty",
+        "romXxh3": "19F905A0CBC9FE8F",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -262,6 +325,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "MarioParty2Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MarioParty2Recompiled",
+        "romFileName": "marioparty2.n64.us.1.0.z64",
+        "romName": "MarioParty2",
+        "romXxh3": "D2DBFB3B4D7A5E81",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -283,6 +355,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "MarioParty3Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MarioParty3Recompiled",
+        "romFileName": "marioparty3.n64.us.1.0.z64",
+        "romName": "MarioParty3",
+        "romXxh3": "39F865D6EC68E629",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -305,6 +386,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "SmashBrosRecompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "SmashBrosRecompiled",
+        "romFileName": "smashbrothers.n64.us.1.0.z64",
+        "romName": "SMASH BROTHERS",
+        "romXxh3": "38912AC86097BFEC",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -326,6 +416,22 @@
           "packageFormat": "zip",
           "executablePath": "Ghostship.appimage"
         }
+      },
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "ghostship",
+        "romFileName": "baserom.us.z64",
+        "romName": "SUPER MARIO 64",
+        "dataFiles": [
+          "saves",
+          "default.sav",
+          "default.sav.bak",
+          "sm64.o2r",
+          "*.cfg.json",
+          "mods",
+          "imgui.ini",
+          "logs"
+        ]
       }
     },
     {
@@ -348,6 +454,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "run.sh"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "BanjoTooieRecompiled",
+        "romFileName": "bt.n64.us.1.0.z64",
+        "romName": "BANJO TOOIE",
+        "romXxh3": "00F70DE5F2D70EA2",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -369,6 +484,20 @@
           "packageFormat": "zip",
           "executablePath": "Paperboat.AppImage"
         }
+      },
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "paperboat",
+        "romFileName": "baserom.us.z64",
+        "romName": "PAPER MARIO",
+        "dataFiles": [
+          "saves",
+          "pm64.o2r",
+          "paperboat.cfg.json",
+          "mods",
+          "imgui.ini",
+          "logs"
+        ]
       }
     },
     {
@@ -390,6 +519,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "DinoTale"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "dinotale",
+        "romFileName": "yoshisstory.n64.us.z64",
+        "romName": "YOSHI STORY",
+        "romXxh3": "F1D8A6737DDA5B82",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -416,6 +554,15 @@
           "packageFormat": "zip",
           "executablePath": "MegaMan64Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MegaMan64Recompiled",
+        "romFileName": "megaman.n64.us.1.0.z64",
+        "romName": "MEGA MAN 64",
+        "romXxh3": "0C74C7489D01643B",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -437,6 +584,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "FZeroXRecompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "FZeroXRecompiled",
+        "romFileName": "fzerox.n64.us.1.0.z64",
+        "romName": "F-ZERO X",
+        "romXxh3": "B7AA6356AA4E29E9",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -458,6 +614,15 @@
           "packageFormat": "tar.gz",
           "executablePath": "MarioGolfRecompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MarioGolfRecompiled",
+        "romFileName": "mariogolf64.n64.us.1.0.z64",
+        "romName": "MarioGolf64",
+        "romXxh3": "C44360A904011B02",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -485,6 +650,15 @@
           "packageFormat": "zip",
           "executablePath": "Zelda64Recompiled"
         }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "Zelda64Recompiled",
+        "romFileName": "mm.n64.us.1.0.z64",
+        "romName": "ZELDA MAJORA'S MASK",
+        "romXxh3": "EF18B4A9E2386169",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
       }
     },
     {
@@ -507,6 +681,21 @@
           "packageFormat": "appimage",
           "executablePath": "ShipOfHarkinian.AppImage"
         }
+      },
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "soh",
+        "romFileName": "oot.z64",
+        "romName": "THE LEGEND OF ZELDA",
+        "dataFiles": [
+          "Save",
+          "shipofharkinian.json",
+          "oot.o2r",
+          "oot-mq.o2r",
+          "mods",
+          "imgui.ini",
+          "logs"
+        ]
       }
     },
     {

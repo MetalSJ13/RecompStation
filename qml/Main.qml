@@ -1734,7 +1734,7 @@ ApplicationWindow {
         const project = window.libraryGameProject(game)
         if (project !== null && window.installedLauncherProjectIds[project.id] === true) {
             if (!window.runningLaunchers[project.id])
-                window.launchSupportedGame(project.id)
+                window.launchSupportedGame(project.id, game)
             return
         }
         window.openLibraryGameDetails(game)
@@ -1790,11 +1790,17 @@ ApplicationWindow {
         return entries.find(entry => entry.projectId === projectId) || null
     }
 
-    function launchSupportedGame(projectId) {
+    // Bumped when a launcher starts or stops, so the line under Play
+    // re-reads what the launcher already has.
+    property int launchStatusRevision: 0
+
+    function launchSupportedGame(projectId, game) {
         let errors = Object.assign({}, launchErrors)
         delete errors[projectId]
         launchErrors = errors
-        gameLaunchManager.launchProject(projectId)
+        launchOverlay.artworkPath = game && game.artworkPath ? game.artworkPath : ""
+        launchOverlay.platform = game && game.platform ? game.platform : ""
+        gameLaunchManager.launchGame(projectId, game && game.path ? game.path : "")
     }
 
     function startAssetDownload(project, asset) {
@@ -2020,13 +2026,20 @@ ApplicationWindow {
 
     Connections {
         target: gameLaunchManager
+        function onLaunchPrepared(projectId, steps) {
+            if (steps.length > 0)
+                launchOverlay.show(projectId, steps)
+        }
         function onLaunchStarted(projectId, processId) {
+            window.launchStatusRevision++
+            launchOverlay.started(projectId)
             let running = Object.assign({}, window.runningLaunchers)
             running[projectId] = true
             window.runningLaunchers = running
             controllerManager.gameSessionActive = Object.keys(running).length > 0
         }
         function onLaunchFailed(projectId, message) {
+            launchOverlay.hideFor(projectId)
             let running = Object.assign({}, window.runningLaunchers)
             delete running[projectId]
             window.runningLaunchers = running
@@ -2036,6 +2049,8 @@ ApplicationWindow {
             window.launchErrors = errors
         }
         function onProcessFinished(projectId, exitCode, crashed) {
+            window.launchStatusRevision++
+            launchOverlay.hideFor(projectId)
             let running = Object.assign({}, window.runningLaunchers)
             delete running[projectId]
             window.runningLaunchers = running
@@ -2893,6 +2908,10 @@ ApplicationWindow {
 
     GameDetailsPage {
         id: gameDetailsPopup
+    }
+
+    LaunchOverlay {
+        id: launchOverlay
     }
 
     // ---- Adding games -------------------------------------------------------
@@ -4163,7 +4182,7 @@ ApplicationWindow {
                                             }
                                             onClicked: {
                                                 if (shelvesSpotlight.project)
-                                                    window.launchSupportedGame(shelvesSpotlight.project.id)
+                                                    window.launchSupportedGame(shelvesSpotlight.project.id, shelvesSpotlight.game)
                                             }
                                         }
                                         Button {
@@ -5946,6 +5965,35 @@ ApplicationWindow {
                                         rightPadding: 16
                                         implicitHeight: 38
                                         }
+                                    }
+                                    SettingsGroupLabel { text: "PLAYING" }
+                                    SettingRow {
+                                        title: "Prepare games for launchers"
+                                        description: "Give your copy to the launcher before it starts, so you don't have to find the file in each launcher. Copies are checked first, and your library files are only read."
+                                        ToggleSwitch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            checked: settingsManager.prepareGameFiles
+                                            onToggled: settingsManager.setPrepareGameFiles(checked)
+                                            Accessible.name: "Prepare games for launchers"
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Start games in fullscreen"
+                                        description: "Set once, the first time each launcher starts. If you change it inside the launcher later, that choice is kept. Widescreen is already the launchers' default."
+                                        dimmed: !settingsManager.prepareGameFiles
+                                        ToggleSwitch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            enabled: settingsManager.prepareGameFiles
+                                            checked: settingsManager.startGamesFullscreen
+                                            onToggled: settingsManager.setStartGamesFullscreen(checked)
+                                            Accessible.name: "Start games in fullscreen"
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Saves stay with each launcher"
+                                        description: "In the launcher's own folder, such as ~/.config/BanjoRecompiled, so uninstalling or updating a launcher keeps them. Each game's page shows where its saves are."
                                     }
                                     Item { Layout.preferredHeight: 16 }
                                 }

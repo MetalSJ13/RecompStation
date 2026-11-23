@@ -2,10 +2,13 @@
 
 #include "LauncherDownloadManager.h"
 #include "Logging.h"
+#include "SettingsManager.h"
+#include "projects/ProjectCatalog.h"
 
 #include <QDir>
 #include <QFileInfo>
 #include <QProcess>
+#include <QProcessEnvironment>
 #include <QVariantMap>
 
 GameLaunchManager::GameLaunchManager(
@@ -30,7 +33,67 @@ GameLaunchManager::~GameLaunchManager()
     }
 }
 
+void GameLaunchManager::setProjectCatalog(ProjectCatalog *catalog)
+{
+    m_projectCatalog = catalog;
+}
+
+void GameLaunchManager::setSettingsManager(SettingsManager *settings)
+{
+    m_settingsManager = settings;
+}
+
+void GameLaunchManager::setPreparationRoots(const QString &homeDirectory, const QString &dataHome)
+{
+    m_homeDirectory = homeDirectory;
+    m_dataHome = dataHome;
+}
+
+QString GameLaunchManager::installDirectory(const QString &projectId, QString *executablePath) const
+{
+    if (!m_launcherDownloadManager)
+        return {};
+    for (const QVariant &entry : m_launcherDownloadManager->installedLaunchers()) {
+        const QVariantMap installation = entry.toMap();
+        if (installation.value(QStringLiteral("projectId")).toString() == projectId) {
+            if (executablePath)
+                *executablePath = installation.value(QStringLiteral("executablePath")).toString();
+            return installation.value(QStringLiteral("directory")).toString();
+        }
+    }
+    return {};
+}
+
+LaunchPreparer::Options GameLaunchManager::preparationOptions(const QString &projectId) const
+{
+    LaunchPreparer::Options options;
+    options.homeDirectory = m_homeDirectory;
+    options.dataHome = m_dataHome;
+    if (m_settingsManager) {
+        options.prepareFiles = m_settingsManager->prepareGameFiles();
+        options.fullscreen = m_settingsManager->startGamesFullscreen();
+        options.windowMode = m_settingsManager->launchWindowMode(projectId);
+    }
+    return options;
+}
+
+QVariantMap GameLaunchManager::launchReadiness(const QString &projectId, const QString &gamePath)
+{
+    if (!m_projectCatalog)
+        return {};
+    const QVariantMap project = m_projectCatalog->project(projectId);
+    if (project.isEmpty())
+        return {};
+    return m_preparer.readiness(project, gamePath, installDirectory(projectId),
+                                preparationOptions(projectId));
+}
+
 bool GameLaunchManager::launchProject(const QString &projectId)
+{
+    return launchGame(projectId, QString());
+}
+
+bool GameLaunchManager::launchGame(const QString &projectId, const QString &gamePath)
 {
     qCInfo(lcGameLaunch) << "Launch requested for project:" << projectId;
     if (!m_launcherDownloadManager || projectId.trimmed().isEmpty())
@@ -43,15 +106,7 @@ bool GameLaunchManager::launchProject(const QString &projectId)
         previous->deleteLater();
 
     QString executablePath;
-    QString workingDirectory;
-    for (const QVariant &entry : m_launcherDownloadManager->installedLaunchers()) {
-        const QVariantMap installation = entry.toMap();
-        if (installation.value(QStringLiteral("projectId")).toString() == projectId) {
-            executablePath = installation.value(QStringLiteral("executablePath")).toString();
-            workingDirectory = installation.value(QStringLiteral("directory")).toString();
-            break;
-        }
-    }
+    const QString workingDirectory = installDirectory(projectId, &executablePath);
 
     const QFileInfo executableInfo(executablePath);
     if (executablePath.isEmpty() || !executableInfo.isFile()
@@ -62,8 +117,22 @@ bool GameLaunchManager::launchProject(const QString &projectId)
         return false;
     }
 
+    LaunchPreparer::Plan plan;
+    if (m_projectCatalog) {
+        const QVariantMap project = m_projectCatalog->project(projectId);
+        if (!project.isEmpty())
+            plan = m_preparer.prepare(project, gamePath, workingDirectory, preparationOptions(projectId));
+    }
+    emit launchPrepared(projectId, plan.steps);
+
     auto *process = new QProcess(this);
     process->setWorkingDirectory(workingDirectory);
+    if (!plan.environment.isEmpty()) {
+        QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+        for (auto it = plan.environment.cbegin(); it != plan.environment.cend(); ++it)
+            environment.insert(it.key(), it.value());
+        process->setProcessEnvironment(environment);
+    }
 
     // Startup scripts often rely on being invoked from their installation
     // directory (for example, "./run.sh") so their relative asset paths work.

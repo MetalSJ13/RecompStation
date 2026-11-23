@@ -80,6 +80,35 @@ Popup {
     }
     property var installedProject: selectedProject
         ? window.installedLauncher(selectedProject.id) : null
+    // The line under Play: whether Play will just work (LaunchPreparer).
+    property var launchState: {
+        window.launchStatusRevision
+        settingsManager.launchSettingsRevision
+        if (!selectedProject || installedProject === null || !visible)
+            return ({})
+        return gameLaunchManager.launchReadiness(selectedProject.id,
+            window.selectedGame ? window.selectedGame.path : "")
+    }
+    readonly property string launchTone: launchState.tone || ""
+
+    function folderOf(path) {
+        const slash = path.lastIndexOf("/")
+        return slash > 0 ? path.substring(0, slash) : path
+    }
+    function shortPath(path) {
+        const home = platformManager.homeDirectory()
+        return path && path.indexOf(home + "/") === 0 ? "~" + path.substring(home.length) : (path || "")
+    }
+    function copyText(text) {
+        clipboardHelper.text = text
+        clipboardHelper.selectAll()
+        clipboardHelper.copy()
+    }
+
+    TextEdit {
+        id: clipboardHelper
+        visible: false
+    }
     property bool installPromptVisible: false
     property bool switchAnimating: false
     property real gameBackgroundOpacity: 1.0
@@ -776,7 +805,7 @@ Popup {
                             border.width: detailsPlayButton.activeFocus ? 3 : 0
                             border.color: theme.textPrimary
                         }
-                        onClicked: window.launchSupportedGame(gameDetailsPopup.selectedProject.id)
+                        onClicked: window.launchSupportedGame(gameDetailsPopup.selectedProject.id, window.selectedGame)
                     }
                     // Not installed, release found: Install (asks to confirm below).
                     Button {
@@ -952,6 +981,83 @@ Popup {
                     }
                 }
 
+                // Will Play just work? One line, and what to do if not.
+                RowLayout {
+                    id: detailsLaunchStatus
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    spacing: 12
+                    visible: gameDetailsPopup.installedProject !== null
+                        && (gameDetailsPopup.launchState.state || "").length > 0
+                        && !(gameDetailsPopup.selectedProject
+                             && window.launchErrors[gameDetailsPopup.selectedProject.id])
+                    readonly property string stateName: gameDetailsPopup.launchState.state || ""
+                    readonly property color toneColor: gameDetailsPopup.launchTone === "ok" ? theme.success
+                        : gameDetailsPopup.launchTone === "warn" ? theme.warning : theme.accent
+
+                    Rectangle {
+                        Layout.alignment: Qt.AlignTop
+                        Layout.topMargin: 5
+                        width: 18; height: 18; radius: 9
+                        color: Qt.rgba(detailsLaunchStatus.toneColor.r, detailsLaunchStatus.toneColor.g,
+                                       detailsLaunchStatus.toneColor.b, 0.22)
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 10; height: 10; radius: 5
+                            color: detailsLaunchStatus.toneColor
+                        }
+                    }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Label {
+                            Layout.fillWidth: true
+                            text: gameDetailsPopup.launchState.title || ""
+                            color: theme.textPrimary
+                            font.pixelSize: 14 * theme.fontScale
+                            font.weight: Font.DemiBold
+                            wrapMode: Text.Wrap
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: gameDetailsPopup.launchState.detail || ""
+                            color: theme.textMuted
+                            font.pixelSize: 12.5 * theme.fontScale
+                            wrapMode: Text.Wrap
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
+                        }
+                        RowLayout {
+                            Layout.topMargin: 6
+                            spacing: 8
+                            visible: detailsShowFileButton.visible || detailsAddCopyButton.visible
+                            Button {
+                                id: detailsShowFileButton
+                                visible: detailsLaunchStatus.stateName === "manual" || detailsLaunchStatus.stateName === "disabled"
+                                text: "Show file"
+                                implicitHeight: 38
+                                onClicked: Qt.openUrlExternally("file://" + gameDetailsPopup.folderOf(gameDetailsPopup.launchState.gameFile || ""))
+                            }
+                            Button {
+                                visible: detailsShowFileButton.visible
+                                text: "Copy path"
+                                implicitHeight: 38
+                                onClicked: gameDetailsPopup.copyText(gameDetailsPopup.launchState.gameFile || "")
+                            }
+                            Button {
+                                id: detailsAddCopyButton
+                                visible: detailsLaunchStatus.stateName === "wrong_version"
+                                    || detailsLaunchStatus.stateName === "wrong_game"
+                                    || detailsLaunchStatus.stateName === "wrong_file"
+                                    || detailsLaunchStatus.stateName === "no_game"
+                                text: "Add another copy"
+                                implicitHeight: 38
+                                onClicked: window.openAddGames([])
+                            }
+                        }
+                    }
+                }
+
                 // One line of context or the latest error.
                 Label {
                     Layout.fillWidth: true
@@ -963,7 +1069,7 @@ Popup {
                     text: errorText.length > 0 ? errorText
                         : !gameDetailsPopup.selectedProject ? ""
                         : gameDetailsPopup.installedProject !== null
-                            ? (gameDetailsPopup.releaseInfo
+                            ? (gameDetailsPopup.releaseInfo && !detailsLaunchStatus.visible
                                 ? "Latest release " + gameDetailsPopup.releaseTag + "  ·  Linux / " + projectCatalog.currentArchitecture
                                 : "")
                         : gameDetailsPopup.releaseInfo && gameDetailsPopup.compatibleAssets.length === 0
@@ -1306,6 +1412,102 @@ Popup {
                                 color: theme.textMuted
                                 font.pixelSize: 11 * theme.fontScale
                                 wrapMode: Text.WrapAnywhere
+                            }
+                        }
+
+                        // How Play starts this game: which file, window mode, saves.
+                        ColumnLayout {
+                            id: detailsLaunchSection
+                            Layout.fillWidth: true
+                            Layout.topMargin: 10
+                            spacing: 8
+                            visible: gameDetailsPopup.installedProject !== null
+                                && (gameDetailsPopup.launchState.state || "").length > 0
+                            readonly property string method: gameDetailsPopup.launchState.method || ""
+
+                            Label {
+                                text: "LAUNCH"
+                                color: theme.textMuted
+                                font.pixelSize: 11 * theme.fontScale
+                                font.bold: true
+                                font.letterSpacing: 0.8
+                            }
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: 3
+                                columnSpacing: 14
+                                rowSpacing: 8
+
+                                Label { text: "Game file"; color: theme.textMuted; font.pixelSize: 13 * theme.fontScale }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: {
+                                        const path = window.selectedGame ? (window.selectedGame.path || "") : ""
+                                        return path.length > 0 ? path.substring(path.lastIndexOf("/") + 1) : "None"
+                                    }
+                                    color: theme.textSecondary
+                                    font.pixelSize: 13 * theme.fontScale
+                                    elide: Text.ElideMiddle
+                                }
+                                Item { implicitWidth: 1; implicitHeight: 1 }
+
+                                Label {
+                                    visible: detailsLaunchSection.method === "n64recomp"
+                                    text: "Window"
+                                    color: theme.textMuted
+                                    font.pixelSize: 13 * theme.fontScale
+                                }
+                                ValueCycler {
+                                    id: detailsWindowModeCycler
+                                    visible: detailsLaunchSection.method === "n64recomp"
+                                    Layout.columnSpan: 2
+                                    preferredWidth: 220
+                                    options: [
+                                        { label: settingsManager.startGamesFullscreen ? "Use default (fullscreen)" : "Use default", value: "default" },
+                                        { label: "Fullscreen", value: "fullscreen" },
+                                        { label: "Windowed", value: "windowed" }
+                                    ]
+                                    value: {
+                                        settingsManager.launchSettingsRevision
+                                        return gameDetailsPopup.selectedProject
+                                            ? settingsManager.launchWindowMode(gameDetailsPopup.selectedProject.id) : "default"
+                                    }
+                                    onPicked: (value) => settingsManager.setLaunchWindowMode(gameDetailsPopup.selectedProject.id, value)
+                                }
+
+                                Label {
+                                    visible: (gameDetailsPopup.launchState.savesFolder || "").length > 0
+                                    text: "Saves"
+                                    color: theme.textMuted
+                                    font.pixelSize: 13 * theme.fontScale
+                                }
+                                Label {
+                                    visible: (gameDetailsPopup.launchState.savesFolder || "").length > 0
+                                    Layout.fillWidth: true
+                                    text: gameDetailsPopup.shortPath(gameDetailsPopup.launchState.savesFolder)
+                                    color: theme.textSecondary
+                                    font.pixelSize: 13 * theme.fontScale
+                                    elide: Text.ElideMiddle
+                                }
+                                Button {
+                                    visible: (gameDetailsPopup.launchState.savesFolder || "").length > 0
+                                    text: "Open folder"
+                                    implicitHeight: 34
+                                    onClicked: {
+                                        const saves = gameDetailsPopup.launchState.savesFolder
+                                        // Before the first start the saves folder may not exist yet.
+                                        Qt.openUrlExternally("file://" + (platformManager.pathExists(saves)
+                                            ? saves : gameDetailsPopup.launchState.dataFolder))
+                                    }
+                                }
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: detailsLaunchSection.method === "n64recomp"
+                                text: "A window choice here is applied the next time this game starts; \"Use default\" leaves the launcher's own setting alone."
+                                color: theme.textMuted
+                                font.pixelSize: 11.5 * theme.fontScale
+                                wrapMode: Text.Wrap
                             }
                         }
                     }

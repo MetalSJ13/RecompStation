@@ -32,6 +32,65 @@ bool validRepositoryPart(const QString &value)
     return pattern.match(value).hasMatch() && value != QStringLiteral(".")
         && value != QStringLiteral("..");
 }
+
+// A single file or folder name: no separators, no leading dot, no "..".
+bool validFileName(const QString &value)
+{
+    static const QRegularExpression pattern(QStringLiteral("^[A-Za-z0-9_][A-Za-z0-9 _.'+-]*$"));
+    return value.size() <= 96 && pattern.match(value).hasMatch()
+        && !value.contains(QStringLiteral(".."));
+}
+
+// The optional "launch" recipe: how RecompStation hands the player's game
+// file to this launcher. Returns false when the object is present but invalid.
+bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
+{
+    const QString method = object.value(QStringLiteral("method")).toString();
+    if (method == QStringLiteral("manual")) {
+        *recipe = QVariantMap{{QStringLiteral("method"), method}};
+        return true;
+    }
+    if (method != QStringLiteral("n64recomp") && method != QStringLiteral("harbourmasters"))
+        return false;
+
+    const QString dataFolder = object.value(QStringLiteral("dataFolder")).toString();
+    const QString romFileName = object.value(QStringLiteral("romFileName")).toString();
+    const QString romName = object.value(QStringLiteral("romName")).toString().trimmed();
+    const QString romXxh3 = object.value(QStringLiteral("romXxh3")).toString().toUpper();
+    const QString romVersion = object.value(QStringLiteral("romVersion")).toString().trimmed();
+    const QString graphicsFile = object.value(QStringLiteral("graphicsFile")).toString();
+    static const QRegularExpression hashPattern(QStringLiteral("^[0-9A-F]{16}$"));
+    if (!validFileName(dataFolder) || !validFileName(romFileName)
+        || !romFileName.endsWith(QStringLiteral(".z64")) || romName.isEmpty() || romName.size() > 20
+        || (!romXxh3.isEmpty() && !hashPattern.match(romXxh3).hasMatch())
+        || (!graphicsFile.isEmpty()
+            && (!validFileName(graphicsFile) || !graphicsFile.endsWith(QStringLiteral(".json"))))) {
+        return false;
+    }
+    if (method == QStringLiteral("n64recomp") && romXxh3.isEmpty())
+        return false;
+
+    QStringList dataFiles;
+    for (const QJsonValue &value : object.value(QStringLiteral("dataFiles")).toArray()) {
+        QString name = value.toString();
+        // "*" is allowed as a simple wildcard, nothing else.
+        if (!validFileName(QString(name).replace(QLatin1Char('*'), QLatin1Char('x'))))
+            return false;
+        dataFiles.append(name);
+    }
+
+    *recipe = QVariantMap{
+        {QStringLiteral("method"), method},
+        {QStringLiteral("dataFolder"), dataFolder},
+        {QStringLiteral("romFileName"), romFileName},
+        {QStringLiteral("romName"), romName},
+        {QStringLiteral("romXxh3"), romXxh3},
+        {QStringLiteral("romVersion"), romVersion},
+        {QStringLiteral("graphicsFile"), graphicsFile},
+        {QStringLiteral("dataFiles"), dataFiles}
+    };
+    return true;
+}
 }
 
 ProjectCatalog::ProjectCatalog(QObject *parent)
@@ -263,6 +322,13 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
             });
         }
 
+        QVariantMap launchRecipe{{QStringLiteral("method"), QStringLiteral("manual")}};
+        if (object.contains(QStringLiteral("launch"))
+            && (!object.value(QStringLiteral("launch")).isObject()
+                || !parseLaunchRecipe(object.value(QStringLiteral("launch")).toObject(), &launchRecipe))) {
+            return fail(QStringLiteral("A project contains an invalid launch recipe."));
+        }
+
         QVariantMap project;
         project.insert(QStringLiteral("id"), id);
         project.insert(QStringLiteral("name"), name);
@@ -274,6 +340,7 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         project.insert(QStringLiteral("romRequirements"),
                        object.value(QStringLiteral("romRequirements")).toString());
         project.insert(QStringLiteral("architectures"), architectureRules);
+        project.insert(QStringLiteral("launch"), launchRecipe);
         parsedProjects.append(project);
         projectIds.insert(id);
     }

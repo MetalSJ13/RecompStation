@@ -45,6 +45,10 @@ qt_add_executable(RecompStationApp
     src/core/LauncherDownloadManager.cpp
     src/core/GameLaunchManager.h
     src/core/GameLaunchManager.cpp
+    src/core/LaunchPreparer.h
+    src/core/LaunchPreparer.cpp
+    src/core/RomInspector.h
+    src/core/RomInspector.cpp
     src/core/ArchiveExtractor.h
     src/core/ArchiveExtractor.cpp
     src/core/LibraryScanner.h
@@ -113,6 +117,7 @@ qt_add_qml_module(RecompStationApp
         qml/ImportGamesPanel.qml
         qml/FirstRunSetup.qml
         qml/LaunchBoxProgress.qml
+        qml/LaunchOverlay.qml
     RESOURCES
         assets/images/recompstation-controller.png
 )
@@ -132,6 +137,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "16")
     target_compile_options(RecompStationApp PRIVATE -Wno-sfinae-incomplete)
 endif()
+
+# xxHash (BSD 2-Clause, header only): checks N64 ROMs against launcher checksums.
+target_include_directories(RecompStationApp PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash
+)
 
 target_link_libraries(RecompStationApp PRIVATE
     Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql Qt6::Network Qt6::Concurrent Qt6::Svg
@@ -283,8 +294,19 @@ if(BUILD_TESTING)
         src/core/Logging.h
         src/core/Logging.cpp
         tests/GameLaunchManagerTest.cpp
+        data/projects.qrc
         src/core/GameLaunchManager.h
         src/core/GameLaunchManager.cpp
+        src/core/LaunchPreparer.h
+        src/core/LaunchPreparer.cpp
+        src/core/RomInspector.h
+        src/core/RomInspector.cpp
+        src/metadata/N64RomHash.h
+        src/metadata/N64RomHash.cpp
+        src/projects/ProjectCatalog.h
+        src/projects/ProjectCatalog.cpp
+        src/core/SettingsManager.h
+        src/core/SettingsManager.cpp
         src/core/LauncherDownloadManager.h
         src/core/LauncherDownloadManager.cpp
         src/core/ArchiveExtractor.h
@@ -295,6 +317,7 @@ if(BUILD_TESTING)
 
     target_include_directories(GameLaunchManagerTests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash
     )
 
     target_link_libraries(GameLaunchManagerTests PRIVATE
@@ -302,6 +325,29 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME GameLaunchManagerTests COMMAND GameLaunchManagerTests)
+
+    qt_add_executable(LaunchPreparerTests
+        src/core/Logging.h
+        src/core/Logging.cpp
+        tests/LaunchPreparerTest.cpp
+        src/core/LaunchPreparer.h
+        src/core/LaunchPreparer.cpp
+        src/core/RomInspector.h
+        src/core/RomInspector.cpp
+        src/metadata/N64RomHash.h
+        src/metadata/N64RomHash.cpp
+    )
+
+    target_include_directories(LaunchPreparerTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash
+    )
+
+    target_link_libraries(LaunchPreparerTests PRIVATE
+        Qt6::Core Qt6::Test
+    )
+
+    add_test(NAME LaunchPreparerTests COMMAND LaunchPreparerTests)
 
     qt_add_executable(LibraryScannerTests
         src/core/Logging.h
