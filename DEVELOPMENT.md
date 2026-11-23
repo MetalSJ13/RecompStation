@@ -7,7 +7,7 @@ This document is the authoritative development status and implementation order f
 ### Current focus
 - **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream and Controller settings/hardware-validation workstream are complete and user-validated. The latest build completed successfully and all 19/19 CTest suites passed on 2026-11-22. Milestone 7 remains open for folder-picker/modal controller-only validation, broader accessibility review, and multi-display validation.
 - **Current UI work:** Responsive Library presentation refinement is active on `ui/interface-redesign`. The responsive sizing foundation and Grid/List presentation passes are substantially complete and user-validated. Phase 4 — Carousel View — is in progress: the viewport edge fade has been refined and accepted as a baseline; selection/scrolling behavior and clipping remain to be reviewed. Keep the existing Carousel card-sizing formula, density values, and artwork proportions unchanged during this pass.
-- **Next technical focus:** Continue the responsive Library presentation pass, including the remaining Carousel review. Phase 5 — Full Library composition is intentionally deferred until later and must remain open. Milestone 7's folder-picker/modal, accessibility, and multi-display items also remain open; do not imply they are complete.
+- **Next technical focus:** Begin the Library presentation redesign (see that section) on `ui/library-presentation`, starting with the shared `GameArtwork.qml` component and the artwork-forward Grid. Continue the remaining Carousel review separately. Phase 5 — Full Library composition is intentionally deferred until later and must remain open. Milestone 7's folder-picker/modal, accessibility, and multi-display items also remain open; do not imply they are complete.
 
 ### Implemented foundations
 - **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
@@ -26,6 +26,7 @@ This document is the authoritative development status and implementation order f
 
 ### Branch and merge policy
 - **Current development branch:** `ui/interface-redesign`
+- **Library presentation redesign branch:** `ui/library-presentation`, branched from `ui/interface-redesign`; merge back into `ui/interface-redesign` after review.
 - **Base:** Existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.
 - **Merge policy:** Keep this work unmerged into `main` until reviewed and explicitly approved.
 
@@ -50,7 +51,26 @@ The responsive Library presentation work is being tracked as a focused five-phas
   - [x] Establish a softer two-sided viewport fade while preserving the first card at the initial scroll position; refine the right fade to respond to the card's trailing edge. User reviewed the result and said it looks good.
   - [ ] Review selected-card emphasis and horizontal scrolling/navigation animations.
   - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
-- [ ] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable.
+- [ ] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The planned Shelves view and spotlight panel (Library presentation redesign, step 4 below) are the intended direction for this phase.
+
+## Library presentation redesign (planned, 2026-11-22)
+
+Scope is the Library page only; Game Details and Settings adjustments follow later. The direction was agreed from the design comparison canvas (current Grid, proposed Shelves view, proposed platform Grid, cover-fill analysis, and a measured RecompLauncher reference). RecompStation keeps its own identity: controller-first by default, library-first (the user's ROMs, with recompilation support shown as status), and curated size presets rather than free resizing.
+
+**Decisions**
+- Artwork stays sourced from LaunchBox and TheGamesDB box art. No new artwork provider (for example SteamGridDB) is planned.
+- Frame shape follows the platform's box art rather than one shared 2:3 frame: N64 7:5 (North American landscape boxes), PS1 1:1, GameCube/Wii/Xbox 5:7. A cover whose measured aspect ratio clearly differs (for example a PAL portrait N64 box) uses its own measured ratio.
+- The cover art is the card: no card surface, padding, or inner inset around the artwork. The focus ring is drawn outside the artwork.
+- Filtering uses platform pills only. No Installed / Not installed status filter for now.
+- Carousel card sizing, density values, and artwork proportions remain frozen until Phase 4 is closed; steps 1–3 do not modify Carousel.
+- `docs/UI_DESIGN.md` is updated to replace the shared 2:3 frame rule when step 2 is implemented and user-validated.
+
+**Implementation order** (each step: build, all CTest suites passing, and user validation before the next)
+- [ ] **Step 1 — Shared `GameArtwork.qml` component:** Consolidate cover presentation (frame shape by platform, measured-ratio fallback, missing-artwork placeholder, focus styling hooks) into one reusable component. Initial adoption must produce no visual change.
+- [ ] **Step 2 — Grid: artwork-forward cards:** Remove the card surface, padding, and inner inset; draw the focus ring outside the artwork; use a two-line caption (title plus one status line such as "Recomp installed" or "ROM verified"). A platform-filtered Grid uses that platform's frame. The All Platforms Grid keeps uniform cells, with each cover in its native frame aligned to a shared bottom edge so captions line up. Revalidate Compact/Comfortable/Spacious column counts at 1920×1080, 2560×1080, 3440×1440, and 4K.
+- [ ] **Step 3 — Compact Library header:** Replace the platform dropdown with platform pills (LB/RB cycle platforms), present Shelves/Grid/List/Carousel as a compact segmented control, collapse search into an expanding search control, and make card size an icon control. Preserve all existing view and size preferences and their persistence.
+- [ ] **Step 4 — Shelves view and spotlight panel:** Add Shelves as a fourth presentation: one horizontal row per platform with a fixed row height and per-platform card widths, plus a spotlight panel for the focused game (screenshot backdrop, title, release information, recompilation and ROM-verification status, Play and Details actions). Define focus movement between the spotlight, shelves, and header; persist the selected view; respect Reduced Motion.
+- [ ] **Step 5 — Keyboard parity:** Complete keyboard navigation to match controller navigation and show keyboard keys in the adaptive hint bar when keyboard input is active. Proposed bindings: arrows to move, Enter to play, I for details, Esc to go back, PgUp/PgDn (or Q/E) to cycle platforms, `/` for search.
 
 ## Recent stabilization notes (2026-11-21)
 
