@@ -53,6 +53,23 @@ The responsive Library presentation work is being tracked as a focused five-phas
   - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
 - [x] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The Shelves view and spotlight panel (Library presentation redesign, step 4) and the hero carousel complete this phase; confirmed by the user on 2026-11-22.
 
+## Game Details redesign (2026-11-22)
+
+Direction chosen by the user from design mockups (today; recompilation installed; available to install with a downloading state). Work is on `ui/game-details`, branched from `ui/interface-redesign`, in two passes so the move can be validated before the redesign.
+
+**Decisions**
+- Same visual family as the Library: screenshot backdrop (keeps today's automatic screenshot cycling), cover at its true platform shape, chips, metadata title.
+- One primary action following the launcher lifecycle: Install <project> → Downloading (progress, Cancel where supported) → Play. Check for updates beside Play; Uninstall moves under a controller-accessible ⋯ menu and still asks for confirmation.
+- About and Screenshots on the left; a Recompilation card on the right (project, repository, status, release, package, catalog ROM requirement). Games with several supported projects show project chips in the card.
+- Game Details moves from `Main.qml` into `qml/GameDetailsPage.qml`.
+
+**Pass 1 — move without visual change**
+- [x] Move the Game Details popup (about 1,030 lines) into `qml/GameDetailsPage.qml`, instantiated in `Main.qml` with the same `gameDetailsPopup` id. It continues to read application state from the `Main.qml` scope it is created in. `contentFrame` and `infoScroll` aliases replace the two direct references from Main.qml's controller navigation.
+- [ ] User validation: build and all CTest suites pass; Game Details opens from every view and looks and behaves exactly as before (backdrop cycling, LB/RB game switching and its animation, scrolling with the controller, install/play/uninstall and prompts, Back).
+
+**Pass 2 — redesign**
+- [ ] Implement the agreed layout and actions in `GameDetailsPage.qml`.
+
 ## List with preview pane (2026-11-22)
 
 Chosen by the user from design mockups (List today; list + preview at Comfortable with an installed GameCube game; Compact with an N64 game that is not installed and has no screenshots). Work is on `ui/list-preview`, branched from `ui/interface-redesign`.
