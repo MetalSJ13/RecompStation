@@ -1,627 +1,160 @@
 # RecompStation Development Roadmap
 
-This document is the authoritative development status and implementation order for RecompStation. The immediate focus is a user-experience redesign, followed by the library automation needed to make metadata maintenance hands-off, then the remaining launcher and platform work.
-
-## Project status
-
-### Current focus
-- **Active milestone:** Milestone 7 — Input, accessibility, and regression pass. The Navigation and Focus workstream and Controller settings/hardware-validation workstream are complete and user-validated. The latest build completed successfully and all 19/19 CTest suites passed on 2026-11-22. Milestone 7 remains open for folder-picker/modal controller-only validation, broader accessibility review, and multi-display validation.
-- **Current UI work:** Responsive Library presentation refinement is active on `ui/interface-redesign`. The responsive sizing foundation and Grid/List presentation passes are substantially complete and user-validated. Phase 4 — Carousel View — is in progress: the viewport edge fade has been refined and accepted as a baseline; selection/scrolling behavior and clipping remain to be reviewed. Keep the existing Carousel card-sizing formula, density values, and artwork proportions unchanged during this pass.
-- **Next technical focus:** Begin the Library presentation redesign (see that section) on `ui/library-presentation`, starting with the shared `GameArtwork.qml` component and the artwork-forward Grid. Continue the remaining Carousel review separately. Phase 5 — Full Library composition is intentionally deferred until later and must remain open. Milestone 7's folder-picker/modal, accessibility, and multi-display items also remain open; do not imply they are complete.
-
-### Implemented foundations
-- **Settings:** Appearance, Display, Library, Metadata, Controller, and Application categories are present. Appearance and Application use the shared scrollable content pattern. TheGamesDB enablement is persistent and its configured/disabled/API-key-required state is displayed.
-- **Metadata:** Provider preference is applied before metadata initialization. Automatic matching uses conservative title/platform matching and records lookup outcomes to avoid repeated requests. Settings now has one Universal Library Refresh action that retries eligible metadata lookups, then retrieves missing TheGamesDB screenshots; the separate LaunchBox artwork manager fills missing covers and screenshots for LaunchBox-associated library games. Existing screenshot files are skipped and preserved. A successful LaunchBox catalog update still performs its library-scoped artwork pass and prompts the user to run the universal refresh for metadata matching and missing screenshots.
-
-- **LaunchBox artwork:** Implemented a separate downloader scoped to the local game library. It uses saved LaunchBox associations only, fetches one preferred front cover and up to three gameplay screenshots, preserves existing covers, caches files locally, and limits traffic to one request at a time with a 300 ms pause after each five requests. Settings shows artwork progress and final downloaded/skipped/failed counts. Latest user-confirmed runtime log: 40 images downloaded for 16 library games, with 0 skipped and 0 failed; the latest full build and all 19 CTest suites also passed.
-- **Controller:** Connected-device state, input enablement, active default profile, and read-only navigation bindings are displayed. Stable SDL GUIDs and per-device profile persistence have backend foundations; applying device-specific mappings remains deferred.
-- **Library:** Filesystem monitoring, automatic metadata scan integration, and diagnostic logging are implemented. Re-added ROMs can retry after stale failed lookup state is cleared. The independent library platform list includes N64, PS1, GameCube, Wii, and Xbox. Latest runtime scan completed across all five configured platforms; the user confirmed add/remove detection and database reconciliation while the application was running.
-- **N64 identification:** A ROM hash utility detects `.z64`, `.n64`, and `.v64` byte order, normalizes data, and calculates MD5 and CRC32. Unit tests cover all supported byte orders and invalid input.
-
-### Pending validation and follow-up
-- Original Xbox library support is included in the independent platform list, with a dedicated folder, recursive .iso/.xiso scanning, TheGamesDB platform-name mapping, and regression coverage. The latest local build and all 19 CTest suites passed; runtime scanning discovered the configured Xbox game. The .iso files must be XISO-format images; ordinary/redump full-disc ISO dumps are not necessarily usable by xemu. Investigate Xbox 360 only after its supported disc/container format and detection rules are established.
-- The latest stabilization build/runtime pass is recorded below. Individual unfinished feature-specific validations remain tracked in their milestone checklists.
-- The TheGamesDB ByGameHash request contract has been investigated, but application integration and validation against known-good ROMs remain outstanding.
-- The environment-variable API key is a development-time mechanism only. Production authentication/distribution must be investigated and designed separately; see Milestone 4.
-
-### Branch and merge policy
-- **Current development branch:** `ui/interface-redesign`
-- **Library presentation redesign branch:** `ui/library-presentation`, branched from `ui/interface-redesign`; merge back into `ui/interface-redesign` after review.
-- **Base:** Existing launcher download/installation and native-launch implementation, including the locally tested Play Game feature.
-- **Merge policy:** Keep this work unmerged into `main` until reviewed and explicitly approved.
-
-Keep the application buildable after each focused change. Preserve working backend behavior while the user-facing workflows are redesigned.
-
-### Library folder browser
-- [x] Replace the desktop-native folder picker with an in-app directory browser for first-run setup and Settings.
-- [x] Support folder navigation, Home/Up navigation, right-click context actions, and creating directories without leaving RecompStation.
-- [x] Restrict folder creation to a single child name in the current writable directory; selecting the library root delegates platform-subfolder creation and persistence to PlatformManager.
-- [x] Add regression coverage for directory listing, safe folder creation, duplicate names, and path traversal rejection.
-- [x] User-confirmed local build/run and UI interaction: the browser opens and can create folders.
-
-## Recent UI presentation progress (2026-11-22)
-
-The responsive Library presentation work is being tracked as a focused five-phase pass. These notes record the current user-validated state; they do not close Milestone 7 or replace its broader accessibility/controller checklist.
-
-- [x] **Phase 1 — Responsive sizing foundation:** Establish separate width/height constraints, density limits, and responsive calculations. User validation covered 1920×1080, 2560×1080, and 3440×1440 at 100% OS scaling.
-- [x] **Phase 2 — Grid View:** Refine responsive column limits, card proportions, and centered layout. User confirmed the intended row density at 4K and 2560×1080, including Compact (10), Comfortable (8), and Spacious (6) at 4K. On 2026-11-22, corrected density-toolbar initialization synchronization and constrained the GridView itself to the intended column block; the user confirmed the sizing issue is resolved.
-- [ ] Validate the 2026-11-22 pointer-input change: confirm mouse-wheel and drag gestures no longer scroll Grid or Carousel, while clicks, toolbar interaction, and keyboard/controller navigation remain functional. The code change is committed; runtime validation is pending.
-- [x] **Phase 3 — List View:** Refine comfortable artwork sizing, viewport-edge fading, and selection/transition behavior. User confirmed the artwork sizing and smoother edge fade; existing selection scaling/transitions were reviewed and retained.
-- [x] **Phase 4 — Carousel View:** Superseded by the hero carousel (see "Hero carousel" above). Original notes: Refine viewport-edge fading, selection/scrolling response, and clipping without changing the current card-sizing formula, density values, or artwork proportions.
-  - [x] Establish a softer two-sided viewport fade while preserving the first card at the initial scroll position; refine the right fade to respond to the card's trailing edge. User reviewed the result and said it looks good.
-  - [ ] Review selected-card emphasis and horizontal scrolling/navigation animations.
-  - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
-- [x] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The Shelves view and spotlight panel (Library presentation redesign, step 4) and the hero carousel complete this phase; confirmed by the user on 2026-11-22.
-
-## First-time setup and adding games (2026-11-23)
-
-Chosen by the user from design mockups (setup: library folder, add games, covers and info; drop onto the Library). Work is on `ui/first-run-import`, branched from `ui/interface-redesign` after merging the Controller and Application pages.
-
-**Decisions**
-- Full-window setup in four steps replaces the small setup dialog; the update question is retired until update checks exist.
-- Adding games copies by default (Move is an option); existing files are never overwritten.
-- N64 ROMs inside .zip / .7z are unpacked into the N64 folder; the archive is left in place.
-- Suggested library folder: `~/Games/RecompStation` when `~/Games` exists (a new folder inside it, so nothing there is touched), otherwise `~/RecompStation`.
-
-**Implementation**
-- [x] `src/core/GameImporter.{h,cpp}` (exposed as `gameImporter`): sources (folders searched recursively, or dropped files), background scan, candidates with detected system, copy or move into `<library>/<platform>` on a background thread with progress and Stop.
-  - System detection: N64 by extension; .cue/.chd/.pbp → PS1; .gcm/.ciso → GameCube; .wbfs/.wud/.wux → Wii; .xiso → Xbox. Shared extensions read the header: GameCube (0xC2339F3D at 0x1C) and Wii (0x5D1C9EA3 at 0x18) disc magic, the same inside RVZ/WIA at 0x58, Xbox `MICROSOFT*XBOX*MEDIA` (trimmed and full images), PS1 ISO 9660 volume with system identifier `PLAYSTATION` (2048- and 2352-byte sectors). Loose .bin/.img are offered as PS1 but unticked. Anything unknown is offered with a system picker, unticked.
-  - .cue sheets bring their FILE tracks along and the tracks are not listed separately. Archives list each N64 ROM inside.
-  - Copies go through `<name>.part` and are renamed when complete; a cancelled or failed copy leaves nothing behind. Move renames on the same drive, and across drives copies then removes the originals only after every file of the game was copied. A game whose file already exists in the platform folder is shown as "Already in library" and skipped.
-  - Files already inside the library are ignored. After an import, a library scan registers the new games (and automatic metadata matching follows).
-- [x] `PlatformManager::suggestedLibraryLocation()` (path, exists, free space) and `useLibraryLocation(path)`.
-- [x] `qml/FirstRunSetup.qml`: library folder (suggested location or Browse), Add games (`ImportGamesPanel`), Covers & info (LaunchBox download, optional TheGamesDB key, import progress), Ready. Controller navigation stays inside it; B goes back a step.
-- [x] `qml/ImportGamesPanel.qml`: Look in Downloads, Add a folder (the in-app folder browser, now with a "source" purpose), Copy/Move, the list of games with system pills or pickers, per-system counts, free-space warning, progress and Stop. Used by setup, by Settings › Library › Add games, and by dropping files or folders anywhere on the window (a "Drop to add" overlay; nothing is copied until confirmed).
-- [x] Tests: `GameImporterTests` (system detection for every header type, .cue grouping, zipped N64 ROM found and unpacked, copy keeps originals, a second pass finds the games already in the library).
-- [x] First runtime check (2026-11-23): "looks fantastic". Found: pressing Download for LaunchBox in step 3 gave no visible feedback; the button showed "Downloading 0%" for the whole job, because the unpacking (~500 MB) and catalog-building stages reported no percentage and the download shows 0% when the server sends no size; failures were not shown in setup at all.
-- [x] Fix: new `qml/LaunchBoxProgress.qml`, used in setup and in Settings › Metadata: "Step 1 of 3 · Downloading · X of Y" (or bytes so far), "Step 2 of 3 · Unpacking · N MB so far", "Step 3 of 3 · Building the catalog · N%", a progress bar (moving stripe when the amount is unknown), a busy spinner, Cancel, and the error with Retry on failure or cancel. Main.qml tracks `launchBoxStage`, bytes received and total from `downloadProgress`. Focus moves to Continue while it runs, since it continues in the background.
-- [ ] User validation: first-time setup from scratch (rename or move the settings file aside, or use a fresh user); suggested folder; adding from Downloads and another folder; a zipped N64 ROM; a .cue/.bin game; an unsure .iso with the picker; Move; dropping files on the Library; Settings › Library › Add games.
-
-## Settings redesign (2026-11-23)
-
-Direction chosen by the user from design mockups (Settings today; proposed Appearance, Display, Background and Metadata) and a live wave-background prototype. Work is on `ui/settings`, branched from `ui/interface-redesign`, in four steps.
-
-**Decisions**
-- Console-style layout: a category rail on the left where each entry shows its current values, setting rows in the middle (capped at 880 px), and a preview or reference pane on the right when the window is wide enough. Choices are ◀ value ▶ rows (D-pad left/right) or toggles; no dropdowns and no separate Apply buttons. LB/RB (Q/E on the keyboard) switch sections.
-- Ember is retired; Aurora (teal, mint accent) and Carbon (graphite, crimson accent) are added. Saved "ember" settings move to Electric Blue.
-- Interface scale (Auto or 75–200%) is applied with `QT_SCALE_FACTOR` at startup, so changing it restarts RecompStation, which reopens on the same Settings page. The user accepted the restart.
-- Animated background: a GPU shader (ribbon waves) instead of pre-rendered video, with user-chosen colors, motion and quality. Background gets its own Settings section.
-- Metadata: LaunchBox becomes the default first provider (offline, no key); TheGamesDB stays available. The TheGamesDB key is entered in the app instead of an environment variable.
-
-**Step 1: themes, interface scale, Settings layout, Appearance**
-- [x] `Theme.qml` keeps one palette per theme (`palettes`, `presets`, `paletteFor()`), adds `accentText`, and drops Ember. `SettingsManager` accepts `aurora` and `carbon` and rewrites a stored `ember` to `electric-blue` on load.
-- [x] Interface scale: `SettingsManager.interfaceScale` ("auto" or 75, 85, 100, 115, 125, 150, 175, 200; `display/interfaceScale`) and `autoInterfaceScalePercent(height)`: below 900 → 85%, below 1300 → 100%, below 1700 → 125%, below 2000 → 150%, below 2600 → 175%, otherwise 200%. Heights are logical (after desktop scaling).
-- [x] `main.cpp` reads the setting before `QGuiApplication` exists and sets `QT_SCALE_FACTOR`; it then unsets it so launchers and games are not scaled. Auto uses the value measured on the previous run (`display/autoScalePercent`); on the first run, or when the screen changed, it restarts once before showing a window. A `QT_SCALE_FACTOR` already set in the environment wins and the setting is disabled. `interfaceScaleInfo` (applied, auto, screen) and `startupSettingsSection` are exposed to QML; `settingsManager.requestApplicationRestart(section)` relaunches with `--settings-section=`.
-- [x] New QML components: `ValueCycler.qml` (◀ value ▶ with position dots; `stepValue()` is used by controller routing), `SettingRow.qml`, `SettingsGroupLabel.qml`, `SettingsNavItem.qml`, `ThemeTile.qml`.
-- [x] Settings shell: rail with summaries, transparent content area capped at 880 px, right pane for Appearance (live preview of the focused theme using the selected game's cover) and Display (auto-scale table and this screen). Left/right/A on a focused cycler change its value; left at the first value returns to the rail. LB/RB and Q/E cycle sections; the hint bar says "Section".
-- [x] Appearance: four theme tiles with miniature previews that apply immediately; Text size as a cycler; Reduced motion as a row.
-- [x] Display: Interface scale row and a "Restart now" banner when the saved scale differs from the one in use. The rest of Display is converted in Step 2.
-- [x] Tests: Ember migration, Aurora/Carbon, interface scale default, persistence, rejection, and the auto-scale table.
-- [x] First runtime check (2026-11-23): builds and runs; Carbon applied; Auto chose 125% on the user's screen; rail summaries and preview pane visible. Found: content column still narrow (fixed in Step 2).
-- [ ] Remaining checks: LB/RB and Q/E; cycler with D-pad and keyboard; interface scale restart (manual value and back to Auto).
-
-**Step 2: Display, Background section, Library rows**
-- [x] Fix: section columns used `parent.width` inside their ScrollView, which follows the content's implicit width; they now use the ScrollView's `availableWidth`, so rows reach the 880 px cap (theme tiles show two per row). Sections leave 64 px at the bottom for the hint bar.
-- [x] Theme preview falls back to the theme in use when no tile is focused or hovered.
-- [x] Display: Interface scale, Window mode (Fullscreen / Maximized / Windowed) and Window size as cyclers. Window size is only active in Windowed mode and applies when picked (no Apply button). When the preview pane is hidden, the screen size and auto scale appear under the rows.
-- [x] New Background section (between Display and Library) with its own icon: style tiles (Gradient, Waves, Image) with previews; wave color cycler (Ocean, Violet, Emerald; the Ember wave palette is retired and migrates to Ocean); Image rows for Choose / Clear, Fit (Fill or Fit) and Dim (Off–60%). The preview pane shows the background with stand-in covers.
-- [x] New `qml/WallpaperBackground.qml` draws the custom wallpaper in the Library: decoded at the screen's size (memory stays bounded for very large photos; small images are not upscaled when decoded), Fill crops to cover, Fit shows the whole image over a blurred copy of itself, and the dim amount is configurable (default 15%, close to the previous fixed 14%). Fit and Dim are stored with the other Library visuals.
-- [x] Library: folder row with Change folder, platform chips, Scan on startup toggle, and Scan library row that shows the latest scan message.
-- [x] User validation (2026-11-23): Background section with a custom image (Fill, Dim 30%), style tiles and preview pane, Aurora theme, rail summaries confirmed at runtime. The Metadata rail shows "No providers enabled"; the user may have switched both off earlier. To check in Step 4.
-
-**Step 3: Shader wave background**
-- [x] `shaders/waves.frag` (GLSL 440) ports the reviewed WebGL prototype: two ribbons of 14 lines interpolated between moving curves, a soft haze, vignette and dithering. Compiled with `qt_add_shaders` to `qrc:/shaders/waves.frag.qsb`. New build dependency: Qt Shader Tools (`qt6-shadertools` on Arch, `qt6-shadertools-dev` on Debian/Ubuntu, `qt6-qtshadertools-devel` on Fedora).
-- [x] `qml/WaveBackground.qml` wraps it: color, theme top/bottom colors, speed, quality (render scale 1.0 / 0.75 / 0.5 through a layer texture) and fps (60 via FrameAnimation, 30 via a timer, so the scene is only redrawn that often). When not running it keeps its current frame. Falls back to the theme gradient on Qt's software renderer.
-- [x] The Library's waves pause under Reduced motion, while a game session is active, and when the window is inactive or minimized. The old SVG wave images and their slide animation are removed.
-- [x] Background settings: Color swatches (Ocean, Violet, Aurora, Sunset, Rose, Ice, Theme accent, Custom) in a new `qml/ColorSwatchPicker.qml` (left/right like a cycler); Custom hue (14 named hues); Motion (Calm 0.6×, Normal, Lively 1.7×); Quality (Auto: High up to 2560 × 1440 physical pixels, Balanced above; High; Balanced; Low = half resolution at 30 fps). Saved wave palettes carry over (Emerald → Aurora).
-- [x] The Waves style tile shows a still frame in the chosen color; the preview pane animates while Background is open.
-- [x] User validation (2026-11-23): builds with Shader Tools; waves look and move like the prototype; color swatches, Motion and Quality (Auto chose Balanced on the user's screen) work.
-**Step 4: Metadata**
-- [x] TheGamesDB key in the app: `SettingsManager::saveTheGamesDbApiKey()` writes `config/thegamesdb.key` (next to settings.ini, not inside it) with owner-only permissions set before the atomic replace; `clearTheGamesDbApiKey()`, `theGamesDbKeySource` ("environment", "saved", "none") and `theGamesDbKeyHint` (last four characters). `RECOMPSTATION_TGDB_API_KEY` still wins. Keys must be 16–128 letters and digits. Saving or removing a key reconfigures `TheGamesDbClient` and `ScreenshotManager` and re-checks the connection immediately, with no restart.
-- [x] `MetadataManager` exposes `connectionState` (disabled, unconfigured, checking, connected, error), `connectionError`, `remainingAllowance` (TheGamesDB's `remaining_monthly_allowance` + `extra_allowance`) and `refreshProvider()` (used by Test). It no longer requests the platform list without a key.
-- [x] Provider order: `metadata/providerOrder`, default `launchbox`. LaunchBox is asked first (or alone when TheGamesDB has no key); TheGamesDB is asked when LaunchBox has no confident match. With `thegamesdb` order, the previous behaviour applies.
-- [x] Fix: a TheGamesDB failure (no key, HTTP 403/rate limit, offline) used to stop the whole run and record every remaining game as `provider_error`, which automatic scans then skipped forever. Now the failing game tries LaunchBox, the rest of the run continues with LaunchBox only, and `provider_error` games are retried by automatic scans after an hour (`gamesNeedingMetadata`).
-- [x] Fix: a scan that finished while matching was still running had its matching silently skipped; it now runs once the current pass ends.
-- [x] When LaunchBox is switched on or its catalog is downloaded/updated, games without metadata are matched again automatically (if automatic matching is on).
-- [x] LaunchBox catalog: only RecompStation's platforms (N64, PS1, GameCube, Wii, Xbox) are indexed: games, file associations and images for other platforms are skipped. Takes effect at the next catalog update. `catalogSizeBytes` is shown in Settings.
-- [x] Metadata page: provider cards with status pills and on/off switches; key field (hidden input, Save / Cancel, Test, Remove; Escape cancels), key source and requests left; LaunchBox Download / Update / Cancel with progress and last update; "Ask first" cycler; automation toggles; Refresh all metadata with progress. Preview pane: how matching works, the latest run, and how to get a key.
-- [x] Tests: provider order, key save/permissions/clear/validation/environment priority, allowance parsing, `setApiKey`, LaunchBox-first preference, LaunchBox after a provider failure, failure without LaunchBox, platform-filtered catalog.
-- [x] User validation (2026-11-23): all 20 test suites pass (after two test-only fixes); a game added while the app was running was matched and appeared in the Library without a manual refresh; removing it updated the Library. The page shows TheGamesDB switched off (which explains the earlier "No providers enabled") and LaunchBox installed at 498 MB, indexed before the platform filter.
-- [ ] Remaining: Update catalog and compare its size with 498 MB; add a TheGamesDB key in the app and Test it.
-- [x] Polish: new `qml/ToggleSwitch.qml` replaces Qt's default switches across Settings: a pill track that fills with the accent when on, a sliding knob, and an accent focus ring. The Controller page's old focus background on its switch is removed.
-- [x] Merged `ui/settings` into `ui/interface-redesign` at the user's request (2026-11-23); `docs/UI_DESIGN.md` updated (themes and backgrounds, Settings organization).
-
-**Step 5: Controller and Application pages** (branch `ui/settings-controller-app`, from mockups on the design canvas: proposed Controller, controller outlines, proposed Application)
-- [x] Decisions (2026-11-23): button symbols follow the connected controller automatically everywhere (no manual override); keep the four separate navigate rows; add the live button test; remove the placeholder update switch until RecompStation publishes GitHub releases; list launchers whose game left the library, with Remove.
-- [x] `qml/ControllerShapes.js` + `qml/ControllerOutline.qml`: line drawings of Xbox-style, PlayStation-style, Nintendo-style and generic layouts (vector paths, theme colors, face buttons in the accent, no logos). The connected layout replaces the neon placeholder image; disconnected shows the generic outline dimmed.
-- [x] Symbols: `window.controllerLayout`, `inputGlyph(token)` (A B X Y / ✕ ○ □ △ / B A Y X, LB RB LT RT / L1 R1 L2 R2 / L R ZL ZR, D-pad and stick arrows, L3/R3) and `inputGlyphColor(token)`. `actionInput(action)` reads the controller's profile, so the hint bar, the Library platform pills and Game Details show the button actually mapped to Select, Back, Details and the section buttons, not fixed defaults. Binding chips in Settings use the same symbols instead of ids like `dpad-up`.
-- [x] Controller page: device card (outline, name, layout description, status), Controller navigation row, mappings (unchanged behaviour), Reset mappings row. Right pane: button test. `ControllerManager.activeInputs` lists held inputs (including right-stick directions, display only); the outline fills the pressed parts, and chips show shoulders, triggers, Back and Start.
-- [x] Application page: About (version, Qt, architecture, project page), Storage (new `StorageUsage` class measures launchers, covers and screenshots, LaunchBox catalog and leftover downloads on a background thread; Clear leftovers when no download or install is running), Data folder with Open folder, Launchers without a game (Remove, through the existing uninstall confirmation), Runtime log with Open log folder, Reset settings (press twice; `SettingsManager::resetPreferences()` keeps the library folder, LaunchBox state, TheGamesDB key and first-run answers; Library visuals reset too; then restarts). Right pane: where things live and the total size. Managed launcher uninstall and the update switch are removed from this page; the first-run update question is unchanged.
-- [x] Test: `resetPreferencesKeepsLibraryAndKey`.
-- [x] User validation (2026-11-23): "Looks great"; merged into `ui/interface-redesign`.
-- [ ] Still worth trying when convenient: another controller type, a remapped Select in the hint bar, orphaned launcher Remove, Reset settings.
-
-**Step 6: Fix match** — planned: Game Details action to search either provider and pick the right game.
-
-## Game Details redesign (2026-11-22)
-
-Direction chosen by the user from design mockups (today; recompilation installed; available to install with a downloading state). Work is on `ui/game-details`, branched from `ui/interface-redesign`, in two passes so the move can be validated before the redesign.
-
-**Decisions**
-- Same visual family as the Library: screenshot backdrop (keeps today's automatic screenshot cycling), cover at its true platform shape, chips, metadata title.
-- One primary action following the launcher lifecycle: Install <project> → Downloading (progress, Cancel where supported) → Play. Check for updates beside Play; Uninstall moves under a controller-accessible ⋯ menu and still asks for confirmation.
-- About and Screenshots on the left; a Recompilation card on the right (project, repository, status, release, package, catalog ROM requirement). Games with several supported projects show project chips in the card.
-- Game Details moves from `Main.qml` into `qml/GameDetailsPage.qml`.
-
-**Pass 1 — move without visual change**
-- [x] Move the Game Details popup (about 1,030 lines) into `qml/GameDetailsPage.qml`, instantiated in `Main.qml` with the same `gameDetailsPopup` id. It continues to read application state from the `Main.qml` scope it is created in. `contentFrame` and `infoScroll` aliases replace the two direct references from Main.qml's controller navigation.
-- [x] User validation (2026-11-22): Game Details works exactly as before after the move.
-
-**Pass 2 — redesign**
-- [x] Replace the layout in `GameDetailsPage.qml`; all state, functions, animations, backdrop cycling, and launcher calls are unchanged.
-  - Hero: cover at its platform shape (height 220–360 px), platform / project-status / development-status chips, metadata title (file name when no metadata), year and formatted rating ("Local library entry" without metadata), the primary action, and one line of context or the latest launch, download, or release error.
-  - Primary action by state: Play ("Running…" while running); Install <project> → the existing Yes / No confirmation (BETA / ALPHA wording kept) → `startAssetDownload`; Find compatible launcher when no release has been checked; a disabled "Checking for releases…" while checking; a progress pill while downloading / installing; Retry after a release error. Installed games also show Check for updates and a ⋯ button that reveals Uninstall… inline (D-pad reachable), which opens the existing confirmation dialog. There is no download Cancel: the downloader has no cancel operation yet.
-  - Below, in a scroll view (two columns above 1100 px, stacked below): About (overview, or the existing "Game information not found" card with Retry Metadata and View Metadata Settings) and up to three screenshots (the one shown as the backdrop is outlined); a Recompilation card with project chips when several projects match, name, repository, alpha/beta notice, and Status / Release / Package / ROM / Installed at rows.
-  - Top right: the game's position ("2 of 45") with LB / RB glyphs while a controller is active.
-  - Opening the page or switching games focuses the primary action (Play, Install, or Find), so A acts immediately; Back otherwise.
-- [x] User validation (2026-11-22): installed (Play, Check for updates, ⋯ → Uninstall…), not installed (Install → Yes / No, version line), Recompilation card data, and LB/RB game switching confirmed.
-- [x] Polish: the page centers vertically when its content fits (hero moved down by part of the spare height); screenshots grow to share the left column (up to 380 px wide); installed games show "Latest release <tag> · Linux / <arch>" instead of "Uninstall is under ⋯."; the hint bar matches the Library pill with button glyphs, and A reads "Play" or "Install" when that button has focus. Keyboard hints inside Game Details no longer show Library-only keys.
-- [x] Polish confirmed at runtime (2026-11-23).
-- [ ] Remaining state checks when convenient: downloading/installing pill, release and launch errors, several projects (Open Nectar), no metadata.
-
-
-**Screenshot follow-up (2026-11-23, user request)**
-- [x] New `qml/ScreenshotBackdrop.qml`: wide panels show each screenshot whole at its own aspect ratio over a blurred, dimmed copy of itself (instead of cropping to a thin band), cycle through screenshots every 9 s with a cross-fade (still under Reduced Motion), and fall back to the blurred cover. Used by the List preview header (centered). The Shelves spotlight uses only its blurred, cycling fill and keeps the box cover on the right (user preference after review, 2026-11-23).
-- [x] List preview screenshots are focusable buttons: Right from the list (or a click) reaches them, Left from the first one, Up/Down, or B return to the list, and A / Enter / click opens them full screen.
-- [x] New `qml/ScreenshotViewer.qml`: full-window viewer with Left/Right (D-pad, keyboard, edge buttons) to page, B / Escape / the × button or clicking outside the image to close, and an "N of M" hint. Focus returns to the thumbnail that opened it, and the List preview header shows the screenshot last viewed.
-- [x] Game Details screenshots are focusable and clickable; choosing one cross-fades the background to it and restarts the slideshow from there. The focused thumbnail has an accent ring; the one shown as the background keeps the white outline.
-- [x] User validation (2026-11-23): screenshot fitting and cycling, the List viewer, Game Details screenshot selection, and the Shelves spotlight cover confirmed. `ui/game-details` merged into `ui/interface-redesign`.
-
-## List with preview pane (2026-11-22)
-
-Chosen by the user from design mockups (List today; list + preview at Comfortable with an installed GameCube game; Compact with an N64 game that is not installed and has no screenshots). Work is on `ui/list-preview`, branched from `ui/interface-redesign`.
-
-- [x] Rows take about 45% of the width (420–780 px). Thumbnails use the platform frame shape inside a fixed-width column (wide enough for 7:5) so titles align; rows show the metadata title, platform and release year, and a recompilation status line (hidden at Compact). Row size presets: 60 / 84 / 108 px thumbnails.
-- [x] All Platforms groups rows under platform headers (name and game count; the count is hidden while searching), using ListView sections. Headers are not focusable, so navigation is unchanged. Decision: headers kept for consistency with the sectioned Grid and Shelves (the user was undecided; easy to remove).
-- [x] Preview pane on the right follows the selection: screenshot header (blurred cover when none), cover at its true shape overlapping the header, platform and status chips, title, year and rating, a four-line overview, up to three screenshot thumbnails (or a hint to run Refresh All Metadata), and Play (installed only) and Details. The screenshot strip hides on short windows rather than overlapping the actions.
-- [x] A / Enter in List play an installed recompilation and otherwise open Game Details, matching Carousel; Y / `I` open Game Details. Clicking a row still opens Game Details; the Play button launches. The hint bar shows "Play" when A would launch.
-- [x] User validation (2026-11-22): build and tests pass; rows, headers only in All Platforms, Compact hides the status line, preview content, A plays or opens Details, Y opens Details.
-- [x] Polish from that review: Play and Details move up under the year and rating beside the cover; screenshot thumbnails share the full pane width, limited by the height left below the overview (hidden below 120 px wide); the list may grow to 900 px on wide screens.
-- [x] Polish confirmed at runtime (2026-11-22). Merged into `ui/interface-redesign`; `docs/UI_DESIGN.md` List description updated.
-
-## Hero carousel (2026-11-22)
-
-The user lifted the Phase 4 Carousel freeze and chose a hero carousel after reviewing design mockups (Carousel today, hero with an installed GameCube game, hero with an N64 game). Work is on `ui/carousel-hero`, branched from `ui/interface-redesign`. This replaces the remaining Phase 4 Carousel review items.
-
-- [x] Full-window backdrop of the selected game's first screenshot (blurred cover when none exists), cross-fading between selections, with a legibility gradient. Shown only in Carousel on the Library page; the collection heading is hidden in Carousel.
-- [x] One edge-to-edge row in library order. The selected cover is centered and about 1.43× larger; covers use platform frame shapes and fade toward the window edges. Row height follows the Carousel size preference (170 / 210 / 250 px base, scaled with window height). Positions come from `LibraryGridLayout.carouselPositions` (covered by `ArtworkLayoutTests`) and animate, respecting Reduced Motion.
-- [x] Beneath the selection: platform, recompilation status, and "N of M" chips; metadata title; year and rating; Play (installed only; "Running…" while running) and Details.
-- [x] Actions: in Carousel, A / Enter / clicking the selected cover plays an installed recompilation and otherwise opens Game Details. New **Details** controller action (default Y; △ on PlayStation and X on Nintendo layouts in hints) and the `I` key open Game Details from any Library view. Hovering highlights without changing the selection (the row recenters under the pointer); clicking another cover selects it; the wheel steps the selection.
-- [x] `ControllerInputRouter` gains `detailsRequested` (optional `detailsPressed` frame argument, so existing callers are unchanged). The default profile maps Details to Y, the action is listed in Controller settings for remapping, and saved profiles that predate it keep their mappings and receive the default instead of being reset. New `ControllerInputRouterTests` and `SettingsManagerTests` cases.
-- [x] First runtime check (2026-11-22): the hero layout renders as designed with real artwork and screenshots.
-- [x] Polish from that check: numeric community ratings are shown as "★ 4.8" instead of raw values (also in the Shelves spotlight); the row and the details are centered together as one block, slightly below the middle, instead of pinning the row at 42% of the height.
-- [x] User validation (2026-11-22): build and tests pass; backdrop with and without screenshots, row centering, details and actions, A plays or opens Details, Y opens Details, existing controller mappings preserved. Merged into `ui/interface-redesign`; `docs/UI_DESIGN.md` Carousel section updated.
-
-## Library presentation redesign (planned, 2026-11-22)
-
-Scope is the Library page only; Game Details and Settings adjustments follow later. The direction was agreed from the design comparison canvas (current Grid, proposed Shelves view, proposed platform Grid, cover-fill analysis, and a measured RecompLauncher reference). RecompStation keeps its own identity: controller-first by default, library-first (the user's ROMs, with recompilation support shown as status), and curated size presets rather than free resizing.
-
-**Decisions**
-- Artwork stays sourced from LaunchBox and TheGamesDB box art. No new artwork provider (for example SteamGridDB) is planned.
-- Frame shape follows the platform's box art rather than one shared 2:3 frame: N64 7:5 (North American landscape boxes), PS1 1:1, GameCube/Wii/Xbox 5:7. A cover whose measured aspect ratio clearly differs (for example a PAL portrait N64 box) uses its own measured ratio.
-- The cover art is the card: no card surface, padding, or inner inset around the artwork. The focus ring is drawn outside the artwork.
-- Filtering uses platform pills only. No Installed / Not installed status filter for now.
-- Carousel card sizing, density values, and artwork proportions remain frozen until Phase 4 is closed; steps 1–3 do not modify Carousel.
-- `docs/UI_DESIGN.md` is updated to replace the shared 2:3 frame rule when step 2 is implemented and user-validated.
-
-**Implementation order** (each step: build, all CTest suites passing, and user validation before the next)
-- [x] **Step 1 — Shared `GameArtwork.qml` component:** Consolidate cover presentation (frame shape by platform, measured-ratio fallback, missing-artwork placeholder, focus styling hooks) into one reusable component. Initial adoption must produce no visual change.
-  - [x] Add `qml/GameArtwork.qml` and `qml/ArtworkLayout.js` (pure frame-ratio calculations, including the dormant "platform" frame mode for step 2). Adopt the component in Grid View with the existing "measured" behavior. List View and Carousel are intentionally unchanged (Carousel stays frozen until Phase 4 closes).
-  - [x] Add the `ArtworkLayoutTests` QuickTest suite (runs offscreen) covering platform shapes, measured/platform frame modes, the PAL-box tolerance rule, and frame fitting. CTest now has 20 suites.
-  - [x] User validation: build and all 20 CTest suites pass; Grid covers, blurred landscape backdrops, N64 presentation, missing-artwork placeholders, focus border color, and Reduced Motion look identical to before. User confirmed 2026-11-22 after the `ArtworkLayout.js` resource-registration fix.
-- [x] **Step 2 — Grid: artwork-forward cards:** Remove the card surface, padding, and inner inset; draw the focus ring outside the artwork; use a two-line caption (title plus one status line such as "Recomp installed" or "ROM verified"). A platform-filtered Grid uses that platform's frame. The All Platforms Grid is sectioned by platform (see below). Revalidate Compact/Comfortable/Spacious column counts at 1920×1080, 2560×1080, 3440×1440, and 4K.
-  - [x] Grid cards drop the card surface, inner padding, inset, and accent glow. `GameArtwork` gains bottom frame alignment, an outer focus ring (full strength when focused, faint on hover), and edge-to-edge cropping in "platform" mode. The platform-ratio tolerance is 12%, which caps cropping at about 6% per edge; covers outside it keep their measured shape.
-  - [x] Card widths per density are unchanged (220 / 270 / 350 px), so column counts are unchanged. Artwork height follows the selected platform's frame (5:7 for All Platforms); the caption height scales with the font-size preference. Grid top/bottom margins grow to 16 / 18 px to fit the focus ring and focus scale.
-  - [x] Caption status line: "<project> · Installed" (success color) when a supported launcher is installed, "Recompilation available" (accent) when a catalog project matches, otherwise the platform name. Installed launchers are looked up once per launcher change at window level rather than per card.
-  - [x] First runtime check (2026-11-22): filtered and portrait covers look right and the status line works, but in All Platforms the shared 5:7 cells leave a large gap above N64 covers, worst where one platform's games end and the next begin. Decision: section the All Platforms Grid by platform.
-  - [x] **Sectioned All Platforms Grid:** a header per platform (display name and game count) and per-section row heights from the platform frame shape. Geometry and directional navigation live in `qml/LibraryGridLayout.js` (up/down continue into the previous/next section at the nearest valid column; up from the first row returns to the toolbar). `gameGrid` still owns the model and `currentIndex`, so List View, Carousel, and Game Details switching are unchanged; it is hidden while the sectioned view is shown. The cover and caption are shared through `qml/LibraryCoverCard.qml`. The sectioned view keeps the startup/view-switch reveal, the scroll-edge fade, mouse-wheel scrolling, analog-stick scrolling, and Reduced Motion behavior. It creates every card (no view recycling), which is fine for current library sizes and should be revisited for very large libraries. Covered by the `LibraryGridLayout` cases in `ArtworkLayoutTests`.
-  - [x] Runtime check (2026-11-22): sections, per-platform row heights, and controller navigation between sections confirmed by the user.
-  - [x] Polish from that review: captions show the matched metadata title when available (ROM file name otherwise) and Library search also matches metadata titles; the installed status is shortened to "Recomp installed" (Game Details keeps the full project name); both grids end 36 px above the floating input-hint bar; wide-screen (≥ 3000 px) column caps are per card size (Compact 10, Comfortable 8, Spacious 6) instead of 8 for every size.
-  - [x] User validation of the polish (confirmed 2026-11-22, including Compact 10 / Spacious 6 columns, metadata-title search, and Game Details switching in All Platforms; `docs/UI_DESIGN.md` artwork rule updated): build and all CTest suites pass; titles and status lines, search by metadata title, last row clear of the hint bar, and column counts per card size at 3440×1440 and 4K. Also confirm keyboard navigation, mouse hover/click/wheel, analog scrolling, and switching games inside Game Details in All Platforms.
-- [x] **Step 3 — Compact Library header:** Replace the platform dropdown with platform pills (LB/RB cycle platforms), present Shelves/Grid/List/Carousel as a compact segmented control, collapse search into an expanding search control, and make card size an icon control. Preserve all existing view and size preferences and their persistence.
-  - [x] Decision: on the Library page LB/RB cycle platform filters (wrapping). Inside Game Details they still switch games; from Settings either returns to the Library. Settings remains reachable from the header and the Menu button. The input-hint label reads "Platform", "Switch game", or "Library" accordingly.
-  - [x] Replace the four labelled dropdowns in the top bar with: platform pills showing game counts (empty platforms dimmed, LB/RB glyphs beside them while a controller is active), a round search button that expands into a field while focused or holding text, a Grid/List/Carousel segmented control, and a card/row-size button that steps Compact → Comfortable → Spacious for the current view. Select on a focused toolbar button activates it instead of opening the current game. The `libraryFilterPanel` id is kept so directional focus into and out of the toolbar is unchanged. Removed the noisy `[Density Toolbar]` logging with the old size dropdown.
-  - [x] User validation (2026-11-22): build and tests pass; LB/RB cycle platform filters; D-pad navigation across the toolbar and A to activate pills, search, view, and size work; Grid size persists across restart.
-  - [ ] Remaining checks: List and Carousel size stepping and their persistence, and narrow-window behavior (pills clip rather than wrap).
-- [x] **Step 4 — Shelves view and spotlight panel:** Add Shelves as a fourth presentation: one horizontal row per platform with a fixed row height and per-platform card widths, plus a spotlight panel for the focused game (screenshot backdrop, title, release information, recompilation and ROM-verification status, Play and Details actions). Define focus movement between the spotlight, shelves, and header; persist the selected view; respect Reduced Motion.
-  - [x] `SettingsManager` accepts and persists `"shelves"` as a Library view; unknown view names are rejected. Covered by new `SettingsManagerTests` cases.
-  - [x] Shelves is the first option in the view switcher. The spotlight shows the selected game: first screenshot as the backdrop (or the blurred cover when no screenshot exists), platform and recompilation status chips, metadata title, release year and rating, a three-line overview, and Play (only when the supported launcher is installed; "Running…" while it runs) and Details actions, plus the cover at its true shape on wide windows. No ROM-verification line is shown because per-game verification state is not yet exposed to QML.
-  - [x] One shelf per platform (respecting the platform filter and search), cards sized by the Grid card-size preference (150 / 190 / 236 px tall) with platform-shaped widths, focus ring, and a slight focus scale. Navigation: left/right along a shelf without wrapping; up/down between shelves, returning to the card last focused on that shelf; up from the first shelf to the spotlight actions; left/right between Play and Details; up from the spotlight to the toolbar; down from the toolbar to the spotlight. Logic in `LibraryGridLayout.moveShelfIndex`, covered by `ArtworkLayoutTests`.
-  - [x] Mouse: hover selects (the spotlight follows), click opens Game Details, vertical wheel scrolls shelves, horizontal wheel/trackpad scrolls the shelf under the pointer. Analog-stick scrolling, Game Details game switching, LB/RB platform cycling, and Reduced Motion are supported.
-  - [x] User validation (2026-11-22): build and tests pass; Shelves and the spotlight render as intended; Play launches an installed recompilation; controller focus paths (shelves ↔ spotlight ↔ toolbar, per-shelf memory) work; Shelves persists across restart.
-  - [x] Polish: the RB glyph sits right after the platform pills (the pill strip hugs its content and clips only in narrow windows); shelf headers align with the first card and every shelf keeps its leading/trailing margin at either end; the spotlight is shorter (220–300 px, about a third of the view) so more shelf rows fit.
-  - [ ] Confirm the polish at runtime.
-- [x] **Step 5 — Keyboard parity:** Complete keyboard navigation to match controller navigation and show keyboard keys in the adaptive hint bar when keyboard input is active. Proposed bindings: arrows to move, Enter to play, I for details, Esc to go back, PgUp/PgDn (or Q/E) to cycle platforms, `/` for search.
-  - [x] Q/E cycle platform filters on the Library page, matching LB/RB (PgUp/PgDn were tried and dropped at the user's request after they did not trigger in testing); `/` (alternate Ctrl+F) opens and focuses search. These shortcuts are disabled while a text field, open popup, Game Details, the system menu, or a dialog owns the keyboard, and the existing Settings PgUp/PgDn scrolling is unchanged.
-  - [x] Search field: Enter or Down moves focus into the current view; Escape clears the text, then leaves the field. Moving from the toolbar into the content now targets the active view (Shelves spotlight, List, Carousel, sectioned or filtered Grid) through one `focusLibraryContent()` helper; previously it always targeted the Grid.
-  - [x] Keyboard hint bar on the Library page: arrows Navigate, Enter Select, Q / E Platform, / Search, F11, Ctrl+Q. Enter already opens Game Details from any card, so no separate details key was added.
-  - [x] User validation (2026-11-22): `/` opens search, typing then Enter moves to the results, Escape clears then leaves, Q/E cycle platforms and type normally in the search field.
-
-## Recent stabilization notes (2026-11-21)
-
-- [x] Validate live library reconciliation: existing library loads; adding a ROM while RecompStation is running registers it without a restart; automatic metadata matching runs when enabled; removing a ROM updates its availability and removes it from the active library view. User confirmed the full sequence.
-- [x] Validate persistence of automatic metadata-matching and automatic artwork-download preferences across application restarts, including disabled and re-enabled states.
-- [x] Validate the LaunchBox-only metadata-provider path and the existing launcher install/launch/uninstall workflow. These are user-confirmed runtime checks; manual metadata editing and artwork replacement are not currently exposed and remain future Game Details functionality.
-- [x] Improve Game Details launcher action awareness: **Find Compatible Launcher** is shown when no launcher is installed; **Check for Updates** is shown when a launcher is installed. Compatible-release status and version/platform details are clearer. User confirmed the revised actions work.
-- [x] Complete a fresh stabilization build and runtime pass. `./scripts/build.sh --test` completed successfully with all 19/19 CTest suites passing (6.88 seconds). `./scripts/run.sh` started successfully; the database initialized; filesystem monitoring enabled for five directories; N64, PS1, GameCube, Wii, and Xbox scans completed; the Xbox Series X controller was detected and mapped; LaunchBox artwork processing completed with 40 images downloaded, 0 skipped, and 0 failed for 16 library games.
-- The CMake `WrapVulkanHeaders` missing-header warning remains non-fatal and did not prevent the successful build, test run, or application startup.
-- **Stabilization pass status:** complete based on the user-confirmed checks above. The user will choose the next development priority; do not assume the next task.
-
-## Recent implementation notes (2026-11-21)
-
-### Navigation and Focus completion
-- [x] Confirm controller focus is visible and usable on the Library toolbar controls, including platform/view/card-size dropdowns.
-- [x] Refine Settings directional focus so vertical D-pad movement follows visual row order.
-- [x] Confirm keyboard/controller navigation through Settings categories and content, including Application settings and long scrolling content.
-- [x] Confirm display controls: Windowed, Fullscreen, Maximized, and preferred custom window sizing.
-- [x] Add horizontal D-pad navigation between the custom Library background image actions (Choose image / Choose another image and Clear); user confirmed the final fix works.
-- [x] Confirm controller navigation is restored after a managed game session ends and that game processes retain input ownership while running.
-- **Status:** The Navigation and Focus workstream is functionally complete based on user testing. This does not close Milestone 7 as a whole; remaining accessibility, controller-interface, modal/file-picker, multi-display, and full regression items stay tracked below.
-
-### Metadata matching preference
-- [x] Add persistent Settings → Metadata options to enable or disable automatic metadata matching and automatic cover-art downloads; both default to enabled to preserve the existing workflow.
-- [x] Keep the manual **Refresh All Metadata** workflow available regardless of either automatic preference; manual refresh explicitly retries matching and artwork retrieval.
-- [x] Add persistent automatic metadata-matching and automatic artwork-download preferences, both enabled by default; preserve manual **Refresh All Metadata** as an explicit override.
-- [x] User visually confirmed the new Metadata settings are present.
-- [x] Build and run locally; verify automatic metadata-matching and automatic artwork-download preferences persist across restarts, including disabled and re-enabled states. **User-confirmed 2026-11-21.**
-- [ ] Verify disabled scans skip matching, automatic cover/screenshot downloads respect the artwork preference, and manual refresh overrides both preferences.
-
-### First-run experience and library setup
-- [x] Add the optional automatic application-update preference prompt before library-folder setup. Yes, No, closing the prompt, and Escape all complete the preference; dismissal is saved as disabled, and the choice can later be changed in Settings → Application. This is preference UI only: release checks are not connected and no network requests are made.
-- [x] Polish the first-run library-folder setup overlay to match the active theme and the rest of the application.
-- [x] Scope the library-folder setup overlay to the Library page and prevent it from covering the controller pause menu.
-- [x] Make the library-folder setup overlay non-modal so mouse users can still use the toolbar and navigate to Settings while setup remains incomplete.
-- [x] User exercised the reset/setup flow, selected an existing library root, corrected an initially incorrect folder path, and confirmed that the subsequent scan discovers the games and automatically starts metadata matching.
-- [ ] Complete validation of both empty-library and populated-library presentation after a full reset; only the populated-library scan/matching path has been confirmed in this pass.
-- [x] Revisit the empty-library presentation after reset/first-run testing. The trial that hid the empty state until a library folder was configured was reverted at the user's request; current behavior is intentionally unchanged.
-
-### Library folder browser
-- [x] Replace the native folder picker with the in-app browser shared by first-run setup and Settings.
-- [x] Add directory navigation, Home/Up controls, right-click folder actions, and in-app folder creation.
-- [x] Add safe folder-creation validation and regression tests.
-- [x] User confirmed the browser builds, runs, and creates folders successfully.
-
-## Recent implementation notes (2026-11-18)
-
-The following notes record focused implementation and user-validation updates. The milestone checklists below remain the authoritative task/status tracker.
-
-### Controller settings
-- [x] Redesign the Controller settings page with separate device, controller-options, active-profile, and default-button-layout sections.
-- [x] Expose the existing controller-input enable/disable setting.
-- [x] Document current navigation bindings as read-only rather than presenting them as editable.
-- [x] Expose stable SDL controller GUIDs and persist validated logical-action profiles independently per GUID.
-- [x] Validate saved profile mappings in the input router on hardware, including remapped navigation/actions, button capture/replacement, per-device reset, left/right trigger capture/use, and L3/R3 stick-click capture/use. User confirmed remapped actions, trigger mappings, L3/R3 mappings, and persistence after application restart on 2026-11-22. Capture consumes the assigned physical input until release.
-- [x] Build and verify Settings category navigation and visible focus styling across the tested categories and controls.
-- [x] Build and visually verify the revised Controller page with connected and disconnected controller states; confirm trigger and L3/R3 labels and capture guidance. User verified both connected and disconnected presentations on 2026-11-22.
-
-### Settings foundation
-- [x] Normalize Appearance and Application settings content into scrollable panels consistent with the other Settings categories.
-- [x] Add a dedicated Metadata category, ordered after Library and before Controller.
-- [x] Add a persistent TheGamesDB provider checkbox and configured/disabled/API-key-required status.
-- [x] Gate TheGamesDB platform-catalog and search requests using the saved provider preference.
-- [x] Add regression coverage for provider preference persistence and disabled-provider search behavior.
-- [x] Build/run and verify Settings scrolling and category navigation; user has since confirmed navigation through the Settings categories and long content using keyboard/controller input.
-- [ ] Verify provider-toggle persistence across restarts and metadata refresh behavior.
-- [ ] Add provider priority/fallback and independent artwork-source controls as additional providers are integrated.
-
-### Library and navigation polish
-- [x] Simplify primary Library/Settings navigation to compact icon-led controls; user approved the appearance.
-- [x] Add configurable Grid/List browsing, title search, platform filtering, and independent view sizing.
-- [ ] Complete Carousel validation: verify selected-card focus, mouse/keyboard/controller selection, details opening, preference persistence, and Grid/List regression. Horizontal controller navigation has been exercised; remaining checks are not yet fully confirmed.
-- [x] Refine Carousel viewport-edge fading, including the left-edge initial-position exception and trailing-edge-based right fade. User reviewed the result and accepted it as a good baseline on 2026-11-22.
-- [ ] Review Carousel selected-card emphasis and horizontal scrolling/navigation animations; preserve the current card sizing and density calculations during this pass.
-- [ ] Verify Carousel clipping at both viewport edges, including enlarged selected cards and card borders.
-- [x] Verify Carousel hover does not cascade through cards when the pointer is stationary near screen edges; selection should follow actual pointer movement.
-- [x] Add coordinated static/animated/custom library background treatments.
-- [x] Polish game-card selection, artwork presentation, theme switching, and adaptive navigation hints.
-- [x] Validate fullscreen startup and the coordinated startup Grid reveal on the user's Wayland desktop; no initial windowed flash or duplicate/late card animation remains.
-- [x] Confirm Library keyboard navigation: arrow keys move through the grid, Enter/Return selects a game, and Escape returns from game details.
-- [x] Confirm controller hot-plug detection and adaptive input hints when controller input is used.
-- [ ] Complete accessibility and controller-only validation across all screens and controls.
-
-### Recompilation and native-port project catalog
-- [x] Add the initial N64 project catalog and subsequent N64 projects, including Star Fox 64, Donkey Kong 64, Mario Kart 64, Mario Party trilogy, Super Smash Bros., Ghostship, Banjo-Tooie, and PaperBoat.
-- [x] Add ten further projects: DinoTale (Yoshi's Story), Mega Man 64, F-Zero X, Mario Golf, Zelda 64: Recompiled (Majora's Mask), Ship of Harkinian (Ocarina of Time), Open Nectar (Pikmin 1 and 2), Strikers (Super Mario Strikers), Dusklight (Twilight Princess), and Luigi's Mansion Recompiled.
-- [x] Map each project to its original console platform and known game-title aliases; Open Nectar covers both Pikmin titles.
-- [x] Restrict release matching to verified native Linux AppImage, ZIP, and TAR.GZ assets for supported CPU architectures; exclude Windows, macOS, Android, and Flatpak assets.
-- [x] Record project-specific game-data requirements and known ROM/disc revisions or hashes where documented. Zelda 64: Recompiled currently targets Majora's Mask; Ocarina of Time is not represented by that entry.
-- [x] Add regression coverage for the new title/platform matches and representative Linux asset names, including rejection of Flatpak and Windows packages.
-- [ ] Build and run the updated application, then verify install/launch/uninstall for the newly added projects; preserve user ROM/disc data during uninstall.
-
-### Linux launcher execution and archive handling
-- [x] Support release ZIPs that wrap a single TAR.GZ/TGZ payload; safely extract the nested archive into the requested staging destination.
-- [x] Add regression coverage confirming nested archive contents land in the expected destination.
-- [x] Launch shell startup scripts from their installation directory using a relative invocation such as `./run.sh`.
-- [x] Add regression coverage confirming the shell script is invoked as `./run.sh`.
-- [x] Correct the PaperBoat executable filename to the archive's exact case-sensitive name, `Paperboat.AppImage`.
-- [x] User-confirmed launch success for Star Fox 64, Donkey Kong 64, Banjo-Tooie, and PaperBoat.
-- [ ] Continue testing remaining catalog projects and verify uninstall preserves ROM files.
-
-## Completed foundation
-
-- [x] C++20, CMake, Qt 6.5+, and QML application foundation
-- [x] SQLite database initialization and platform directory creation
-- [x] Game scanning and library registration for N64, PS1, GameCube, and Wii
-- [x] TheGamesDB asynchronous search, platform catalog retrieval, and runtime platform-ID mapping
-- [x] Metadata association with local ROM records without overwriting local titles or paths
-- [x] Cover-art retrieval, local caching, and library thumbnails
-- [x] Asynchronous GitHub repository and latest-release discovery
-- [x] Curated recompilation project catalog with an initial Banjo: Recompiled entry
-- [x] Architecture-aware Linux release asset filtering
-- [x] Staged launcher downloads, safe archive extraction, installation validation, managed uninstall, and installed-launcher rediscovery
-- [x] Native launcher process startup and process-state/error reporting
-- [x] Regression tests for implemented scanner, metadata, artwork, GitHub, catalog, archive, launcher-management, and process-launch components
-
-## Development principles
-
-1. Keep `main` stable; develop unfinished work on the dedicated UI branch.
-2. Keep the application buildable and runnable after each focused change.
-3. Preserve existing behavior while improving presentation and architecture.
-4. Keep application/business logic in C++ and presentation/navigation in QML.
-5. Prefer small reusable QML components and focused pages over a monolithic main view.
-6. Do not expose backend workflows as user-facing chores when they can be automated safely.
-7. Automatically associate metadata only when the match is sufficiently reliable; do not silently attach uncertain results.
-8. Run builds and regression tests after meaningful changes. Add tests when backend behavior changes.
-9. Do not invalidate or delete the user's existing build directory or application data during routine UI work.
-
-## Ordered development roadmap
-
-### Milestone 1: Product experience and design foundation — complete (design specification and code audit, 2026-11-18)
-
-- [x] Agree on the product direction: immersive personal game collection, not a storefront or clone of another launcher
-- [x] Establish the two primary destinations: Game Library and Settings
-- [x] Define metadata as an automated library service rather than a standalone search/association workflow
-- [x] Define dark visual language, curated themes, and fullscreen-first behavior- [x] Audit the current primary pages, dialogs, overlays, and interactions against `docs/UI_DESIGN.md`; record aligned areas, legacy cleanup, and deferred validation.
-- [x] Bundle reusable SVG icon assets for navigation and common actions; define shared icon sizing (local validation pending)
-- [x] Define the application/page hierarchy, Library and Settings navigation, Game Details overlay behavior, and contextual launcher/metadata workflows.
-- [x] Define the selection-versus-focus model and keyboard/controller navigation expectations for Library, Settings, nested popups, and Escape handling.
-- [x] Define display behavior accurately: Windowed, Maximized, and Fullscreen; preserve prior mode on F11; compositor owns monitor placement/resolution; borderless and explicit monitor selection remain deferred.
-
-**Milestone 1 exit note:** The design direction, hierarchy, interaction model, and current implementation audit are now documented in `docs/UI_DESIGN.md`. This closes the Milestone 1 planning/specification work. It does not mark later implementation/validation items complete: full accessibility/controller-only testing, legacy unreachable QML cleanup, additional display modes, and broader library states remain tracked in their respective milestones.
-
-### Milestone 2: Application shell and navigation
-
-- [x] Refine main navigation and add an upward details-page entrance with a slower artwork dissolve; user visually validated the navigation and details transitions.
-- [x] Replace the width-reserving sidebar with an integrated horizontal Library and Settings navigation bar; main content uses the available window area. User approved the updated navigation layout.
-- [x] Add a dedicated Back to Library control to immersive game details; Escape also closes the details view.
-- [x] Remove Metadata Search and Platforms as top-level navigation destinations; platform selection now lives in the Library. Legacy page components remain in QML pending safe cleanup.
-- [x] Keep platform selection/filtering inside the Game Library; combine it with title search.
-- [x] Add live game-title search in the Library; search respects the selected platform and shows a no-results state.
-- [x] Consolidate Grid/List and view-specific sizing controls in the Library header; persist Grid density and List row size independently.
-- [x] Constrain List View to approximately half the content width, preserving a large visible area for custom/animated backgrounds; add reduced-motion-aware selected/hover zoom.
-- [x] Rehome launcher discovery and management contextually in Game Details, preserving the existing download, install, launch, and uninstall capabilities.
-- [x] Add the bottom-up, staggered Grid card entrance for application startup, List-to-Grid switching, and return from Settings; respect Reduced Motion. User has visually validated the timing and behavior across these entry points.
-- [x] Normalize the Settings category content gutters, title/description/divider hierarchy, section spacing, and horizontal-scroll behavior; retain the shared focus treatment and on-demand vertical scrolling.
-- [x] Request fullscreen as the initial native window state on every application launch, including first-run and existing-library installations; gate the startup Grid card reveal until fullscreen is confirmed and initialize delegates in their hidden reveal state to prevent a visible pre-animation flash. User confirmed the startup behavior on Wayland, including the absence of the windowed flash and duplicate/late card reveal.
-- [ ] Complete a full navigation/backend regression pass to confirm all existing pages and backend connections remain functional after the transition. The recent Navigation and Focus validation covers core Library/Settings navigation, but does not replace this broader regression.
-
-**Milestone 2 status:** The core shell, Library browsing controls, contextual launcher workflow, card entrance behavior, and fullscreen-on-launch behavior are implemented and user-validated. The latest local build completed successfully and all 14 automated tests passed. Recent fixes for Application-page controller/keyboard navigation, Settings scrolling and Escape handling, and adaptive pause-menu hints were also confirmed by the user. The comprehensive manual navigation/backend regression pass remains intentionally open and deferred while work proceeds on Milestone 3; do not mark Milestone 2 complete until that pass is explicitly resumed and finished.
-
-### Milestone 3: Game Library experience
-
-**Progress note (2026-11-21):** The dedicated immersive Game Details experience and contextual metadata/project/installation/launch information are implemented and user-validated. The user confirmed the missing-artwork placeholder appears while artwork loads and is replaced by the retrieved image, and that searches with no matches show a no-results overlay. The platform-filtered empty state was also inspected; retain one generic empty-library experience rather than introducing platform-specific messages. Initial truly-empty-library behavior and scan/error recovery still need verification.
-
-- [x] Simplify the library header to one platform selector (All Platforms by default); remove the separate collection search and duplicate management panel
-- [x] Expand game tiles into a responsive multi-row grid with larger artwork, clearer title/platform typography, and stronger selected-game emphasis. Responsive card sizing and column layout have been user-validated at 4K and 2560×1080.
-- [x] Add a theme-aware, selected-game artwork atmosphere layer behind the library content, with contrast overlays and reduced-motion-aware fading (first visual pass; local validation pending)
-- [x] Add subtle focus depth to the current game tile, respecting reduced motion (local validation pending)
-- [x] Replace the compact game-details popup with a full-window immersive details experience, using the selected cover as a softly blurred, gradually fading background (local validation pending)
-- [x] Keep the library backdrop stable and theme-driven instead of changing it with game selection (local validation pending)
-- [x] Add a dedicated game-details experience; implemented as the immersive full-window Game Details view and user-validated with representative games.
-- [x] Present metadata, supported project, installation state, and launch action in the game context; metadata, project selection, installed location/ROM requirements, Play Game, and Uninstall are present and user-validated.
-- [ ] Verify the single universal empty-library screen when no games have been discovered; keep its guidance general (no platform-specific empty screens) and do not imply manual scanning is required when automatic scanning is enabled.
-- [x] Confirm the no-search-results overlay and missing-artwork placeholder/loading-to-artwork behavior.
-- [ ] Verify loading/scanning feedback, unsupported-file handling, and scan/metadata error recovery.
-- [x] Keep manual library scanning in Settings; remove duplicate scan and metadata-refresh controls from the Library page
-- [ ] Verify missing and differently proportioned artwork beyond the already-confirmed placeholder and artwork-loading behavior.
-
-### Milestone 4: Automatic library and metadata maintenance
-
-
-#### LaunchBox optional local-catalog fallback — planned
-
-**Agreed design decisions**
-- TheGamesDB remains the primary metadata provider. LaunchBox is an optional secondary source and must be disabled by default for new installations.
-- Download the LaunchBox `Metadata.zip` archive only after the user explicitly enables LaunchBox. Show download/extraction or indexing progress, support cancellation, and retain a usable existing catalog if an update fails.
-- Keep a local searchable index rather than reparsing the extracted XML for every game lookup. The supplied archive is approximately 106 MB compressed and 550 MB extracted, so avoid unnecessary repeated extraction and processing.
-- Use `Platforms.xml` only as reference data. Map RecompStation platforms to explicit canonical LaunchBox platform names; do not blindly accept every LaunchBox alias (for example, the Nintendo 64DD alias collision).
-- Use `Files.xml` platform-specific filename associations as the preferred route: first match the ROM's full filename (including region, language, and revision tags, excluding only its known file extension and harmless punctuation/case differences), then use its `GameName` to locate the corresponding `Metadata.xml` record. Only if no exact filename association exists, fall back to conservative platform-and-title matching.
-- Treat platform as a mandatory matching constraint. Prefer exact revision-preserving title matches, then allow a unique revision-insensitive canonical-title match when the provider omits ROM revision details. Normalize known region and language tags for title lookup, but preserve them in the filename-association key. Reject multiple plausible candidates rather than guessing. Treat `ReleaseType` as a confidence/safeguard signal, not a blanket exclusion; supported libraries may include ports, homebrew, and ROM hacks.
-- Try LaunchBox after any successful TheGamesDB search that does not produce a confident match, including empty, unrelated, and ambiguous result sets. Do not use LaunchBox to mask network errors, rate limits, authentication failures, or other provider errors.
-- Run the same fallback pipeline for newly discovered games after library scans and for explicit manual metadata refreshes. Both paths use `LibraryMetadataMatcher`; do not duplicate provider logic in the scanner or Settings UI.
-- Updating the LaunchBox catalog does not automatically retry unresolved games. After download and extraction complete, prompt the user to run the single **Refresh All Metadata** action; that action retries eligible metadata lookups and then retrieves missing TheGamesDB screenshots. The catalog's separate library-scoped LaunchBox artwork pass remains independent.
-- During a catalog update, skip fallback lookups rather than opening a catalog while its file is being replaced. Existing LaunchBox associations remain intact if TheGamesDB has no result; a confident TheGamesDB match may upgrade a LaunchBox association to the primary provider.
-- Never replace an existing metadata association with LaunchBox data. Add a database-level guard in addition to matcher-level routing. Missing LaunchBox fields must not erase populated values.
-- Keep artwork storage and download logic separate from metadata association. The initial implementation downloads LaunchBox artwork only for local games with a saved LaunchBox `DatabaseID`; a future independent artwork-provider association can support games whose primary metadata came from TheGamesDB without changing metadata provenance.
-- Parse `<GameImage>` records from the existing `Metadata.xml` and index image metadata locally by LaunchBox `DatabaseID`, image type, and region. Store the image `FileName` and construct downloads only from the verified image host `https://images.launchbox-app.com/{FileName}`; do not use the Games Database page URL, which produced redirect-loop behavior in diagnostics.
-- Initially select one `Box - Front` cover and up to three `Screenshot - Gameplay` images. Prefer North America, then World, Europe, Japan, and unspecified regions; retain all indexed variants so selection can be adjusted without re-downloading the catalog.
-- Download actual image files only when a LaunchBox-associated game in the user's available library needs them. Reuse cached files, validate HTTPS/final host, HTTP status, supported image MIME/signature, and a 20 MB response limit before database association. Never replace an existing cover automatically. Keep screenshots separate in the existing screenshot model.
-- Use conservative image-request scheduling: one in-flight HTTP request at a time, process up to five requests, then wait 300 ms before the next batch. This is a RecompStation safety default, not a claim about LaunchBox's published limits (no authoritative numeric image-host limit has been established).
-- Future hardening: handle HTTP 429 using `Retry-After` or bounded backoff, pause on HTTP 403, and retry transient network/5xx failures a limited number of times. The initial downloader reports failures and caches successful downloads but does not yet implement automatic retries.
-- Do not integrate `Mame.xml` in this initial console-library implementation. It is an arcade/MAME machine catalog with distinct short-name and clone relationships; revisit it only if arcade library support is planned.
-- Provide a manual catalog update action and consider an optional periodic update check. Do not silently download large archives without the user's enablement and update preferences.
-
-**LaunchBox artwork integration — implementation status**
-
-- [x] Reuse the locally indexed GameImage records and image lookup API keyed by LaunchBox database ID, type, and region.
-- [x] Select one Box - Front cover (North America preferred) and up to three Screenshot - Gameplay images; do not fetch unrelated image categories or regional variants.
-- [x] Download images only for available local games with an explicit LaunchBox metadata association. Do not download artwork for catalog-only games or infer an image association from title alone.
-- [x] Use the verified images.launchbox-app.com CDN host, validate HTTPS/final host, HTTP success, supported image format, and a 20 MB response limit.
-- [x] Cache covers and screenshots under the local game's artwork directory, reuse existing files, preserve existing cover artwork, and register cached files with the database.
-- [x] Schedule one request at a time; after every five image requests, pause for 300 ms. This is intentionally more conservative than five concurrent requests.
-- [x] Trigger refresh after successful catalog updates and metadata scrapes; defer a refresh request if a download batch is already active.
-- [x] Add focused tests for trusted CDN URL construction, regional cover selection, gameplay screenshot selection, and cover-skip behavior.
-- [x] Replace the separate manual metadata and screenshot actions with one **Refresh All Metadata** workflow: retry metadata matching first, then retrieve missing TheGamesDB screenshots. Preserve existing screenshot files and skip games that already have screenshots. **User-confirmed working in the application.**
-- [x] Keep **Update Catalog** as a separate action; after the catalog finishes downloading and extracting, prompt the user to run **Refresh All Metadata**. The catalog's existing local-library-only LaunchBox artwork pass remains intact. **Runtime logs confirmed the catalog artwork pass and its completion reporting.**
-- [x] Build and run the complete regression suite after the unified-refresh and provider-fallback changes. The user confirmed all 19 CTest suites passed; latest runtime logs also confirmed LaunchBox artwork processing completed with 40 downloaded, 0 skipped, and 0 failed for 16 library games.
-
-**Implementation order**
-- [x] Strengthen `DatabaseManager::associateMetadata()` so an existing provider association cannot be overwritten by a fallback insert; add regression tests for existing metadata and missing-field preservation. **Verified:** user confirmed `./scripts/build.sh --test` completed successfully with all tests passing.
-- [x] Introduce and test a LaunchBox XML parser for `Platforms.xml`, `Files.xml`, and `Metadata.xml`; validate malformed, incomplete, duplicate, and unexpected records. **Verified:** user confirmed the new build completed and all tests passed.
-- [x] Add explicit RecompStation-to-LaunchBox platform mappings and conservative filename/title matching, including region/revision handling and ambiguity rejection. **Verified:** user confirmed `./scripts/build.sh --test` completed successfully with all tests passing.
-- [x] Build a local SQLite catalog/index and query API; avoid loading or reparsing the full XML archive for individual game lookups. **Verified:** user confirmed the local build and all 17 regression tests passed, including `LaunchBoxCatalogDatabaseTests`.
-  - A separate SQLite catalog stores platform references/aliases, filename associations, and game metadata with lookup indexes. XML is streamed record-by-record into a transaction; a failed parse or insert rolls back and preserves the previous catalog.
-- [x] Add archive download, progress reporting, cancellation, extraction, validation, and rollback-safe catalog replacement/update handling. Reuse existing archive infrastructure where appropriate. **Verified:** user confirmed the local build completed and all regression tests passed after background extraction/indexing and cancellation support were added.
-  - Download remains asynchronous; archive extraction and SQLite indexing run through `QtConcurrent` with a worker-owned database connection. Cancellation is shared through extraction and each streamed XML record, and indexing cancellation rolls back its transaction. Extraction reports processed megabytes; indexing reports platform/file/game/finalization stages. The worker validates the staged database before the existing rollback-safe activation path. Regression tests cover pre-cancelled extraction cleanup and cancelled indexing preserving the previously indexed catalog.
-- [x] Add persistent LaunchBox enablement, defaulting to disabled, plus catalog status and a user-controlled update workflow in Settings → Metadata. Download/index only when enabled. **Verified:** user confirmed the build and regression suite passed, found the new Settings controls at runtime, downloaded `Metadata.zip`, and successfully extracted/indexed the catalog through the application.
-  - The preference defaults to disabled and persists across restarts; the last-successful-update timestamp is persisted. Settings exposes catalog availability, manual Update Catalog and Cancel controls, progress/status feedback, and clarifies that enabling the provider does not automatically download the archive. Actual TheGamesDB-to-LaunchBox fallback matching remains a separate subsequent task.
-- [x] Allow LaunchBox to act as the active metadata provider when TheGamesDB is disabled or unconfigured; manual Refresh All Metadata and per-game retry remain available when the LaunchBox catalog is enabled and installed. TheGamesDB remains preferred whenever configured, and provider/network failures do not silently trigger fallback. Automated direct-fallback coverage added; user confirmed the LaunchBox-only workflow works at runtime.
-- [x] Integrate LaunchBox as a second-chance provider whenever TheGamesDB completes successfully without a confident match; preserve TheGamesDB priority and never fallback on provider errors. **Runtime matching confirmed:** Metroid Prime 2 was successfully associated through LaunchBox after TheGamesDB returned ambiguous results. The latest full build includes the `LibraryMetadataMatcherTests` suite, and all 19 CTest suites passed.
-  - Both automatic library-scan scraping and manual metadata refresh use the same matcher queue. Empty, unrelated, and ambiguous successful TheGamesDB results can enter LaunchBox fallback; network/authentication/provider failures cannot.
-  - LaunchBox first checks a full normalized ROM filename against platform-specific `Files.xml` associations, retaining region/language/revision tokens. If no association exists, it queries platform-specific title candidates, normalizes region/language tags, prefers exact revision matches, and accepts a revision-insensitive match only when unique.
-  - Revision variants are retrieved together so competing revisions remain ambiguous rather than silently selecting the canonical record. Platform restrictions remain mandatory.
-  - Fallback metadata uses the database-level insert-only API, stores no invented artwork URL, and leaves artwork handling independent. A later confident TheGamesDB match can replace LaunchBox provenance with primary-provider metadata.
-- [x] Keep the LaunchBox fallback metadata association free of invented artwork URLs; run a separate LaunchBox artwork manager only for saved LaunchBox associations, preserve existing cover paths, and gate image requests on the LaunchBox enablement preference. **Runtime verified:** the separate artwork manager completed library-scoped downloads successfully, and Metroid Prime 2 was confirmed with metadata, cover artwork, and gameplay screenshots.
-- [ ] Add focused unit, parser, database, matching, archive/update, and end-to-end fallback regression coverage. Include disabled-provider, primary-match, genuine-no-match, provider-error, ambiguity, platform-collision, and no-overwrite cases.
-- [x] Run `./scripts/build.sh --test` and the complete regression suite after the provider-independent LaunchBox fallback changes. User confirmed all 19 CTest suites passed and validated the LaunchBox fallback/automatic library workflow. Dedicated cancellation and some provider failure-path checks remain separate follow-up coverage.
-
-**Scope and completion rule:** This work extends Milestone 4's automatic metadata maintenance. The checklist remains planned until the implementation, full automated regression suite, local build, and relevant runtime checks are completed and confirmed. Do not mark tasks complete based solely on code being committed.
-
-- [x] Use one shared discovery/matching pipeline for manual and automatic scans (automatic post-scan scraping and the new manual **Refresh All Metadata** action use the same `LibraryMetadataMatcher` queue; user-confirmed runtime behavior)
-- [x] Add recursive filesystem monitoring for configured platform folders, with a 750 ms debounce and automatic full-library reconciliation (implementation, regression tests, runtime scan/reconciliation, and latest full regression run confirmed)
-- [x] Detect added and removed games, including newly created nested folders; preserve unavailable database records and avoid duplicate registration (runtime scan behavior, duplicate-safe reconciliation, and latest full regression run confirmed)
-- [x] Automatically identify metadata using conservative title and platform matching (runtime matching confirmed for representative titles; ambiguous matches remain unresolved for fallback handling and broader confidence-rule tests)
-- [ ] Define and test conservative match-confidence rules; keep ambiguous matches unresolved
-- [x] Add an isolated N64 ROM hashing utility with byte-order detection and MD5/CRC32 calculation. **Verified:** its regression coverage was included in the user-confirmed 18/18 CTest pass on 2026-11-20.
-- [ ] Integrate TheGamesDB Games/ByGameHash requests (MD5 then CRC fallback) and preserve title search as the final fallback
-- [ ] Replace the development-only environment-variable API-key workflow for production: review TheGamesDB licensing, shared-key policy, rate limits, attribution, and distribution terms; then choose an application-managed key/backend proxy or a secure user-key option
-- [ ] Verify provider hash conventions against known-good N64 ROMs before enabling automatic hash association
-- [x] Persist completed lookup outcomes and provider failures to avoid repeated automatic requests; explicit refresh can retry checked games (local validation pending)
-- [ ] Further validate artwork cache behavior, provider rate-limit handling, and retry/backoff policy
-- [ ] Surface scan status and exceptional review in the affected game/library context, not a separate Metadata Search page
-- [ ] Add regression tests for matching, monitoring, duplicate events, API failures, and cache behavior
-
-### Milestone 5: Settings and first-run experience
-
-- [x] Move persistent preferences to `<dataDirectory>/config/settings.ini`, migrate existing QSettings values, and restore first-run setup when the file is absent.
-- [x] Establish the first curated static theme foundation: Midnight Violet, Electric Blue, and Ember with semantic color tokens, coordinated surfaces/status colors, theme-aware background/artwork treatments, and live preview before applying. **Runtime verified:** selecting Electric Blue from Settings saved the preference and emitted the expected theme-change notification.
-- [ ] Revisit the Ember theme in a future design pass; the user prefers Midnight Violet and Electric Blue and does not feel Ember is at the same visual quality. Keep the current theme available for now; consider a stronger replacement/refinement later.
-- [x] Add optional animated theme backgrounds and custom still-image backgrounds with preview/apply/restore behavior (initial lightweight wave ambience and image scaling implemented; further visual refinement remains)
-- [x] Add compositor-respecting preferred window-size presets and safe windowed sizing (never force monitor-wide resolution changes). **User-validated:** Windowed, Fullscreen, and Maximized modes work, and the preferred custom window size now applies correctly on the user's Wayland desktop. Multi-display behavior remains a separate open validation item.
-- [ ] Make the UI adapt cleanly to 1080p (1920×1080), 1440p (2560×1440), and 4K (3840×2160), including Library presentations, Game Details, Settings, dialogs, overlays, and window resizing; preserve the intended spacious design at each resolution.
-- [ ] Validate Qt high-DPI and desktop scaling behavior on the current KDE Plasma Wayland environment. Keep explicit monitor selection deferred; the compositor remains responsible for monitor placement and resolution.
-- [x] Add a single configurable library root, catalog-derived platform folders, first-run setup, and startup scan preference
-- [x] Replace the native folder chooser with the shared in-app folder browser; user confirmed folder creation works.
-- [x] Style the first-run library-folder setup overlay and keep it scoped to the Library page.
-- [x] Keep the setup overlay non-modal so the toolbar and Settings remain mouse-accessible; suppress it while the controller pause menu is open.
-- [x] Add automatic filesystem monitoring for configured folders (runtime monitoring/reconciliation behavior confirmed; see Milestone 4 for implementation and validation details).
-- [x] Automatically scan an existing library immediately when the user selects or changes the library root; populate filename-based cards before metadata is available. User confirmed the corrected library root is scanned, games are discovered, and automatic metadata matching starts afterward.
-- [x] Cache gameplay screenshots independently of cover art for games with saved TheGamesDB associations.
-- [x] Expose TheGamesDB provider status/enablement and one coordinated **Refresh All Metadata** action in Settings → Metadata; separate manual metadata and screenshot buttons have been retired.
-- [ ] Revisit launcher installation/update preferences only when the underlying launcher workflows and higher-priority Settings work are settled; no broad all-launcher GitHub update polling is planned.
-- [ ] Add useful contextual first-run guidance without forcing a lengthy setup wizard.
-- [x] During initial setup, ask whether the user wants automatic RecompStation application-update checks and persist the choice; Yes, No, close, and Escape all complete the prompt, with dismissal saved as disabled. The preference is editable in Settings → Application. **Preference UI only:** release checking is not connected and makes no network requests.
-- [ ] Audit Settings so every exposed control has implemented behavior, a clear purpose, and persistent state where appropriate; remove or defer nonfunctional controls.
-- [ ] Implement the automatic application-update check workflow and a manual **Check for Updates Now** action; the opt-in preference UI and persistence are in place, but no release checks are performed yet.
-- [ ] Check for application updates periodically (no more than once per day), compare the installed version with GitHub releases, and notify the user when a newer release is available.
-- [ ] Update notifications must direct users to the GitHub release page for manual download; do not automatically download, replace, or install RecompStation. Handle API/network failures quietly and avoid repeating the same release notification.
-
-### Milestone 6: Launcher experience
-
-- [x] Present supported project discovery and installation contextually from game details. **Runtime verified:** the Banjo Recompiled workflow exposed the compatible launcher, completed installation, and successfully launched it through the game workflow.
-- [x] Make the Game Details launcher discovery action context-aware: show **Find Compatible Launcher** when no launcher is installed and **Check for Updates** when one is installed. Clarify compatible-release availability and version/platform information. **User-confirmed 2026-11-21:** discovery and installation buttons work in the revised layout; existing launcher actions remain functional.
-- [ ] Refine release/asset selection and architecture compatibility explanations
-- [ ] Improve download progress, cancellation, extraction, installation, and failure feedback. **Partially runtime verified:** Banjo Recompiled archive download, extraction, installation, and Play Game were exercised successfully; cancellation and failure-path feedback still require dedicated validation.
-- [ ] Improve installed-launcher status and confirmation-protected uninstall; make uninstall accessible from the relevant Game Details page as well as Settings, and never remove the user's ROM or unrelated game files.
-- [ ] Make installed release/version information clear when available.
-- [ ] Retain per-game launcher update checks in Game Details; defer a centralized check across every installed launcher to avoid unnecessary GitHub API traffic. A centralized launcher overview remains a future design discussion.
-
-### Milestone 7: Input, accessibility, and regression pass
-
-**Navigation and Focus workstream: functionally complete (user-validated 2026-11-21). Controller settings and hardware-validation workstream: complete (user-validated 2026-11-22).** Saved per-device profiles, button capture/remapping, reset, trigger and L3/R3 mappings, capture cancellation/input suppression, restart persistence, connection status, and connected/disconnected page presentation have been validated. Remaining Milestone 7 work includes folder-picker/modal controller-only validation, broader accessibility/scaling review, and multi-display validation.
-
-- [x] Add application-level arrow-key navigation for the Game Library Grid View and Enter/Return game selection
-- [x] Support Escape to return from immersive game details to the Game Library
-- [x] Add adaptive mouse, keyboard, and controller navigation hints with bundled icons
-- [x] Detect controllers connected after application startup; switch hints when controller input is used
-- [x] Validate keyboard navigation and visible focus across the Library and Settings pages. Library navigation works well; Settings category navigation now activates with Enter/Return as well as Space. User confirms it works, with minor keyboard-focus/activation rough edges accepted for now; further refinement is deferred to later polish.
-- [ ] Complete keyboard-operability validation of the Library Folder Picker in both Settings and first-run/reset flows (initial focus, arrow-key folder traversal with automatic scrolling, Page Up/Down, Home/End, Enter to open, Space to select, and focusable action buttons). The first-run Enter/Return activation issue has been fixed and user-confirmed; the full interaction checklist still needs systematic verification.
-- [x] Add controller-friendly category navigation and visible focus styling for Settings controls across the tested categories.
-- [x] Complete controller navigation across Settings categories, controls, dropdowns, long scrolling content, and custom-background actions. User confirmed Application settings navigation and D-pad left/right movement between Choose image and Clear.
-- [ ] Complete controller-only validation of modal dialogs and file-picker interactions, including focus entry, action selection, cancellation, and focus restoration.
-- [x] Validate smooth right-analog-stick scrolling in Library Grid/List (viewport-only movement, tilt-sensitive speed, dead zone, and deceleration on release); user confirmed it works. D-pad navigation remains item-by-item.
-- [x] Validate progressive navigation acceleration in all Library layouts (List, Grid, Carousel) for the left analog stick and D-pad: starts deliberately (280 ms repeat), accelerates to 150 ms and then 75 ms while held; selection advances one item per event. User confirmed accelerated navigation works well across all three views.
-- [x] Controller profile application, button capture/remapping, per-device reset, left/right trigger support, and L3/R3 stick-click mappings are complete and hardware-validated; see the **Controller settings** checklist above. Capture completion consumes the captured physical input until release, and leaving Controller settings cancels active capture.
-- [x] Support adding and removing button mappings and resetting controller mappings. Existing functionality is present.
-- [ ] Polish the button-mapping GUI so controls, dialogs, focus, hover, and selection states consistently follow the active application theme.
-- [ ] Verify Xbox/PlayStation default controller mappings.
-- [x] Implement and user-validate game-session input ownership: external game process start/finish/failure drives a separate session-suspension state, including multiple concurrent launcher processes. RecompStation controller navigation and right-stick UI scrolling are suspended while any managed game process runs; the user's manual controller-input preference is preserved. User confirmed normal game input, navigation restoration, manual-preference preservation, and failed-launch recovery.
-- [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
-- [ ] Add lightweight navigation sounds with volume controls
-- [x] Validate Windowed, Fullscreen, and Maximized display modes and applying the preferred custom window size. User confirmed all four behaviors work.
-- [ ] Validate multi-display behavior and compositor placement across monitors.
-- [x] Run the full build and regression suite; manually exercise existing workflows. **User-confirmed 2026-11-22:** `./scripts/build.sh --test` completed successfully; all 19/19 CTest suites passed and the executable was produced. SDL2 controller support was enabled. The non-fatal `WrapVulkanHeaders` missing-header warning remains.
-- [ ] Fix regressions before considering the UI milestone complete
-
-### Milestone 8: Complete launcher lifecycle
-
-- [ ] Track installed launcher versions
-- [ ] Add update discovery and download flow
-- [ ] Implement rollback-safe replacement
-- [ ] Recover from or clean up abandoned staging/extraction directories safely
-- [ ] Add tests for update failure, recovery, and version state
-
-### Milestone 9: Project-specific launch configuration and compatibility
-
-- [ ] Support project-specific command-line arguments and launch configuration
-- [ ] Pass the correct ROM/game path when required
-- [ ] Define catalog-driven launch behavior rather than hardcoding individual projects
-- [ ] Validate ROM revision/compatibility where reliable data is available
-- [ ] Never present a title/platform match as proof of ROM compatibility
-
-### Milestone 10: Optional release integrity verification
-
-- [ ] Detect published SHA-256 checksum files or manifests and verify downloaded assets
-- [ ] Detect detached signatures (for example, `.sig`) where projects publish them
-- [ ] Verify signatures only against a trusted, documented project-specific key or trust mechanism
-- [ ] Record whether an asset was verified, had no published verification metadata, or failed verification
-- [ ] Do not block installation merely because verification metadata is absent
-- [ ] Treat present-but-invalid verification data as an integrity failure and stop installation by default
-
-### Milestone 11: Expand supported project and platform coverage
-
-- [ ] Decouple game-library platform discovery and folder creation from the recompilation-project catalog, so a platform can be scanned even when no native recompilation project exists for it
-- [ ] Verify end-to-end GameCube game detection and ensure a dedicated GameCube folder is created under the configured RecompStation library root
-- [ ] Verify end-to-end Wii game detection and ensure a dedicated Wii folder is created under the configured RecompStation library root
-- [x] Add original Xbox as a first-class library platform with a dedicated folder and recursive .iso/.xiso candidate detection; latest local build and runtime scan confirmed. .iso must contain an Xbox XISO image, not an arbitrary or unconverted full-disc dump.
-- [ ] Investigate Xbox 360 library support; first establish the correct supported disc/container format(s), naming/layout conventions, and reliable detection rules before implementing scanner support or creating the platform folder
-- [ ] Define and test platform-specific file extensions, directory naming, and duplicate-detection rules; do not classify an unknown or unsupported file as a game
-- [ ] Keep library detection support distinct from native recompilation-project availability and launcher compatibility
-- [ ] Add curated projects only after validating release assets, package layout, executable path, and launch requirements
-- [ ] Expand metadata-provider platform mappings and catalog coverage as supported platforms become available
-- [ ] Add package formats only when a real catalog entry requires them
-- [ ] Validate architecture and operating-system compatibility per catalog entry
-- [ ] Document project-specific ROM requirements and limitations accurately
+This document is the current development status and implementation order for RecompStation. It was reviewed and reorganised on 2026-11-23: finished work is summarised, open checks are collected in one list, and items that no longer apply were removed. The detailed step-by-step record of earlier work (where logic lives, why decisions were made) is preserved in [`docs/development-history.md`](docs/development-history.md).
+
+## Status
+
+- **Development branch:** `ui/interface-redesign`. Feature work happens on short-lived branches from it and is fast-forward merged after the user validates it. `main` stays untouched until the redesign is reviewed and explicitly approved for merge.
+- **Build:** C++20 / Qt 6.5+ / QML, 21 CTest suites (`./scripts/build.sh --test`).
+- **Last validated:** first-time setup and adding games, the Settings redesign (all seven sections) and the LaunchBox progress fix (2026-11-23).
+
+## What is done
+
+**Application shell and navigation**
+- Two destinations, Library and Settings, with a console-style header; fullscreen on launch; F11 and Windowed/Maximized/Fullscreen modes; Game Details as a full-window overlay.
+- Full controller, keyboard and mouse navigation, with an adaptive hint bar whose button symbols follow the connected controller's layout and its mapping profile.
+- Interface scale (Auto from the screen's logical height, or 75–200%) applied at startup through `QT_SCALE_FACTOR`; changing it restarts the app on the same Settings page.
+
+**Library**
+- Four views: Shelves (with a spotlight panel), Grid (sectioned by platform in All Platforms), List with a preview pane, and a full-screen hero Carousel. Covers use their platform's box shape (`GameArtwork.qml`). Platform pills (LB/RB, Q/E), expanding search, per-view size presets, all persisted.
+- Backgrounds: theme gradient, live GPU shader waves (color, motion, quality; paused during games and under Reduced motion), or the user's own image (Fill/Fit, Dim).
+- Filesystem monitoring and automatic reconciliation of added and removed games.
+
+**Game Details**
+- Hero layout (screenshot backdrop, cover at its true shape, chips, title), one primary action that follows the launcher lifecycle (Install → Downloading → Play), Check for updates, Uninstall under ⋯, About, selectable screenshots with a full-screen viewer, and a Recompilation card. LB/RB switch games.
+
+**Settings** (category rail with live summaries, ◀ value ▶ rows, toggles, preview pane)
+- Appearance (four themes: Electric Blue, Midnight Violet, Aurora, Carbon; Ember retired), Display, Background, Library (including Add games), Metadata, Controller (layout drawing, live button test, symbols, remapping), Application (about, storage use, data and log folders, launchers whose game is gone, reset settings).
+
+**Metadata**
+- LaunchBox (offline catalog, first by default, indexed for supported platforms only) and TheGamesDB (key entered in the app and stored in an owner-only file; the environment variable still wins).
+- Automatic matching after every scan, including games added while the app runs; TheGamesDB failures fall back to LaunchBox and are retried an hour later; enabling LaunchBox or updating its catalog re-matches unmatched games. Covers and screenshots from either provider.
+
+**First-time setup and adding games**
+- Full-window setup: library folder (suggests `~/Games/RecompStation` or `~/RecompStation`), Add games, covers and info (LaunchBox progress with stages, Cancel and Retry), ready.
+- `GameImporter`: finds games in folders or dropped files, identifies the system (extension plus disc headers), keeps `.cue` tracks together, unpacks N64 ROMs from `.zip`/`.7z`, copies (default) or moves them into the platform folders, never overwrites. Available from setup, Settings › Library and drag-and-drop.
+
+**Launchers**
+- Curated catalog of 26 projects (22 N64, 4 GameCube) queried through the GitHub API; Linux x86_64/arm64 AppImage, ZIP and TAR.GZ assets (including a ZIP wrapping a TAR.GZ); staged download, extraction, install, launch, uninstall, rediscovery. Game input ownership while a launcher runs.
+
+## Open validation checklist
+
+Runtime checks for implemented features that have not been fully confirmed yet. Tick them as they are exercised.
+
+- [ ] Settings: LB/RB and Q/E switch sections; ◀ value ▶ rows with D-pad and keyboard; interface scale change and restart (a manual value, then back to Auto).
+- [ ] Metadata: press Update catalog and compare the catalog size with the previous 498 MB; add a TheGamesDB key in the app and Test it; with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
+- [ ] Controller: a second controller type changes the drawing and every symbol; a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
+- [ ] Application: Remove for a launcher whose game is gone; Reset settings.
+- [ ] First-time setup: from scratch; adding from Downloads and another folder; a zipped N64 ROM; a `.cue`/`.bin` game; an unsure `.iso` with the system picker; Move; drag-and-drop onto the Library; Settings › Library › Add games.
+- [ ] Library: List and Carousel size stepping and persistence; narrow-window behaviour (pills clip rather than wrap); Shelves spacing polish; the empty-library screen after a reset.
+- [ ] Game Details states: downloading/installing pill, release and launch errors, a game with several projects (Open Nectar), a game without metadata.
+- [ ] Launchers: install, launch and uninstall for the catalog projects not yet exercised (confirmed so far: Banjo-Kazooie, Banjo-Tooie, Star Fox 64, Donkey Kong 64, PaperBoat); download cancellation and failure feedback; uninstall keeps ROM files.
+- [ ] Controller-only and keyboard-only pass over dialogs and the in-app folder browser (focus entry, actions, cancel, focus return).
+- [ ] Full regression pass across pages and backend workflows before merging into `main`.
+
+## Roadmap
+
+Ordered by priority. Each item ships on its own branch with tests, a build, and user validation.
+
+### 1. Seamless launching — next
+Today the user has to locate the ROM inside each launcher's own file picker. Goal: pressing Play starts the game with the right file and no picker.
+- [ ] Research, per catalog project, how it finds its game data (first-run file dialog, a copied ROM in its data folder, command-line argument, extracted game files) and where it stores display settings.
+- [ ] Add catalog-driven launch behaviour (no per-project code paths): for example a ROM argument template, or the destination where the launcher expects its verified ROM copy.
+- [ ] Verify the ROM before providing it (N64: MD5/CRC against the catalog's known hashes, byte-order normalisation); never present a title match as proof of compatibility.
+- [ ] Optional first-launch display defaults (fullscreen, widescreen) where a project's settings format is documented, written only when the launcher has no settings yet, so the user's own changes are never overwritten. Off by default unless agreed.
+
+### 2. Catalog, platforms and file formats
+- [ ] Add the recompilation projects listed on playported.com that publish native Linux builds; support several projects per game in Game Details.
+- [ ] Add platforms supported by recompilation projects (for example Xbox 360, PS2, and others), each with researched file formats, system detection rules for the importer and scanner, TheGamesDB/LaunchBox platform mappings, and box-art shape.
+- [ ] Keep library platform support independent of whether a recompilation project exists for it.
+- [ ] Review archive extraction safety (path traversal, absolute paths and symlinks, special files, nested archive depth, size and file-count limits) and add regression tests for each case.
+- [ ] Flatpak packages stay out of scope.
+
+### 3. Launcher lifecycle and integrity
+- [ ] Track installed launcher versions and show them in Game Details.
+- [ ] Update flow with rollback-safe replacement; clean up abandoned staging directories at startup.
+- [ ] Clearer release and architecture explanations when no compatible asset exists.
+- [ ] Verify published SHA-256 checksums or signatures when a project provides them; treat invalid data as a failure, missing data as unverified.
+- [ ] Tests for update failure, recovery and version state.
+
+### 4. Metadata follow-ups
+- [ ] Fix match: a Game Details action to search either provider and pick the right game.
+- [ ] TheGamesDB `Games/ByGameHash` (MD5, then CRC) for N64, after verifying hash conventions against known-good ROMs.
+- [ ] Bounded retry and backoff for HTTP 429/5xx on metadata and artwork requests; pause on 403.
+- [ ] Regression tests for match-confidence rules, monitoring duplicate events and cache behaviour.
+- [ ] Decide whether a shared TheGamesDB key could ever be shipped (licensing, rate limits, attribution) or whether user keys remain the only option.
+
+### 5. Build and test performance
+- [ ] Measure where build time goes (Main.qml compilation, moc/rcc, linking) and adopt the safe wins: compiler cache, a faster linker when available, splitting the largest QML file, parallel test runs.
+- [ ] Shorten the regression suite's wall time without reducing coverage (parallel CTest, removing fixed waits from the slowest tests).
+
+### 6. Input, accessibility and regression
+- [ ] Contrast, accessible names, tab order and scaling review across all pages.
+- [ ] Theme polish of the button-mapping capture states.
+- [ ] Multi-display placement.
+- [ ] Optional navigation sounds with a volume control.
+
+### 7. Desktop environment compatibility
+Developed and tested on KDE Plasma (Wayland). Before a public release, check the app on XFCE, Cinnamon and MATE (all X11-based), and GNOME:
+- [ ] Fullscreen on launch and F11 toggling, maximized and windowed sizes, window placement.
+- [ ] The shader wave background under each compositor or none (XFCE and MATE may run without compositing), and the software-renderer fallback.
+- [ ] High-DPI and fractional scaling, including the interface scale's Auto mode under X11.
+- [ ] Controller hot-plug and input focus while a launcher runs; drag-and-drop from each file manager (Thunar, Nemo, Caja, Nautilus); opening folders with `xdg-open`.
+- [ ] Record any environment-specific workarounds here.
+
+### 8. Windows support — open question
+Not decided. Points to discuss before any work starts:
+- Most recompilation projects publish Windows builds, so the catalog would need Windows asset matching (`.zip`/`.exe`) alongside Linux.
+- Qt, QML and SDL2 are portable; Linux-specific parts are paths (XDG folders), launching (AppImage, `./run.sh`), file permissions (the owner-only key file), `xdg-open`, and the build scripts.
+- Packaging (installer or portable ZIP), code signing and SmartScreen warnings, and a CI build matrix.
+- Testing cost: every feature would need checking on both systems.
+
+### 9. Application updates — deferred
+RecompStation does not publish GitHub releases yet. When it does: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.
+
+### 10. Documentation and licensing
+- [ ] GPL-3.0 `LICENSE` file in the repository.
+- [ ] End-user `README.md`: a clear statement that RecompStation does not supply, host or distribute games, summary, contents, features, screenshots of the views, download and install.
+
+## Key decisions
+
+- Controller-first, library-first, and fullscreen by default; RecompStation keeps its own visual identity (RecompLauncher, GPL-3, was used only as a reference).
+- Artwork comes from LaunchBox and TheGamesDB box art; no other artwork provider is planned.
+- Metadata is matched only when one result clearly fits; ambiguous games stay unmatched rather than getting the wrong cover.
+- RecompStation never supplies game files and never overwrites or deletes the user's games; uninstalling a launcher keeps ROMs and saves.
+- Launchers come only from native Linux release assets of curated projects; Flatpak is out of scope.
+- No settings without real behaviour: placeholder controls are removed until their feature exists.
 
 ## Build and development workflow
 
 Dependencies:
-- Qt 6.5 or newer (including Qt SVG and Qt Shader Tools: `qt6-shadertools` on Arch Linux)
-- C++20 compiler and CMake
-- Ninja (recommended by the build script)
-- libarchive (Arch Linux package: `libarchive`)
+- Qt 6.5 or newer, including Qt SVG and Qt Shader Tools (`qt6-shadertools` on Arch Linux)
+- A C++20 compiler and CMake; Ninja is recommended
+- libarchive (`libarchive` on Arch Linux)
+- SDL2 for controller support (optional at build time)
 
 From the repository root:
 
 ```bash
-./scripts/build.sh
-./scripts/build.sh --test
+./scripts/install_dependencies.sh   # Arch-based systems
+./scripts/build.sh                  # Debug build
+./scripts/build.sh --test           # build and run the CTest suites
+./scripts/run.sh                    # start the app
 ```
 
-Choose a configuration with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`.
+Choose a configuration with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`. The build script reuses the configured generator and build directory; keep the build directory and prefer incremental builds. Every new `.qml` or `.js` file must be listed in `QML_FILES` in `CMakeLists.txt` (the QML tests read from the source tree and will not catch a missing entry).
 
-The build script reuses the configured generator and build directory. Prefer incremental builds and retain the existing build directory. Use a clean build only to diagnose build-system or stale-artifact problems.
+The CMake `WrapVulkanHeaders` warning is harmless.
+
+## Development principles
+
+1. Keep `main` stable; develop on the redesign branch and short feature branches.
+2. Keep the application buildable and runnable after each focused change.
+3. Application logic in C++, presentation and navigation in QML; small reusable components over one large file.
+4. Automate backend chores (scanning, matching, artwork) rather than exposing them as tasks.
+5. Add tests whenever backend behaviour changes; run the full suite before merging.
+6. Never delete the user's build directory, application data, games or saves during routine work.
 
 ## Definition of done
 
-A milestone is complete when its checklist is satisfied, the application builds, relevant automated tests pass, existing workflows have been manually checked where appropriate, and documentation reflects the actual implementation. Do not describe planned monitoring, controller support, display controls, or other future behavior as already implemented.
+A roadmap item is done when its checklist is satisfied, the application builds, all CTest suites pass, the user has validated it at runtime, and this document and `docs/UI_DESIGN.md` describe what was actually built.
