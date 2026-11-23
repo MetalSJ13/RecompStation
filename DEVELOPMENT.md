@@ -5,8 +5,8 @@ This document is the current development status and implementation order for Rec
 ## Status
 
 - **Development branch:** `ui/interface-redesign`. Feature work happens on short-lived branches from it and is fast-forward merged after the user validates it. `main` stays untouched until the redesign is reviewed and explicitly approved for merge.
-- **Build:** C++20 / Qt 6.5+ / QML, 21 CTest suites (`./scripts/build.sh --test`).
-- **Last validated:** first-time setup and adding games, the Settings redesign (all seven sections) and the LaunchBox progress fix (2026-11-23).
+- **Build:** C++20 / Qt 6.5+ / QML, 22 CTest suites (`./scripts/build.sh --test`).
+- **Last validated:** seamless play (Banjo-Kazooie, Shipwright, Ghostship), first-time setup and adding games, the Settings redesign (all seven sections) and the LaunchBox progress fix (2026-11-23).
 
 ## What is done
 
@@ -35,7 +35,17 @@ This document is the current development status and implementation order for Rec
 - `GameImporter`: finds games in folders or dropped files, identifies the system (extension plus disc headers), keeps `.cue` tracks together, unpacks N64 ROMs from `.zip`/`.7z`, copies (default) or moves them into the platform folders, never overwrites. Available from setup, Settings › Library and drag-and-drop.
 
 **Launchers**
-- Curated catalog of 26 projects (22 N64, 4 GameCube) queried through the GitHub API; Linux x86_64/arm64 AppImage, ZIP and TAR.GZ assets (including a ZIP wrapping a TAR.GZ); staged download, extraction, install, launch, uninstall, rediscovery. Game input ownership while a launcher runs.
+- Curated catalog of 26 projects (22 N64, 4 GameCube) queried through the GitHub API; Linux x86_64/arm64 AppImage, ZIP and TAR.GZ assets (including a ZIP wrapping a TAR.GZ); staged download, extraction, install, launch, uninstall, rediscovery. Game input ownership while a launcher runs. The launcher file inside an archive is matched by name without case (it must still be the only match).
+
+**Seamless play** (`LaunchPreparer`, `RomInspector`, the `launch` recipe in `data/projects.json`)
+- Play hands the library's game file to the launcher, so it opens straight to the game. Three catalog-driven methods, no per-project code:
+  - `n64recomp` (16 projects): the ROM is checked against the launcher's own XXH3-64 checksum (read from each project's source, `.rom_hash`) and copied, padded and converted to big-endian, to `~/.config/<program_id>/<game_id>.z64` — where N64ModernRuntime keeps it after its first start. A `portable.txt` in the install folder means the install folder instead.
+  - `harbourmasters` (Shipwright, Ghostship, PaperBoat): `SHIP_HOME` is set to `~/.local/share/<name>`, so saves live outside the managed install folder (Ghostship and PaperBoat previously saved into it, because libultraship falls back to the working directory). Existing saves and settings are copied there once; the ROM is placed there for the port's own extraction prompt.
+  - `manual` (the GameCube ports, Conker, Diddy Kong Racing, Pokémon Snap): the game page offers Show file and Copy path.
+- Never replaces a file a launcher already has; library files are only read; the status line under Play explains wrong versions (region and revision from the ROM header) and wrong games.
+- Display: launchers must write their own `graphics.json` (a file missing options crashes RecompFrontend launchers: `ds_option` is parsed as a number). RecompStation only changes `wm_option` in an existing file — "Start games in fullscreen" once per launcher (remembered in `launch/fullscreenApplied/<id>`), or the per-game Window choice every start. Widescreen ("Expand") is already the launchers' default.
+- Settings › Library › Playing (prepare games, start in fullscreen); Game Details status line and Launch section (game file, window, saves folder); a short starting screen listing what was done.
+- xxHash 0.8.5 header in `third_party/xxhash` (BSD 2-Clause).
 
 ## Open validation checklist
 
@@ -56,12 +66,12 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 
 Ordered by priority. Each item ships on its own branch with tests, a build, and user validation.
 
-### 1. Seamless launching — next
-Today the user has to locate the ROM inside each launcher's own file picker. Goal: pressing Play starts the game with the right file and no picker.
-- [ ] Research, per catalog project, how it finds its game data (first-run file dialog, a copied ROM in its data folder, command-line argument, extracted game files) and where it stores display settings.
-- [ ] Add catalog-driven launch behaviour (no per-project code paths): for example a ROM argument template, or the destination where the launcher expects its verified ROM copy.
-- [ ] Verify the ROM before providing it (N64: MD5/CRC against the catalog's known hashes, byte-order normalisation); never present a title match as proof of compatibility.
-- [ ] Optional first-launch display defaults (fullscreen, widescreen) where a project's settings format is documented, written only when the launcher has no settings yet, so the user's own changes are never overwritten. Off by default unless agreed.
+### 1. Seamless launching — follow-ups
+The core is done (see What is done). Remaining:
+- [ ] Projects still on `manual`: research and add recipes where a launcher accepts its file in a predictable way — for example Luigi's Mansion (`--us-disc` / `--pal-disc` by disc ID), Open Nectar (`--data-dir`), Super Mario Strikers, Dusklight; Pokémon Snap stores its ROM and saves next to the executable, so it also needs save protection.
+- [ ] Protect saves of launchers that keep them in their install folder (portable mode, Pokémon Snap) on uninstall and update.
+- [ ] Read the ROM check off the UI thread (the first open of a game page reads up to 64 MB once; results are cached by path, size and modification time).
+- [ ] When adding a catalog project, record its launch recipe from the project's source (program id, game id, ROM checksum) rather than from release notes.
 
 ### 2. Catalog, platforms and file formats
 - [ ] Add the recompilation projects listed on playported.com that publish native Linux builds; support several projects per game in Game Details.
@@ -122,6 +132,7 @@ RecompStation does not publish GitHub releases yet. When it does: a manual "Chec
 - Artwork comes from LaunchBox and TheGamesDB box art; no other artwork provider is planned.
 - Metadata is matched only when one result clearly fits; ambiguous games stay unmatched rather than getting the wrong cover.
 - RecompStation never supplies game files and never overwrites or deletes the user's games; uninstalling a launcher keeps ROMs and saves.
+- RecompStation never creates a launcher's settings files; it changes single documented keys in files the launcher wrote itself.
 - Launchers come only from native Linux release assets of curated projects; Flatpak is out of scope.
 - No settings without real behaviour: placeholder controls are removed until their feature exists.
 
