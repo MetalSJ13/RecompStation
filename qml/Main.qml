@@ -97,7 +97,7 @@ ApplicationWindow {
                 { icon: "", key: "Esc", label: "Back", color: "#A9B7CA", round: false }
             ]
         }
-        if (currentPage === "Library") {
+        if (currentPage === "Library" && !gameDetailsPopup.visible) {
             return [
                 { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
                 { icon: "", key: "Enter", label: (settingsManager.libraryView === "carousel"

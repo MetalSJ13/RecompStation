@@ -308,26 +308,74 @@ Popup {
             onPointChanged: window.activeInputDevice = "mouse"
         }
 
+        // Input hints, styled like the Library hint bar. A reads "Play" or
+        // "Install" when that button has focus.
         Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 18
-            width: Math.min(parent.width - 48, detailsHintLabel.implicitWidth + 34)
-            height: 38
-            radius: 19
+            anchors.bottomMargin: 14
+            width: Math.min(parent.width - 48, detailsHintRow.implicitWidth + 40)
+            height: 46
+            radius: 23
             color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g,
-                           theme.sidebarBackground.b, 0.88)
+                           theme.sidebarBackground.b, 0.90)
             border.color: theme.divider
             z: 20
-            Label {
-                id: detailsHintLabel
+
+            Row {
+                id: detailsHintRow
                 anchors.centerIn: parent
-                text: window.inputHintItems().map(function(item) {
-                    return item.key.length > 0
-                        ? item.key + "  " + item.label : item.label
-                }).join("     ")
-                color: theme.textSecondary
-                font.pixelSize: 10 * theme.fontScale
+                spacing: 16
+
+                Repeater {
+                    model: window.inputHintItems().map(function(item) {
+                        if (item.label !== "Select")
+                            return item
+                        const label = detailsPlayButton.activeFocus ? "Play"
+                            : detailsInstallButton.activeFocus ? "Install" : item.label
+                        return Object.assign({}, item, { label: label })
+                    })
+                    delegate: Row {
+                        required property var modelData
+                        spacing: 5
+                        anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+
+                        Image {
+                            visible: modelData.icon !== ""
+                            source: modelData.icon
+                            width: 17
+                            height: 17
+                            fillMode: Image.PreserveAspectFit
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Rectangle {
+                            visible: modelData.key !== ""
+                            width: Math.max(22, detailsHintKeyLabel.implicitWidth + 12)
+                            height: 23
+                            radius: modelData.round ? 12 : 5
+                            color: modelData.round
+                                   ? Qt.rgba(0.22, 0.68, 0.50, 0.16)
+                                   : Qt.rgba(0.58, 0.68, 0.82, 0.12)
+                            border.color: modelData.color
+                            anchors.verticalCenter: parent.verticalCenter
+                            Label {
+                                id: detailsHintKeyLabel
+                                anchors.centerIn: parent
+                                text: modelData.key
+                                color: modelData.color
+                                font.pixelSize: 10 * theme.fontScale
+                                font.weight: Font.Bold
+                            }
+                        }
+                        Label {
+                            text: modelData.label
+                            color: theme.textSecondary
+                            font.pixelSize: 11 * theme.fontScale
+                            font.weight: Font.Medium
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
             }
         }
 
@@ -506,6 +554,10 @@ Popup {
         // and popup state as before.
         // ------------------------------------------------------------------
         readonly property real pageMargin: Math.max(32, Math.min(88, width * 0.045))
+        // Spare height when everything fits; the hero moves down by part of
+        // it so the page is centered (slightly high) instead of top-heavy.
+        readonly property real verticalSlack: Math.max(0,
+            (height - 76 - 70) - (detailsHero.height + 32 + gameInfoScroll.contentHeight))
         readonly property var gamePosition: {
             const games = gameGrid.model || []
             if (!window.selectedGame)
@@ -559,7 +611,7 @@ Popup {
             anchors.top: parent.top
             anchors.leftMargin: detailsContentFrame.pageMargin
             anchors.rightMargin: detailsContentFrame.pageMargin
-            anchors.topMargin: 76
+            anchors.topMargin: 76 + Math.round(detailsContentFrame.verticalSlack * 0.42)
             readonly property real coverHeight: Math.round(Math.max(220, Math.min(360, detailsContentFrame.height * 0.36)))
             height: coverHeight
 
@@ -896,7 +948,10 @@ Popup {
                     readonly property string errorText: launchError || downloadError || releaseError
                     text: errorText.length > 0 ? errorText
                         : !gameDetailsPopup.selectedProject ? ""
-                        : gameDetailsPopup.installedProject !== null ? "Uninstall is under ⋯."
+                        : gameDetailsPopup.installedProject !== null
+                            ? (gameDetailsPopup.releaseInfo
+                                ? "Latest release " + gameDetailsPopup.releaseTag + "  ·  Linux / " + projectCatalog.currentArchitecture
+                                : "")
                         : gameDetailsPopup.releaseInfo && gameDetailsPopup.compatibleAssets.length === 0
                             ? "No compatible Linux launcher package is available for " + projectCatalog.currentArchitecture + "."
                         : gameDetailsPopup.releaseInfo
@@ -1032,7 +1087,7 @@ Popup {
                         spacing: 10
                         readonly property var shots: window.selectedGame && window.selectedGame.screenshots
                             ? window.selectedGame.screenshots.slice(0, 3) : []
-                        readonly property real thumbWidth: Math.min(240, (width - 20) / 3)
+                        readonly property real thumbWidth: Math.floor(Math.min(380, (width - 20) / 3))
                         Repeater {
                             model: detailsScreenshotStrip.shots
                             delegate: Rectangle {

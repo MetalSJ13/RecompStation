@@ -74,7 +74,9 @@ Direction chosen by the user from design mockups (today; recompilation installed
   - Below, in a scroll view (two columns above 1100 px, stacked below): About (overview, or the existing "Game information not found" card with Retry Metadata and View Metadata Settings) and up to three screenshots (the one shown as the backdrop is outlined); a Recompilation card with project chips when several projects match, name, repository, alpha/beta notice, and Status / Release / Package / ROM / Installed at rows.
   - Top right: the game's position ("2 of 45") with LB / RB glyphs while a controller is active.
   - Opening the page or switching games focuses the primary action (Play, Install, or Find), so A acts immediately; Back otherwise.
-- [ ] User validation: build and all CTest suites pass; installed, not installed, never checked, checking, downloading/installing, release error, launch error, no supported project, several projects (Open Nectar), no metadata, no screenshots; A on open; D-pad reach of every button including ⋯ → Uninstall…; LB/RB switching and its animation; backdrop cycling; narrow and short windows; Reduced Motion.
+- [x] User validation (2026-11-22): installed (Play, Check for updates, ⋯ → Uninstall…), not installed (Install → Yes / No, version line), Recompilation card data, and LB/RB game switching confirmed.
+- [x] Polish: the page centers vertically when its content fits (hero moved down by part of the spare height); screenshots grow to share the left column (up to 380 px wide); installed games show "Latest release <tag> · Linux / <arch>" instead of "Uninstall is under ⋯."; the hint bar matches the Library pill with button glyphs, and A reads "Play" or "Install" when that button has focus. Keyboard hints inside Game Details no longer show Library-only keys.
+- [ ] Confirm the polish at runtime; remaining state checks (downloading/installing, release and launch errors, several projects, no metadata) when convenient.
 
 ## List with preview pane (2026-11-22)
 
