@@ -29,6 +29,9 @@ class ControllerManager final : public QObject
     Q_PROPERTY(QString mappingCaptureAction READ mappingCaptureAction NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(bool mappingCaptureReplaceExisting READ mappingCaptureReplaceExisting NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(int profileRevision READ profileRevision NOTIFY controllerProfileChanged)
+    // Inputs held right now (button tokens, stick directions, triggers), for
+    // the button test in Settings. Display only; not used for navigation.
+    Q_PROPERTY(QStringList activeInputs READ activeInputs NOTIFY activeInputsChanged)
 
 public:
     explicit ControllerManager(QObject *parent = nullptr);
@@ -74,6 +77,7 @@ signals:
     void mappingCaptureStateChanged();
     void controllerProfileChanged();
     void mappingCaptured(const QString &action, const QString &input);
+    void activeInputsChanged();
 
 private slots:
     void pollController();
@@ -93,6 +97,11 @@ private:
     QVariantMap m_controllerProfile;
     QString m_mappingCaptureAction;
     QStringList m_previousActiveInputs;
+    QStringList m_displayedInputs;
+    void setDisplayedInputs(const QStringList &inputs);
+public:
+    QStringList activeInputs() const { return m_displayedInputs; }
+private:
     QStringList m_captureInputsAwaitingRelease;
     bool m_mappingCaptureActive = false;
     bool m_mappingCaptureReplaceExisting = false;

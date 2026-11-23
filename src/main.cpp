@@ -7,6 +7,7 @@
 #include <QProcess>
 #include <QScreen>
 #include <QSettings>
+#include <QSysInfo>
 #include <QStandardPaths>
 
 #include "core/Logging.h"
@@ -19,6 +20,7 @@
 #include "core/ArtworkManager.h"
 #include "core/LaunchBoxArtworkManager.h"
 #include "core/ScreenshotManager.h"
+#include "core/StorageUsage.h"
 #include "core/LibraryMetadataMatcher.h"
 #include "database/DatabaseManager.h"
 #include "metadata/TheGamesDbClient.h"
@@ -253,6 +255,7 @@ int main(int argc, char *argv[])
                      &launchBoxArtworkManager, [&launchBoxArtworkManager](int, int) {
         launchBoxArtworkManager.refreshLibraryArtwork();
     });
+    StorageUsage storageUsage(platformManager.dataDirectory());
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
@@ -280,6 +283,9 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("controllerManager", &controllerManager);
     engine.rootContext()->setContextProperty("projectCatalog", &projectCatalog);
     engine.rootContext()->setContextProperty("interfaceScaleInfo", interfaceScaleInfo);
+    engine.rootContext()->setContextProperty("storageUsage", &storageUsage);
+    engine.rootContext()->setContextProperty("qtVersion", QString::fromLatin1(qVersion()));
+    engine.rootContext()->setContextProperty("cpuArchitecture", QSysInfo::currentCpuArchitecture());
     engine.rootContext()->setContextProperty("startupSettingsSection", startupSettingsSection);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,

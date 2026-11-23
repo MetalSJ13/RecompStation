@@ -64,47 +64,37 @@ ApplicationWindow {
 
     function inputHintItems() {
         if (activeInputDevice === "controller" && controllerManager.connected) {
-            let selectButton = "A"
-            let backButton = "B"
-            let switchButtons = "LB / RB"
-            let detailsButton = "Y"
-            let selectColor = "#48C78E"
-            let backColor = "#E58B78"
-            if (controllerManager.controllerType === "playstation") {
-                selectButton = "✕"
-                backButton = "○"
-                switchButtons = "L1 / R1"
-                detailsButton = "△"
-                selectColor = "#55A9F4"
-                backColor = "#F06B8B"
-            } else if (controllerManager.controllerType === "nintendo") {
-                selectButton = "B"
-                backButton = "A"
-                switchButtons = "L / R"
-                detailsButton = "X"
-                selectColor = "#E58B78"
-                backColor = "#48A8E8"
-            } else if (controllerManager.controllerType !== "xbox") {
-                selectButton = "S"
-                backButton = "E"
-                switchButtons = "L / R"
-                detailsButton = "N"
-            }
+            // Symbols come from the connected controller's layout and from
+            // its mapping profile, so a remapped button shows correctly.
+            const selectToken = window.actionInput("select", "a")
+            const backToken = window.actionInput("back", "b")
+            const detailsToken = window.actionInput("details", "y")
+            const selectButton = window.inputGlyph(selectToken)
+            const backButton = window.inputGlyph(backToken)
+            const detailsButton = window.inputGlyph(detailsToken)
+            const switchButtons = window.inputGlyph(window.actionInput("previousSection", "leftshoulder"))
+                + " / " + window.inputGlyph(window.actionInput("nextSection", "rightshoulder"))
+            const selectColor = window.inputGlyphColor(selectToken)
+            const backColor = window.inputGlyphColor(backToken)
+            const detailsColor = window.inputGlyphColor(detailsToken)
             const libraryActive = currentPage === "Library" && !gameDetailsPopup.visible
             const carouselPlays = libraryActive
                 && (settingsManager.libraryView === "carousel" || settingsManager.libraryView === "list")
                 && window.libraryGameInstalled((gameGrid.model || [])[Math.max(0, gameGrid.currentIndex)])
             const items = [
                 { icon: "qrc:/icons/dpad.svg", key: "", label: "Navigate", color: "#B8C7D9", round: false },
-                { icon: "", key: selectButton, label: carouselPlays ? "Play" : "Select", color: selectColor, round: true },
-                { icon: "", key: backButton, label: "Back", color: backColor, round: true },
+                { icon: "", key: selectButton, label: carouselPlays ? "Play" : "Select", color: selectColor,
+                  round: window.isFaceButton(selectToken) },
+                { icon: "", key: backButton, label: "Back", color: backColor,
+                  round: window.isFaceButton(backToken) },
                 { icon: "", key: switchButtons,
                   label: gameDetailsPopup.visible ? "Switch game"
                       : currentPage === "Library" ? "Platform" : "Section",
                   color: "#A9B7CA", round: false }
             ]
             if (libraryActive)
-                items.splice(2, 0, { icon: "", key: detailsButton, label: "Details", color: "#E8C27F", round: true })
+                items.splice(2, 0, { icon: "", key: detailsButton, label: "Details", color: detailsColor,
+                                     round: window.isFaceButton(detailsToken) })
             return items
         }
         if (activeInputDevice === "mouse") {
@@ -1072,6 +1062,75 @@ ApplicationWindow {
     readonly property real waveRenderScale: waveQualityResolved === "low" ? 0.5
         : waveQualityResolved === "balanced" ? 0.75 : 1.0
     readonly property int waveFps: waveQualityResolved === "low" ? 30 : 60
+    // ---- Controller symbols -------------------------------------------------
+    // The connected controller's layout decides every button symbol shown in
+    // the app: hint bar, Settings mappings and the button test. Tokens are
+    // positional (SDL): "a" is the bottom face button on every layout.
+    readonly property string controllerLayout: controllerManager.connected
+        && ["xbox", "playstation", "nintendo"].indexOf(controllerManager.controllerType) >= 0
+        ? controllerManager.controllerType : "generic"
+    function inputGlyph(token) {
+        const layout = window.controllerLayout
+        const face = {
+            xbox: { a: "A", b: "B", x: "X", y: "Y" },
+            playstation: { a: "✕", b: "○", x: "□", y: "△" },
+            nintendo: { a: "B", b: "A", x: "Y", y: "X" },
+            generic: { a: "A", b: "B", x: "X", y: "Y" }
+        }[layout]
+        if (face[token])
+            return face[token]
+        const named = {
+            xbox: { leftshoulder: "LB", rightshoulder: "RB", lefttrigger: "LT", righttrigger: "RT",
+                    back: "View", start: "Menu", guide: "Guide" },
+            playstation: { leftshoulder: "L1", rightshoulder: "R1", lefttrigger: "L2", righttrigger: "R2",
+                           back: "Create", start: "Options", guide: "Home" },
+            nintendo: { leftshoulder: "L", rightshoulder: "R", lefttrigger: "ZL", righttrigger: "ZR",
+                        back: "−", start: "+", guide: "Home" },
+            generic: { leftshoulder: "LB", rightshoulder: "RB", lefttrigger: "LT", righttrigger: "RT",
+                       back: "Back", start: "Start", guide: "Guide" }
+        }[layout]
+        if (named[token])
+            return named[token]
+        const stickClick = layout === "playstation" ? ["L3", "R3"] : ["Left stick click", "Right stick click"]
+        const arrows = { up: "↑", down: "↓", left: "←", right: "→" }
+        if (token === "leftstick-click" || token === "leftstick") return stickClick[0]
+        if (token === "rightstick-click" || token === "rightstick") return stickClick[1]
+        const parts = token.split("-")
+        if (parts.length === 2 && arrows[parts[1]]) {
+            const source = parts[0] === "dpad" ? "D-pad" : parts[0] === "leftstick" ? "Left stick" : "Right stick"
+            return source + " " + arrows[parts[1]]
+        }
+        return token
+    }
+    // Face buttons use each layout's customary colors; everything else is neutral.
+    function inputGlyphColor(token) {
+        const colors = {
+            xbox: { a: "#48C78E", b: "#E58B78", x: "#55A9F4", y: "#E8C27F" },
+            playstation: { a: "#55A9F4", b: "#F06B8B", x: "#E28BD1", y: "#48C78E" },
+            nintendo: { a: "#E58B78", b: "#48A8E8", x: "#48C78E", y: "#E8C27F" },
+            generic: { a: "#48C78E", b: "#E58B78", x: "#55A9F4", y: "#E8C27F" }
+        }[window.controllerLayout]
+        return colors[token] || "#A9B7CA"
+    }
+    function isFaceButton(token) { return ["a", "b", "x", "y"].indexOf(token) >= 0 }
+    // The first input bound to an action in the connected controller's profile.
+    function actionInput(action, fallback) {
+        const revision = controllerManager.profileRevision
+        if (!controllerManager.connected)
+            return fallback
+        const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
+        const bindings = profile[action] || []
+        return bindings.length > 0 ? bindings[0] : fallback
+    }
+    function layoutDescription() {
+        switch (window.controllerLayout) {
+        case "playstation": return "Face buttons ✕ ○ □ △ · shoulder buttons L1 / R1"
+        case "nintendo": return "Face buttons B A Y X · shoulder buttons L / R"
+        case "xbox": return "Face buttons A B X Y · shoulder buttons LB / RB"
+        }
+        return "Face buttons A B X Y · shoulder buttons LB / RB"
+    }
+
     // A ValueCycler (or anything with stepValue) at or above the focused item.
     function focusedValueStepper(item) {
         let current = item
@@ -1104,6 +1163,8 @@ ApplicationWindow {
     property int selectedMetadataPlatformId: 0
     property int launchBoxProgressPercent: 0
     property string theGamesDbKeyMessage: ""
+    property bool resetSettingsArmed: false
+
     function formatBytes(bytes) {
         if (!bytes || bytes <= 0)
             return "0 MB"
@@ -1452,6 +1513,24 @@ ApplicationWindow {
         return counts
     }
 
+    // Installed launchers whose game is no longer in the library. They have no
+    // Game Details page to uninstall them from, so Settings > Application
+    // lists them.
+    readonly property var orphanedLaunchers: {
+        window.libraryRevision
+        window.launcherRevision
+        const used = {}
+        for (const game of databaseManager.games("")) {
+            const projects = projectCatalog.projectsForGame(
+                game.metadataTitle ? game.metadataTitle : game.title, game.platform)
+            for (const project of projects)
+                used[project.id] = true
+        }
+        return launcherDownloadManager.installedLaunchers().filter(function(launcher) {
+            return used[launcher.projectId] !== true
+        })
+    }
+
     // Display names for the internal platform identifiers.
     function platformDisplayName(platform) {
         const names = { "N64": "Nintendo 64", "PS1": "PlayStation", "GameCube": "GameCube",
@@ -1461,11 +1540,8 @@ ApplicationWindow {
 
     // Shoulder-button names for the controller in use, as [previous, next].
     function platformCycleButtonLabels() {
-        if (controllerManager.controllerType === "playstation")
-            return ["L1", "R1"]
-        if (controllerManager.controllerType === "xbox")
-            return ["LB", "RB"]
-        return ["L", "R"]
+        return [window.inputGlyph(window.actionInput("previousSection", "leftshoulder")),
+                window.inputGlyph(window.actionInput("nextSection", "rightshoulder"))]
     }
 
     // Select a Library platform filter and return to the top of the results.
@@ -4908,6 +4984,8 @@ ApplicationWindow {
                     onSectionChanged: {
                         console.info("[Settings QML] Section changed:", section)
                         window.previewThemeId = settingsManager.themeName
+                        if (section === "Application")
+                            storageUsage.refresh()
                         if (controllerManager.mappingCaptureActive && section !== "Controller")
                             controllerManager.cancelMappingCapture()
                     }
@@ -5619,279 +5697,316 @@ ApplicationWindow {
 
                                 ColumnLayout {
                                     width: applicationContent.availableWidth
-                                    spacing: 16
-                                Label {
-                                    text: "Application"
-                                    color: theme.textPrimary
-                                    font.pixelSize: 27 * theme.fontScale
-                                    font.bold: true
-                                }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "Application details and local storage."
-                                    color: theme.textSecondary
-                                    font.pixelSize: 13 * theme.fontScale
-                                    wrapMode: Text.Wrap
-                                }
-                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                Label {
-                                    text: "APPLICATION UPDATES"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    radius: theme.radiusCard
-                                    color: theme.sidebarBackground
-                                    border.color: theme.divider
-                                    implicitHeight: updateSettingsColumn.implicitHeight + 28
-                                    ColumnLayout {
-                                        id: updateSettingsColumn
-                                        anchors.left: parent.left
-                                        anchors.right: parent.right
-                                        anchors.top: parent.top
-                                        anchors.margins: 14
-                                        spacing: 8
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 16
-                                            ColumnLayout {
-                                                Layout.fillWidth: true
-                                                spacing: 4
-                                                Label {
-                                                    Layout.fillWidth: true
-                                                    text: "Check for application updates automatically"
-                                                    color: theme.textPrimary
-                                                    font.pixelSize: 13 * theme.fontScale
-                                                    font.bold: true
-                                                    wrapMode: Text.Wrap
-                                                }
-                                                Label {
-                                                    Layout.fillWidth: true
-                                                    text: "Saved preference for future release-check support."
-                                                    color: theme.textMuted
-                                                    font.pixelSize: 11 * theme.fontScale
-                                                    wrapMode: Text.Wrap
-                                                }
-                                            }
-                                            ToggleSwitch {
-                                                activeFocusOnTab: true
-                                                focusPolicy: Qt.StrongFocus
-                                                checked: settingsManager.automaticUpdateChecksEnabled
-                                                onToggled: settingsManager.setAutomaticUpdateChecksEnabled(checked)
-                                            }
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Automatic release checking is not connected in this build. Changing this setting only saves your preference; no network requests are made."
-                                            color: theme.textMuted
-                                            font.pixelSize: 10 * theme.fontScale
-                                            wrapMode: Text.Wrap
-                                        }
-                                    }
-                                }
-                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                Label {
-                                    text: "APPLICATION DATA DIRECTORY"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    implicitHeight: dataInfo.implicitHeight + 28
-                                    radius: theme.radiusCard
-                                    color: theme.sidebarBackground
-                                    border.color: theme.divider
-                                    ColumnLayout {
-                                        id: dataInfo
-                                        anchors.left: parent.left
-                                        anchors.right: parent.right
-                                        anchors.top: parent.top
-                                        anchors.margins: 14
-                                        spacing: 7
-                                        Label {
-                                            text: "Storage location"
-                                            color: theme.textPrimary
-                                            font.pixelSize: 13 * theme.fontScale
-                                            font.bold: true
-                                        }
-                                        TextField {
-                                            Layout.fillWidth: true
-                                            text: platformManager.dataDirectory
-                                            readOnly: true
-                                            selectByMouse: true
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            color: theme.textSecondary
-                                            font.pixelSize: 12 * theme.fontScale
-                                            background: Rectangle {
-                                                radius: 6
-                                                color: parent.activeFocus ? theme.elevatedSurface : theme.surface
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            }
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Contains your game database, artwork cache, downloads, and installed launchers."
-                                            color: theme.textMuted
-                                            font.pixelSize: 11 * theme.fontScale
-                                            wrapMode: Text.Wrap
-                                        }
-                                    }
-                                }
-                                Label {
-                                    text: "DIAGNOSTICS"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    radius: theme.radiusCard
-                                    color: theme.sidebarBackground
-                                    border.color: theme.divider
-                                    implicitHeight: diagnosticsColumn.implicitHeight + 28
-                                    ColumnLayout {
-                                        id: diagnosticsColumn
-                                        anchors.left: parent.left
-                                        anchors.right: parent.right
-                                        anchors.top: parent.top
-                                        anchors.margins: 14
-                                        spacing: 7
-                                        Label {
-                                            text: "Runtime log"
-                                            color: theme.textPrimary
-                                            font.pixelSize: 13 * theme.fontScale
-                                            font.bold: true
-                                        }
-                                        TextField {
-                                            Layout.fillWidth: true
-                                            text: platformManager.dataDirectory + "/logs/runtime.log"
-                                            readOnly: true
-                                            selectByMouse: true
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            color: theme.textSecondary
-                                            font.pixelSize: 11 * theme.fontScale
-                                            background: Rectangle {
-                                                radius: 6
-                                                color: parent.activeFocus ? theme.elevatedSurface : theme.surface
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            }
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "The log records application, library, metadata, controller, and launcher activity. It rotates at 5 MiB and retains three archived logs."
-                                            color: theme.textMuted
-                                            font.pixelSize: 10 * theme.fontScale
-                                            wrapMode: Text.Wrap
-                                        }
-                                    }
-                                }
-                                Label {
-                                    text: "MANAGED LAUNCHERS"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "These are Linux launchers installed and managed by RecompStation. Removing one here only removes its managed installation; game files and saves are not affected."
-                                    color: theme.textSecondary
-                                    font.pixelSize: 11 * theme.fontScale
-                                    wrapMode: Text.Wrap
-                                }
-                                ColumnLayout {
-                                    Layout.fillWidth: true
                                     spacing: 8
-                                    Repeater {
-                                        model: window.launcherRevision >= 0
-                                            ? launcherDownloadManager.installedLaunchers() : []
-                                        delegate: Rectangle {
-                                            required property var modelData
-                                            Layout.fillWidth: true
-                                            radius: theme.radiusCard
-                                            color: theme.sidebarBackground
-                                            border.color: theme.divider
-                                            implicitHeight: launcherEntryColumn.implicitHeight + 24
-                                            ColumnLayout {
-                                                id: launcherEntryColumn
-                                                anchors.left: parent.left
-                                                anchors.right: parent.right
-                                                anchors.top: parent.top
-                                                anchors.margins: 12
-                                                spacing: 5
-                                                Label {
-                                                    text: modelData.projectId
-                                                    color: theme.textPrimary
-                                                    font.pixelSize: 13 * theme.fontScale
-                                                    font.bold: true
-                                                }
-                                                Label {
-                                                    Layout.fillWidth: true
-                                                    text: modelData.executablePath
-                                                    color: theme.textMuted
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                    wrapMode: Text.WrapAnywhere
-                                                }
-                                                Button {
-                                                    id: uninstallManagedLauncherButton
-                                                    Layout.alignment: Qt.AlignRight
-                                                    Layout.minimumWidth: 132
-                                                    activeFocusOnTab: true
-                                                    focusPolicy: Qt.StrongFocus
-                                                    text: "Uninstall"
-                                                    Accessible.name: "Uninstall " + modelData.projectId
-                                                    background: Rectangle {
-                                                        radius: 7
-                                                        color: uninstallManagedLauncherButton.activeFocus
-                                                            ? theme.controlHover : theme.surface
-                                                        border.width: uninstallManagedLauncherButton.activeFocus ? 2 : 1
-                                                        border.color: uninstallManagedLauncherButton.activeFocus
-                                                            ? theme.accent : theme.divider
-                                                    }
-                                                    contentItem: Label {
-                                                        text: uninstallManagedLauncherButton.text
-                                                        color: uninstallManagedLauncherButton.activeFocus
-                                                            ? theme.textPrimary : theme.textSecondary
-                                                        font.pixelSize: 12 * theme.fontScale
-                                                        font.bold: uninstallManagedLauncherButton.activeFocus
-                                                        horizontalAlignment: Text.AlignHCenter
-                                                        verticalAlignment: Text.AlignVCenter
-                                                    }
-                                                    onClicked: {
-                                                        window.pendingUninstallProjectId = modelData.projectId
-                                                        uninstallDialog.open()
-                                                        Qt.callLater(function() {
-                                                            uninstallDialog.standardButton(Dialog.Ok).forceActiveFocus()
-                                                        })
-                                                    }
-                                                }
-                                            }
-                                        }
+
+                                    Label {
+                                        text: "Application"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 30 * theme.fontScale
+                                        font.bold: true
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        visible: launcherDownloadManager.installedLaunchers().length === 0
-                                        text: "No managed launchers are currently installed."
-                                        color: theme.textMuted
-                                        font.pixelSize: 11 * theme.fontScale
+                                        Layout.bottomMargin: 8
+                                        text: "RecompStation itself: version, what it stores, logs, and resetting settings."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 14 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                }
-                                Item { Layout.fillHeight: true }
-                                Label {
-                                    text: "RecompStation  •  Version 0.1.0"
-                                    color: theme.textMuted
-                                    font.pixelSize: 11 * theme.fontScale
-                                }
-                            
+                                    SettingsGroupLabel { text: "ABOUT" }
+                                    SettingRow {
+                                        title: "RecompStation " + Qt.application.version
+                                        description: "Qt " + qtVersion + " · Linux · " + cpuArchitecture
+                                        Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: "Project page"
+                                            onClicked: Qt.openUrlExternally("https://github.com/MetalSJ13/RecompStation")
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                opacity: parent.enabled ? 1 : 0.5
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                        }
+                                    }
+
+                                    SettingsGroupLabel { text: "STORAGE" }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: storageColumn.implicitHeight + 28
+                                        radius: 12
+                                        color: theme.sidebarBackground
+                                        ColumnLayout {
+                                            id: storageColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 14
+                                            anchors.leftMargin: 18
+                                            anchors.rightMargin: 18
+                                            spacing: 10
+                                            Repeater {
+                                                model: [
+                                                    { key: "launchers", label: "Launchers (" + launcherDownloadManager.installedLaunchers().length + ")" },
+                                                    { key: "artwork", label: "Covers and screenshots" },
+                                                    { key: "launchBoxCatalog", label: "LaunchBox catalog" },
+                                                    { key: "downloads", label: "Leftover downloads" }
+                                                ]
+                                                delegate: RowLayout {
+                                                    required property var modelData
+                                                    readonly property real bytes: storageUsage.usage[modelData.key] || 0
+                                                    readonly property real largest: Math.max(1, storageUsage.usage.launchers || 0,
+                                                        storageUsage.usage.artwork || 0, storageUsage.usage.launchBoxCatalog || 0,
+                                                        storageUsage.usage.downloads || 0)
+                                                    Layout.fillWidth: true
+                                                    spacing: 14
+                                                    Label {
+                                                        Layout.preferredWidth: 190
+                                                        text: modelData.label
+                                                        color: theme.textPrimary
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        elide: Text.ElideRight
+                                                    }
+                                                    Rectangle {
+                                                        Layout.fillWidth: true
+                                                        Layout.preferredHeight: 8
+                                                        radius: 4
+                                                        color: theme.surface
+                                                        Rectangle {
+                                                            width: parent.width * Math.min(1, parent.parent.bytes / parent.parent.largest)
+                                                            height: parent.height
+                                                            radius: 4
+                                                            color: theme.accent
+                                                            Behavior on width {
+                                                                enabled: !settingsManager.reducedMotion
+                                                                NumberAnimation { duration: 220 }
+                                                            }
+                                                        }
+                                                    }
+                                                    Label {
+                                                        Layout.preferredWidth: 80
+                                                        horizontalAlignment: Text.AlignRight
+                                                        text: storageUsage.measuring && !storageUsage.usage.total ? "…" : window.formatBytes(parent.bytes)
+                                                        color: theme.textSecondary
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                    }
+                                                }
+                                            }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 8
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: "Launchers are uninstalled from each game's Details page. Your game files are never moved or deleted."
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 11.5 * theme.fontScale
+                                                    wrapMode: Text.Wrap
+                                                }
+                                                Button {
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    visible: (storageUsage.usage.downloads || 0) > 0
+                                                    enabled: Object.keys(window.pendingDownloadRequests).length === 0
+                                                        && Object.keys(window.pendingInstallRequests).length === 0
+                                                    text: "Clear leftovers"
+                                                    onClicked: storageUsage.clearDownloadLeftovers()
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                opacity: parent.enabled ? 1 : 0.5
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                                }
+                                            }
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Data folder"
+                                        description: platformManager.dataDirectory
+                                        Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: "Open folder"
+                                            onClicked: Qt.openUrlExternally("file://" + platformManager.dataDirectory)
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                opacity: parent.enabled ? 1 : 0.5
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                        }
+                                    }
+
+                                    SettingsGroupLabel {
+                                        visible: window.orphanedLaunchers.length > 0
+                                        text: "LAUNCHERS WITHOUT A GAME"
+                                    }
+                                    Repeater {
+                                        model: window.orphanedLaunchers
+                                        delegate: SettingRow {
+                                            required property var modelData
+                                            title: modelData.projectId
+                                            description: "Its game is no longer in your library. Removing it frees the space; saves stored by the launcher elsewhere are not touched."
+                                            Button {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                text: "Remove"
+                                                onClicked: {
+                                                    window.pendingUninstallProjectId = modelData.projectId
+                                                    uninstallDialog.open()
+                                                    Qt.callLater(function() {
+                                                        uninstallDialog.standardButton(Dialog.Ok).forceActiveFocus()
+                                                    })
+                                                }
+                                                background: Rectangle {
+                                                    radius: 9
+                                                    color: parent.activeFocus ? theme.elevatedSurface
+                                                        : (parent.highlighted ? theme.accent : theme.surface)
+                                                    border.color: theme.accent
+                                                    border.width: parent.activeFocus ? 2 : 0
+                                                }
+                                                contentItem: Label {
+                                                    text: parent.text
+                                                    color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                    opacity: parent.enabled ? 1 : 0.5
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                    font.weight: Font.DemiBold
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    verticalAlignment: Text.AlignVCenter
+                                                }
+                                                leftPadding: 16
+                                                rightPadding: 16
+                                                implicitHeight: 38
+                                            }
+                                        }
+                                    }
+
+                                    SettingsGroupLabel { text: "DIAGNOSTICS" }
+                                    SettingRow {
+                                        title: "Runtime log"
+                                        description: "Records library, metadata, controller and launcher activity. Rotates at 5 MiB and keeps three older logs. Attach it when reporting a problem."
+                                        Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: "Open log folder"
+                                            onClicked: Qt.openUrlExternally("file://" + platformManager.dataDirectory + "/logs")
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                opacity: parent.enabled ? 1 : 0.5
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                        }
+                                    }
+
+                                    SettingsGroupLabel { text: "RESET" }
+                                    SettingRow {
+                                        title: "Reset settings"
+                                        description: window.resetSettingsArmed
+                                            ? "Press again to reset and restart RecompStation."
+                                            : "Restores appearance, display, background, library view, controller and metadata settings. Your games, library folder, covers, launchers, LaunchBox catalog and TheGamesDB key are kept."
+                                        Button {
+                                            id: resetSettingsButton
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: window.resetSettingsArmed ? "Confirm reset" : "Reset…"
+                                            highlighted: window.resetSettingsArmed
+                                            onClicked: {
+                                                if (!window.resetSettingsArmed) {
+                                                    window.resetSettingsArmed = true
+                                                    resetSettingsDisarmTimer.restart()
+                                                    return
+                                                }
+                                                window.resetSettingsArmed = false
+                                                libraryVisualSettings.waveColor = "ocean"
+                                                libraryVisualSettings.waveCustomHue = 220
+                                                libraryVisualSettings.waveMotion = "normal"
+                                                libraryVisualSettings.waveQuality = "auto"
+                                                libraryVisualSettings.wallpaperFit = "fill"
+                                                libraryVisualSettings.wallpaperDim = 15
+                                                if (settingsManager.resetPreferences())
+                                                    settingsManager.requestApplicationRestart("Application")
+                                            }
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                opacity: parent.enabled ? 1 : 0.5
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                            Timer {
+                                                id: resetSettingsDisarmTimer
+                                                interval: 6000
+                                                onTriggered: window.resetSettingsArmed = false
+                                            }
+                                        }
+                                    }
+                                    Item { Layout.preferredHeight: 16 }
                                 }
                             }
 
@@ -6475,226 +6590,100 @@ ApplicationWindow {
                                     Label {
                                         text: "Controller"
                                         color: theme.textPrimary
-                                        font.pixelSize: 27 * theme.fontScale
+                                        font.pixelSize: 30 * theme.fontScale
                                         font.bold: true
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "View connected controller information and configure controller support."
+                                        Layout.bottomMargin: 8
+                                        text: "Your controller, the button symbols RecompStation shows, and what each button does."
                                         color: theme.textSecondary
-                                        font.pixelSize: 13 * theme.fontScale
+                                        font.pixelSize: 14 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
 
-                                    Label {
-                                        text: "CONNECTED DEVICE"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
+                                    // Connected device: a line drawing of its layout, no logos.
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        implicitHeight: controllerInfoColumn.implicitHeight + 30
-                                        radius: theme.radiusCard
+                                        implicitHeight: controllerInfoColumn.implicitHeight + 32
+                                        radius: 12
                                         color: theme.sidebarBackground
-                                        border.color: controllerManager.connected ? theme.accent : theme.divider
-
                                         RowLayout {
                                             id: controllerInfoColumn
                                             anchors.left: parent.left
                                             anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 16
-                                            spacing: 14
-
-                                            Image {
-                                                source: "qrc:/qt/qml/RecompStation/assets/images/recompstation-controller.png"
-                                                sourceSize: Qt.size(384, 256)
-                                                fillMode: Image.PreserveAspectFit
-                                                Layout.preferredWidth: 52
-                                                Layout.preferredHeight: 36
-                                                smooth: true
-                                                mipmap: true
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.leftMargin: 20
+                                            anchors.rightMargin: 18
+                                            spacing: 20
+                                            ControllerOutline {
+                                                Layout.preferredWidth: 150
+                                                Layout.preferredHeight: 100
+                                                kind: window.controllerLayout
+                                                lineColor: controllerManager.connected ? theme.textSecondary : theme.textSubtle
+                                                accentColor: controllerManager.connected ? theme.accent : theme.textSubtle
+                                                opacity: controllerManager.connected ? 1.0 : 0.6
                                             }
                                             ColumnLayout {
                                                 Layout.fillWidth: true
                                                 spacing: 5
                                                 Label {
+                                                    Layout.fillWidth: true
                                                     text: controllerManager.connected
                                                         ? controllerManager.controllerName : "No controller connected"
                                                     color: theme.textPrimary
-                                                    font.pixelSize: 14 * theme.fontScale
+                                                    font.pixelSize: 17 * theme.fontScale
                                                     font.bold: true
-                                                }
-                                                Label {
-                                                    text: controllerManager.connected
-                                                        ? controllerManager.controllerType.toUpperCase() + " controller"
-                                                        : controllerManager.available
-                                                            ? "Connect a supported gamepad to use controller navigation."
-                                                            : "Controller support is unavailable in this build."
-                                                    color: theme.textSecondary
-                                                    font.pixelSize: 11 * theme.fontScale
-                                                    wrapMode: Text.Wrap
-                                                    Layout.fillWidth: true
-                                                }
-                                            }
-                                            Rectangle {
-                                                radius: 10
-                                                color: controllerManager.connected
-                                                    ? Qt.rgba(0.25, 0.75, 0.48, 0.14)
-                                                    : Qt.rgba(0.55, 0.60, 0.68, 0.12)
-                                                border.color: controllerManager.connected ? "#48C78E" : theme.divider
-                                                implicitWidth: controllerStatusLabel.implicitWidth + 20
-                                                implicitHeight: 28
-                                                Label {
-                                                    id: controllerStatusLabel
-                                                    anchors.centerIn: parent
-                                                    text: controllerManager.connected ? "Connected" : "Disconnected"
-                                                    color: controllerManager.connected ? "#48C78E" : theme.textMuted
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                    font.bold: true
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Label {
-                                        text: "CONTROLLER OPTIONS"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        implicitHeight: controllerOptionsColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: theme.divider
-                                        ColumnLayout {
-                                            id: controllerOptionsColumn
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 10
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                ColumnLayout {
-                                                    Layout.fillWidth: true
-                                                    spacing: 3
-                                                    Label {
-                                                        text: "Controller navigation"
-                                                        color: theme.textPrimary
-                                                        font.pixelSize: 13 * theme.fontScale
-                                                        font.bold: true
-                                                    }
-                                                    Label {
-                                                        Layout.fillWidth: true
-                                                        text: "Allow a connected gamepad to navigate RecompStation menus."
-                                                        color: theme.textSecondary
-                                                        font.pixelSize: 11 * theme.fontScale
-                                                        wrapMode: Text.Wrap
-                                                    }
-                                                }
-                                                ToggleSwitch {
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                                    checked: controllerManager.inputEnabled
-                                                    onToggled: controllerManager.inputEnabled = checked
-                                                }
-                                            }
-                                            Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: controllerManager.connected
-                                                    ? "Controller input is active. You can connect or disconnect a gamepad while RecompStation is running."
-                                                    : "Keyboard and mouse remain available. Controller hot-plug detection is active."
-                                                color: theme.textMuted
-                                                font.pixelSize: 10 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                        }
-                                    }
-
-                                    Label {
-                                        text: "ACTIVE PROFILE"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        implicitHeight: profileColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: controllerManager.connected ? theme.accent : theme.divider
-                                        ColumnLayout {
-                                            id: profileColumn
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 8
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                Label {
-                                                    text: controllerManager.connected
-                                                        ? controllerManager.controllerName : "Default controller profile"
-                                                    color: theme.textPrimary
-                                                    font.pixelSize: 13 * theme.fontScale
-                                                    font.bold: true
-                                                    Layout.fillWidth: true
                                                     elide: Text.ElideRight
                                                 }
-                                                Button {
-                                                    id: resetControllerProfileButton
-                                                    text: "Reset to defaults"
-                                                    enabled: controllerManager.connected
-                                                    activeFocusOnTab: true
-                                                    focusPolicy: Qt.StrongFocus
-                                                    background: Rectangle {
-                                                        radius: theme.radiusSmall
-                                                        color: resetControllerProfileButton.activeFocus
-                                                            ? theme.elevatedSurface : theme.surface
-                                                        border.color: resetControllerProfileButton.activeFocus
-                                                            ? theme.accent : theme.divider
-                                                        border.width: resetControllerProfileButton.activeFocus ? 2 : 1
-                                                    }
-                                                    onClicked: {
-                                                        controllerManager.resetConnectedControllerProfile()
-                                                    }
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: controllerManager.connected ? window.layoutDescription()
+                                                        : controllerManager.available
+                                                            ? "Connect a controller by USB or Bluetooth; it is picked up automatically."
+                                                            : "Controller support is unavailable in this build."
+                                                    color: theme.textSecondary
+                                                    font.pixelSize: 12.5 * theme.fontScale
+                                                    wrapMode: Text.Wrap
+                                                }
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    visible: controllerManager.connected
+                                                    text: "Button prompts across RecompStation use these symbols."
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 12 * theme.fontScale
+                                                    wrapMode: Text.Wrap
                                                 }
                                             }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: controllerManager.connected
-                                                    ? "Mappings are saved separately for this controller. Add another button or stick direction to any action."
-                                                    : "Connect a controller to configure its device-specific mappings."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
+                                            StatusPill {
+                                                text: controllerManager.connected ? "● Connected" : "Not connected"
+                                                tone: controllerManager.connected ? "good" : "neutral"
                                             }
                                         }
                                     }
 
-                                    Label {
-                                        text: "BUTTON MAPPINGS"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
+                                    SettingsGroupLabel { text: "OPTIONS" }
+                                    SettingRow {
+                                        title: "Controller navigation"
+                                        description: "Use a connected controller to move around RecompStation. Keyboard and mouse always work."
+                                        ToggleSwitch {
+                                            checked: controllerManager.inputEnabled
+                                            onToggled: controllerManager.inputEnabled = checked
+                                            Accessible.name: "Controller navigation"
+                                        }
                                     }
+
+                                    SettingsGroupLabel { text: "BUTTON MAPPINGS" }
                                     Label {
                                         Layout.fillWidth: true
+                                        Layout.bottomMargin: 2
                                         text: controllerManager.mappingCaptureActive
-                                            ? "Press a controller button, trigger, or click either analog stick. Release the input used to start capture first; capture cancels after 15 seconds."
-                                            : "Choose Add binding, then press a button, trigger, D-pad direction, move a stick, or press a stick to click it. Existing bindings are kept."
+                                            ? "Press a button, trigger or D-pad direction, move the left stick, or click a stick. Release the button you used to start first; this cancels after 15 seconds."
+                                            : controllerManager.connected
+                                                ? "Saved separately for this controller. Add another input to any action, or replace its inputs."
+                                                : "Connect a controller to change its mappings."
                                         color: controllerManager.mappingCaptureActive ? theme.accent : theme.textSecondary
-                                        font.pixelSize: 11 * theme.fontScale
+                                        font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     Repeater {
@@ -6767,13 +6756,11 @@ ApplicationWindow {
                                                                     anchors.rightMargin: 4
                                                                     spacing: 5
                                                                     Label {
-                                                                        text: modelData === "lefttrigger" ? "Left trigger"
-                                                                            : modelData === "righttrigger" ? "Right trigger"
-                                                                            : modelData === "leftstick-click" ? "L3 · Left stick click"
-                                                                            : modelData === "rightstick-click" ? "R3 · Right stick click"
-                                                                            : modelData
-                                                                        color: theme.textSecondary
-                                                                        font.pixelSize: 10 * theme.fontScale
+                                                                        text: window.inputGlyph(modelData)
+                                                                        color: window.isFaceButton(modelData)
+                                                                            ? window.inputGlyphColor(modelData) : theme.textPrimary
+                                                                        font.pixelSize: (window.isFaceButton(modelData) ? 14 : 12) * theme.fontScale
+                                                                        font.bold: true
                                                                     }
                                                                     Button {
                                                                         id: removeBindingButton
@@ -6875,6 +6862,37 @@ ApplicationWindow {
                                             }
                                         }
                                     }
+                                    SettingRow {
+                                        title: "Reset mappings"
+                                        description: "Restore this controller's default buttons."
+                                        enabled: controllerManager.connected
+                                        Button {
+                                            id: resetControllerProfileButton
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            enabled: controllerManager.connected
+                                            text: "Reset to defaults"
+                                            onClicked: controllerManager.resetConnectedControllerProfile()
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface : theme.surface
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: theme.textPrimary
+                                                opacity: parent.enabled ? 1 : 0.5
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -6887,6 +6905,8 @@ ApplicationWindow {
                                 || settingsPage.section === "Display"
                                 || settingsPage.section === "Background"
                                 || settingsPage.section === "Metadata"
+                                || settingsPage.section === "Controller"
+                                || settingsPage.section === "Application"
                             visible: hasContent && settingsLayoutRow.width >= 1180
                             Layout.preferredWidth: Math.max(340, Math.min(460, settingsLayoutRow.width * 0.28))
                             Layout.fillHeight: true
@@ -7003,6 +7023,111 @@ ApplicationWindow {
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap
+                                }
+                                Item { Layout.fillHeight: true }
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 20
+                                spacing: 10
+                                visible: settingsPage.section === "Controller"
+
+                                SettingsGroupLabel { Layout.topMargin: 0; text: "BUTTON TEST" }
+                                ControllerOutline {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: width * 0.66
+                                    kind: window.controllerLayout
+                                    activeInputs: settingsPage.section === "Controller" ? controllerManager.activeInputs : []
+                                    lineColor: controllerManager.connected ? theme.textSecondary : theme.textSubtle
+                                    accentColor: controllerManager.connected ? theme.accent : theme.textSubtle
+                                    litColor: theme.accentHover
+                                    lineWidth: 1.8
+                                }
+                                // Shoulder buttons and triggers are not on the front of the drawing.
+                                Row {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    spacing: 8
+                                    Repeater {
+                                        model: ["lefttrigger", "leftshoulder", "back", "start", "rightshoulder", "righttrigger"]
+                                        delegate: Rectangle {
+                                            required property string modelData
+                                            readonly property bool lit: controllerManager.activeInputs.indexOf(modelData) >= 0
+                                            width: Math.max(44, shoulderLabel.implicitWidth + 18)
+                                            height: 28
+                                            radius: 8
+                                            color: lit ? theme.accent : theme.surface
+                                            Label {
+                                                id: shoulderLabel
+                                                anchors.centerIn: parent
+                                                text: window.inputGlyph(modelData)
+                                                color: parent.lit ? theme.accentText : theme.textSecondary
+                                                font.pixelSize: 12 * theme.fontScale
+                                                font.bold: true
+                                            }
+                                        }
+                                    }
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 10
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: !controllerManager.connected ? "Connect a controller to test it."
+                                        : controllerManager.activeInputs.length === 0 ? "Press any button"
+                                        : controllerManager.activeInputs.filter(function(token) {
+                                              return token !== "leftstick" && token !== "rightstick"
+                                          }).map(window.inputGlyph).join("  ·  ")
+                                    color: theme.textPrimary
+                                    font.pixelSize: 15 * theme.fontScale
+                                    font.bold: true
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: "Buttons light up on the drawing as you press them, so you can check a controller or a new mapping before playing."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Item { Layout.fillHeight: true }
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 20
+                                spacing: 10
+                                visible: settingsPage.section === "Application"
+                            
+                                SettingsGroupLabel { Layout.topMargin: 0; text: "WHERE THINGS LIVE" }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Everything RecompStation downloads or creates is in its data folder:"
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "launchers/ · artwork/ · downloads/\nmetadata/launchbox/ · database/\nlogs/ · config/"
+                                    color: theme.textSecondary
+                                    font.family: "monospace"
+                                    font.pixelSize: 12 * theme.fontScale
+                                    lineHeight: 1.4
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Your game files stay where you put them and are never moved or deleted."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                SettingsGroupLabel { text: "IN TOTAL" }
+                                Label {
+                                    text: storageUsage.usage.total ? window.formatBytes(storageUsage.usage.total) : "Measuring…"
+                                    color: theme.textPrimary
+                                    font.pixelSize: 22 * theme.fontScale
+                                    font.bold: true
                                 }
                                 Item { Layout.fillHeight: true }
                             }

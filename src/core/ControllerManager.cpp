@@ -233,6 +233,14 @@ void ControllerManager::setConnected(bool connected, const QString &name,
         qCInfo(lcApplication) << "Controller disconnected.";
 }
 
+void ControllerManager::setDisplayedInputs(const QStringList &inputs)
+{
+    if (m_displayedInputs == inputs)
+        return;
+    m_displayedInputs = inputs;
+    emit activeInputsChanged();
+}
+
 void ControllerManager::pollController()
 {
 #ifdef RECOMPSTATION_HAS_SDL2
@@ -289,6 +297,7 @@ void ControllerManager::pollController()
     }
 
     if (!m_controller) {
+        setDisplayedInputs({});
         if (m_mappingCaptureActive)
             cancelMappingCapture();
         m_inputRouter.processFrame({}, false, false, false, false, false,
@@ -344,6 +353,16 @@ void ControllerManager::pollController()
         ControllerInputRouter::directionFromAxes(leftX, leftY);
     if (!leftStickDirection.isEmpty())
         activeInputs.append(QStringLiteral("leftstick-") + leftStickDirection);
+
+    // The button test also shows the right stick, which is otherwise only
+    // used for scrolling and is not a mappable input.
+    QStringList displayed = activeInputs;
+    const QString rightStickDirection = ControllerInputRouter::directionFromAxes(
+        SDL_GameControllerGetAxis(m_controller, SDL_CONTROLLER_AXIS_RIGHTX),
+        SDL_GameControllerGetAxis(m_controller, SDL_CONTROLLER_AXIS_RIGHTY));
+    if (!rightStickDirection.isEmpty())
+        displayed.append(QStringLiteral("rightstick-") + rightStickDirection);
+    setDisplayedInputs(displayed);
 
     // A captured press belongs exclusively to the mapping operation. Keep its
     // physical input (including legacy stick-click aliases) out of normal

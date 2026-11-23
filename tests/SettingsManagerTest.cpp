@@ -62,6 +62,7 @@ private slots:
     void savesTheGamesDbKeyPrivately();
     void rejectsImplausibleTheGamesDbKeys();
     void environmentTheGamesDbKeyTakesPriority();
+    void resetPreferencesKeepsLibraryAndKey();
 };
 
 void SettingsManagerTest::init()
@@ -946,6 +947,35 @@ void SettingsManagerTest::environmentTheGamesDbKeyTakesPriority()
     QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("environment"));
     qunsetenv("RECOMPSTATION_TGDB_API_KEY");
     QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("saved"));
+}
+
+void SettingsManagerTest::resetPreferencesKeepsLibraryAndKey()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+    {
+        QSettings settings(settingsPath, QSettings::IniFormat);
+        settings.setValue(QStringLiteral("library/root"), QStringLiteral("/games"));
+        settings.setValue(QStringLiteral("metadata/launchBoxEnabled"), true);
+    }
+    {
+        SettingsManager manager(settingsPath);
+        manager.setThemeName(QStringLiteral("carbon"));
+        manager.setInterfaceScale(QStringLiteral("150"));
+        manager.setMetadataProviderOrder(QStringLiteral("thegamesdb"));
+        QVERIFY(manager.saveTheGamesDbApiKey(QStringLiteral("keepthiskey0123456789")));
+        QVERIFY(manager.resetPreferences());
+    }
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.themeName(), QStringLiteral("midnight-violet"));
+    QCOMPARE(reloaded.interfaceScale(), QStringLiteral("auto"));
+    QCOMPARE(reloaded.metadataProviderOrder(), QStringLiteral("launchbox"));
+    QVERIFY(reloaded.launchBoxEnabled());
+    QCOMPARE(reloaded.theGamesDbKeySource(), QStringLiteral("saved"));
+    QCOMPARE(QSettings(settingsPath, QSettings::IniFormat).value(QStringLiteral("library/root")).toString(),
+             QStringLiteral("/games"));
 }
 
 QTEST_GUILESS_MAIN(SettingsManagerTest)

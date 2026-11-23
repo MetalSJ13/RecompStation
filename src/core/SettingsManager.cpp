@@ -767,6 +767,29 @@ QString SettingsManager::storedInterfaceScale(const QString &settingsFilePath)
     return isSupportedInterfaceScale(value) ? value : QStringLiteral("auto");
 }
 
+bool SettingsManager::resetPreferences()
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    for (const QString &group : {QStringLiteral("appearance"), QStringLiteral("display"),
+                                 QStringLiteral("controllers")})
+        settings.remove(group);
+    for (const QString &key : {QStringLiteral("library/view"), QStringLiteral("library/density"),
+                               QStringLiteral("library/listDensity"), QStringLiteral("library/consoleDensity"),
+                               QStringLiteral("library/scanOnStartup"),
+                               QStringLiteral("metadata/providerOrder"),
+                               QStringLiteral("metadata/automaticMatchingEnabled"),
+                               QStringLiteral("metadata/automaticArtworkDownloadsEnabled"),
+                               QStringLiteral("metadata/theGamesDbEnabled")})
+        settings.remove(key);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Could not reset preferences.";
+        return false;
+    }
+    qCInfo(lcSettings) << "Preferences reset to defaults; restart to apply.";
+    return true;
+}
+
 void SettingsManager::requestApplicationRestart(const QString &settingsSection)
 {
     emit applicationRestartRequested(settingsSection);

@@ -109,6 +109,11 @@ public:
     static QString storedInterfaceScale(const QString &settingsFilePath);
     // Asks main() to restart RecompStation and reopen Settings at a section.
     Q_INVOKABLE void requestApplicationRestart(const QString &settingsSection);
+    // Restores appearance, display, library-view, controller and metadata
+    // behaviour settings to their defaults. Keeps the library folder, the
+    // LaunchBox catalog state, the TheGamesDB key and first-run answers.
+    // Takes full effect after a restart.
+    Q_INVOKABLE bool resetPreferences();
 
     bool reducedMotion() const;
     Q_INVOKABLE void setReducedMotion(bool enabled);

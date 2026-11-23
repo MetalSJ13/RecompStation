@@ -57,6 +57,8 @@ qt_add_executable(RecompStationApp
     src/core/LaunchBoxArtworkManager.cpp
     src/core/ScreenshotManager.h
     src/core/ScreenshotManager.cpp
+    src/core/StorageUsage.h
+    src/core/StorageUsage.cpp
     src/database/DatabaseManager.h
     src/database/DatabaseManager.cpp
     src/metadata/LaunchBoxXmlParser.h
@@ -104,6 +106,8 @@ qt_add_qml_module(RecompStationApp
         qml/ColorSwatchPicker.qml
         qml/StatusPill.qml
         qml/ToggleSwitch.qml
+        qml/ControllerShapes.js
+        qml/ControllerOutline.qml
     RESOURCES
         assets/images/recompstation-controller.png
 )
