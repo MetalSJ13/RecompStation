@@ -5321,7 +5321,8 @@ ApplicationWindow {
                                             border.color: theme.textPrimary
                                         }
                                         onClicked: window.openLibraryGameDetails(listPreview.game)
-        
+                                    }
+                                }
                             }
 
                             Label {
@@ -5392,9 +5393,6 @@ ApplicationWindow {
                                         font.pixelSize: 13 * theme.fontScale
                                     }
                                 }
-                            }
-
-                        }
                             }
                         }
 
