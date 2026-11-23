@@ -38,7 +38,7 @@ private slots:
 
     void setApiKeyConfiguresTheClient()
     {
-        TheGamesDbClient client(QString());
+        TheGamesDbClient client{QString()};
         QVERIFY(!client.isConfigured());
         client.setApiKey(QStringLiteral("  key0123456789abcdef  "));
         QVERIFY(client.isConfigured());
