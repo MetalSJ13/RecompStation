@@ -922,7 +922,7 @@ void SettingsManagerTest::savesTheGamesDbKeyPrivately()
 
     QVERIFY(manager.clearTheGamesDbApiKey());
     QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("none"));
-    QVERIFY(!keyFile.exists());
+    QVERIFY(!QFileInfo::exists(manager.theGamesDbKeyFilePath()));
 }
 
 void SettingsManagerTest::rejectsImplausibleTheGamesDbKeys()
