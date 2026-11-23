@@ -63,7 +63,7 @@ Chosen by the user from design mockups (List today; list + preview at Comfortabl
 - [x] A / Enter in List play an installed recompilation and otherwise open Game Details, matching Carousel; Y / `I` open Game Details. Clicking a row still opens Game Details; the Play button launches. The hint bar shows "Play" when A would launch.
 - [x] User validation (2026-11-22): build and tests pass; rows, headers only in All Platforms, Compact hides the status line, preview content, A plays or opens Details, Y opens Details.
 - [x] Polish from that review: Play and Details move up under the year and rating beside the cover; screenshot thumbnails share the full pane width, limited by the height left below the overview (hidden below 120 px wide); the list may grow to 900 px on wide screens.
-- [ ] Confirm the polish at runtime.
+- [x] Polish confirmed at runtime (2026-11-22). Merged into `ui/interface-redesign`; `docs/UI_DESIGN.md` List description updated.
 
 ## Hero carousel (2026-11-22)
 
