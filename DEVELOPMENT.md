@@ -53,6 +53,28 @@ The responsive Library presentation work is being tracked as a focused five-phas
   - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
 - [x] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The Shelves view and spotlight panel (Library presentation redesign, step 4) and the hero carousel complete this phase; confirmed by the user on 2026-11-22.
 
+## First-time setup and adding games (2026-11-23)
+
+Chosen by the user from design mockups (setup: library folder, add games, covers and info; drop onto the Library). Work is on `ui/first-run-import`, branched from `ui/interface-redesign` after merging the Controller and Application pages.
+
+**Decisions**
+- Full-window setup in four steps replaces the small setup dialog; the update question is retired until update checks exist.
+- Adding games copies by default (Move is an option); existing files are never overwritten.
+- N64 ROMs inside .zip / .7z are unpacked into the N64 folder; the archive is left in place.
+- Suggested library folder: `~/Games/RecompStation` when `~/Games` exists (a new folder inside it, so nothing there is touched), otherwise `~/RecompStation`.
+
+**Implementation**
+- [x] `src/core/GameImporter.{h,cpp}` (exposed as `gameImporter`): sources (folders searched recursively, or dropped files), background scan, candidates with detected system, copy or move into `<library>/<platform>` on a background thread with progress and Stop.
+  - System detection: N64 by extension; .cue/.chd/.pbp → PS1; .gcm/.ciso → GameCube; .wbfs/.wud/.wux → Wii; .xiso → Xbox. Shared extensions read the header: GameCube (0xC2339F3D at 0x1C) and Wii (0x5D1C9EA3 at 0x18) disc magic, the same inside RVZ/WIA at 0x58, Xbox `MICROSOFT*XBOX*MEDIA` (trimmed and full images), PS1 ISO 9660 volume with system identifier `PLAYSTATION` (2048- and 2352-byte sectors). Loose .bin/.img are offered as PS1 but unticked. Anything unknown is offered with a system picker, unticked.
+  - .cue sheets bring their FILE tracks along and the tracks are not listed separately. Archives list each N64 ROM inside.
+  - Copies go through `<name>.part` and are renamed when complete; a cancelled or failed copy leaves nothing behind. Move renames on the same drive, and across drives copies then removes the originals only after every file of the game was copied. A game whose file already exists in the platform folder is shown as "Already in library" and skipped.
+  - Files already inside the library are ignored. After an import, a library scan registers the new games (and automatic metadata matching follows).
+- [x] `PlatformManager::suggestedLibraryLocation()` (path, exists, free space) and `useLibraryLocation(path)`.
+- [x] `qml/FirstRunSetup.qml`: library folder (suggested location or Browse), Add games (`ImportGamesPanel`), Covers & info (LaunchBox download, optional TheGamesDB key, import progress), Ready. Controller navigation stays inside it; B goes back a step.
+- [x] `qml/ImportGamesPanel.qml`: Look in Downloads, Add a folder (the in-app folder browser, now with a "source" purpose), Copy/Move, the list of games with system pills or pickers, per-system counts, free-space warning, progress and Stop. Used by setup, by Settings › Library › Add games, and by dropping files or folders anywhere on the window (a "Drop to add" overlay; nothing is copied until confirmed).
+- [x] Tests: `GameImporterTests` (system detection for every header type, .cue grouping, zipped N64 ROM found and unpacked, copy keeps originals, a second pass finds the games already in the library).
+- [ ] User validation: first-time setup from scratch (rename or move the settings file aside, or use a fresh user); suggested folder; adding from Downloads and another folder; a zipped N64 ROM; a .cue/.bin game; an unsure .iso with the picker; Move; dropping files on the Library; Settings › Library › Add games.
+
 ## Settings redesign (2026-11-23)
 
 Direction chosen by the user from design mockups (Settings today; proposed Appearance, Display, Background and Metadata) and a live wave-background prototype. Work is on `ui/settings`, branched from `ui/interface-redesign`, in four steps.

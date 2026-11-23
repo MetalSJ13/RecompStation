@@ -59,6 +59,8 @@ qt_add_executable(RecompStationApp
     src/core/ScreenshotManager.cpp
     src/core/StorageUsage.h
     src/core/StorageUsage.cpp
+    src/core/GameImporter.h
+    src/core/GameImporter.cpp
     src/database/DatabaseManager.h
     src/database/DatabaseManager.cpp
     src/metadata/LaunchBoxXmlParser.h
@@ -108,6 +110,8 @@ qt_add_qml_module(RecompStationApp
         qml/ToggleSwitch.qml
         qml/ControllerShapes.js
         qml/ControllerOutline.qml
+        qml/ImportGamesPanel.qml
+        qml/FirstRunSetup.qml
     RESOURCES
         assets/images/recompstation-controller.png
 )
@@ -231,6 +235,26 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME PlatformManagerTests COMMAND PlatformManagerTests)
+
+    qt_add_executable(GameImporterTests
+        src/core/Logging.h
+        src/core/Logging.cpp
+        tests/GameImporterTest.cpp
+        src/core/GameImporter.h
+        src/core/GameImporter.cpp
+        src/core/PlatformManager.h
+        src/core/PlatformManager.cpp
+    )
+
+    target_include_directories(GameImporterTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(GameImporterTests PRIVATE
+        Qt6::Core Qt6::Concurrent Qt6::Test LibArchive::LibArchive
+    )
+
+    add_test(NAME GameImporterTests COMMAND GameImporterTests)
 
     qt_add_executable(LauncherDownloadManagerTests
         src/core/Logging.h

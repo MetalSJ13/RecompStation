@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QStorageInfo>
 #include <QDebug>
 #include <QDirIterator>
 #include <QVariantMap>
@@ -178,6 +179,31 @@ bool PlatformManager::setLibraryDirectoryPath(const QString &directoryPath)
 QString PlatformManager::homeDirectory() const
 {
     return QDir::homePath();
+}
+
+QVariantMap PlatformManager::suggestedLibraryLocation() const
+{
+    const QDir home(QDir::homePath());
+    const QString games = home.filePath(QStringLiteral("Games"));
+    const QString path = QFileInfo(games).isDir()
+        ? QDir(games).filePath(QStringLiteral("RecompStation"))
+        : home.filePath(QStringLiteral("RecompStation"));
+    QString existing = path;
+    while (!QFileInfo::exists(existing) && existing != QDir::rootPath())
+        existing = QFileInfo(existing).absolutePath();
+    return QVariantMap{
+        {QStringLiteral("path"), path},
+        {QStringLiteral("exists"), QFileInfo(path).isDir()},
+        {QStringLiteral("freeBytes"), QStorageInfo(existing).bytesAvailable()},
+    };
+}
+
+bool PlatformManager::useLibraryLocation(const QString &directoryPath)
+{
+    const QString path = QDir::cleanPath(directoryPath.trimmed());
+    if (path.isEmpty() || !QDir().mkpath(path))
+        return false;
+    return setLibraryDirectoryPath(path);
 }
 
 QString PlatformManager::parentDirectory(const QString &directoryPath) const

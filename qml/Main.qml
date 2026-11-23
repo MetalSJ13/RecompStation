@@ -359,6 +359,24 @@ ApplicationWindow {
             return
         }
 
+        const modalRoot = window.activeModalRoot()
+        if (modalRoot) {
+            const stepper = window.focusedValueStepper(window.activeFocusItem)
+            if (stepper && (direction === "right" || (direction === "left" && stepper.canStepBack))) {
+                stepper.stepValue(direction === "left" ? -1 : 1)
+                return
+            }
+            if (!window.isDescendantOf(window.activeFocusItem, modalRoot)) {
+                const candidates = []
+                window.collectFocusableItems(modalRoot, candidates, [])
+                if (candidates.length > 0)
+                    candidates[0].forceActiveFocus()
+                return
+            }
+            window.moveDirectionalFocus(modalRoot, direction)
+            return
+        }
+
         if (currentPage === "Settings" && window.activeFocusItem
                 && window.activeFocusItem.popup
                 && window.activeFocusItem.popup.visible) {
@@ -602,6 +620,18 @@ ApplicationWindow {
             return
         }
 
+        if (window.activeModalRoot()) {
+            const stepper = window.focusedValueStepper(window.activeFocusItem)
+            if (stepper) {
+                stepper.stepValue(1)
+                return
+            }
+            const focused = window.focusedActionItem(window.activeFocusItem)
+            if (focused && typeof focused.click === "function")
+                focused.click()
+            return
+        }
+
         const focusedAction = window.focusedActionItem(window.activeFocusItem)
         if (focusedAction && focusedAction.popup
                 && typeof focusedAction.incrementCurrentIndex === "function"
@@ -699,6 +729,14 @@ ApplicationWindow {
         const openCombo = window.activeControllerComboBox()
         if (openCombo) {
             window.finishControllerComboBoxSelection(openCombo, false)
+            return
+        }
+        if (importGamesPopup.visible && !libraryFolderDialog.visible && !uninstallDialog.visible) {
+            importGamesPopup.close()
+            return
+        }
+        if (firstRunSetup.visible && !libraryFolderDialog.visible) {
+            firstRunSetup.goBack()
             return
         }
         if (systemMenuVisible) {
@@ -946,9 +984,55 @@ ApplicationWindow {
     property string pendingNavigationPage: ""
     property bool navigationTransitionRunning: false
     property string pendingThemeName: settingsManager.themeName
+    // First-time setup step (0–3), or -1 when not shown.
+    property int firstRunStep: -1
+    // Add games: copy (default) or move.
+    property bool importMoves: false
+    function openLibraryFolderBrowser() {
+        libraryFolderDialog.purpose = "library"
+        libraryFolderDialog.open()
+    }
+    function openSourceFolderBrowser() {
+        libraryFolderDialog.purpose = "source"
+        libraryFolderDialog.open()
+    }
+    function openAddGames(sources) {
+        if (window.firstRunStep >= 0) {
+            for (const source of sources || [])
+                gameImporter.addSource(source)
+            window.firstRunStep = 1
+            return
+        }
+        if (!gameImporter.importing) {
+            if (sources && sources.length > 0)
+                gameImporter.setSources(sources)
+            else if (importGamesPopup.closedAfterImport)
+                gameImporter.clear()
+        }
+        importGamesPopup.closedAfterImport = false
+        importGamesPopup.open()
+    }
+    function finishFirstRun() {
+        window.firstRunStep = -1
+        settingsManager.completeUpdatePreferencePrompt(false)
+        window.currentPage = "Library"
+        libraryScanner.scanAllAsync()
+    }
+    // The open full-window overlay that controller navigation stays inside.
+    function activeModalRoot() {
+        if (libraryFolderDialog.visible || uninstallDialog.visible)
+            return null
+        if (importGamesPopup.visible)
+            return importGamesPopup.contentItem
+        if (firstRunSetup.visible)
+            return firstRunSetup.navigationRoot
+        return null
+    }
     // After a restart from Settings (for example to apply a new interface
     // scale), reopen Settings at the section the user was on.
     Component.onCompleted: {
+        if (!platformManager.libraryConfigured)
+            window.firstRunStep = 0
         if (startupSettingsSection.length > 0
                 && window.settingsSections.indexOf(startupSettingsSection) >= 0) {
             window.currentPage = "Settings"
@@ -2005,7 +2089,11 @@ ApplicationWindow {
 
     Dialog {
         id: libraryFolderDialog
-        title: "Choose your RecompStation game library"
+        // "library": choose the library folder. "source": add a folder to
+        // look for games in (Add games).
+        property string purpose: "library"
+        title: purpose === "source" ? "Choose a folder that has games in it"
+                                    : "Choose your RecompStation game library"
         modal: true
         anchors.centerIn: parent
         width: Math.min(parent.width - 36, 760)
@@ -2033,7 +2121,7 @@ ApplicationWindow {
         }
 
         onOpened: {
-            const startPath = platformManager.libraryConfigured
+            const startPath = purpose === "library" && platformManager.libraryConfigured
                 ? platformManager.libraryDirectory : platformManager.homeDirectory()
             navigateTo(startPath)
             Qt.callLater(function() { libraryDirectoryList.forceActiveFocus() })
@@ -2044,7 +2132,9 @@ ApplicationWindow {
 
             Label {
                 Layout.fillWidth: true
-                text: "Choose where RecompStation should store and scan your games. You can create a folder here without leaving setup."
+                text: libraryFolderDialog.purpose === "source"
+                    ? "Pick a folder; its subfolders are searched too. Nothing is moved until you choose Add."
+                    : "Choose where RecompStation should store and scan your games. You can create a folder here without leaving setup."
                 color: theme.textSecondary
                 wrapMode: Text.Wrap
             }
@@ -2303,6 +2393,11 @@ ApplicationWindow {
                     focusPolicy: Qt.StrongFocus
                     enabled: libraryFolderDialog.selectedFolderPath.length > 0
                     onClicked: {
+                        if (libraryFolderDialog.purpose === "source") {
+                            gameImporter.addSource(libraryFolderDialog.selectedFolderPath)
+                            libraryFolderDialog.accept()
+                            return
+                        }
                         if (platformManager.setLibraryDirectoryPath(
                                 libraryFolderDialog.selectedFolderPath)) {
                             window.scanMessage = "Library folder saved. Scanning platform folders..."
@@ -2401,9 +2496,8 @@ ApplicationWindow {
         width: Math.min(parent.width - 40, 540)
         padding: 26
         closePolicy: Popup.CloseOnEscape
-        visible: !platformManager.libraryConfigured
-            && !settingsManager.updatePreferencePromptCompleted
-            && !window.systemMenuVisible
+        // Retired: update checks are not built yet. Kept for when they are.
+        visible: false
         standardButtons: Dialog.NoButton
         onRejected: window.finishUpdatePreferencePrompt(false)
 
@@ -2550,9 +2644,8 @@ ApplicationWindow {
         width: Math.min(parent.width - 40, 560)
         padding: 26
         closePolicy: platformManager.libraryConfigured ? Popup.CloseOnEscape : Popup.NoAutoClose
-        visible: !platformManager.libraryConfigured
-            && settingsManager.updatePreferencePromptCompleted
-            && window.currentPage === "Library" && !window.systemMenuVisible
+        // Replaced by the full-window FirstRunSetup.
+        visible: false
         standardButtons: Dialog.NoButton
 
         background: Rectangle {
@@ -2719,7 +2812,7 @@ ApplicationWindow {
                     highlighted: true
                     font.pixelSize: 13 * theme.fontScale
                     padding: 13
-                    onClicked: libraryFolderDialog.open()
+                    onClicked: window.openLibraryFolderBrowser()
                     background: Rectangle {
                         radius: 9
                         color: parent.down ? theme.accentPressed
@@ -2776,6 +2869,71 @@ ApplicationWindow {
         id: gameDetailsPopup
     }
 
+    // ---- Adding games -------------------------------------------------------
+    FirstRunSetup {
+        id: firstRunSetup
+    }
+
+    Connections {
+        target: platformManager
+        function onLibraryDirectoryChanged() {
+            if (window.firstRunStep === 0 && platformManager.libraryConfigured)
+                window.firstRunStep = 1
+        }
+    }
+
+    Popup {
+        id: importGamesPopup
+        property bool closedAfterImport: false
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 80, 1240)
+        height: Math.min(parent.height - 80, 820)
+        modal: true
+        closePolicy: gameImporter.importing ? Popup.NoAutoClose : Popup.CloseOnEscape
+        padding: 26
+        onOpened: Qt.callLater(function() { importGamesPanel.focusFirst() })
+        background: Rectangle {
+            radius: 18
+            color: theme.windowBackground
+            border.color: theme.divider
+        }
+        contentItem: ColumnLayout {
+            spacing: 6
+            Label {
+                text: "Add games"
+                color: theme.textPrimary
+                font.pixelSize: 26 * theme.fontScale
+                font.bold: true
+            }
+            Label {
+                Layout.fillWidth: true
+                Layout.bottomMargin: 10
+                text: "RecompStation finds games in these folders, works out each one's system and " + (window.importMoves ? "moves" : "copies")
+                    + " them into " + platformManager.libraryDirectory.replace(platformManager.homeDirectory(), "~")
+                    + ". Files already in your library are never overwritten."
+                color: theme.textSecondary
+                font.pixelSize: 13.5 * theme.fontScale
+                wrapMode: Text.Wrap
+            }
+            ImportGamesPanel {
+                id: importGamesPanel
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                secondaryText: "Close"
+                onSecondaryRequested: importGamesPopup.close()
+            }
+        }
+    }
+
+    Connections {
+        target: gameImporter
+        function onImportFinished(imported, skipped, failed) {
+            importGamesPopup.closedAfterImport = true
+            window.scanMessage = gameImporter.status
+        }
+    }
+
     // Full-screen screenshot viewer (List preview). Paging updates the List
     // preview header so it shows the screenshot last viewed.
     ScreenshotViewer {
@@ -2806,6 +2964,63 @@ ApplicationWindow {
             id: mainContentPanel
             anchors.fill: parent
             color: theme.windowBackground
+
+            // Drop game files or folders anywhere to add them (Add games).
+            DropArea {
+                id: gameDropArea
+                anchors.fill: parent
+                z: 1000
+                enabled: platformManager.libraryConfigured && !gameImporter.importing
+                onEntered: (drag) => {
+                    if (drag.hasUrls)
+                        drag.accept(Qt.CopyAction)
+                    else
+                        drag.accepted = false
+                }
+                onDropped: (drop) => {
+                    if (!drop.hasUrls)
+                        return
+                    const paths = drop.urls.map(function(url) { return url.toString() })
+                    drop.accept(Qt.CopyAction)
+                    window.openAddGames(paths)
+                }
+                Rectangle {
+                    anchors.fill: parent
+                    visible: gameDropArea.containsDrag
+                    color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.78)
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 40
+                        radius: 24
+                        color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.08)
+                        border.width: 3
+                        border.color: theme.accent
+                        Column {
+                            anchors.centerIn: parent
+                            spacing: 12
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "⤓"
+                                color: theme.accent
+                                font.pixelSize: 56
+                            }
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "Drop to add to your library"
+                                color: theme.textPrimary
+                                font.pixelSize: 30 * theme.fontScale
+                                font.bold: true
+                            }
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "You'll see what was found, and each game's system, before anything is copied."
+                                color: theme.textSecondary
+                                font.pixelSize: 15 * theme.fontScale
+                            }
+                        }
+                    }
+                }
+            }
             Component.onCompleted: console.info("[Settings Geometry] main content panel:", width, "x", height)
             onWidthChanged: console.info("[Settings Geometry] main content panel width:", width)
 
@@ -5571,6 +5786,34 @@ ApplicationWindow {
                                         font.pixelSize: 14 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
+                                    SettingsGroupLabel { text: "ADD GAMES" }
+                                    SettingRow {
+                                        title: "Add games"
+                                        description: "Find games in other folders and copy them into your library, sorted by system. You can also drop files onto RecompStation."
+                                        Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: gameImporter.importing ? "Adding…" : "Add games…"
+                                            onClicked: window.openAddGames([])
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface : theme.accent
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: parent.activeFocus ? theme.textPrimary : theme.accentText
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                        }
+                                    }
                                     SettingsGroupLabel { text: "LOCATION" }
                                     SettingRow {
                                         title: "Library folder"
@@ -5582,7 +5825,7 @@ ApplicationWindow {
                                             focusPolicy: Qt.StrongFocus
                                             text: "Change folder"
                                             enabled: platformManager.libraryConfigured
-                                            onClicked: libraryFolderDialog.open()
+                                            onClicked: window.openLibraryFolderBrowser()
                                         background: Rectangle {
                                             radius: 9
                                             color: parent.activeFocus ? theme.elevatedSurface

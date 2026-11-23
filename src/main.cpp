@@ -21,6 +21,7 @@
 #include "core/LaunchBoxArtworkManager.h"
 #include "core/ScreenshotManager.h"
 #include "core/StorageUsage.h"
+#include "core/GameImporter.h"
 #include "core/LibraryMetadataMatcher.h"
 #include "database/DatabaseManager.h"
 #include "metadata/TheGamesDbClient.h"
@@ -256,6 +257,13 @@ int main(int argc, char *argv[])
         launchBoxArtworkManager.refreshLibraryArtwork();
     });
     StorageUsage storageUsage(platformManager.dataDirectory());
+    GameImporter gameImporter(&platformManager);
+    // Newly added games are registered (and matched) by a library scan.
+    QObject::connect(&gameImporter, &GameImporter::importFinished,
+                     &libraryScanner, [&libraryScanner](int imported, int, int) {
+        if (imported > 0)
+            libraryScanner.scanAllAsync();
+    });
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
@@ -284,6 +292,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("projectCatalog", &projectCatalog);
     engine.rootContext()->setContextProperty("interfaceScaleInfo", interfaceScaleInfo);
     engine.rootContext()->setContextProperty("storageUsage", &storageUsage);
+    engine.rootContext()->setContextProperty("gameImporter", &gameImporter);
     engine.rootContext()->setContextProperty("qtVersion", QString::fromLatin1(qVersion()));
     engine.rootContext()->setContextProperty("cpuArchitecture", QSysInfo::currentCpuArchitecture());
     engine.rootContext()->setContextProperty("startupSettingsSection", startupSettingsSection);
