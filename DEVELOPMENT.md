@@ -61,7 +61,9 @@ Chosen by the user from design mockups (List today; list + preview at Comfortabl
 - [x] All Platforms groups rows under platform headers (name and game count; the count is hidden while searching), using ListView sections. Headers are not focusable, so navigation is unchanged. Decision: headers kept for consistency with the sectioned Grid and Shelves (the user was undecided; easy to remove).
 - [x] Preview pane on the right follows the selection: screenshot header (blurred cover when none), cover at its true shape overlapping the header, platform and status chips, title, year and rating, a four-line overview, up to three screenshot thumbnails (or a hint to run Refresh All Metadata), and Play (installed only) and Details. The screenshot strip hides on short windows rather than overlapping the actions.
 - [x] A / Enter in List play an installed recompilation and otherwise open Game Details, matching Carousel; Y / `I` open Game Details. Clicking a row still opens Game Details; the Play button launches. The hint bar shows "Play" when A would launch.
-- [ ] User validation: build and all CTest suites pass; rows at each size; headers in All Platforms and none when filtered; preview with and without screenshots, metadata, and installed recompilations; Play; A / Y / Enter / `I`; mouse hover and click; narrow and short windows; Reduced Motion.
+- [x] User validation (2026-11-22): build and tests pass; rows, headers only in All Platforms, Compact hides the status line, preview content, A plays or opens Details, Y opens Details.
+- [x] Polish from that review: Play and Details move up under the year and rating beside the cover; screenshot thumbnails share the full pane width, limited by the height left below the overview (hidden below 120 px wide); the list may grow to 900 px on wide screens.
+- [ ] Confirm the polish at runtime.
 
 ## Hero carousel (2026-11-22)
 

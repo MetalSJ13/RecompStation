@@ -4907,7 +4907,7 @@ ApplicationWindow {
                             // Rows take the left part of the canvas; the preview pane
                             // (listPreview) uses the rest.
                             width: Math.min(parent.width,
-                                Math.max(420, Math.min(parent.width * 0.45, 780)))
+                                Math.max(420, Math.min(parent.width * 0.45, 900)))
                             // All Platforms groups rows under platform headers, like the
                             // sectioned Grid. Headers are not focusable.
                             section.property: window.selectedPlatform === "All Platforms" ? "platform" : ""
@@ -5285,6 +5285,43 @@ ApplicationWindow {
                                     color: theme.textSecondary
                                     font.pixelSize: 14 * theme.fontScale
                                 }
+                                Row {
+                                    id: listPreviewActions
+                                    topPadding: 6
+                                    spacing: 10
+                                    Button {
+                                        id: listPreviewPlayButton
+                                        visible: listPreview.installed
+                                        enabled: !listPreview.running
+                                        focusPolicy: Qt.NoFocus
+                                        text: listPreview.running ? "Running…" : "Play"
+                                        icon.source: "qrc:/icons/play.svg"
+                                        icon.width: 16
+                                        icon.height: 16
+                                        implicitHeight: 44
+                                        width: 130
+                                        background: Rectangle {
+                                            radius: height / 2
+                                            color: listPreviewPlayButton.enabled ? theme.accent : theme.controlBackground
+                                            border.width: 3
+                                            border.color: theme.textPrimary
+                                        }
+                                        onClicked: window.libraryPrimaryAction(gameGrid.currentIndex)
+                                    }
+                                    Button {
+                                        id: listPreviewDetailsButton
+                                        focusPolicy: Qt.NoFocus
+                                        text: "Details"
+                                        implicitHeight: 44
+                                        width: 120
+                                        background: Rectangle {
+                                            radius: height / 2
+                                            color: listPreviewDetailsButton.hovered ? theme.controlHover : theme.controlBackground
+                                            border.width: listPreview.installed ? 0 : 3
+                                            border.color: theme.textPrimary
+                                        }
+                                        onClicked: window.openLibraryGameDetails(listPreview.game)
+        
                             }
 
                             Label {
@@ -5315,8 +5352,12 @@ ApplicationWindow {
                                 anchors.top: listPreviewOverview.visible ? listPreviewOverview.bottom : listPreviewCover.bottom
                                 anchors.topMargin: 20
                                 spacing: 8
-                                // Hide rather than overlap the actions on short windows.
-                                visible: y + height <= listPreviewActions.y - 12
+                                // Three thumbnails share the pane width, limited by the
+                                // height left below the overview; hidden when too small.
+                                readonly property real thumbWidth: Math.floor(Math.min(
+                                    (width - 20) / 3,
+                                    Math.max(0, listPreview.height - y - 24 - 28 * theme.fontScale) * 16 / 9))
+                                visible: listPreview.hasScreenshot ? thumbWidth >= 120 : y + height <= listPreview.height - 20
                                 Label {
                                     text: "SCREENSHOTS"
                                     color: theme.textMuted
@@ -5330,7 +5371,7 @@ ApplicationWindow {
                                         model: listPreview.shots.slice(0, 3)
                                         delegate: Rectangle {
                                             required property string modelData
-                                            width: Math.min(180, (listPreviewShots.width - 20) / 3)
+                                            width: listPreviewShots.thumbWidth
                                             height: Math.round(width * 9 / 16)
                                             radius: theme.radiusSmall
                                             color: theme.surface
@@ -5353,46 +5394,7 @@ ApplicationWindow {
                                 }
                             }
 
-                            Row {
-                                id: listPreviewActions
-                                anchors.left: parent.left
-                                anchors.leftMargin: 28
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 24
-                                spacing: 10
-                                Button {
-                                    id: listPreviewPlayButton
-                                    visible: listPreview.installed
-                                    enabled: !listPreview.running
-                                    focusPolicy: Qt.NoFocus
-                                    text: listPreview.running ? "Running…" : "Play"
-                                    icon.source: "qrc:/icons/play.svg"
-                                    icon.width: 16
-                                    icon.height: 16
-                                    implicitHeight: 44
-                                    width: 130
-                                    background: Rectangle {
-                                        radius: height / 2
-                                        color: listPreviewPlayButton.enabled ? theme.accent : theme.controlBackground
-                                        border.width: 3
-                                        border.color: theme.textPrimary
-                                    }
-                                    onClicked: window.libraryPrimaryAction(gameGrid.currentIndex)
-                                }
-                                Button {
-                                    id: listPreviewDetailsButton
-                                    focusPolicy: Qt.NoFocus
-                                    text: "Details"
-                                    implicitHeight: 44
-                                    width: 120
-                                    background: Rectangle {
-                                        radius: height / 2
-                                        color: listPreviewDetailsButton.hovered ? theme.controlHover : theme.controlBackground
-                                        border.width: listPreview.installed ? 0 : 3
-                                        border.color: theme.textPrimary
-                                    }
-                                    onClicked: window.openLibraryGameDetails(listPreview.game)
-                                }
+                        }
                             }
                         }
 
