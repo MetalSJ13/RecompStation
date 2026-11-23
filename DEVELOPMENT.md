@@ -53,6 +53,16 @@ The responsive Library presentation work is being tracked as a focused five-phas
   - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
 - [x] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The Shelves view and spotlight panel (Library presentation redesign, step 4) and the hero carousel complete this phase; confirmed by the user on 2026-11-22.
 
+## List with preview pane (2026-11-22)
+
+Chosen by the user from design mockups (List today; list + preview at Comfortable with an installed GameCube game; Compact with an N64 game that is not installed and has no screenshots). Work is on `ui/list-preview`, branched from `ui/interface-redesign`.
+
+- [x] Rows take about 45% of the width (420–780 px). Thumbnails use the platform frame shape inside a fixed-width column (wide enough for 7:5) so titles align; rows show the metadata title, platform and release year, and a recompilation status line (hidden at Compact). Row size presets: 60 / 84 / 108 px thumbnails.
+- [x] All Platforms groups rows under platform headers (name and game count; the count is hidden while searching), using ListView sections. Headers are not focusable, so navigation is unchanged. Decision: headers kept for consistency with the sectioned Grid and Shelves (the user was undecided; easy to remove).
+- [x] Preview pane on the right follows the selection: screenshot header (blurred cover when none), cover at its true shape overlapping the header, platform and status chips, title, year and rating, a four-line overview, up to three screenshot thumbnails (or a hint to run Refresh All Metadata), and Play (installed only) and Details. The screenshot strip hides on short windows rather than overlapping the actions.
+- [x] A / Enter in List play an installed recompilation and otherwise open Game Details, matching Carousel; Y / `I` open Game Details. Clicking a row still opens Game Details; the Play button launches. The hint bar shows "Play" when A would launch.
+- [ ] User validation: build and all CTest suites pass; rows at each size; headers in All Platforms and none when filtered; preview with and without screenshots, metadata, and installed recompilations; Play; A / Y / Enter / `I`; mouse hover and click; narrow and short windows; Reduced Motion.
+
 ## Hero carousel (2026-11-22)
 
 The user lifted the Phase 4 Carousel freeze and chose a hero carousel after reviewing design mockups (Carousel today, hero with an installed GameCube game, hero with an N64 game). Work is on `ui/carousel-hero`, branched from `ui/interface-redesign`. This replaces the remaining Phase 4 Carousel review items.

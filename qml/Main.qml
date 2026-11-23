@@ -74,8 +74,9 @@ ApplicationWindow {
                 detailsButton = "N"
             }
             const libraryActive = currentPage === "Library" && !gameDetailsPopup.visible
-            const carouselPlays = libraryActive && settingsManager.libraryView === "carousel"
-                && window.libraryGameInstalled(consoleView.currentGame)
+            const carouselPlays = libraryActive
+                && (settingsManager.libraryView === "carousel" || settingsManager.libraryView === "list")
+                && window.libraryGameInstalled((gameGrid.model || [])[Math.max(0, gameGrid.currentIndex)])
             const items = [
                 { icon: "qrc:/icons/dpad.svg", key: "", label: "Navigate", color: "#B8C7D9", round: false },
                 { icon: "", key: selectButton, label: carouselPlays ? "Play" : "Select", color: selectColor, round: true },
@@ -99,8 +100,10 @@ ApplicationWindow {
         if (currentPage === "Library") {
             return [
                 { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
-                { icon: "", key: "Enter", label: settingsManager.libraryView === "carousel"
-                    && window.libraryGameInstalled(consoleView.currentGame) ? "Play" : "Select",
+                { icon: "", key: "Enter", label: (settingsManager.libraryView === "carousel"
+                    || settingsManager.libraryView === "list")
+                    && window.libraryGameInstalled((gameGrid.model || [])[Math.max(0, gameGrid.currentIndex)])
+                    ? "Play" : "Select",
                   color: "#A9B7CA", round: false },
                 { icon: "", key: "I", label: "Details", color: "#A9B7CA", round: false },
                 { icon: "", key: "Q / E", label: "Platform", color: "#A9B7CA", round: false },
@@ -583,9 +586,7 @@ ApplicationWindow {
                 return
             }
             if (settingsManager.libraryView === "list") {
-                const tile = gameList.itemAtIndex(index)
-                if (tile && tile.openDetails)
-                    tile.openDetails()
+                window.libraryPrimaryAction(index)
             } else if (settingsManager.libraryView === "carousel") {
                 window.libraryPrimaryAction(index)
             } else if (window.sectionedLibraryGrid) {
@@ -1303,7 +1304,8 @@ ApplicationWindow {
         return project !== null && window.installedLauncherProjectIds[project.id] === true
     }
 
-    // Carousel primary action (A / Enter / click on the selected card): play
+    // Carousel and List primary action (A / Enter, or clicking the selected
+    // Carousel cover): play
     // when the game's recompilation is installed, otherwise open Game Details.
     function libraryPrimaryAction(index) {
         const games = gameGrid.model || []
@@ -4901,10 +4903,43 @@ ApplicationWindow {
                             anchors.left: parent.left
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
-                            // List rows should use more of the available canvas
-                            // while retaining a readable maximum width.
+                            anchors.bottomMargin: gameGrid.hintBarClearance
+                            // Rows take the left part of the canvas; the preview pane
+                            // (listPreview) uses the rest.
                             width: Math.min(parent.width,
-                                Math.max(420, Math.min(parent.width * 0.68, 1200)))
+                                Math.max(420, Math.min(parent.width * 0.45, 780)))
+                            // All Platforms groups rows under platform headers, like the
+                            // sectioned Grid. Headers are not focusable.
+                            section.property: window.selectedPlatform === "All Platforms" ? "platform" : ""
+                            section.criteria: ViewSection.FullString
+                            section.delegate: Item {
+                                required property string section
+                                width: gameList.width - gameList.leftMargin - gameList.rightMargin
+                                height: Math.ceil(42 * theme.fontScale)
+                                Row {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 12
+                                    anchors.bottom: parent.bottom
+                                    anchors.bottomMargin: 8
+                                    spacing: 10
+                                    Label {
+                                        text: window.platformDisplayName(parent.parent.section)
+                                        color: theme.textPrimary
+                                        font.pixelSize: 17 * theme.fontScale
+                                        font.bold: true
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    Label {
+                                        visible: window.librarySearchText.trim().length === 0
+                                        readonly property int total:
+                                            window.libraryPlatformCounts[parent.parent.section] || 0
+                                        text: total + (total === 1 ? " game" : " games")
+                                        color: theme.textMuted
+                                        font.pixelSize: 12 * theme.fontScale
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                }
+                            }
                             visible: settingsManager.libraryView === "list" || opacity > 0
                             opacity: settingsManager.libraryView === "list" ? 1 : 0
                             Behavior on opacity {
@@ -4949,9 +4984,8 @@ ApplicationWindow {
                                 required property int id
                                 required property int index
                                 width: gameList.width - gameList.leftMargin - gameList.rightMargin
-                                readonly property int rowHeight:
-                                    settingsManager.libraryListDensity === "compact" ? 104
-                                    : settingsManager.libraryListDensity === "spacious" ? 144 : 128
+                                readonly property int rowHeight: Math.round(thumbHeight
+                                    + (settingsManager.libraryListDensity === "compact" ? 20 : 28))
                                 height: rowHeight
                                 // Use a shorter eased fade than Grid View because List
                                 // rows are much shorter, while keeping the same minimum
@@ -4972,7 +5006,7 @@ ApplicationWindow {
                                 opacity: scrollEdgeOpacity
                                 focus: ListView.isCurrentItem
                                 z: highlighted ? 2 : 1
-                                scale: highlighted ? 1.035 : 1.0
+                                scale: ListView.isCurrentItem ? 1.02 : 1.0
                                 transformOrigin: Item.Center
                                 Behavior on scale {
                                     enabled: !settingsManager.reducedMotion
@@ -4990,93 +5024,80 @@ ApplicationWindow {
                                         metadataRating: listTile.metadataRating }
                                     gameDetailsPopup.open()
                                 }
-                                Keys.onReturnPressed: openDetails()
-                                Keys.onEnterPressed: openDetails()
+                                Keys.onReturnPressed: window.libraryPrimaryAction(listTile.index)
+                                Keys.onEnterPressed: window.libraryPrimaryAction(listTile.index)
+                                readonly property real thumbHeight:
+                                    settingsManager.libraryListDensity === "compact" ? 60
+                                    : settingsManager.libraryListDensity === "spacious" ? 108 : 84
+                                // Wide enough for a 7:5 N64 cover, so every title starts
+                                // at the same x whatever the cover shape.
+                                readonly property real thumbColumnWidth: Math.round(thumbHeight * 1.4)
+                                readonly property var project: window.libraryGameProject({
+                                    title: listTile.title, metadataTitle: listTile.metadataTitle,
+                                    platform: listTile.platform })
+                                readonly property bool installed: project !== null
+                                    && window.installedLauncherProjectIds[project.id] === true
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: theme.radiusCard
-                                    clip: true
-                                    gradient: Gradient {
-                                        orientation: Gradient.Horizontal
-                                        GradientStop {
-                                            position: 0.0
-                                            color: listTile.highlighted
-                                                ? Qt.rgba(theme.elevatedSurface.r, theme.elevatedSurface.g,
-                                                          theme.elevatedSurface.b, 0.94)
-                                                : Qt.rgba(theme.surface.r, theme.surface.g,
-                                                          theme.surface.b, 0.64)
-                                        }
-                                        GradientStop {
-                                            position: 0.58
-                                            color: listTile.highlighted
-                                                ? Qt.rgba(theme.elevatedSurface.r, theme.elevatedSurface.g,
-                                                          theme.elevatedSurface.b, 0.68)
-                                                : Qt.rgba(theme.surface.r, theme.surface.g,
-                                                          theme.surface.b, 0.34)
-                                        }
-                                        GradientStop {
-                                            position: 1.0
-                                            color: listTile.highlighted
-                                                ? Qt.rgba(theme.elevatedSurface.r, theme.elevatedSurface.g,
-                                                          theme.elevatedSurface.b, 0.20)
-                                                : Qt.rgba(theme.surface.r, theme.surface.g,
-                                                          theme.surface.b, 0.035)
-                                        }
-                                    }
-                                    border.width: listTile.highlighted ? 2 : 1
-                                    border.color: listTile.highlighted ? theme.accent
-                                        : Qt.rgba(theme.divider.r, theme.divider.g,
-                                                  theme.divider.b, 0.28)
-                                    Behavior on border.color {
+                                    color: listTile.highlighted
+                                        ? theme.elevatedSurface
+                                        : Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.42)
+                                    border.width: listTile.ListView.isCurrentItem ? 2 : 0
+                                    border.color: theme.accent
+                                    Behavior on color {
                                         enabled: !settingsManager.reducedMotion
                                         ColorAnimation { duration: 170; easing.type: Easing.OutCubic }
                                     }
-                                    Behavior on border.width {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
-                                    }
                                 }
-                                Item {
-                                    id: listArtworkFrame
+                                GameArtwork {
+                                    id: listThumbnail
                                     anchors.left: parent.left
                                     anchors.leftMargin: 12
                                     anchors.verticalCenter: parent.verticalCenter
-                                    // Comfortable density gives portrait covers a little
-                                    // more vertical presence while preserving the row height.
-                                    width: settingsManager.libraryListDensity === "compact" ? 68
-                                        : settingsManager.libraryListDensity === "spacious" ? 94 : 80
-                                    height: settingsManager.libraryListDensity === "compact" ? 82
-                                        : settingsManager.libraryListDensity === "spacious" ? 116 : 112
-                                    Image {
-                                        id: listCoverImage
-                                        anchors.fill: parent
-                                        source: listTile.artworkPath
-                                        fillMode: Image.PreserveAspectFit
-                                        asynchronous: true
-                                        cache: true
-                                        visible: status === Image.Ready
-                                    }
-                                    Image {
-                                        anchors.fill: parent
-                                        source: "qrc:/icons/game-artwork-unavailable.png"
-                                        fillMode: Image.PreserveAspectFit
-                                        asynchronous: true
-                                        cache: true
-                                        visible: listCoverImage.status !== Image.Ready
-                                    }
+                                    width: listTile.thumbColumnWidth
+                                    height: listTile.thumbHeight
+                                    source: listTile.artworkPath
+                                    platform: listTile.platform
+                                    themeTokens: theme
+                                    reducedMotion: settingsManager.reducedMotion
+                                    frameMode: "platform"
+                                    frameInset: 0
+                                    showViewportBackground: false
                                 }
-                                ColumnLayout {
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: settingsManager.libraryListDensity === "compact" ? 90
-                                        : settingsManager.libraryListDensity === "spacious" ? 122 : 108
+                                Column {
+                                    anchors.left: listThumbnail.right
+                                    anchors.leftMargin: 16
                                     anchors.right: parent.right
-                                    anchors.rightMargin: 18
+                                    anchors.rightMargin: 16
                                     anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 5
-                                    Label { Layout.fillWidth: true; text: listTile.title; color: theme.textPrimary; font.pixelSize: (settingsManager.libraryListDensity === "compact" ? 14 : settingsManager.libraryListDensity === "spacious" ? 17 : 16) * theme.fontScale; font.bold: true; elide: Text.ElideRight }
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        Label { text: listTile.platform; color: theme.textSecondary; font.pixelSize: 11 * theme.fontScale }
+                                    spacing: 4
+                                    Label {
+                                        width: parent.width
+                                        text: listTile.metadataTitle.length > 0 ? listTile.metadataTitle : listTile.title
+                                        color: theme.textPrimary
+                                        font.pixelSize: (settingsManager.libraryListDensity === "compact" ? 15 : 16) * theme.fontScale
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Label {
+                                        width: parent.width
+                                        text: window.platformDisplayName(listTile.platform)
+                                            + (listTile.metadataReleaseDate.length >= 4
+                                                ? "  ·  " + listTile.metadataReleaseDate.substring(0, 4) : "")
+                                        color: theme.textMuted
+                                        font.pixelSize: 12 * theme.fontScale
+                                        elide: Text.ElideRight
+                                    }
+                                    Label {
+                                        width: parent.width
+                                        visible: listTile.project !== null
+                                            && settingsManager.libraryListDensity !== "compact"
+                                        text: listTile.installed ? "Recomp installed" : "Recompilation available"
+                                        color: listTile.installed ? theme.success : theme.accentHover
+                                        font.pixelSize: 12 * theme.fontScale
+                                        font.bold: true
+                                        elide: Text.ElideRight
                                     }
                                 }
                                 MouseArea {
@@ -5095,6 +5116,283 @@ ApplicationWindow {
                             }
                             ScrollBar.vertical: ScrollBar {
                                 policy: ScrollBar.AlwaysOff
+                            }
+                        }
+
+                        // List preview pane: follows the selected game. Screenshot
+                        // header (blurred cover when none), cover at its true shape,
+                        // chips, title, year and rating, overview, up to three
+                        // screenshot thumbnails, then Play and Details.
+                        Rectangle {
+                            id: listPreview
+                            anchors.left: gameList.right
+                            anchors.leftMargin: 24
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.topMargin: 6
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: gameGrid.hintBarClearance
+                            readonly property bool active: settingsManager.libraryView === "list"
+                                && gameGrid.count > 0 && width > 360
+                            visible: active || opacity > 0
+                            opacity: active ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                            }
+                            radius: theme.radiusLarge
+                            color: theme.sidebarBackground
+                            border.width: 1
+                            border.color: Qt.rgba(theme.divider.r, theme.divider.g, theme.divider.b, 0.6)
+                            clip: true
+
+                            readonly property var game: {
+                                const games = gameGrid.model || []
+                                return games.length > 0
+                                    ? games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))] : null
+                            }
+                            readonly property var shots: game && game.screenshots ? game.screenshots : []
+                            readonly property bool hasScreenshot: shots.length > 0
+                            readonly property var project: window.libraryGameProject(game)
+                            readonly property bool installed: window.libraryGameInstalled(game)
+                            readonly property bool running: project !== null
+                                && window.runningLaunchers[project.id] === true
+                            readonly property real coverHeight: Math.round(Math.max(140, Math.min(220, height * 0.3)))
+
+                            Item {
+                                id: listPreviewHeader
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                height: Math.round(parent.height * 0.42)
+                                clip: true
+                                Image {
+                                    id: listPreviewHeaderImage
+                                    anchors.fill: parent
+                                    source: !listPreview.game ? ""
+                                        : listPreview.hasScreenshot ? listPreview.shots[0] : listPreview.game.artworkPath
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    cache: true
+                                    visible: false
+                                }
+                                MultiEffect {
+                                    anchors.fill: parent
+                                    source: listPreviewHeaderImage
+                                    blurEnabled: !listPreview.hasScreenshot
+                                    blur: 1.0
+                                    blurMax: 48
+                                    autoPaddingEnabled: false
+                                    opacity: listPreviewHeaderImage.status === Image.Ready
+                                        ? (listPreview.hasScreenshot ? 1 : 0.5) : 0
+                                    Behavior on opacity {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 220 }
+                                    }
+                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    gradient: Gradient {
+                                        GradientStop { position: 0.35; color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g, theme.sidebarBackground.b, 0) }
+                                        GradientStop { position: 0.78; color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g, theme.sidebarBackground.b, 0.85) }
+                                        GradientStop { position: 1.0; color: theme.sidebarBackground }
+                                    }
+                                }
+                            }
+
+                            GameArtwork {
+                                id: listPreviewCover
+                                x: 28
+                                y: listPreviewHeader.height - Math.round(listPreview.coverHeight * 0.55)
+                                height: listPreview.coverHeight
+                                width: Math.round(height * LibraryGridLayout.frameRatioForPlatform(
+                                    listPreview.game ? listPreview.game.platform : ""))
+                                source: listPreview.game ? listPreview.game.artworkPath : ""
+                                platform: listPreview.game ? listPreview.game.platform : ""
+                                themeTokens: theme
+                                reducedMotion: settingsManager.reducedMotion
+                                frameMode: "platform"
+                                frameInset: 0
+                                showViewportBackground: false
+                            }
+
+                            Column {
+                                anchors.left: listPreviewCover.right
+                                anchors.leftMargin: 24
+                                anchors.right: parent.right
+                                anchors.rightMargin: 28
+                                anchors.bottom: listPreviewCover.bottom
+                                spacing: 8
+                                Row {
+                                    spacing: 8
+                                    Rectangle {
+                                        height: 24
+                                        width: listPreviewPlatformLabel.implicitWidth + 20
+                                        radius: 12
+                                        color: Qt.rgba(theme.textPrimary.r, theme.textPrimary.g, theme.textPrimary.b, 0.14)
+                                        Label {
+                                            id: listPreviewPlatformLabel
+                                            anchors.centerIn: parent
+                                            text: listPreview.game
+                                                ? window.platformDisplayName(listPreview.game.platform).toUpperCase() : ""
+                                            color: theme.textPrimary
+                                            font.pixelSize: 11 * theme.fontScale
+                                            font.bold: true
+                                            font.letterSpacing: 0.6
+                                        }
+                                    }
+                                    Rectangle {
+                                        visible: listPreview.project !== null
+                                        height: 24
+                                        width: Math.min(listPreviewStatusLabel.implicitWidth + 20,
+                                            listPreview.width - listPreviewCover.width - 200)
+                                        radius: 12
+                                        color: listPreview.installed
+                                            ? Qt.rgba(theme.success.r, theme.success.g, theme.success.b, 0.16)
+                                            : Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.16)
+                                        Label {
+                                            id: listPreviewStatusLabel
+                                            anchors.centerIn: parent
+                                            width: Math.min(implicitWidth, parent.width - 20)
+                                            text: !listPreview.project ? ""
+                                                : listPreview.project.name + (listPreview.installed ? " · Installed" : " · Available")
+                                            color: listPreview.installed ? theme.success : theme.accentHover
+                                            font.pixelSize: 11 * theme.fontScale
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                }
+                                Label {
+                                    width: parent.width
+                                    text: listPreview.game
+                                        ? (listPreview.game.metadataTitle || listPreview.game.title) : ""
+                                    color: theme.textPrimary
+                                    font.pixelSize: 28 * theme.fontScale
+                                    font.bold: true
+                                    wrapMode: Text.WordWrap
+                                    maximumLineCount: 2
+                                    elide: Text.ElideRight
+                                }
+                                Label {
+                                    width: parent.width
+                                    readonly property string year: listPreview.game && listPreview.game.metadataReleaseDate
+                                        ? String(listPreview.game.metadataReleaseDate).substring(0, 4) : ""
+                                    readonly property string rating: listPreview.game
+                                        ? window.formatGameRating(listPreview.game.metadataRating) : ""
+                                    visible: text.length > 0
+                                    text: [year, rating].filter(part => part.length > 0).join("  ·  ")
+                                    color: theme.textSecondary
+                                    font.pixelSize: 14 * theme.fontScale
+                                }
+                            }
+
+                            Label {
+                                id: listPreviewOverview
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.leftMargin: 28
+                                anchors.rightMargin: 28
+                                anchors.top: listPreviewCover.bottom
+                                anchors.topMargin: 20
+                                text: listPreview.game && listPreview.game.metadataOverview
+                                    ? listPreview.game.metadataOverview : ""
+                                visible: text.length > 0
+                                color: theme.textSecondary
+                                font.pixelSize: 14 * theme.fontScale
+                                lineHeight: 1.2
+                                wrapMode: Text.WordWrap
+                                maximumLineCount: 4
+                                elide: Text.ElideRight
+                            }
+
+                            Column {
+                                id: listPreviewShots
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.leftMargin: 28
+                                anchors.rightMargin: 28
+                                anchors.top: listPreviewOverview.visible ? listPreviewOverview.bottom : listPreviewCover.bottom
+                                anchors.topMargin: 20
+                                spacing: 8
+                                // Hide rather than overlap the actions on short windows.
+                                visible: y + height <= listPreviewActions.y - 12
+                                Label {
+                                    text: "SCREENSHOTS"
+                                    color: theme.textMuted
+                                    font.pixelSize: 11 * theme.fontScale
+                                    font.bold: true
+                                    font.letterSpacing: 0.8
+                                }
+                                Row {
+                                    spacing: 10
+                                    Repeater {
+                                        model: listPreview.shots.slice(0, 3)
+                                        delegate: Rectangle {
+                                            required property string modelData
+                                            width: Math.min(180, (listPreviewShots.width - 20) / 3)
+                                            height: Math.round(width * 9 / 16)
+                                            radius: theme.radiusSmall
+                                            color: theme.surface
+                                            clip: true
+                                            Image {
+                                                anchors.fill: parent
+                                                source: modelData
+                                                fillMode: Image.PreserveAspectCrop
+                                                asynchronous: true
+                                                cache: true
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        visible: !listPreview.hasScreenshot
+                                        text: "No screenshots yet. Run Refresh All Metadata in Settings to fetch them."
+                                        color: theme.textMuted
+                                        font.pixelSize: 13 * theme.fontScale
+                                    }
+                                }
+                            }
+
+                            Row {
+                                id: listPreviewActions
+                                anchors.left: parent.left
+                                anchors.leftMargin: 28
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 24
+                                spacing: 10
+                                Button {
+                                    id: listPreviewPlayButton
+                                    visible: listPreview.installed
+                                    enabled: !listPreview.running
+                                    focusPolicy: Qt.NoFocus
+                                    text: listPreview.running ? "Running…" : "Play"
+                                    icon.source: "qrc:/icons/play.svg"
+                                    icon.width: 16
+                                    icon.height: 16
+                                    implicitHeight: 44
+                                    width: 130
+                                    background: Rectangle {
+                                        radius: height / 2
+                                        color: listPreviewPlayButton.enabled ? theme.accent : theme.controlBackground
+                                        border.width: 3
+                                        border.color: theme.textPrimary
+                                    }
+                                    onClicked: window.libraryPrimaryAction(gameGrid.currentIndex)
+                                }
+                                Button {
+                                    id: listPreviewDetailsButton
+                                    focusPolicy: Qt.NoFocus
+                                    text: "Details"
+                                    implicitHeight: 44
+                                    width: 120
+                                    background: Rectangle {
+                                        radius: height / 2
+                                        color: listPreviewDetailsButton.hovered ? theme.controlHover : theme.controlBackground
+                                        border.width: listPreview.installed ? 0 : 3
+                                        border.color: theme.textPrimary
+                                    }
+                                    onClicked: window.openLibraryGameDetails(listPreview.game)
+                                }
                             }
                         }
 
