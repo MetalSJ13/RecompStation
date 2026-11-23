@@ -51,6 +51,12 @@ private slots:
     void rejectsUnknownLibraryView();
     void persistsLibraryPresentationPreferences();
     void rejectsUnsupportedLibraryPresentationPreferences();
+    void migratesRetiredEmberThemeToElectricBlue();
+    void acceptsAuroraAndCarbonThemes();
+    void defaultsToAutomaticInterfaceScale();
+    void persistsInterfaceScale();
+    void rejectsUnsupportedInterfaceScale();
+    void autoInterfaceScaleFollowsScreenHeight();
 };
 
 void SettingsManagerTest::init()
@@ -464,11 +470,11 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
 
     {
         SettingsManager manager(settingsPath);
-        manager.setThemeName(QStringLiteral("ember"));
+        manager.setThemeName(QStringLiteral("carbon"));
         manager.setScanOnStartup(false);
         manager.setPreferredPresentationSize(QStringLiteral("3440x1440"));
         manager.setDisplayMode(QStringLiteral("maximized"));
-        QCOMPARE(manager.themeName(), QStringLiteral("ember"));
+        QCOMPARE(manager.themeName(), QStringLiteral("carbon"));
         QVERIFY(!manager.scanOnStartup());
         QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("3440x1440"));
         QCOMPARE(manager.displayMode(), QStringLiteral("maximized"));
@@ -476,7 +482,7 @@ void SettingsManagerTest::persistsPreferencesInExplicitConfigFile()
     }
 
     SettingsManager reloaded(settingsPath);
-    QCOMPARE(reloaded.themeName(), QStringLiteral("ember"));
+    QCOMPARE(reloaded.themeName(), QStringLiteral("carbon"));
     QVERIFY(!reloaded.scanOnStartup());
     QCOMPARE(reloaded.preferredPresentationSize(), QStringLiteral("3440x1440"));
     QCOMPARE(reloaded.displayMode(), QStringLiteral("maximized"));
@@ -763,6 +769,103 @@ void SettingsManagerTest::rejectsUnsupportedPresentationSize()
 
     QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("system"));
     QCOMPARE(changed.count(), 0);
+}
+
+void SettingsManagerTest::migratesRetiredEmberThemeToElectricBlue()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+    {
+        QSettings settings(settingsPath, QSettings::IniFormat);
+        settings.setValue(QStringLiteral("appearance/theme"), QStringLiteral("ember"));
+    }
+
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.themeName(), QStringLiteral("electric-blue"));
+    QSettings stored(settingsPath, QSettings::IniFormat);
+    QCOMPARE(stored.value(QStringLiteral("appearance/theme")).toString(),
+             QStringLiteral("electric-blue"));
+
+    manager.setThemeName(QStringLiteral("ember"));
+    QCOMPARE(manager.themeName(), QStringLiteral("electric-blue"));
+}
+
+void SettingsManagerTest::acceptsAuroraAndCarbonThemes()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    manager.setThemeName(QStringLiteral("aurora"));
+    QCOMPARE(manager.themeName(), QStringLiteral("aurora"));
+    manager.setThemeName(QStringLiteral("carbon"));
+    QCOMPARE(SettingsManager(settingsPath).themeName(), QStringLiteral("carbon"));
+}
+
+void SettingsManagerTest::defaultsToAutomaticInterfaceScale()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.interfaceScale(), QStringLiteral("auto"));
+    QCOMPARE(SettingsManager::storedInterfaceScale(settingsPath), QStringLiteral("auto"));
+    QCOMPARE(manager.interfaceScaleOptions().first().toString(), QStringLiteral("auto"));
+}
+
+void SettingsManagerTest::persistsInterfaceScale()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QSignalSpy changed(&manager, &SettingsManager::interfaceScaleChanged);
+    manager.setInterfaceScale(QStringLiteral("150"));
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(SettingsManager(settingsPath).interfaceScale(), QStringLiteral("150"));
+    QCOMPARE(SettingsManager::storedInterfaceScale(settingsPath), QStringLiteral("150"));
+}
+
+void SettingsManagerTest::rejectsUnsupportedInterfaceScale()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QSignalSpy changed(&manager, &SettingsManager::interfaceScaleChanged);
+    manager.setInterfaceScale(QStringLiteral("140"));
+    manager.setInterfaceScale(QStringLiteral("huge"));
+    QCOMPARE(manager.interfaceScale(), QStringLiteral("auto"));
+    QCOMPARE(changed.count(), 0);
+
+    {
+        QSettings settings(settingsPath, QSettings::IniFormat);
+        settings.setValue(QStringLiteral("display/interfaceScale"), QStringLiteral("999"));
+    }
+    QCOMPARE(SettingsManager::storedInterfaceScale(settingsPath), QStringLiteral("auto"));
+}
+
+void SettingsManagerTest::autoInterfaceScaleFollowsScreenHeight()
+{
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(0), 100);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(720), 85);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(800), 85);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(1080), 100);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(1200), 100);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(1440), 125);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(1800), 150);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(2160), 175);
+    QCOMPARE(SettingsManager::autoInterfaceScalePercent(2880), 200);
 }
 
 QTEST_GUILESS_MAIN(SettingsManagerTest)

@@ -2,6 +2,12 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDateTime>
+#include <algorithm>
+#include <QDir>
+#include <QProcess>
+#include <QScreen>
+#include <QSettings>
+#include <QStandardPaths>
 
 #include "core/Logging.h"
 #include "core/ControllerManager.h"
@@ -21,9 +27,71 @@
 #include "github/GitHubManager.h"
 #include "projects/ProjectCatalog.h"
 
+namespace {
+// Interface scale is applied with QT_SCALE_FACTOR, which Qt reads while
+// QGuiApplication is constructed. Everything here runs before that.
+struct InterfaceScaleStartup {
+    bool external = false;     // QT_SCALE_FACTOR came from the user's environment
+    bool relaunched = false;   // this process is the automatic re-launch
+    QString setting;           // "auto" or a percentage
+    int cachedAutoPercent = 0; // auto value measured on the previous run
+    int appliedPercent = 100;
+    QString settingsFilePath;
+};
+
+InterfaceScaleStartup prepareInterfaceScale()
+{
+    InterfaceScaleStartup scale;
+    scale.relaunched = qEnvironmentVariableIsSet("RECOMPSTATION_SCALE_RELAUNCHED");
+    qunsetenv("RECOMPSTATION_SCALE_RELAUNCHED");
+    scale.external = qEnvironmentVariableIsSet("QT_SCALE_FACTOR");
+
+    // Same location PlatformManager uses: <AppData>/config/settings.ini.
+    QCoreApplication::setOrganizationName(QStringLiteral("RecompStation"));
+    QCoreApplication::setApplicationName(QStringLiteral("RecompStation"));
+    scale.settingsFilePath = QDir(QStandardPaths::writableLocation(
+        QStandardPaths::AppDataLocation)).filePath(QStringLiteral("config/settings.ini"));
+    scale.setting = SettingsManager::storedInterfaceScale(scale.settingsFilePath);
+    scale.cachedAutoPercent = QSettings(scale.settingsFilePath, QSettings::IniFormat)
+        .value(QStringLiteral("display/autoScalePercent"), 0).toInt();
+
+    if (scale.external)
+        return scale;
+    scale.appliedPercent = scale.setting == QStringLiteral("auto")
+        ? (scale.cachedAutoPercent > 0 ? scale.cachedAutoPercent : 100)
+        : scale.setting.toInt();
+    if (scale.appliedPercent != 100)
+        qputenv("QT_SCALE_FACTOR", QByteArray::number(scale.appliedPercent / 100.0));
+    return scale;
+}
+
+void relaunchApplication(const QString &settingsSection, bool automaticScaleRelaunch)
+{
+    QStringList arguments = QCoreApplication::arguments().mid(1);
+    arguments.erase(std::remove_if(arguments.begin(), arguments.end(),
+        [](const QString &argument) {
+            return argument.startsWith(QStringLiteral("--settings-section="));
+        }), arguments.end());
+    if (!settingsSection.isEmpty())
+        arguments.append(QStringLiteral("--settings-section=") + settingsSection);
+    if (automaticScaleRelaunch)
+        qputenv("RECOMPSTATION_SCALE_RELAUNCHED", "1");
+    const bool started = QProcess::startDetached(
+        QCoreApplication::applicationFilePath(), arguments);
+    qunsetenv("RECOMPSTATION_SCALE_RELAUNCHED");
+    if (!started)
+        qWarning() << "Could not restart RecompStation.";
+}
+}
+
 int main(int argc, char *argv[])
 {
+    InterfaceScaleStartup interfaceScale = prepareInterfaceScale();
     QGuiApplication app(argc, argv);
+    // Qt has read the factor now. Remove it so launchers and games started
+    // from RecompStation are not scaled as well.
+    if (!interfaceScale.external)
+        qunsetenv("QT_SCALE_FACTOR");
     // Keep the launcher terminal attached to the GUI process and make the
     // expected desktop-window close behavior explicit.
     QGuiApplication::setQuitOnLastWindowClosed(true);
@@ -54,6 +122,61 @@ int main(int argc, char *argv[])
     qCInfo(lcApplication) << "Application data directory:" << platformManager.dataDirectory();
 
     SettingsManager settingsManager(platformManager.settingsFilePath());
+
+    // Measure the screen in logical pixels (after desktop scaling, before
+    // ours) and work out what Auto should be.
+    QVariantMap interfaceScaleInfo;
+    {
+        QScreen *screen = QGuiApplication::primaryScreen();
+        const qreal ours = interfaceScale.external ? 1.0 : interfaceScale.appliedPercent / 100.0;
+        const QSize logical = screen
+            ? QSize(qRound(screen->geometry().width() * ours),
+                    qRound(screen->geometry().height() * ours))
+            : QSize();
+        const int autoPercent = SettingsManager::autoInterfaceScalePercent(logical.height());
+        interfaceScaleInfo.insert(QStringLiteral("applied"), interfaceScale.appliedPercent);
+        interfaceScaleInfo.insert(QStringLiteral("auto"), autoPercent);
+        interfaceScaleInfo.insert(QStringLiteral("external"), interfaceScale.external);
+        interfaceScaleInfo.insert(QStringLiteral("environmentValue"),
+                                  interfaceScale.external
+                                      ? qEnvironmentVariable("QT_SCALE_FACTOR") : QString());
+        interfaceScaleInfo.insert(QStringLiteral("screenName"), screen ? screen->name() : QString());
+        interfaceScaleInfo.insert(QStringLiteral("logicalWidth"), logical.width());
+        interfaceScaleInfo.insert(QStringLiteral("logicalHeight"), logical.height());
+        interfaceScaleInfo.insert(QStringLiteral("devicePixelRatio"),
+                                  screen ? screen->devicePixelRatio() / ours : 1.0);
+        qCInfo(lcApplication) << "Interface scale:" << interfaceScale.setting
+                              << "applied" << interfaceScale.appliedPercent << "%"
+                              << "auto" << autoPercent << "%"
+                              << "screen" << logical << "external" << interfaceScale.external;
+
+        if (!interfaceScale.external && autoPercent != interfaceScale.cachedAutoPercent) {
+            QSettings settings(platformManager.settingsFilePath(), QSettings::IniFormat);
+            settings.setValue(QStringLiteral("display/autoScalePercent"), autoPercent);
+            settings.sync();
+        }
+        // First run, or the screen changed since the last run: no window has
+        // been shown yet, so restart straight away with the right factor.
+        if (!interfaceScale.external && !interfaceScale.relaunched
+                && settingsManager.interfaceScale() == QStringLiteral("auto")
+                && autoPercent != interfaceScale.appliedPercent) {
+            qCInfo(lcApplication) << "Restarting to apply automatic interface scale"
+                                  << autoPercent << "%";
+            relaunchApplication(QString(), true);
+            return 0;
+        }
+    }
+    QString startupSettingsSection;
+    for (const QString &argument : app.arguments()) {
+        if (argument.startsWith(QStringLiteral("--settings-section=")))
+            startupSettingsSection = argument.section(QLatin1Char('='), 1);
+    }
+    QObject::connect(&settingsManager, &SettingsManager::applicationRestartRequested,
+                     &app, [&app](const QString &section) {
+        qCInfo(lcApplication) << "Restart requested from Settings:" << section;
+        relaunchApplication(section, false);
+        app.quit();
+    });
     DatabaseManager databaseManager;
     const QString databasePath =
         platformManager.dataDirectory() + "/database/library.sqlite";
@@ -134,6 +257,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("gameLaunchManager", &gameLaunchManager);
     engine.rootContext()->setContextProperty("controllerManager", &controllerManager);
     engine.rootContext()->setContextProperty("projectCatalog", &projectCatalog);
+    engine.rootContext()->setContextProperty("interfaceScaleInfo", interfaceScaleInfo);
+    engine.rootContext()->setContextProperty("startupSettingsSection", startupSettingsSection);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, []() {

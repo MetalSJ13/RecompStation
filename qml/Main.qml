@@ -83,7 +83,7 @@ ApplicationWindow {
                 { icon: "", key: backButton, label: "Back", color: backColor, round: true },
                 { icon: "", key: switchButtons,
                   label: gameDetailsPopup.visible ? "Switch game"
-                      : currentPage === "Library" ? "Platform" : "Library",
+                      : currentPage === "Library" ? "Platform" : "Section",
                   color: "#A9B7CA", round: false }
             ]
             if (libraryActive)
@@ -112,13 +112,16 @@ ApplicationWindow {
                 { icon: "", key: "Ctrl+Q", label: "Quit", color: "#A9B7CA", round: false }
             ]
         }
-        return [
+        const keyboardItems = [
             { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
             { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
             { icon: "", key: "Esc", label: "Back", color: "#A9B7CA", round: false },
             { icon: "", key: "F11", label: "Fullscreen", color: "#A9B7CA", round: false },
             { icon: "", key: "Ctrl+Q", label: "Quit", color: "#A9B7CA", round: false }
         ]
+        if (currentPage === "Settings" && !gameDetailsPopup.visible)
+            keyboardItems.splice(3, 0, { icon: "", key: "Q / E", label: "Section", color: "#A9B7CA", round: false })
+        return keyboardItems
     }
 
     function collectFocusableItems(item, output, visited) {
@@ -284,6 +287,16 @@ ApplicationWindow {
         return window.visible && currentPage === "Library"
             && !systemMenuVisible && !gameDetailsPopup.visible
             && !uninstallDialog.visible && !librarySetupDialog.visible
+            && window.keyboardDirectionalNavigationAllowed()
+    }
+
+    // Q/E switch Settings sections, except while typing in a text field.
+    function settingsKeyboardShortcutsAllowed() {
+        const focused = window.activeFocusItem
+        const typing = focused && (focused instanceof TextInput || focused instanceof TextEdit)
+        return window.visible && currentPage === "Settings"
+            && !systemMenuVisible && !typing
+            && !controllerManager.mappingCaptureActive
             && window.keyboardDirectionalNavigationAllowed()
     }
 
@@ -512,7 +525,7 @@ ApplicationWindow {
             gameGrid.positionViewAtIndex(next, GridView.Contain)
             gameGrid.forceActiveFocus()
         } else if (currentPage === "Settings") {
-            const sections = ["Appearance", "Display", "Library", "Metadata", "Controller", "Application"]
+            const sections = window.settingsSections
             const focused = window.activeFocusItem
             const inNavigation = window.isDescendantOf(focused, settingsNavigationPanel)
             const inContent = window.isDescendantOf(focused, settingsContentCard)
@@ -539,6 +552,14 @@ ApplicationWindow {
             }
 
             if (inContent) {
+                // Left/right change the value of a focused ◀ value ▶ row. At
+                // the first value, left falls through to the category rail.
+                const stepper = window.focusedValueStepper(focused)
+                if (stepper && (direction === "right"
+                        || (direction === "left" && stepper.canStepBack))) {
+                    stepper.stepValue(direction === "left" ? -1 : 1)
+                    return
+                }
                 if (direction === "left") {
                     // Keep left/right movement within the custom-background
                     // action row before allowing left to return to the category rail.
@@ -633,6 +654,11 @@ ApplicationWindow {
                     tile.openDetails()
             }
         } else if (currentPage === "Settings") {
+            const stepper = window.focusedValueStepper(window.activeFocusItem)
+            if (stepper) {
+                stepper.stepValue(1)
+                return
+            }
             const focused = window.focusedActionItem(window.activeFocusItem)
             if (focused && focused.popup) {
                 if (focused.popup.visible) {
@@ -646,8 +672,6 @@ ApplicationWindow {
                         }
                         settingsManager.setDisplayMode(focused.currentValue)
                         window.applyDisplayMode(focused.currentValue)
-                    } else if (focused === fontSizeSelector) {
-                        settingsManager.fontSize = focused.currentValue
                     }
                 } else {
                     focused.popup.open()
@@ -706,7 +730,7 @@ ApplicationWindow {
         if (controllerManager.mappingCaptureActive && currentPage !== "Settings")
             controllerManager.cancelMappingCapture()
         if (currentPage === "Settings")
-            Qt.callLater(function() { appearanceNavigationButton.forceActiveFocus() })
+            Qt.callLater(function() { window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus() })
     }
 
     onWidthChanged: console.info("[Settings Geometry] window width:", width)
@@ -799,6 +823,24 @@ ApplicationWindow {
     // Library keyboard shortcuts, matching the controller: Q/E cycle platform
     // filters (LB/RB), "/" or Ctrl+F opens search. They are
     // disabled while a text field or open popup owns the keyboard.
+    Shortcut {
+        sequence: "Q"
+        context: Qt.ApplicationShortcut
+        enabled: window.settingsKeyboardShortcutsAllowed()
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.cycleSettingsSection(-1)
+        }
+    }
+    Shortcut {
+        sequence: "E"
+        context: Qt.ApplicationShortcut
+        enabled: window.settingsKeyboardShortcutsAllowed()
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.cycleSettingsSection(1)
+        }
+    }
     Shortcut {
         sequence: "Q"
         context: Qt.ApplicationShortcut
@@ -903,6 +945,89 @@ ApplicationWindow {
     property string pendingNavigationPage: ""
     property bool navigationTransitionRunning: false
     property string pendingThemeName: settingsManager.themeName
+    // After a restart from Settings (for example to apply a new interface
+    // scale), reopen Settings at the section the user was on.
+    Component.onCompleted: {
+        if (startupSettingsSection.length > 0
+                && window.settingsSections.indexOf(startupSettingsSection) >= 0) {
+            window.currentPage = "Settings"
+            settingsPage.section = startupSettingsSection
+            Qt.callLater(function() {
+                window.settingsNavigationButtonForSection(startupSettingsSection).forceActiveFocus()
+            })
+        }
+    }
+    // Theme shown in the Appearance preview pane (follows the focused tile).
+    property string previewThemeId: settingsManager.themeName
+    readonly property var settingsSections: ["Appearance", "Display", "Library", "Metadata", "Controller", "Application"]
+    // Settings pages stop growing past this width; the rest of a wide screen
+    // goes to the preview pane.
+    readonly property real settingsContentMaxWidth: 880
+    readonly property bool interfaceScaleRestartPending: !interfaceScaleInfo.external
+        && window.interfaceScalePercentFor(settingsManager.interfaceScale) !== interfaceScaleInfo.applied
+
+    function interfaceScalePercentFor(setting) {
+        return setting === "auto" ? interfaceScaleInfo.auto : parseInt(setting)
+    }
+    function interfaceScaleLabel(setting) {
+        return setting === "auto" ? "Auto · " + interfaceScaleInfo.auto + "%" : setting + "%"
+    }
+    function themeTitle(themeId) {
+        for (let i = 0; i < theme.presets.length; ++i) {
+            if (theme.presets[i].id === themeId)
+                return theme.presets[i].title
+        }
+        return themeId
+    }
+    function cycleSettingsSection(step) {
+        const sections = window.settingsSections
+        const index = Math.max(0, sections.indexOf(settingsPage.section))
+        settingsPage.section = sections[(index + step + sections.length) % sections.length]
+        Qt.callLater(function() {
+            window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
+        })
+    }
+    // One-line summary under each category in the Settings rail.
+    function settingsSectionSummary(section) {
+        switch (section) {
+        case "Appearance":
+            return window.themeTitle(settingsManager.themeName) + " · "
+                + settingsManager.fontSize.charAt(0).toUpperCase() + settingsManager.fontSize.slice(1) + " text"
+        case "Display": {
+            const mode = settingsManager.displayMode
+            return mode.charAt(0).toUpperCase() + mode.slice(1) + " · "
+                + (interfaceScaleInfo.external ? "Scale from environment"
+                    : window.interfaceScaleLabel(settingsManager.interfaceScale))
+        }
+        case "Library": {
+            if (!platformManager.libraryConfigured)
+                return "No library folder"
+            const parts = platformManager.libraryDirectory.split("/")
+            return parts[parts.length - 1] || platformManager.libraryDirectory
+        }
+        case "Metadata": {
+            const providers = []
+            if (settingsManager.theGamesDbEnabled) providers.push("TheGamesDB")
+            if (settingsManager.launchBoxEnabled) providers.push("LaunchBox")
+            return providers.length > 0 ? providers.join(" + ") : "No providers enabled"
+        }
+        case "Controller":
+            return controllerManager.connected ? controllerManager.controllerName : "No controller connected"
+        case "Application":
+            return "Version " + Qt.application.version + " · Logs"
+        }
+        return ""
+    }
+    // A ValueCycler (or anything with stepValue) at or above the focused item.
+    function focusedValueStepper(item) {
+        let current = item
+        while (current) {
+            if (typeof current.stepValue === "function")
+                return current
+            current = current.parent
+        }
+        return null
+    }
     property string selectedPlatform: "All Platforms"
     property string librarySearchText: ""
     property var selectedGame: null
@@ -1049,15 +1174,16 @@ ApplicationWindow {
                 Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
         }
         // LB / RB: switch games inside Game Details, cycle platform filters on
-        // the Library page, and return to the Library from Settings.
+        // the Library page, and switch sections in Settings.
         function onPreviousSectionRequested() {
             window.activeInputDevice = "controller"
             if (gameDetailsPopup.visible)
                 gameDetailsPopup.switchToAdjacentGame(-1)
             else if (currentPage === "Library" && !window.systemMenuVisible)
                 window.cycleLibraryPlatform(-1)
-            else
-                window.navigateToPage("Library")
+            else if (currentPage === "Settings" && !window.systemMenuVisible
+                     && !controllerManager.mappingCaptureActive)
+                window.cycleSettingsSection(-1)
         }
         function onNextSectionRequested() {
             window.activeInputDevice = "controller"
@@ -1065,8 +1191,9 @@ ApplicationWindow {
                 gameDetailsPopup.switchToAdjacentGame(1)
             else if (currentPage === "Library" && !window.systemMenuVisible)
                 window.cycleLibraryPlatform(1)
-            else
-                window.navigateToPage("Library")
+            else if (currentPage === "Settings" && !window.systemMenuVisible
+                     && !controllerManager.mappingCaptureActive)
+                window.cycleSettingsSection(1)
         }
         function onDetailsRequested() {
             window.activeInputDevice = "controller"
@@ -4779,6 +4906,7 @@ ApplicationWindow {
                     property string section: "Appearance"
                     onSectionChanged: {
                         console.info("[Settings QML] Section changed:", section)
+                        window.previewThemeId = settingsManager.themeName
                         if (controllerManager.mappingCaptureActive && section !== "Controller")
                             controllerManager.cancelMappingCapture()
                     }
@@ -4788,328 +4916,84 @@ ApplicationWindow {
                         anchors.fill: parent
                         spacing: 22
 
-                        Rectangle {
+                        // Category rail: each entry shows a summary of its section's values.
+                        Item {
                             id: settingsNavigationPanel
-                            Layout.minimumWidth: 248
-                            Layout.maximumWidth: 248
-                            Layout.preferredWidth: 248
+                            Layout.preferredWidth: 280
+                            Layout.minimumWidth: 240
+                            Layout.maximumWidth: 280
                             Layout.fillHeight: true
-                            radius: theme.radiusLarge
-                            color: theme.sidebarBackground
-                            border.color: theme.divider
 
                             ColumnLayout {
                                 id: settingsNavigationColumn
                                 anchors.fill: parent
-                                anchors.margins: 18
-                                spacing: 14
+                                anchors.topMargin: 6
+                                spacing: 4
 
                                 Label {
-                                    text: "PREFERENCES"
+                                    Layout.leftMargin: 12
+                                    Layout.bottomMargin: 10
+                                    text: "SETTINGS"
                                     color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
+                                    font.pixelSize: 11 * theme.fontScale
                                     font.bold: true
-                                    font.letterSpacing: 1.2
+                                    font.letterSpacing: 1.4
                                 }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "Configure your RecompStation experience."
-                                    color: theme.textSecondary
-                                    font.pixelSize: 12 * theme.fontScale
-                                    wrapMode: Text.Wrap
-                                }
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 1
-                                    color: theme.divider
-                                }
-
-                                Button {
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
+                                SettingsNavItem {
                                     id: appearanceNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 52
-                                    padding: 10
-                                    highlighted: settingsPage.section === "Appearance"
+                                    text: "Appearance"
+                                    iconSource: "qrc:/icons/appearance.svg"
+                                    summary: window.settingsSectionSummary("Appearance")
+                                    current: settingsPage.section === "Appearance"
                                     onClicked: settingsPage.section = "Appearance"
-                                    background: Rectangle {
-                                        radius: theme.radiusCard
-                                        color: appearanceNavigationButton.highlighted
-                                            ? theme.elevatedSurface
-                                            : appearanceNavigationButton.hovered
-                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
-                                                : "transparent"
-                                        border.width: appearanceNavigationButton.highlighted ? 1 : 0
-                                        border.color: theme.accent
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 10
-                                        Rectangle {
-                                            Layout.preferredWidth: 3
-                                            Layout.fillHeight: true
-                                            radius: 2
-                                            color: appearanceNavigationButton.highlighted
-                                                ? theme.accent : "transparent"
-                                        }
-                                        Image {
-                                            source: "qrc:/icons/appearance.svg"
-                                            sourceSize.width: 20
-                                            sourceSize.height: 20
-                                            Layout.preferredWidth: 20
-                                            Layout.preferredHeight: 20
-                                            opacity: appearanceNavigationButton.highlighted ? 1.0 : 0.78
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Appearance"
-                                            color: appearanceNavigationButton.highlighted
-                                                ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: appearanceNavigationButton.highlighted
-                                        }
-                                    }
                                 }
-                                Button {
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
+                                SettingsNavItem {
                                     id: displayNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 52
-                                    padding: 10
-                                    highlighted: settingsPage.section === "Display"
+                                    text: "Display"
+                                    iconSource: "qrc:/icons/display.svg"
+                                    summary: window.settingsSectionSummary("Display")
+                                    current: settingsPage.section === "Display"
                                     onClicked: settingsPage.section = "Display"
-                                    background: Rectangle {
-                                        radius: theme.radiusCard
-                                        color: displayNavigationButton.highlighted
-                                            ? theme.elevatedSurface
-                                            : displayNavigationButton.hovered
-                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
-                                                : "transparent"
-                                        border.width: displayNavigationButton.highlighted ? 1 : 0
-                                        border.color: theme.accent
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 10
-                                        Rectangle {
-                                            Layout.preferredWidth: 3
-                                            Layout.fillHeight: true
-                                            radius: 2
-                                            color: displayNavigationButton.highlighted
-                                                ? theme.accent : "transparent"
-                                        }
-                                        Image {
-                                            source: "qrc:/icons/display.svg"
-                                            sourceSize.width: 20
-                                            sourceSize.height: 20
-                                            Layout.preferredWidth: 20
-                                            Layout.preferredHeight: 20
-                                            opacity: displayNavigationButton.highlighted ? 1.0 : 0.78
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Display"
-                                            color: displayNavigationButton.highlighted
-                                                ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: displayNavigationButton.highlighted
-                                        }
-                                    }
                                 }
-                                Button {
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
+                                SettingsNavItem {
                                     id: libraryNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 52
-                                    padding: 10
-                                    highlighted: settingsPage.section === "Library"
+                                    text: "Library"
+                                    iconSource: "qrc:/icons/library.svg"
+                                    summary: window.settingsSectionSummary("Library")
+                                    current: settingsPage.section === "Library"
                                     onClicked: settingsPage.section = "Library"
-                                    background: Rectangle {
-                                        radius: theme.radiusCard
-                                        color: libraryNavigationButton.highlighted
-                                            ? theme.elevatedSurface
-                                            : libraryNavigationButton.hovered
-                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
-                                                : "transparent"
-                                        border.width: libraryNavigationButton.highlighted ? 1 : 0
-                                        border.color: theme.accent
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 10
-                                        Rectangle {
-                                            Layout.preferredWidth: 3
-                                            Layout.fillHeight: true
-                                            radius: 2
-                                            color: libraryNavigationButton.highlighted
-                                                ? theme.accent : "transparent"
-                                        }
-                                        Image {
-                                            source: "qrc:/icons/library.svg"
-                                            sourceSize.width: 20
-                                            sourceSize.height: 20
-                                            Layout.preferredWidth: 20
-                                            Layout.preferredHeight: 20
-                                            opacity: libraryNavigationButton.highlighted ? 1.0 : 0.78
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Library"
-                                            color: libraryNavigationButton.highlighted
-                                                ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: libraryNavigationButton.highlighted
-                                        }
-                                    }
                                 }
-                                Button {
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
+                                SettingsNavItem {
                                     id: metadataNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 52
-                                    padding: 10
-                                    highlighted: settingsPage.section === "Metadata"
+                                    text: "Metadata"
+                                    iconSource: "qrc:/icons/metadata.svg"
+                                    summary: window.settingsSectionSummary("Metadata")
+                                    current: settingsPage.section === "Metadata"
                                     onClicked: settingsPage.section = "Metadata"
-                                    background: Rectangle {
-                                        radius: theme.radiusCard
-                                        color: metadataNavigationButton.highlighted
-                                            ? theme.elevatedSurface
-                                            : metadataNavigationButton.hovered
-                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
-                                                : "transparent"
-                                        border.width: metadataNavigationButton.highlighted ? 1 : 0
-                                        border.color: theme.accent
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 10
-                                        Rectangle {
-                                            Layout.preferredWidth: 3
-                                            Layout.fillHeight: true
-                                            radius: 2
-                                            color: metadataNavigationButton.highlighted
-                                                ? theme.accent : "transparent"
-                                        }
-                                        Image {
-                                            source: "qrc:/icons/metadata.svg"
-                                            sourceSize.width: 20
-                                            sourceSize.height: 20
-                                            Layout.preferredWidth: 20
-                                            Layout.preferredHeight: 20
-                                            opacity: metadataNavigationButton.highlighted ? 1.0 : 0.78
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Metadata"
-                                            color: metadataNavigationButton.highlighted
-                                                ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: metadataNavigationButton.highlighted
-                                        }
-                                    }
                                 }
-                                Button {
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
+                                SettingsNavItem {
                                     id: controllerNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 52
-                                    padding: 10
-                                    highlighted: settingsPage.section === "Controller"
+                                    text: "Controller"
+                                    iconSource: "qrc:/icons/gamepad.svg"
+                                    summary: window.settingsSectionSummary("Controller")
+                                    current: settingsPage.section === "Controller"
                                     onClicked: settingsPage.section = "Controller"
-                                    background: Rectangle {
-                                        radius: theme.radiusCard
-                                        color: controllerNavigationButton.highlighted
-                                            ? theme.elevatedSurface
-                                            : controllerNavigationButton.hovered
-                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
-                                                : "transparent"
-                                        border.width: controllerNavigationButton.highlighted ? 1 : 0
-                                        border.color: theme.accent
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 10
-                                        Rectangle {
-                                            Layout.preferredWidth: 3
-                                            Layout.fillHeight: true
-                                            radius: 2
-                                            color: controllerNavigationButton.highlighted
-                                                ? theme.accent : "transparent"
-                                        }
-                                        Image {
-                                            source: "qrc:/icons/gamepad.svg"
-                                            sourceSize.width: 20
-                                            sourceSize.height: 20
-                                            Layout.preferredWidth: 20
-                                            Layout.preferredHeight: 20
-                                            opacity: controllerNavigationButton.highlighted ? 1.0 : 0.78
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Controller"
-                                            color: controllerNavigationButton.highlighted
-                                                ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: controllerNavigationButton.highlighted
-                                        }
-                                    }
                                 }
-
-                                Button {
-                                    activeFocusOnTab: true
-                                    focusPolicy: Qt.StrongFocus
+                                SettingsNavItem {
                                     id: applicationNavigationButton
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 52
-                                    padding: 10
-                                    highlighted: settingsPage.section === "Application"
+                                    text: "Application"
+                                    iconSource: "qrc:/icons/application.svg"
+                                    summary: window.settingsSectionSummary("Application")
+                                    current: settingsPage.section === "Application"
                                     onClicked: settingsPage.section = "Application"
-                                    background: Rectangle {
-                                        radius: theme.radiusCard
-                                        color: applicationNavigationButton.highlighted
-                                            ? theme.elevatedSurface
-                                            : applicationNavigationButton.hovered
-                                                ? Qt.lighter(theme.sidebarBackground, 1.08)
-                                                : "transparent"
-                                        border.width: applicationNavigationButton.highlighted ? 1 : 0
-                                        border.color: theme.accent
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 10
-                                        Rectangle {
-                                            Layout.preferredWidth: 3
-                                            Layout.fillHeight: true
-                                            radius: 2
-                                            color: applicationNavigationButton.highlighted
-                                                ? theme.accent : "transparent"
-                                        }
-                                        Image {
-                                            source: "qrc:/icons/application.svg"
-                                            sourceSize.width: 20
-                                            sourceSize.height: 20
-                                            Layout.preferredWidth: 20
-                                            Layout.preferredHeight: 20
-                                            opacity: applicationNavigationButton.highlighted ? 1.0 : 0.78
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Application"
-                                            color: applicationNavigationButton.highlighted
-                                                ? theme.textPrimary : theme.textSecondary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: applicationNavigationButton.highlighted
-                                        }
-                                    }
                                 }
-
                                 Item { Layout.fillHeight: true }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "More preferences will appear here as features are added."
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    wrapMode: Text.Wrap
-                                }
                             }
                         }
 
@@ -5118,297 +5002,104 @@ ApplicationWindow {
                             Layout.minimumWidth: 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            radius: theme.radiusLarge
-                            color: theme.surface
-                            border.color: theme.divider
+                            color: "transparent"
                             clip: true
 
                             ScrollView {
                                 id: appearanceContent
-                                anchors.fill: parent
-                                anchors.margins: 30
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 12
+                                anchors.leftMargin: 8
+                                width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
                                 visible: settingsPage.section === "Appearance"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                                 ColumnLayout {
                                     width: parent.width
-                                    spacing: 16
-                                onVisibleChanged: console.info(
-                                    "[Settings QML] Appearance content visibility:", visible,
-                                    "section:", settingsPage.section,
-                                    "currentPage:", window.currentPage,
-                                    "size:", width, "x", height)
+                                    spacing: 8
 
-                                Label {
-                                    text: "Appearance"
-                                    color: theme.textPrimary
-                                    font.pixelSize: 27 * theme.fontScale
-                                    font.bold: true
-                                }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "Choose a coordinated color palette for the entire application."
-                                    color: theme.textSecondary
-                                    font.pixelSize: 13 * theme.fontScale
-                                    wrapMode: Text.Wrap
-                                }
-                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                Label {
-                                    text: "COLOR PRESETS"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-
-                                Repeater {
-                                    model: [
-                                        { id: "midnight-violet", title: "Midnight Violet", description: "A deep, atmospheric palette with violet highlights", accent: "#8174e8", accentSoft: "#978cf2", background: "#11131b", surface: "#222635", elevated: "#2a3042" },
-                                        { id: "electric-blue", title: "Electric Blue", description: "Cool layered blues with bright electric accents", accent: "#55a8f5", accentSoft: "#7bbcff", background: "#101722", surface: "#202e40", elevated: "#293b51" },
-                                        { id: "ember", title: "Ember", description: "Warm charcoal surfaces with copper and amber accents", accent: "#d58b59", accentSoft: "#e6a875", background: "#191411", surface: "#30231c", elevated: "#3b2b22" }
-                                    ]
-                                    delegate: Button {
-                                        id: themePresetButton
-                                        required property var modelData
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        Layout.fillWidth: true
-                                        Layout.preferredHeight: 76
-                                        padding: 0
-                                        onClicked: pendingThemeName = modelData.id
-
-                                        background: Rectangle {
-                                            radius: theme.radiusCard
-                                            color: themePresetButton.hovered
-                                                ? theme.elevatedSurface : theme.sidebarBackground
-                                            border.width: themePresetButton.activeFocus ? 3
-                                                : pendingThemeName === modelData.id ? 2 : 1
-                                            border.color: themePresetButton.activeFocus
-                                                || pendingThemeName === modelData.id
-                                                ? theme.accent : theme.divider
-                                        }
-
-                                        contentItem: RowLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: 13
-                                            spacing: 14
-
-                                            Rectangle {
-                                                width: 48
-                                                height: 48
-                                                radius: 9
-                                                color: modelData.background
-                                                border.color: theme.divider
-
-                                                ColumnLayout {
-                                                    anchors.fill: parent
-                                                    anchors.margins: 6
-                                                    spacing: 3
-                                                    Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.surface }
-                                                    RowLayout {
-                                                        Layout.fillWidth: true
-                                                        Layout.fillHeight: true
-                                                        spacing: 3
-                                                        Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.elevated }
-                                                        Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; radius: 3; color: modelData.accent }
-                                                    }
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                Layout.fillWidth: true
-                                                Layout.minimumWidth: 0
-                                                spacing: 3
-                                                Label {
-                                                    Layout.fillWidth: true
-                                                    Layout.minimumWidth: 0
-                                                    text: modelData.title
-                                                    color: theme.textPrimary
-                                                    font.pixelSize: 14 * theme.fontScale
-                                                    font.bold: true
-                                                    elide: Text.ElideRight
-                                                }
-                                                Label {
-                                                    Layout.fillWidth: true
-                                                    Layout.minimumWidth: 0
-                                                    text: modelData.description
-                                                    color: theme.textMuted
-                                                    font.pixelSize: 11 * theme.fontScale
-                                                    wrapMode: Text.Wrap
-                                                    maximumLineCount: 2
-                                                    elide: Text.ElideRight
-                                                }
-                                            }
-
-                                            Label {
-                                                Layout.preferredWidth: 94
-                                                Layout.minimumWidth: 94
-                                                Layout.maximumWidth: 94
-                                                horizontalAlignment: Text.AlignRight
-                                                verticalAlignment: Text.AlignVCenter
-                                                text: pendingThemeName === modelData.id
-                                                    ? (settingsManager.themeName === modelData.id ? "✓  Applied" : "✓  Selected")
-                                                    : "Select"
-                                                color: pendingThemeName === modelData.id ? theme.accent : theme.textSecondary
-                                                font.pixelSize: 12 * theme.fontScale
-                                                font.bold: pendingThemeName === modelData.id
-                                            }
-                                        }
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 12
-                                    Item { Layout.fillWidth: true }
                                     Label {
-                                        visible: pendingThemeName !== settingsManager.themeName
-                                        text: "You have an unapplied theme selection."
-                                        color: theme.textMuted
-                                        font.pixelSize: 11 * theme.fontScale
+                                        text: "Appearance"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 30 * theme.fontScale
+                                        font.bold: true
                                     }
-                                    Button {
-                                        id: applyThemeButton
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        Layout.preferredWidth: 180
-                                        Layout.preferredHeight: 44
-                                        text: "Apply Theme"
-                                        enabled: pendingThemeName !== settingsManager.themeName
-                                        highlighted: enabled
-                                        background: Rectangle {
-                                            radius: theme.radiusCard
-                                            color: !applyThemeButton.enabled
-                                                ? theme.sidebarBackground
-                                                : applyThemeButton.activeFocus
-                                                    ? theme.elevatedSurface
-                                                    : applyThemeButton.hovered
-                                                        ? Qt.lighter(theme.accent, 1.08)
-                                                        : theme.accent
-                                            border.width: applyThemeButton.activeFocus ? 3 : 1
-                                            border.color: applyThemeButton.activeFocus
-                                                ? theme.textPrimary : theme.accent
-                                        }
-                                        contentItem: Label {
-                                            text: applyThemeButton.text
-                                            color: applyThemeButton.enabled
-                                                ? theme.windowBackground : theme.textMuted
-                                            font.pixelSize: 13 * theme.fontScale
-                                            font.weight: Font.DemiBold
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        onClicked: settingsManager.themeName = pendingThemeName
-                                    }
-                                }
-                                Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                Label {
-                                    text: "ACCESSIBILITY"
-                                    color: theme.textMuted
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                    font.letterSpacing: 1
-                                }
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 18
-                                    ColumnLayout {
+                                    Label {
                                         Layout.fillWidth: true
-                                        Layout.minimumWidth: 0
-                                        spacing: 4
-                                        Label {
-                                            text: "Interface font size"
-                                            color: theme.textPrimary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: true
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Adjust text throughout RecompStation."
-                                            color: theme.textMuted
-                                            font.pixelSize: 11 * theme.fontScale
-                                            wrapMode: Text.Wrap
-                                        }
+                                        Layout.bottomMargin: 8
+                                        text: "Themes apply as soon as you pick one. Focus a tile to preview it."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 14 * theme.fontScale
+                                        wrapMode: Text.Wrap
                                     }
-                                    ComboBox {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
-                                        }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        id: fontSizeSelector
-                                        Layout.preferredWidth: 170
-                                        Layout.preferredHeight: 44
-                                        textRole: "label"
-                                        valueRole: "value"
-                                        model: [
-                                            { label: "Small", value: "small" },
-                                            { label: "Medium", value: "medium" },
-                                            { label: "Large", value: "large" }
-                                        ]
-                                        Component.onCompleted: {
-                                            const savedIndex = indexOfValue(settingsManager.fontSize)
-                                            currentIndex = savedIndex >= 0 ? savedIndex : 1
-                                        }
-                                        onActivated: settingsManager.fontSize = currentValue
-                                    }
-                                }
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 18
-                                    ColumnLayout {
+                                    SettingsGroupLabel { text: "THEME" }
+
+                                    GridLayout {
+                                        id: themeTileGrid
                                         Layout.fillWidth: true
-                                        Layout.minimumWidth: 0
-                                        spacing: 4
-                                        Label {
-                                            text: "Reduced motion"
-                                            color: theme.textPrimary
-                                            font.pixelSize: 14 * theme.fontScale
-                                            font.bold: true
-                                        }
-                                        Label {
-                                            Layout.fillWidth: true
-                                            text: "Disable nonessential interface animations."
-                                            color: theme.textMuted
-                                            font.pixelSize: 11 * theme.fontScale
-                                            wrapMode: Text.Wrap
+                                        columns: width >= 560 ? 2 : 1
+                                        columnSpacing: 12
+                                        rowSpacing: 12
+                                        Repeater {
+                                            model: theme.presets
+                                            delegate: ThemeTile {
+                                                required property var modelData
+                                                Layout.fillWidth: true
+                                                Layout.preferredWidth: 1
+                                                themeId: modelData.id
+                                                title: modelData.title
+                                                description: modelData.description
+                                                inUse: settingsManager.themeName === modelData.id
+                                                onActiveFocusChanged: if (activeFocus) window.previewThemeId = modelData.id
+                                                onHoveredChanged: if (hovered) window.previewThemeId = modelData.id
+                                                onClicked: settingsManager.themeName = modelData.id
+                                            }
                                         }
                                     }
-                                    Switch {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-                                            border.color: parent.activeFocus ? theme.accent : "transparent"
-                                            border.width: parent.activeFocus ? 2 : 0
-                                            anchors.margins: -6
+
+                                    SettingsGroupLabel { text: "TEXT & MOTION" }
+                                    SettingRow {
+                                        title: "Text size"
+                                        description: "Applied on top of the interface scale in Display."
+                                        ValueCycler {
+                                            id: fontSizeSelector
+                                            options: [
+                                                { label: "Small", value: "small" },
+                                                { label: "Medium", value: "medium" },
+                                                { label: "Large", value: "large" }
+                                            ]
+                                            value: settingsManager.fontSize
+                                            onPicked: (value) => settingsManager.fontSize = value
                                         }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        checked: settingsManager.reducedMotion
-                                        onToggled: settingsManager.reducedMotion = checked
-                                        Accessible.name: "Reduced motion"
                                     }
-                                }
-                                Item { Layout.fillHeight: true }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "Select a palette, then apply it to save your choice."
-                                    color: theme.textMuted
-                                    font.pixelSize: 11 * theme.fontScale
-                                    wrapMode: Text.Wrap
-                                }
-                            
+                                    SettingRow {
+                                        title: "Reduced motion"
+                                        description: "Turns off animated backgrounds, carousel slides and screenshot cycling."
+                                        Switch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            checked: settingsManager.reducedMotion
+                                            onToggled: settingsManager.reducedMotion = checked
+                                            Accessible.name: "Reduced motion"
+                                        }
+                                    }
+                                    Item { Layout.preferredHeight: 24 }
                                 }
                             }
 
                             ScrollView {
                                 id: displayContent
-                                anchors.fill: parent
-                                anchors.margins: 30
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 12
+                                anchors.leftMargin: 8
+                                width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
                                 visible: settingsPage.section === "Display"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -5425,12 +5116,60 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Choose the preferred size of the RecompStation window. Your desktop compositor remains in control of the monitor resolution and window placement."
+                                        text: "How RecompStation fills your screen. Your monitor resolution is never changed."
                                         color: theme.textSecondary
                                         font.pixelSize: 13 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    SettingsGroupLabel { text: "SCALING" }
+                                    SettingRow {
+                                        title: "Interface scale"
+                                        description: interfaceScaleInfo.external
+                                            ? "QT_SCALE_FACTOR=" + interfaceScaleInfo.environmentValue + " is set in your environment, so RecompStation leaves scaling to it."
+                                            : "Auto picks a size from your screen height. Text, covers and spacing scale together."
+                                        ValueCycler {
+                                            id: interfaceScaleSelector
+                                            preferredWidth: 250
+                                            enabled: !interfaceScaleInfo.external
+                                            options: settingsManager.interfaceScaleOptions().map(function(value) {
+                                                return { label: window.interfaceScaleLabel(value), value: value }
+                                            })
+                                            value: settingsManager.interfaceScale
+                                            onPicked: (value) => settingsManager.interfaceScale = value
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        visible: window.interfaceScaleRestartPending
+                                        implicitHeight: scaleRestartRow.implicitHeight + 24
+                                        radius: 12
+                                        color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.12)
+                                        border.color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.45)
+                                        RowLayout {
+                                            id: scaleRestartRow
+                                            anchors.fill: parent
+                                            anchors.margins: 12
+                                            anchors.leftMargin: 18
+                                            spacing: 14
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Restart RecompStation to switch from " + interfaceScaleInfo.applied + "% to "
+                                                    + window.interfaceScalePercentFor(settingsManager.interfaceScale)
+                                                    + "%. It reopens on this page."
+                                                color: theme.textPrimary
+                                                font.pixelSize: 13 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                            Button {
+                                                id: restartForScaleButton
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                text: "Restart now"
+                                                highlighted: true
+                                                onClicked: settingsManager.requestApplicationRestart("Display")
+                                            }
+                                        }
+                                    }
                                     Label {
                                         text: "CURRENT DISPLAY"
                                         color: theme.textMuted
@@ -5594,8 +5333,13 @@ ApplicationWindow {
 
                             ScrollView {
                                 id: libraryContent
-                                anchors.fill: parent
-                                anchors.margins: 30
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 12
+                                anchors.leftMargin: 8
+                                width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
                                 visible: settingsPage.section === "Library"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -5916,8 +5660,13 @@ ApplicationWindow {
 
                             ScrollView {
                                 id: applicationContent
-                                anchors.fill: parent
-                                anchors.margins: 30
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 12
+                                anchors.leftMargin: 8
+                                width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
                                 visible: settingsPage.section === "Application"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -6202,8 +5951,13 @@ ApplicationWindow {
 
                             ScrollView {
                                 id: metadataContent
-                                anchors.fill: parent
-                                anchors.margins: 30
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 12
+                                anchors.leftMargin: 8
+                                width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
                                 visible: settingsPage.section === "Metadata"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -6583,8 +6337,13 @@ ApplicationWindow {
 
                             ScrollView {
                                 id: controllerContent
-                                anchors.fill: parent
-                                anchors.margins: 30
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 12
+                                anchors.leftMargin: 8
+                                width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
                                 visible: settingsPage.section === "Controller"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -7004,6 +6763,196 @@ ApplicationWindow {
                                         }
                                     }
                                 }
+                            }
+                        }
+
+                        // Right-hand pane: a live preview or reference for the current section.
+                        // Hidden when the window is too narrow to give the rows room.
+                        Rectangle {
+                            id: settingsPreviewPane
+                            readonly property bool hasContent: settingsPage.section === "Appearance"
+                                || settingsPage.section === "Display"
+                            visible: hasContent && settingsLayoutRow.width >= 1180
+                            Layout.preferredWidth: Math.max(340, Math.min(460, settingsLayoutRow.width * 0.28))
+                            Layout.fillHeight: true
+                            radius: 16
+                            color: theme.sidebarBackground
+                            border.color: theme.divider
+                            clip: true
+
+                            readonly property var previewGame: {
+                                const games = gameGrid.model || []
+                                return games.length > 0 ? games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))] : null
+                            }
+                            readonly property var previewColors: theme.paletteFor(window.previewThemeId)
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 20
+                                spacing: 10
+                                visible: settingsPage.section === "Appearance"
+
+                                SettingsGroupLabel {
+                                    Layout.topMargin: 0
+                                    text: "LIVE PREVIEW · " + window.themeTitle(window.previewThemeId).toUpperCase()
+                                }
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: width * 0.62
+                                    radius: 12
+                                    color: settingsPreviewPane.previewColors.windowBackground
+                                    border.color: settingsPreviewPane.previewColors.divider
+                                    clip: true
+                                    Behavior on color { enabled: !settingsManager.reducedMotion; ColorAnimation { duration: 160 } }
+
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        height: 34
+                                        color: settingsPreviewPane.previewColors.sidebarBackground
+                                        Row {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            x: 12
+                                            spacing: 6
+                                            Rectangle { width: 48; height: 12; radius: 6; color: settingsPreviewPane.previewColors.accent }
+                                            Rectangle { width: 34; height: 12; radius: 6; color: settingsPreviewPane.previewColors.surface }
+                                            Rectangle { width: 34; height: 12; radius: 6; color: settingsPreviewPane.previewColors.surface }
+                                        }
+                                    }
+                                    GameArtwork {
+                                        id: themePreviewCover
+                                        x: 14
+                                        y: 48
+                                        width: parent.width * 0.32
+                                        height: parent.height - 62
+                                        source: settingsPreviewPane.previewGame ? settingsPreviewPane.previewGame.artworkPath : ""
+                                        platform: settingsPreviewPane.previewGame ? settingsPreviewPane.previewGame.platform : ""
+                                        reducedMotion: settingsManager.reducedMotion
+                                        themeTokens: theme
+                                        frameAlignment: "center"
+                                    }
+                                    Column {
+                                        anchors.left: themePreviewCover.right
+                                        anchors.leftMargin: 14
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: 14
+                                        y: 56
+                                        spacing: 6
+                                        Label {
+                                            width: parent.width
+                                            text: settingsPreviewPane.previewGame
+                                                ? (settingsPreviewPane.previewGame.metadataTitle || settingsPreviewPane.previewGame.title) : "Your game"
+                                            color: "#f4f5fb"
+                                            font.pixelSize: 15 * theme.fontScale
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                        }
+                                        Label {
+                                            width: parent.width
+                                            text: settingsPreviewPane.previewGame
+                                                ? window.platformDisplayName(settingsPreviewPane.previewGame.platform) : "Platform"
+                                            color: settingsPreviewPane.previewColors.textSecondary
+                                            font.pixelSize: 11 * theme.fontScale
+                                            elide: Text.ElideRight
+                                        }
+                                        Row {
+                                            spacing: 8
+                                            topPadding: 8
+                                            Rectangle {
+                                                width: 84; height: 28; radius: 7
+                                                color: settingsPreviewPane.previewColors.accent
+                                                Label {
+                                                    anchors.centerIn: parent
+                                                    text: "▶  Play"
+                                                    color: settingsPreviewPane.previewColors.accentText
+                                                    font.pixelSize: 11.5 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                            }
+                                            Rectangle {
+                                                width: 70; height: 28; radius: 7
+                                                color: settingsPreviewPane.previewColors.elevatedSurface
+                                                Label {
+                                                    anchors.centerIn: parent
+                                                    text: "Details"
+                                                    color: "#f4f5fb"
+                                                    font.pixelSize: 11.5 * theme.fontScale
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "The preview follows the focused theme. Select it to apply it everywhere."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Item { Layout.fillHeight: true }
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 20
+                                spacing: 10
+                                visible: settingsPage.section === "Display"
+
+                                SettingsGroupLabel { Layout.topMargin: 0; text: "AUTO SCALE BY SCREEN HEIGHT" }
+                                Repeater {
+                                    model: [
+                                        { label: "Below 900p (720p, Steam Deck)", percent: 85 },
+                                        { label: "1080p · 1200p", percent: 100 },
+                                        { label: "1440p · 1600p", percent: 125 },
+                                        { label: "1800p", percent: 150 },
+                                        { label: "2160p (4K)", percent: 175 },
+                                        { label: "2880p and above", percent: 200 }
+                                    ]
+                                    delegate: RowLayout {
+                                        required property var modelData
+                                        readonly property bool matches: modelData.percent === interfaceScaleInfo.auto
+                                        Layout.fillWidth: true
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: modelData.label
+                                            color: parent.matches ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 13 * theme.fontScale
+                                        }
+                                        Label {
+                                            text: modelData.percent + "%"
+                                            color: parent.matches ? theme.accent : theme.textSecondary
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                    }
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 6
+                                    text: "Heights are measured after your desktop's own scaling, so a 4K screen already set to 200% in your desktop counts as 1080p and is not scaled twice."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                SettingsGroupLabel { text: "THIS SCREEN" }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: (interfaceScaleInfo.screenName || "Current display") + " · "
+                                        + interfaceScaleInfo.logicalWidth + " × " + interfaceScaleInfo.logicalHeight
+                                    color: theme.textPrimary
+                                    font.pixelSize: 13.5 * theme.fontScale
+                                    font.bold: true
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Auto would use " + interfaceScaleInfo.auto + "% · now using " + interfaceScaleInfo.applied + "%"
+                                        + (interfaceScaleInfo.external ? " (from QT_SCALE_FACTOR)" : "")
+                                    color: theme.textMuted
+                                    font.pixelSize: 12 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Item { Layout.fillHeight: true }
                             }
                         }
                     }

@@ -34,9 +34,21 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         kDefaultTheme
     ).toString();
 
-    m_themeName = isSupportedTheme(storedTheme)
-        ? storedTheme
-        : kDefaultTheme;
+    // Ember was retired in favour of Aurora and Carbon. Its users move to
+    // Electric Blue, and the stored value is rewritten so the log stays quiet.
+    if (storedTheme == QStringLiteral("ember")) {
+        m_themeName = QStringLiteral("electric-blue");
+        settings.setValue(QStringLiteral("appearance/theme"), m_themeName);
+        qCInfo(lcSettings) << "Migrated retired theme ember to" << m_themeName;
+    } else {
+        m_themeName = isSupportedTheme(storedTheme)
+            ? storedTheme
+            : kDefaultTheme;
+    }
+    const QString storedScale = settings.value(
+        QStringLiteral("display/interfaceScale"), QStringLiteral("auto")).toString();
+    m_interfaceScale = isSupportedInterfaceScale(storedScale)
+        ? storedScale : QStringLiteral("auto");
     m_scanOnStartup = settings.value(QStringLiteral("library/scanOnStartup"), true).toBool();
     m_automaticUpdateChecksEnabled = settings.value(
         QStringLiteral("application/automaticUpdateChecksEnabled"), false).toBool();
@@ -575,6 +587,86 @@ void SettingsManager::setFontSize(const QString &size)
     qCInfo(lcSettings) << "Saved font size:" << size;
 }
 
+QString SettingsManager::interfaceScale() const
+{
+    return m_interfaceScale;
+}
+
+void SettingsManager::setInterfaceScale(const QString &scale)
+{
+    if (!isSupportedInterfaceScale(scale)) {
+        qCWarning(lcSettings) << "Rejected unsupported interface scale:" << scale;
+        return;
+    }
+    if (m_interfaceScale == scale)
+        return;
+
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("display/interfaceScale"), scale);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist interface scale:" << scale;
+        return;
+    }
+
+    m_interfaceScale = scale;
+    emit interfaceScaleChanged();
+    qCInfo(lcSettings) << "Saved interface scale:" << scale;
+}
+
+QVariantList SettingsManager::interfaceScaleOptions() const
+{
+    QVariantList options;
+    options.append(QStringLiteral("auto"));
+    for (int percent : interfaceScalePercents())
+        options.append(QString::number(percent));
+    return options;
+}
+
+QList<int> SettingsManager::interfaceScalePercents()
+{
+    return {75, 85, 100, 115, 125, 150, 175, 200};
+}
+
+bool SettingsManager::isSupportedInterfaceScale(const QString &scale)
+{
+    if (scale == QStringLiteral("auto"))
+        return true;
+    bool ok = false;
+    const int percent = scale.toInt(&ok);
+    return ok && interfaceScalePercents().contains(percent);
+}
+
+int SettingsManager::autoInterfaceScalePercent(int logicalScreenHeight)
+{
+    if (logicalScreenHeight <= 0)
+        return 100;
+    if (logicalScreenHeight < 900)
+        return 85;     // 720p, 768p, Steam Deck 800p
+    if (logicalScreenHeight < 1300)
+        return 100;    // 1080p, 1200p
+    if (logicalScreenHeight < 1700)
+        return 125;    // 1440p, 1600p
+    if (logicalScreenHeight < 2000)
+        return 150;    // 1800p
+    if (logicalScreenHeight < 2600)
+        return 175;    // 2160p (4K)
+    return 200;        // 2880p and above
+}
+
+QString SettingsManager::storedInterfaceScale(const QString &settingsFilePath)
+{
+    QSettings settings(settingsFilePath, QSettings::IniFormat);
+    const QString value = settings.value(
+        QStringLiteral("display/interfaceScale"), QStringLiteral("auto")).toString();
+    return isSupportedInterfaceScale(value) ? value : QStringLiteral("auto");
+}
+
+void SettingsManager::requestApplicationRestart(const QString &settingsSection)
+{
+    emit applicationRestartRequested(settingsSection);
+}
+
 bool SettingsManager::reducedMotion() const
 {
     return m_reducedMotion;
@@ -792,7 +884,8 @@ bool SettingsManager::isSupportedTheme(const QString &themeName)
     static const QStringList supportedThemes = {
         QStringLiteral("midnight-violet"),
         QStringLiteral("electric-blue"),
-        QStringLiteral("ember")
+        QStringLiteral("aurora"),
+        QStringLiteral("carbon")
     };
 
     return supportedThemes.contains(themeName);

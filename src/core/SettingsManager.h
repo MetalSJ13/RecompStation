@@ -22,6 +22,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged)
     Q_PROPERTY(QString restoreDisplayMode READ restoreDisplayMode WRITE setRestoreDisplayMode NOTIFY restoreDisplayModeChanged)
     Q_PROPERTY(QString fontSize READ fontSize WRITE setFontSize NOTIFY fontSizeChanged)
+    Q_PROPERTY(QString interfaceScale READ interfaceScale WRITE setInterfaceScale NOTIFY interfaceScaleChanged)
     Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
     Q_PROPERTY(QString libraryView READ libraryView WRITE setLibraryView NOTIFY libraryViewChanged)
     Q_PROPERTY(QString libraryDensity READ libraryDensity WRITE setLibraryDensity NOTIFY libraryDensityChanged)
@@ -75,6 +76,22 @@ public:
     QString fontSize() const;
     Q_INVOKABLE void setFontSize(const QString &size);
 
+    // "auto" or a whole percentage from interfaceScalePercents(). Applied
+    // through QT_SCALE_FACTOR when the application starts, so a change takes
+    // effect after a restart.
+    QString interfaceScale() const;
+    Q_INVOKABLE void setInterfaceScale(const QString &scale);
+    Q_INVOKABLE QVariantList interfaceScaleOptions() const;
+    static QList<int> interfaceScalePercents();
+    static bool isSupportedInterfaceScale(const QString &scale);
+    // Auto scale for a screen's logical height (after desktop scaling).
+    static int autoInterfaceScalePercent(int logicalScreenHeight);
+    // Reads the saved setting straight from the settings file. Used by main()
+    // before QGuiApplication exists.
+    static QString storedInterfaceScale(const QString &settingsFilePath);
+    // Asks main() to restart RecompStation and reopen Settings at a section.
+    Q_INVOKABLE void requestApplicationRestart(const QString &settingsSection);
+
     bool reducedMotion() const;
     Q_INVOKABLE void setReducedMotion(bool enabled);
 
@@ -105,6 +122,8 @@ signals:
     void displayModeChanged();
     void restoreDisplayModeChanged();
     void fontSizeChanged();
+    void interfaceScaleChanged();
+    void applicationRestartRequested(const QString &settingsSection);
     void reducedMotionChanged();
     void libraryViewChanged();
     void libraryDensityChanged();
@@ -120,6 +139,7 @@ private:
     QString m_displayMode = QStringLiteral("fullscreen");
     QString m_restoreDisplayMode = QStringLiteral("windowed");
     QString m_fontSize = QStringLiteral("medium");
+    QString m_interfaceScale = QStringLiteral("auto");
     bool m_reducedMotion = false;
     QString m_libraryView = QStringLiteral("carousel");
     QString m_libraryDensity = QStringLiteral("comfortable");

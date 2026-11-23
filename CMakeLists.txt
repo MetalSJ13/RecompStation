@@ -93,6 +93,11 @@ qt_add_qml_module(RecompStationApp
         qml/GameDetailsPage.qml
         qml/ScreenshotBackdrop.qml
         qml/ScreenshotViewer.qml
+        qml/ValueCycler.qml
+        qml/SettingRow.qml
+        qml/SettingsGroupLabel.qml
+        qml/SettingsNavItem.qml
+        qml/ThemeTile.qml
     RESOURCES
         assets/library-waves.svg
         assets/library-waves-violet.svg

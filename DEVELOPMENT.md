@@ -53,6 +53,32 @@ The responsive Library presentation work is being tracked as a focused five-phas
   - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
 - [x] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The Shelves view and spotlight panel (Library presentation redesign, step 4) and the hero carousel complete this phase; confirmed by the user on 2026-11-22.
 
+## Settings redesign (2026-11-23)
+
+Direction chosen by the user from design mockups (Settings today; proposed Appearance, Display, Background and Metadata) and a live wave-background prototype. Work is on `ui/settings`, branched from `ui/interface-redesign`, in four steps.
+
+**Decisions**
+- Console-style layout: a category rail on the left where each entry shows its current values, setting rows in the middle (capped at 880 px), and a preview or reference pane on the right when the window is wide enough. Choices are ◀ value ▶ rows (D-pad left/right) or toggles; no dropdowns and no separate Apply buttons. LB/RB (Q/E on the keyboard) switch sections.
+- Ember is retired; Aurora (teal, mint accent) and Carbon (graphite, crimson accent) are added. Saved "ember" settings move to Electric Blue.
+- Interface scale (Auto or 75–200%) is applied with `QT_SCALE_FACTOR` at startup, so changing it restarts RecompStation, which reopens on the same Settings page. The user accepted the restart.
+- Animated background: a GPU shader (ribbon waves) instead of pre-rendered video, with user-chosen colors, motion and quality. Background gets its own Settings section.
+- Metadata: LaunchBox becomes the default first provider (offline, no key); TheGamesDB stays available. The TheGamesDB key is entered in the app instead of an environment variable.
+
+**Step 1: themes, interface scale, Settings layout, Appearance**
+- [x] `Theme.qml` keeps one palette per theme (`palettes`, `presets`, `paletteFor()`), adds `accentText`, and drops Ember. `SettingsManager` accepts `aurora` and `carbon` and rewrites a stored `ember` to `electric-blue` on load.
+- [x] Interface scale: `SettingsManager.interfaceScale` ("auto" or 75, 85, 100, 115, 125, 150, 175, 200; `display/interfaceScale`) and `autoInterfaceScalePercent(height)`: below 900 → 85%, below 1300 → 100%, below 1700 → 125%, below 2000 → 150%, below 2600 → 175%, otherwise 200%. Heights are logical (after desktop scaling).
+- [x] `main.cpp` reads the setting before `QGuiApplication` exists and sets `QT_SCALE_FACTOR`; it then unsets it so launchers and games are not scaled. Auto uses the value measured on the previous run (`display/autoScalePercent`); on the first run, or when the screen changed, it restarts once before showing a window. A `QT_SCALE_FACTOR` already set in the environment wins and the setting is disabled. `interfaceScaleInfo` (applied, auto, screen) and `startupSettingsSection` are exposed to QML; `settingsManager.requestApplicationRestart(section)` relaunches with `--settings-section=`.
+- [x] New QML components: `ValueCycler.qml` (◀ value ▶ with position dots; `stepValue()` is used by controller routing), `SettingRow.qml`, `SettingsGroupLabel.qml`, `SettingsNavItem.qml`, `ThemeTile.qml`.
+- [x] Settings shell: rail with summaries, transparent content area capped at 880 px, right pane for Appearance (live preview of the focused theme using the selected game's cover) and Display (auto-scale table and this screen). Left/right/A on a focused cycler change its value; left at the first value returns to the rail. LB/RB and Q/E cycle sections; the hint bar says "Section".
+- [x] Appearance: four theme tiles with miniature previews that apply immediately; Text size as a cycler; Reduced motion as a row.
+- [x] Display: Interface scale row and a "Restart now" banner when the saved scale differs from the one in use. The rest of Display is converted in Step 2.
+- [x] Tests: Ember migration, Aurora/Carbon, interface scale default, persistence, rejection, and the auto-scale table.
+- [ ] User validation: build and tests; themes and tiles; LB/RB and Q/E; cycler with D-pad and keyboard; preview pane; interface scale restart (manual value and back to Auto); first-run auto restart on a 1440p or 4K screen if available.
+
+**Step 2: Display, Background section, Library rows** — planned
+**Step 3: Shader wave background** — planned (adds the Qt Shader Tools build dependency)
+**Step 4: Metadata** — planned: key entered in the app (stored in a separate file readable only by the user; the environment variable still wins), LaunchBox first by default, fall back to LaunchBox on TheGamesDB errors, re-run matching when a scan finishes while matching is busy, index only supported platforms in the LaunchBox catalog, Fix match in Game Details.
+
 ## Game Details redesign (2026-11-22)
 
 Direction chosen by the user from design mockups (today; recompilation installed; available to install with a downloading state). Work is on `ui/game-details`, branched from `ui/interface-redesign`, in two passes so the move can be validated before the redesign.
