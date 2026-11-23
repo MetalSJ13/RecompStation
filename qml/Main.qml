@@ -73,7 +73,10 @@ ApplicationWindow {
                 { icon: "qrc:/icons/dpad.svg", key: "", label: "Navigate", color: "#B8C7D9", round: false },
                 { icon: "", key: selectButton, label: "Select", color: selectColor, round: true },
                 { icon: "", key: backButton, label: "Back", color: backColor, round: true },
-                { icon: "", key: switchButtons, label: "Switch", color: "#A9B7CA", round: false }
+                { icon: "", key: switchButtons,
+                  label: gameDetailsPopup.visible ? "Switch game"
+                      : currentPage === "Library" ? "Platform" : "Library",
+                  color: "#A9B7CA", round: false }
             ]
         }
         if (activeInputDevice === "mouse") {
@@ -502,6 +505,15 @@ ApplicationWindow {
                 focused.click()
             return
         }
+        // Toolbar buttons (platform pills, search, view, size) handle Select
+        // themselves instead of opening the current game.
+        if (currentPage === "Library"
+                && window.isDescendantOf(window.activeFocusItem, libraryFilterPanel)) {
+            const toolbarAction = window.focusedActionItem(window.activeFocusItem)
+            if (toolbarAction && typeof toolbarAction.click === "function")
+                toolbarAction.click()
+            return
+        }
         if (currentPage === "Library" && gameGrid.count > 0) {
             const index = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
             if (settingsManager.libraryView === "list") {
@@ -886,10 +898,14 @@ ApplicationWindow {
             if (window.systemMenuVisible)
                 Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
         }
+        // LB / RB: switch games inside Game Details, cycle platform filters on
+        // the Library page, and return to the Library from Settings.
         function onPreviousSectionRequested() {
             window.activeInputDevice = "controller"
             if (gameDetailsPopup.visible)
                 gameDetailsPopup.switchToAdjacentGame(-1)
+            else if (currentPage === "Library" && !window.systemMenuVisible)
+                window.cycleLibraryPlatform(-1)
             else
                 window.navigateToPage("Library")
         }
@@ -897,8 +913,10 @@ ApplicationWindow {
             window.activeInputDevice = "controller"
             if (gameDetailsPopup.visible)
                 gameDetailsPopup.switchToAdjacentGame(1)
+            else if (currentPage === "Library" && !window.systemMenuVisible)
+                window.cycleLibraryPlatform(1)
             else
-                window.navigateToPage("Settings")
+                window.navigateToPage("Library")
         }
         function onRightStickScrollRequested(amount) {
             if (!controllerManager.navigationActive) {
@@ -1075,6 +1093,47 @@ ApplicationWindow {
     // single GridView. gameGrid.currentIndex stays the shared selection.
     readonly property bool sectionedLibraryGrid:
         settingsManager.libraryView === "grid" && selectedPlatform === "All Platforms"
+
+    // Game counts per platform for the toolbar pills, from one library query.
+    readonly property var libraryPlatformCounts: {
+        window.libraryRevision
+        const counts = { "All Platforms": 0 }
+        for (const game of databaseManager.games("")) {
+            counts["All Platforms"]++
+            counts[game.platform] = (counts[game.platform] || 0) + 1
+        }
+        return counts
+    }
+
+    // Shoulder-button names for the controller in use, as [previous, next].
+    function platformCycleButtonLabels() {
+        if (controllerManager.controllerType === "playstation")
+            return ["L1", "R1"]
+        if (controllerManager.controllerType === "xbox")
+            return ["LB", "RB"]
+        return ["L", "R"]
+    }
+
+    // Select a Library platform filter and return to the top of the results.
+    function selectLibraryPlatform(platform) {
+        if (window.selectedPlatform === platform)
+            return
+        window.selectedPlatform = platform
+        gameGrid.currentIndex = 0
+        Qt.callLater(function() {
+            gameGrid.positionViewAtBeginning()
+            sectionedGrid.contentY = 0
+            gameList.positionViewAtBeginning()
+        })
+    }
+
+    // Step through All Platforms and each platform, wrapping at either end.
+    function cycleLibraryPlatform(step) {
+        const platforms = ["All Platforms"].concat(platformManager.platforms())
+        const index = Math.max(0, platforms.indexOf(window.selectedPlatform))
+        const next = (index + step + platforms.length) % platforms.length
+        window.selectLibraryPlatform(platforms[next])
+    }
 
     // Open Game Details for an entry of the Library model (gameGrid.model).
     function openLibraryGameDetails(game) {
@@ -6928,240 +6987,338 @@ ApplicationWindow {
                     }
                 }
 
-                            Rectangle {
-                                                id: libraryFilterPanel
-                                                // Keep the filter strip visually compact while the
-                                                // collection heading absorbs the flexible space to its left.
-                                                Layout.minimumWidth: 430
-                                                Layout.preferredWidth: 850
-                                                Layout.maximumWidth: 1080
-                                                Layout.preferredHeight: 72
-                                                radius: 9
-                                visible: currentPage === "Library"
-                                                color: Qt.rgba(theme.sidebarBackground.r,
-                                                               theme.sidebarBackground.g,
-                                                               theme.sidebarBackground.b, 0.72)
-                                                border.width: 0
-                
-                                                RowLayout {
-                                                    anchors.fill: parent
-                                                    anchors.margins: 9
-                                                    spacing: 9
-                
-                                                    ColumnLayout {
-                                                        Layout.fillWidth: true
-                                                        Layout.minimumWidth: 130
-                                                        spacing: 3
-                                                        Label {
-                                                            text: "SEARCH GAMES"
-                                                            color: theme.textMuted
-                                                            font.pixelSize: 9 * theme.fontScale
-                                                            font.bold: true
-                                                            font.letterSpacing: 0.8
-                                                        }
-                                                        TextField {
-                                                            Layout.fillWidth: true
-                                                            Layout.preferredHeight: 34
-                                                            activeFocusOnTab: true
-                                                            focusPolicy: Qt.StrongFocus
-                                                            placeholderText: "Enter a game title"
-                                                            selectByMouse: true
-                                                            color: theme.textPrimary
-                                                            font.pixelSize: 12 * theme.fontScale
-                                                            leftPadding: 10
-                                                            rightPadding: 10
-                                                            onTextChanged: {
-                                                                window.librarySearchText = text
-                                                                gameGrid.currentIndex = 0
-                                                            }
-                                                            background: Rectangle {
-                                                                radius: 8
-                                                                color: theme.surface
-                                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                                border.width: parent.activeFocus ? 2 : 1
-                                                            }
-                                                        }
-                                                    }
-                
-                                                    ColumnLayout {
-                                                        Layout.preferredWidth: 230
-                                                        Layout.minimumWidth: 160
-                                                        spacing: 3
-                                                        Label {
-                                                            text: "PLATFORM"
-                                                            color: theme.textMuted
-                                                            font.pixelSize: 9 * theme.fontScale
-                                                            font.bold: true
-                                                            font.letterSpacing: 0.8
-                                                        }
-                                                        ComboBox {
-                                                            background: Rectangle {
-                                                                radius: 7
-                                                                color: parent.activeFocus
-                                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
-                                                                              theme.accent.b, 0.18)
-                                                                    : theme.surface
-                                                                border.color: parent.activeFocus
-                                                                    ? theme.accent : theme.divider
-                                                                border.width: parent.activeFocus ? 2 : 1
-                                                            }
-                                                            activeFocusOnTab: true
-                                                            focusPolicy: Qt.StrongFocus
-                                                            Layout.fillWidth: true
-                                                            Layout.preferredHeight: 34
-                                                            model: ["All Platforms"].concat(platformManager.platforms())
-                                                            currentIndex: Math.max(0, model.indexOf(window.selectedPlatform))
-                                                            onActivated: {
-                                                                window.selectedPlatform = currentText
-                                                                gameGrid.currentIndex = 0
-                                                            }
-                                                        }
-                                                    }
-                
-                                                    Rectangle {
-                                                        Layout.fillHeight: true
-                                                        Layout.preferredWidth: 1
-                                                        color: theme.divider
-                                                    }
-                
-                                                    ColumnLayout {
-                                                        Layout.preferredWidth: 150
-                                                        Layout.minimumWidth: 105
-                                                        spacing: 3
-                                                        Label {
-                                                            text: "VIEW"
-                                                            color: theme.textMuted
-                                                            font.pixelSize: 9 * theme.fontScale
-                                                            font.bold: true
-                                                            font.letterSpacing: 0.8
-                                                        }
-                                                        ComboBox {
-                                                            background: Rectangle {
-                                                                radius: 7
-                                                                color: parent.activeFocus
-                                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
-                                                                              theme.accent.b, 0.18)
-                                                                    : theme.surface
-                                                                border.color: parent.activeFocus
-                                                                    ? theme.accent : theme.divider
-                                                                border.width: parent.activeFocus ? 2 : 1
-                                                            }
-                                                            activeFocusOnTab: true
-                                                            focusPolicy: Qt.StrongFocus
-                                                            Layout.fillWidth: true
-                                                            Layout.preferredHeight: 34
-                                                            textRole: "label"
-                                                            valueRole: "value"
-                                                            model: [
-                                                                { label: "Grid", value: "grid" },
-                                                                { label: "List", value: "list" },
-                                                                { label: "Carousel", value: "carousel" }
-                                                            ]
-                                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryView))
-                                                            onActivated: settingsManager.libraryView = currentValue
-                                                        }
-                                                    }
-                
-                                                    ColumnLayout {
-                                                        Layout.preferredWidth: 170
-                                                        Layout.minimumWidth: 125
-                                                        spacing: 3
-                                                        Label {
-                                                            text: settingsManager.libraryView === "list" ? "ROW SIZE" : "CARD SIZE"
-                                                            color: theme.textMuted
-                                                            font.pixelSize: 9 * theme.fontScale
-                                                            font.bold: true
-                                                            font.letterSpacing: 0.8
-                                                        }
-                                                        ComboBox {
-                                                            background: Rectangle {
-                                                                radius: 7
-                                                                color: parent.activeFocus
-                                                                    ? Qt.rgba(theme.accent.r, theme.accent.g,
-                                                                              theme.accent.b, 0.18)
-                                                                    : theme.surface
-                                                                border.color: parent.activeFocus
-                                                                    ? theme.accent : theme.divider
-                                                                border.width: parent.activeFocus ? 2 : 1
-                                                            }
-                                                            activeFocusOnTab: true
-                                                            focusPolicy: Qt.StrongFocus
-                                                            Layout.fillWidth: true
-                                                            Layout.preferredHeight: 34
-                                                            textRole: "label"
-                                                            valueRole: "value"
-                                                            model: [
-                                                                { label: "Compact", value: "compact" },
-                                                                { label: "Comfortable", value: "comfortable" },
-                                                                { label: "Spacious", value: "spacious" }
-                                                            ]
-                                                            id: libraryDensityComboBox
-                                                            function syncDensitySelection() {
-                                                                const storedDensity =
-                                                                    settingsManager.libraryView === "list"
-                                                                        ? settingsManager.libraryListDensity
-                                                                        : settingsManager.libraryView === "carousel"
-                                                                            ? settingsManager.libraryConsoleDensity
-                                                                            : settingsManager.libraryDensity
-                                                                const storedIndex = indexOfValue(storedDensity)
-                                                                if (storedIndex >= 0 && currentIndex !== storedIndex)
-                                                                    currentIndex = storedIndex
-                                                            }
-                                                            Component.onCompleted: {
-                                                                syncDensitySelection()
-                                                                console.info("[Density Toolbar] initialized",
-                                                                    "view:", settingsManager.libraryView,
-                                                                    "currentIndex:", currentIndex,
-                                                                    "currentValue:", currentValue,
-                                                                    "gridDensity:", settingsManager.libraryDensity,
-                                                                    "listDensity:", settingsManager.libraryListDensity,
-                                                                    "carouselDensity:", settingsManager.libraryConsoleDensity)
-                                                            }
-                                                            Connections {
-                                                                target: settingsManager
-                                                                function onLibraryViewChanged() {
-                                                                    libraryDensityComboBox.syncDensitySelection()
-                                                                }
-                                                                function onLibraryDensityChanged() {
-                                                                    if (settingsManager.libraryView !== "list"
-                                                                            && settingsManager.libraryView !== "carousel")
-                                                                        libraryDensityComboBox.syncDensitySelection()
-                                                                }
-                                                                function onLibraryListDensityChanged() {
-                                                                    if (settingsManager.libraryView === "list")
-                                                                        libraryDensityComboBox.syncDensitySelection()
-                                                                }
-                                                                function onLibraryConsoleDensityChanged() {
-                                                                    if (settingsManager.libraryView === "carousel")
-                                                                        libraryDensityComboBox.syncDensitySelection()
-                                                                }
-                                                            }
-                                                            onCurrentIndexChanged: {
-                                                                console.info("[Density Toolbar] currentIndex changed",
-                                                                    "view:", settingsManager.libraryView,
-                                                                    "currentIndex:", currentIndex,
-                                                                    "currentValue:", currentValue,
-                                                                    "gridDensity:", settingsManager.libraryDensity)
-                                                            }
-                                                            onActivated: {
-                                                                console.info("[Density Toolbar] activated",
-                                                                    "view:", settingsManager.libraryView,
-                                                                    "index:", currentIndex,
-                                                                    "value:", currentValue)
-                                                                if (settingsManager.libraryView === "list")
-                                                                    settingsManager.libraryListDensity = currentValue
-                                                                else if (settingsManager.libraryView === "carousel")
-                                                                    settingsManager.libraryConsoleDensity = currentValue
-                                                                else
-                                                                    settingsManager.libraryDensity = currentValue
-                                                            }
-                                                        }
-                                                    }
-                                                }
+                // Compact Library toolbar: platform pills (LB/RB cycle them on
+                // a controller), an expanding search control, a segmented view
+                // switcher, and a card-size button. Keeps the libraryFilterPanel
+                // id because directional focus and Select route through it.
+                Item {
+                    id: libraryFilterPanel
+                    visible: currentPage === "Library"
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 430
+                    Layout.preferredHeight: 44
+
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 12
+
+                        // LB / RB hints flank the pills while a controller is active.
+                        Label {
+                            visible: window.activeInputDevice === "controller"
+                                && controllerManager.connected
+                            text: window.platformCycleButtonLabels()[0]
+                            color: theme.textMuted
+                            font.pixelSize: 10 * theme.fontScale
+                            font.bold: true
+                            leftPadding: 6
+                            rightPadding: 6
+                            topPadding: 2
+                            bottomPadding: 2
+                            background: Rectangle {
+                                radius: 4
+                                color: "transparent"
+                                border.color: theme.divider
+                            }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: 120
+                            Layout.preferredHeight: 36
+                            clip: true
+
+                            Row {
+                                id: platformPillRow
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 6
+
+                                Repeater {
+                                    model: ["All Platforms"].concat(platformManager.platforms())
+                                    delegate: Button {
+                                        id: platformPill
+                                        required property string modelData
+                                        readonly property bool selected:
+                                            window.selectedPlatform === modelData
+                                        readonly property int gameCount:
+                                            window.libraryPlatformCounts[modelData] || 0
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
+                                        height: 34
+                                        leftPadding: 14
+                                        rightPadding: 14
+                                        topPadding: 0
+                                        bottomPadding: 0
+                                        Accessible.name: (modelData === "All Platforms" ? "All platforms" : modelData)
+                                            + ", " + gameCount + (gameCount === 1 ? " game" : " games")
+                                        contentItem: Row {
+                                            spacing: 6
+                                            Label {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: platformPill.modelData === "All Platforms"
+                                                    ? "All" : platformPill.modelData
+                                                color: platformPill.selected ? theme.windowBackground
+                                                    : platformPill.gameCount === 0 ? theme.textSubtle
+                                                    : theme.textPrimary
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.bold: platformPill.selected
                                             }
+                                            Label {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: platformPill.gameCount
+                                                color: platformPill.selected
+                                                    ? Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
+                                                              theme.windowBackground.b, 0.7)
+                                                    : theme.textMuted
+                                                font.pixelSize: 12 * theme.fontScale
+                                            }
+                                        }
+                                        background: Rectangle {
+                                            radius: height / 2
+                                            color: platformPill.selected ? theme.textPrimary
+                                                : platformPill.hovered ? theme.controlHover
+                                                : Qt.rgba(theme.surface.r, theme.surface.g,
+                                                          theme.surface.b, 0.8)
+                                            border.width: platformPill.activeFocus ? 2 : 0
+                                            border.color: theme.accent
+                                        }
+                                        onClicked: window.selectLibraryPlatform(modelData)
+                                    }
+                                }
+                            }
+                        }
 
+                        Label {
+                            visible: window.activeInputDevice === "controller"
+                                && controllerManager.connected
+                            text: window.platformCycleButtonLabels()[1]
+                            color: theme.textMuted
+                            font.pixelSize: 10 * theme.fontScale
+                            font.bold: true
+                            leftPadding: 6
+                            rightPadding: 6
+                            topPadding: 2
+                            bottomPadding: 2
+                            background: Rectangle {
+                                radius: 4
+                                color: "transparent"
+                                border.color: theme.divider
+                            }
+                        }
 
-                Item { Layout.fillWidth: true }
+                        // Search: a round button that expands into a field. It stays
+                        // open while it has focus or holds text.
+                        Item {
+                            id: librarySearchControl
+                            // Set by the button so the field is visible before it takes focus.
+                            property bool openRequested: false
+                            readonly property bool open: openRequested
+                                || librarySearchField.activeFocus || librarySearchField.text.length > 0
+                            Layout.preferredWidth: open ? 240 : 36
+                            Layout.preferredHeight: 36
+                            Behavior on Layout.preferredWidth {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                            }
+
+                            TextField {
+                                id: librarySearchField
+                                anchors.fill: parent
+                                visible: librarySearchControl.open
+                                activeFocusOnTab: librarySearchControl.open
+                                focusPolicy: Qt.StrongFocus
+                                placeholderText: "Search games"
+                                selectByMouse: true
+                                color: theme.textPrimary
+                                font.pixelSize: 12 * theme.fontScale
+                                leftPadding: 34
+                                rightPadding: 10
+                                Accessible.name: "Search games"
+                                onActiveFocusChanged: {
+                                    if (!activeFocus)
+                                        librarySearchControl.openRequested = false
+                                }
+                                onTextChanged: {
+                                    window.librarySearchText = text
+                                    gameGrid.currentIndex = 0
+                                }
+                                background: Rectangle {
+                                    radius: height / 2
+                                    color: theme.surface
+                                    border.color: librarySearchField.activeFocus ? theme.accent : theme.divider
+                                    border.width: librarySearchField.activeFocus ? 2 : 1
+                                }
+                            }
+                            Button {
+                                id: librarySearchButton
+                                anchors.fill: parent
+                                visible: !librarySearchControl.open
+                                activeFocusOnTab: !librarySearchControl.open
+                                focusPolicy: Qt.StrongFocus
+                                Accessible.name: "Search games"
+                                padding: 0
+                                contentItem: Item {}
+                                background: Rectangle {
+                                    radius: height / 2
+                                    color: librarySearchButton.hovered ? theme.controlHover
+                                        : Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.8)
+                                    border.width: librarySearchButton.activeFocus ? 2 : 0
+                                    border.color: theme.accent
+                                }
+                                onClicked: {
+                                    librarySearchControl.openRequested = true
+                                    Qt.callLater(function() { librarySearchField.forceActiveFocus() })
+                                }
+                            }
+                            // Magnifier glyph shared by both states.
+                            Item {
+                                width: 16
+                                height: 16
+                                x: librarySearchControl.open ? 12 : (parent.width - width) / 2
+                                anchors.verticalCenter: parent.verticalCenter
+                                Rectangle {
+                                    x: 0; y: 0
+                                    width: 11; height: 11
+                                    radius: 5.5
+                                    color: "transparent"
+                                    border.width: 2
+                                    border.color: theme.textSecondary
+                                }
+                                Rectangle {
+                                    x: 10; y: 9
+                                    width: 2; height: 7
+                                    radius: 1
+                                    rotation: -45
+                                    color: theme.textSecondary
+                                }
+                            }
+                        }
+
+                        // View switcher.
+                        Rectangle {
+                            Layout.preferredHeight: 36
+                            Layout.preferredWidth: viewSegmentRow.implicitWidth + 6
+                            radius: height / 2
+                            color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.8)
+
+                            Row {
+                                id: viewSegmentRow
+                                anchors.centerIn: parent
+                                spacing: 2
+                                Repeater {
+                                    model: [
+                                        { label: "Grid", value: "grid" },
+                                        { label: "List", value: "list" },
+                                        { label: "Carousel", value: "carousel" }
+                                    ]
+                                    delegate: Button {
+                                        id: viewSegment
+                                        required property var modelData
+                                        readonly property bool selected:
+                                            settingsManager.libraryView === modelData.value
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
+                                        height: 30
+                                        leftPadding: 14
+                                        rightPadding: 14
+                                        topPadding: 0
+                                        bottomPadding: 0
+                                        Accessible.name: modelData.label + " view"
+                                        contentItem: Label {
+                                            text: viewSegment.modelData.label
+                                            color: viewSegment.selected ? theme.textPrimary : theme.textSecondary
+                                            font.pixelSize: 12 * theme.fontScale
+                                            font.bold: viewSegment.selected
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        background: Rectangle {
+                                            radius: height / 2
+                                            color: viewSegment.selected ? theme.controlBackground
+                                                : viewSegment.hovered ? theme.controlHover : "transparent"
+                                            border.width: viewSegment.activeFocus ? 2 : 0
+                                            border.color: theme.accent
+                                        }
+                                        onClicked: settingsManager.libraryView = modelData.value
+                                    }
+                                }
+                            }
+                        }
+
+                        // Card or row size for the current view. Each press steps to
+                        // the next size; the label shows the current one.
+                        Button {
+                            id: librarySizeButton
+                            readonly property var sizes: ["compact", "comfortable", "spacious"]
+                            readonly property var sizeLabels: ({
+                                compact: "Compact", comfortable: "Comfortable", spacious: "Spacious"
+                            })
+                            readonly property string currentSize:
+                                settingsManager.libraryView === "list" ? settingsManager.libraryListDensity
+                                : settingsManager.libraryView === "carousel" ? settingsManager.libraryConsoleDensity
+                                : settingsManager.libraryDensity
+                            activeFocusOnTab: true
+                            focusPolicy: Qt.StrongFocus
+                            Layout.preferredHeight: 36
+                            leftPadding: 12
+                            rightPadding: 14
+                            topPadding: 0
+                            bottomPadding: 0
+                            Accessible.name: (settingsManager.libraryView === "list" ? "Row size: " : "Card size: ")
+                                + (sizeLabels[currentSize] || currentSize)
+                            contentItem: Row {
+                                spacing: 8
+                                // Size glyph: three squares growing left to right.
+                                Row {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 2
+                                    Repeater {
+                                        model: [6, 8, 10]
+                                        delegate: Rectangle {
+                                            required property int modelData
+                                            required property int index
+                                            anchors.bottom: parent ? parent.bottom : undefined
+                                            width: modelData
+                                            height: modelData
+                                            radius: 2
+                                            color: index <= librarySizeButton.sizes.indexOf(librarySizeButton.currentSize)
+                                                ? theme.textPrimary : theme.textSubtle
+                                        }
+                                    }
+                                }
+                                Label {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: librarySizeButton.sizeLabels[librarySizeButton.currentSize]
+                                        || librarySizeButton.currentSize
+                                    color: theme.textPrimary
+                                    font.pixelSize: 12 * theme.fontScale
+                                }
+                            }
+                            background: Rectangle {
+                                radius: height / 2
+                                color: librarySizeButton.hovered ? theme.controlHover
+                                    : Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.8)
+                                border.width: librarySizeButton.activeFocus ? 2 : 0
+                                border.color: theme.accent
+                            }
+                            onClicked: {
+                                const index = sizes.indexOf(currentSize)
+                                const next = sizes[(index + 1) % sizes.length]
+                                if (settingsManager.libraryView === "list")
+                                    settingsManager.libraryListDensity = next
+                                else if (settingsManager.libraryView === "carousel")
+                                    settingsManager.libraryConsoleDensity = next
+                                else
+                                    settingsManager.libraryDensity = next
+                            }
+                        }
+                    }
+                }
+
+                // Keeps the page buttons right-aligned when the Library toolbar
+                // is hidden (Settings).
+                Item {
+                    Layout.fillWidth: true
+                    visible: !libraryFilterPanel.visible
+                }
 
                 RowLayout {
                     spacing: 22
