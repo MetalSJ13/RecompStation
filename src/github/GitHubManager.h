@@ -45,8 +45,12 @@ public:
 
     Q_INVOKABLE int fetchRepository(const QString &owner,
                                     const QString &repository);
+    // The newest published release. With includePrereleases, pre-releases
+    // count too (projects that only publish pre-releases). A repository
+    // without any full release falls back to its newest pre-release.
     Q_INVOKABLE int fetchLatestRelease(const QString &owner,
-                                       const QString &repository);
+                                       const QString &repository,
+                                       bool includePrereleases = false);
     Q_INVOKABLE QVariantMap cachedLatestRelease(const QString &owner,
                                                 const QString &repository) const;
 
@@ -56,6 +60,10 @@ public:
                                         GitHubRepository *repository,
                                         QString *errorMessage = nullptr);
     static bool parseLatestReleaseResponse(const QByteArray &response,
+                                           GitHubRelease *release,
+                                           QString *errorMessage = nullptr);
+    // The newest non-draft release in a /releases list response.
+    static bool parseNewestReleaseFromList(const QByteArray &response,
                                            GitHubRelease *release,
                                            QString *errorMessage = nullptr);
 
@@ -69,6 +77,8 @@ private:
     QNetworkAccessManager m_network;
     int m_nextRequestId = 1;
 
+    void requestRelease(int requestId, const QString &owner, const QString &repository,
+                        bool fromList);
     bool isValidRepositoryIdentifier(const QString &owner,
                                      const QString &repository) const;
     void setCommonHeaders(QNetworkRequest &request) const;

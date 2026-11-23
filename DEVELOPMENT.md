@@ -74,9 +74,13 @@ The core is done (see What is done). Remaining:
 - [ ] When adding a catalog project, record its launch recipe from the project's source (program id, game id, ROM checksum) rather than from release notes.
 
 ### 2. Catalog, platforms and file formats
-- [ ] Add the recompilation projects listed on playported.com that publish native Linux builds; support several projects per game in Game Details.
-- [ ] Add platforms supported by recompilation projects (for example Xbox 360, PS2, and others), each with researched file formats, system detection rules for the importer and scanner, TheGamesDB/LaunchBox platform mappings, and box-art shape.
-- [ ] Keep library platform support independent of whether a recompilation project exists for it.
+Source list: playported.com (about 1,200 entries; it names repositories but not owners, so each owner is found separately). A project is added only when its GitHub releases carry a native Linux build (AppImage, tar.gz or zip) that the installer can use; Flatpak-only projects are skipped (for example Unleashed Recompiled, whose Linux release is a Flatpak).
+- [x] Batch 1 (in progress on `feature/catalog-expansion-1`): Xbox 360 as a library platform (XDVDFS detection, metadata mappings); PS1: MediEvil, Bloody Roar II; Xbox: Shadow the Hedgehog, Ninja Gaiden Black; Xbox 360: Lost Odyssey, The Simpsons Game. Projects that publish only pre-releases are supported (`includePrereleases`, and an automatic fallback when a project has no full release).
+- [ ] Next batches from playported.com: more PS1 (Castlevania: SotN, Dino Crisis 1/2, Ape Escape), Xbox (Black, Jet Set Radio Future, SoulCalibur II), N64 (Bomberman 64, Harvest Moon 64, Snowboard Kids 2), Xbox 360 (Spider-Man: Edge of Time, Ninja Gaiden II).
+- [ ] Skipped for now: Blue Dragon (re:Blue's setup copies the program to a folder of the user's choice, outside the managed install), Gran Turismo 2 (Windows only), SSX 3 (Linux build from source only).
+- [ ] The launchers of batch 1 pick the game file themselves; research launch recipes (command-line arguments or data folders) so Play can hand them the file.
+- [ ] LaunchBox: catalogs downloaded before Xbox 360 was added don't contain it; Update catalog fixes that. Detect a missing platform and offer the update.
+- [ ] Add platforms supported by recompilation projects (PS2, others), each with researched file formats, detection rules, metadata mappings and box-art shape.
 - [ ] Review archive extraction safety (path traversal, absolute paths and symlinks, special files, nested archive depth, size and file-count limits) and add regression tests for each case.
 - [ ] Flatpak packages stay out of scope.
 

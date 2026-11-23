@@ -221,7 +221,8 @@ Popup {
                             { name: "PS1", files: "cue · chd · pbp" },
                             { name: "GameCube", files: "iso · rvz · gcm" },
                             { name: "Wii", files: "iso · rvz · wbfs" },
-                            { name: "Xbox", files: "iso · xiso" }
+                            { name: "Xbox", files: "iso · xiso" },
+                            { name: "Xbox 360", files: "iso" }
                         ]
                         delegate: Rectangle {
                             required property var modelData

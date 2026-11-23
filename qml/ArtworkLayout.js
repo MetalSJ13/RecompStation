@@ -16,7 +16,8 @@ function platformAspectRatio(platformName) {
     case "PS1": return 1
     case "GameCube":
     case "Wii":
-    case "Xbox": return 5 / 7
+    case "Xbox":
+    case "Xbox 360": return 5 / 7
     default: return 0
     }
 }

@@ -132,12 +132,14 @@ int GitHubManager::fetchRepository(const QString &owner,
 }
 
 int GitHubManager::fetchLatestRelease(const QString &owner,
-                                      const QString &repository)
+                                      const QString &repository,
+                                      bool includePrereleases)
 {
     const int requestId = m_nextRequestId++;
     const QString cleanOwner = owner.trimmed();
     const QString cleanRepository = repository.trimmed();
-    qCInfo(lcGitHub) << "Latest release request:" << cleanOwner << "/" << cleanRepository;
+    qCInfo(lcGitHub) << "Latest release request:" << cleanOwner << "/" << cleanRepository
+                     << "pre-releases:" << includePrereleases;
 
     if (!isValidRepositoryIdentifier(cleanOwner, cleanRepository)) {
         emit requestFailed(requestId,
@@ -145,24 +147,42 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
         return requestId;
     }
 
-    const QUrl url(QStringLiteral("https://api.github.com/repos/%1/%2/releases/latest")
-                       .arg(cleanOwner, cleanRepository));
+    requestRelease(requestId, cleanOwner, cleanRepository, includePrereleases);
+    return requestId;
+}
+
+void GitHubManager::requestRelease(int requestId, const QString &cleanOwner,
+                                   const QString &cleanRepository, bool fromList)
+{
+    const QUrl url(fromList
+        ? QStringLiteral("https://api.github.com/repos/%1/%2/releases?per_page=10")
+              .arg(cleanOwner, cleanRepository)
+        : QStringLiteral("https://api.github.com/repos/%1/%2/releases/latest")
+              .arg(cleanOwner, cleanRepository));
     QNetworkRequest request(url);
     setCommonHeaders(request);
 
     QNetworkReply *reply = m_network.get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply, requestId,
-                                                     cleanOwner, cleanRepository]() {
+                                                     cleanOwner, cleanRepository, fromList]() {
         const int statusCode =
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         const QByteArray response = reply->readAll();
 
         if (reply->error() != QNetworkReply::NoError) {
+            reply->deleteLater();
+            // No full release yet: GitHub answers 404 for /releases/latest
+            // when a project has only published pre-releases.
+            if (!fromList && statusCode == 404) {
+                qCInfo(lcGitHub) << "No full release for" << cleanOwner << "/" << cleanRepository
+                                 << "- checking pre-releases";
+                requestRelease(requestId, cleanOwner, cleanRepository, true);
+                return;
+            }
             const QString message = apiErrorMessage(
                 statusCode, reply->errorString(),
                 QStringLiteral("latest release for %1/%2")
                     .arg(cleanOwner, cleanRepository));
-            reply->deleteLater();
             qCWarning(lcGitHub) << "Release request failed:" << message;
             emit requestFailed(requestId, message);
             return;
@@ -170,7 +190,8 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
 
         GitHubRelease release;
         QString error;
-        const bool ok = parseLatestReleaseResponse(response, &release, &error);
+        const bool ok = fromList ? parseNewestReleaseFromList(response, &release, &error)
+                                 : parseLatestReleaseResponse(response, &release, &error);
         reply->deleteLater();
         if (!ok) {
             emit requestFailed(requestId, error);
@@ -194,8 +215,31 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
         emit releaseLoaded(requestId, release);
         emit releaseDataLoaded(requestId, releaseToVariantMap(release));
     });
+}
 
-    return requestId;
+bool GitHubManager::parseNewestReleaseFromList(const QByteArray &response,
+                                               GitHubRelease *release,
+                                               QString *errorMessage)
+{
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(response, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isArray()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("GitHub returned an invalid release list.");
+        return false;
+    }
+    // GitHub lists releases newest first.
+    for (const QJsonValue &value : document.array()) {
+        const QJsonObject object = value.toObject();
+        if (object.isEmpty() || object.value(QStringLiteral("draft")).toBool())
+            continue;
+        if (parseLatestReleaseResponse(QJsonDocument(object).toJson(QJsonDocument::Compact),
+                                       release, errorMessage))
+            return true;
+    }
+    if (errorMessage)
+        *errorMessage = QStringLiteral("This project has not published a release yet.");
+    return false;
 }
 
 QVariantMap GitHubManager::cachedLatestRelease(const QString &owner,
