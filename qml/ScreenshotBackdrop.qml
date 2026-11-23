@@ -14,6 +14,10 @@ Item {
     property string fallbackSource: ""
     // "right" or "center": where the sharp screenshot sits.
     property string alignment: "center"
+    // false shows only the blurred fill (for panels that show the cover instead).
+    property bool showSharpImage: true
+    // Strength of the blurred fill behind or instead of the sharp image.
+    property real fillOpacity: 0.55
     property bool cycling: true
     property int interval: 9000
     property bool reducedMotion: false
@@ -96,11 +100,11 @@ Item {
                 blur: 1.0
                 blurMax: 64
                 autoPaddingEnabled: false
-                opacity: fillImage.status === Image.Ready ? (layer.isScreenshot ? 0.55 : 0.5) : 0
+                opacity: fillImage.status === Image.Ready ? (layer.isScreenshot ? root.fillOpacity : 0.5) : 0
             }
             Image {
                 anchors.fill: parent
-                visible: layer.isScreenshot
+                visible: layer.isScreenshot && root.showSharpImage
                 source: layer.layerSource
                 fillMode: Image.PreserveAspectFit
                 horizontalAlignment: root.alignment === "right" ? Image.AlignRight : Image.AlignHCenter

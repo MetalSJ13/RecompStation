@@ -3585,12 +3585,14 @@ ApplicationWindow {
                                 readonly property bool running: project !== null
                                     && window.runningLaunchers[project.id] === true
 
-                                // Screenshot slideshow, shown whole on the right over a
-                                // blurred fill (blurred cover when there are none).
+                                // Blurred screenshot slideshow behind the text (blurred
+                                // cover when there are none); the box cover sits on the right.
                                 ScreenshotBackdrop {
                                     id: spotlightBackdrop
                                     anchors.fill: parent
                                     alignment: "right"
+                                    showSharpImage: false
+                                    fillOpacity: 0.7
                                     sources: shelvesSpotlight.game && shelvesSpotlight.game.screenshots
                                         ? shelvesSpotlight.game.screenshots : []
                                     fallbackSource: shelvesSpotlight.game ? shelvesSpotlight.game.artworkPath : ""
@@ -3744,8 +3746,7 @@ ApplicationWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     height: parent.height - 56
                                     width: Math.round(height * 1.4)
-                                    // The cover shows only when there is no screenshot on the right.
-                                    visible: parent.width > 1100 && !spotlightBackdrop.hasScreenshots
+                                    visible: parent.width > 1100
                                     source: shelvesSpotlight.game ? shelvesSpotlight.game.artworkPath : ""
                                     platform: shelvesSpotlight.game ? shelvesSpotlight.game.platform : ""
                                     themeTokens: theme
