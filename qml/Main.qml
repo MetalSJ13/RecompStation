@@ -3667,13 +3667,6 @@ ApplicationWindow {
 
                                 readonly property bool highlighted:
                                     tileMouse.containsMouse || gameTile.GridView.isCurrentItem
-                                // The blurred fill is useful for landscape covers with
-                                // letterboxing, but duplicates portrait cover art. Keep
-                                // portrait artwork clean so it does not ghost during fades.
-                                readonly property bool useBlurredArtworkBackdrop:
-                                    gameTile.platform !== "N64"
-                                    && gameTileCover.status === Image.Ready
-                                    && gameTileCover.sourceSize.width > gameTileCover.sourceSize.height
                                 function openDetails() {
                                     window.selectedGame = {
                                         id: gameTile.gameId,
@@ -3758,96 +3751,14 @@ ApplicationWindow {
                                             Layout.minimumHeight: 96
                                             Layout.maximumHeight: Math.round((gameTile.width - 20) * 1.5)
 
-                                            Rectangle {
+                                            GameArtwork {
+                                                id: gameTileArtwork
                                                 anchors.fill: parent
-                                                radius: theme.radiusSmall
-                                                color: theme.sidebarBackground
-                                                clip: true
-                                                Image {
-                                                    id: artworkBackdrop
-                                                    anchors.fill: parent
-                                                    source: gameTile.artworkPath
-                                                    fillMode: Image.PreserveAspectCrop
-                                                    horizontalAlignment: Image.AlignHCenter
-                                                    verticalAlignment: Image.AlignVCenter
-                                                    asynchronous: true
-                                                    cache: true
-                                                    visible: gameTile.useBlurredArtworkBackdrop
-                                                    opacity: 0.42
-                                                }
-                                                MultiEffect {
-                                                    anchors.fill: parent
-                                                    source: artworkBackdrop
-                                                    blurEnabled: true
-                                                    blur: 0.8
-                                                    autoPaddingEnabled: false
-                                                    visible: gameTile.useBlurredArtworkBackdrop
-                                                }
-                                                Rectangle {
-                                                    anchors.fill: parent
-                                                    color: theme.artworkOverlay
-                                                    visible: gameTile.artworkPath.length > 0
-                                                }
-                                            }
-
-                                            // Portrait frame follows the cover's own aspect ratio,
-                                            // bounded by the available artwork viewport. This keeps
-                                            // the complete cover visible without empty bands inside
-                                            // the frame. Landscape artwork keeps the full viewport.
-                                            Rectangle {
-                                                id: gameTileArtworkFrame
-                                                anchors.centerIn: parent
-                                                // Keep a clear gutter between the artwork frame
-                                                // and the outer card edge in every density.
-                                                readonly property real frameInset: 4
-                                                readonly property real availableWidth:
-                                                    Math.max(1, parent.width - frameInset * 2)
-                                                readonly property real availableHeight:
-                                                    Math.max(1, parent.height - frameInset * 2)
-                                                // Follow the real aspect ratio for every platform,
-                                                // not just portrait covers. This lets GameCube, Wii,
-                                                // and Xbox artwork meet all four inner-frame edges.
-                                                readonly property real coverRatio:
-                                                    gameTileCover.status === Image.Ready
-                                                    && gameTileCover.sourceSize.width > 0
-                                                    && gameTileCover.sourceSize.height > 0
-                                                        ? gameTileCover.sourceSize.width / gameTileCover.sourceSize.height
-                                                        : availableWidth / availableHeight
-                                                width: Math.min(availableWidth, availableHeight * coverRatio)
-                                                height: Math.min(availableHeight, availableWidth / Math.max(0.01, coverRatio))
-                                                radius: theme.radiusSmall
-                                                color: theme.sidebarBackground
-                                                border.width: 1
-                                                border.color: gameTile.highlighted
-                                                    ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.78)
-                                                    : Qt.rgba(theme.divider.r, theme.divider.g,
-                                                              theme.divider.b, 0.34)
-                                                clip: true
-                                                Behavior on border.color {
-                                                    enabled: !settingsManager.reducedMotion
-                                                    ColorAnimation { duration: 170; easing.type: Easing.OutCubic }
-                                                }
-                                                Image {
-                                                    id: gameTileCover
-                                                    anchors.fill: parent
-                                                    anchors.margins: 0
-                                                    source: gameTile.artworkPath
-                                                    fillMode: Image.PreserveAspectFit
-                                                    asynchronous: true
-                                                    cache: true
-                                                    smooth: true
-                                                    mipmap: true
-                                                    visible: status === Image.Ready
-                                                }
-                                                Image {
-                                                    anchors.fill: parent
-                                                    anchors.margins: 5
-                                                    source: "qrc:/icons/game-artwork-unavailable.png"
-                                                    fillMode: Image.PreserveAspectFit
-                                                    asynchronous: true
-                                                    cache: true
-                                                    visible: gameTileCover.status !== Image.Ready
-                                                }
+                                                source: gameTile.artworkPath
+                                                platform: gameTile.platform
+                                                highlighted: gameTile.highlighted
+                                                reducedMotion: settingsManager.reducedMotion
+                                                themeTokens: theme
                                             }
                                         }
 

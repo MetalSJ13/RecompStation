@@ -86,6 +86,7 @@ qt_add_qml_module(RecompStationApp
     QML_FILES
         qml/Main.qml
         qml/Theme.qml
+        qml/GameArtwork.qml
     RESOURCES
         assets/library-waves.svg
         assets/library-waves-violet.svg
@@ -134,7 +135,7 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
-    find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
+    find_package(Qt6 6.5 REQUIRED COMPONENTS Test QuickTest)
 
     qt_add_executable(ArchiveExtractorTests
         src/core/Logging.h
@@ -525,6 +526,25 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME GitHubManagerTests COMMAND GitHubManagerTests)
+
+    # QML-side logic tests. Each tst_*.qml file in tests/qml runs as a test case.
+    qt_add_executable(ArtworkLayoutTests
+        tests/qml/ArtworkLayoutTestMain.cpp
+    )
+
+    target_compile_definitions(ArtworkLayoutTests PRIVATE
+        QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml"
+    )
+
+    target_link_libraries(ArtworkLayoutTests PRIVATE
+        Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickTest
+    )
+
+    add_test(NAME ArtworkLayoutTests COMMAND ArtworkLayoutTests)
+    # Run without opening a window on the developer's desktop.
+    set_tests_properties(ArtworkLayoutTests PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
 endif()
 
 install(TARGETS RecompStationApp RUNTIME DESTINATION bin)
