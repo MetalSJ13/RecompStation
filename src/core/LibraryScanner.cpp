@@ -387,3 +387,8 @@ void LibraryScanner::scanNextPlatformAsync()
     ++m_asyncPlatformIndex;
     QTimer::singleShot(0, this, &LibraryScanner::scanNextPlatformAsync);
 }
+
+void LibraryScanner::setWatchDebounceInterval(int milliseconds)
+{
+    m_watchDebounceTimer.setInterval(qMax(0, milliseconds));
+}

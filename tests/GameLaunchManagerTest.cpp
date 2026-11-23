@@ -48,7 +48,7 @@ void GameLaunchManagerTest::launchesManagedExecutableAndTracksProcess()
     const QString invokedPathFile = QDir(installDirectory).filePath("invoked-path.txt");
     const QByteArray script(
         "#!/bin/sh\nprintf '%s' \"$0\" > \"" + invokedPathFile.toUtf8()
-        + "\"\nsleep 1\n");
+        + "\"\nsleep 0.3\n");
     QCOMPARE(executable.write(script), qint64(script.size()));
     executable.close();
     QVERIFY(executable.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner
@@ -107,7 +107,7 @@ void GameLaunchManagerTest::launchesShellScriptRelativeToInstallationDirectory()
     QVERIFY(scriptFile.open(QIODevice::WriteOnly));
     const QByteArray script(
         "#!/bin/sh\nprintf '%s' \"$0\" > \"" + invokedPathFile.toUtf8()
-        + "\"\nsleep 1\n");
+        + "\"\nsleep 0.3\n");
     QCOMPARE(scriptFile.write(script), qint64(script.size()));
     scriptFile.close();
     QVERIFY(scriptFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner

@@ -95,8 +95,11 @@ The core is done (see What is done). Remaining:
 - [ ] Decide whether a shared TheGamesDB key could ever be shipped (licensing, rate limits, attribution) or whether user keys remain the only option.
 
 ### 5. Build and test performance
-- [ ] Measure where build time goes (Main.qml compilation, moc/rcc, linking) and adopt the safe wins: compiler cache, a faster linker when available, splitting the largest QML file, parallel test runs.
-- [ ] Shorten the regression suite's wall time without reducing coverage (parallel CTest, removing fixed waits from the slowest tests).
+- [x] Shared `recompstation_core` static library: the app and every test link it, instead of each test recompiling the sources it uses (was 98 compilations of 29 files, now 29).
+- [x] ccache when installed; mold, then lld, as the linker when the compiler accepts it (`-DRECOMPSTATION_FAST_LINKER=OFF` to opt out). `mold` added to the Arch dependency script.
+- [x] Tests run in parallel (`ctest -j`, `JOBS` to override); `build.sh` prints configure, build and test times.
+- [x] Fixed waits removed from the slowest tests without changing what they check: the library watcher's debounce is 50 ms in tests (750 ms in the app), and the launch tests' scripts sleep 0.3 s instead of 1 s.
+- [ ] Measure again with the printed times; if Main.qml's QML compilation (qmlcachegen, 8,000 lines) dominates, split it into components (Library, Settings pages) so changes recompile less.
 
 ### 6. Input, accessibility and regression
 - [ ] Contrast, accessible names, tab order and scaling review across all pages.
@@ -140,6 +143,7 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 Dependencies:
 - Qt 6.5 or newer, including Qt SVG and Qt Shader Tools (`qt6-shadertools` on Arch Linux)
 - A C++20 compiler and CMake; Ninja is recommended
+- Optional, for faster builds: ccache and mold (or lld), picked up automatically
 - libarchive (`libarchive` on Arch Linux)
 - SDL2 for controller support (optional at build time)
 
@@ -148,7 +152,7 @@ From the repository root:
 ```bash
 ./scripts/install_dependencies.sh   # Arch-based systems
 ./scripts/build.sh                  # Debug build
-./scripts/build.sh --test           # build and run the CTest suites
+./scripts/build.sh --test           # build and run the CTest suites in parallel
 ./scripts/run.sh                    # start the app
 ```
 

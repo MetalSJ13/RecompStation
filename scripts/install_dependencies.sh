@@ -44,6 +44,7 @@ PACKAGES=(
     qt6-wayland
     clang
     ccache
+    mold
     sqlite
 )
 

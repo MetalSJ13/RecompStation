@@ -15,12 +15,13 @@ Options:
   Debug             Build with debug symbols (default).
   Release           Build an optimized release build.
   RelWithDebInfo    Build optimized with debug symbols.
-  --test            Run the CTest regression suite after building.
+  --test            Run the CTest regression suite after building (in parallel).
   -h, --help        Show this help.
 
 Environment:
   BUILD_DIR         Override the build directory.
   BUILD_TESTING     Set to ON or OFF (default: ON).
+  JOBS              Parallel compile and test jobs (default: number of CPUs).
 EOF
 }
 
@@ -79,19 +80,32 @@ echo "Generator:     $GENERATOR"
 echo "Build tests:   $BUILD_TESTING"
 echo
 
+JOBS="${JOBS:-$(nproc 2>/dev/null || echo 4)}"
+SECONDS=0
 cmake -S "$PROJECT_ROOT" \
       -B "$BUILD_DIR" \
       -G "$GENERATOR" \
       -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
       -DBUILD_TESTING="$BUILD_TESTING"
+CONFIGURE_SECONDS=$SECONDS
 
-cmake --build "$BUILD_DIR" --parallel
+SECONDS=0
+cmake --build "$BUILD_DIR" --parallel "$JOBS"
+BUILD_SECONDS=$SECONDS
 
+TEST_SECONDS=""
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo
-    echo "Running scanner regression tests..."
-    ctest --test-dir "$BUILD_DIR" --output-on-failure
+    echo "Running the regression tests ($JOBS at a time)..."
+    SECONDS=0
+    # Each test uses its own temporary folders and settings, so they can run
+    # side by side.
+    ctest --test-dir "$BUILD_DIR" --output-on-failure -j "$JOBS" --timeout 120
+    TEST_SECONDS=$SECONDS
 fi
+
+echo
+echo "Time: configure ${CONFIGURE_SECONDS}s, build ${BUILD_SECONDS}s${TEST_SECONDS:+, tests ${TEST_SECONDS}s}"
 
 echo
 echo "Build completed successfully!"

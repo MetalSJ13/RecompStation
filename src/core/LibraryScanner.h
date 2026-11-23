@@ -36,6 +36,9 @@ public:
     Q_INVOKABLE int scanPlatform(const QString &platform);
     Q_INVOKABLE bool startMonitoring();
     Q_INVOKABLE void stopMonitoring();
+    // How long file changes settle before a rescan (default WatchDebounceMs).
+    // Tests shorten it.
+    void setWatchDebounceInterval(int milliseconds);
 
 signals:
     void scanStarted();

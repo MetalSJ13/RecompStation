@@ -66,6 +66,9 @@ private slots:
 
         m_scanner = std::make_unique<LibraryScanner>(
             m_platformManager.get(), m_databaseManager.get());
+        // The production debounce (750 ms) only slows the test down; the
+        // behaviour under test is the same with a short one.
+        m_scanner->setWatchDebounceInterval(50);
     }
 
     void cleanup()
@@ -128,6 +131,7 @@ private slots:
                  qPrintable(databaseManager.lastError()));
 
         LibraryScanner scanner(&platformManager, &databaseManager);
+        scanner.setWatchDebounceInterval(50);
         QSignalSpy scanSpy(&scanner, &LibraryScanner::scanCompleted);
         QVERIFY(scanSpy.isValid());
         QVERIFY(!platformManager.libraryConfigured());
@@ -269,7 +273,8 @@ private slots:
         QVERIFY(!m_scanner->monitoringActive());
 
         QVERIFY(writeGameFile("N64", "WhileStopped.z64"));
-        QTest::qWait(1000);
+        // Several debounce intervals: a running watcher would have rescanned.
+        QTest::qWait(300);
         QVERIFY(m_databaseManager->games("N64").isEmpty());
 
         QVERIFY(m_scanner->startMonitoring());
