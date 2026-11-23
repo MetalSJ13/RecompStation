@@ -65,10 +65,16 @@ Direction chosen by the user from design mockups (today; recompilation installed
 
 **Pass 1 — move without visual change**
 - [x] Move the Game Details popup (about 1,030 lines) into `qml/GameDetailsPage.qml`, instantiated in `Main.qml` with the same `gameDetailsPopup` id. It continues to read application state from the `Main.qml` scope it is created in. `contentFrame` and `infoScroll` aliases replace the two direct references from Main.qml's controller navigation.
-- [ ] User validation: build and all CTest suites pass; Game Details opens from every view and looks and behaves exactly as before (backdrop cycling, LB/RB game switching and its animation, scrolling with the controller, install/play/uninstall and prompts, Back).
+- [x] User validation (2026-11-22): Game Details works exactly as before after the move.
 
 **Pass 2 — redesign**
-- [ ] Implement the agreed layout and actions in `GameDetailsPage.qml`.
+- [x] Replace the layout in `GameDetailsPage.qml`; all state, functions, animations, backdrop cycling, and launcher calls are unchanged.
+  - Hero: cover at its platform shape (height 220–360 px), platform / project-status / development-status chips, metadata title (file name when no metadata), year and formatted rating ("Local library entry" without metadata), the primary action, and one line of context or the latest launch, download, or release error.
+  - Primary action by state: Play ("Running…" while running); Install <project> → the existing Yes / No confirmation (BETA / ALPHA wording kept) → `startAssetDownload`; Find compatible launcher when no release has been checked; a disabled "Checking for releases…" while checking; a progress pill while downloading / installing; Retry after a release error. Installed games also show Check for updates and a ⋯ button that reveals Uninstall… inline (D-pad reachable), which opens the existing confirmation dialog. There is no download Cancel: the downloader has no cancel operation yet.
+  - Below, in a scroll view (two columns above 1100 px, stacked below): About (overview, or the existing "Game information not found" card with Retry Metadata and View Metadata Settings) and up to three screenshots (the one shown as the backdrop is outlined); a Recompilation card with project chips when several projects match, name, repository, alpha/beta notice, and Status / Release / Package / ROM / Installed at rows.
+  - Top right: the game's position ("2 of 45") with LB / RB glyphs while a controller is active.
+  - Opening the page or switching games focuses the primary action (Play, Install, or Find), so A acts immediately; Back otherwise.
+- [ ] User validation: build and all CTest suites pass; installed, not installed, never checked, checking, downloading/installing, release error, launch error, no supported project, several projects (Open Nectar), no metadata, no screenshots; A on open; D-pad reach of every button including ⋯ → Uninstall…; LB/RB switching and its animation; backdrop cycling; narrow and short windows; Reduced Motion.
 
 ## List with preview pane (2026-11-22)
 

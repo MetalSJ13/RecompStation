@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
+import "LibraryGridLayout.js" as LibraryGridLayout
 
 // Game Details: the full-window page opened from every Library view (A / Y /
 // Enter / click). Moved out of Main.qml unchanged; it still reads application
@@ -242,7 +243,7 @@ Popup {
             detailsContentFrame.opacity = 1
             detailsContentFrame.enabled = true
             gameDetailsPopup.switchAnimating = false
-            detailsBackButton.forceActiveFocus()
+            detailsContentFrame.focusPrimaryAction()
         }
     }
 
@@ -250,7 +251,7 @@ Popup {
         resettingProjectSelection = true
         selectedProjectId = supportedProjects.length > 0 ? supportedProjects[0].id : ""
         resettingProjectSelection = false
-        detailsBackButton.forceActiveFocus()
+        Qt.callLater(detailsContentFrame.focusPrimaryAction)
         screenshotIndex = 0
         previousScreenshotIndex = -1
         screenshotLayerA = true
@@ -498,547 +499,751 @@ Popup {
             }
         }
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.margins: Math.max(32, Math.min(88, detailsContentFrame.width * 0.045))
-            spacing: 48
-
-        Rectangle {
-            Layout.preferredWidth: 214
-            Layout.preferredHeight: 306
-            Layout.fillHeight: false
-            Layout.alignment: Qt.AlignTop
-            radius: theme.radiusCard
-            color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.12)
-            clip: true
-
-            Image {
-                id: gameCoverImage
-                anchors.fill: parent
-                anchors.margins: 0
-                source: window.selectedGame ? window.selectedGame.artworkPath : ""
-                fillMode: Image.PreserveAspectFit
-                asynchronous: true
-                smooth: true
+        // ------------------------------------------------------------------
+        // Layout (redesign pass 2): cover at its platform shape beside the
+        // title and the primary launcher action, then About / Screenshots
+        // and a Recompilation card. All actions call the same window helpers
+        // and popup state as before.
+        // ------------------------------------------------------------------
+        readonly property real pageMargin: Math.max(32, Math.min(88, width * 0.045))
+        readonly property var gamePosition: {
+            const games = gameGrid.model || []
+            if (!window.selectedGame)
+                return { index: -1, count: games.length }
+            for (let i = 0; i < games.length; ++i) {
+                if (Number(games[i].id) === Number(window.selectedGame.id))
+                    return { index: i, count: games.length }
             }
-            Image {
-                anchors.fill: parent
-                anchors.margins: 0
-                source: "qrc:/icons/game-artwork-unavailable.png"
-                fillMode: Image.PreserveAspectFit
-                visible: !window.selectedGame
-                    || !window.selectedGame.artworkPath
-                    || window.selectedGame.artworkPath.length === 0
-                    || gameCoverImage.status === Image.Error
-                asynchronous: true
-                smooth: true
-            }
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                height: 54
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop { position: 1.0; color: theme.artworkFade }
-                }
+            return { index: -1, count: games.length }
+        }
+
+        // LB / RB position, top right.
+        Row {
+            z: 10
+            anchors.right: parent.right
+            anchors.rightMargin: 28
+            anchors.top: parent.top
+            anchors.topMargin: 26
+            spacing: 10
+            visible: detailsContentFrame.gamePosition.index >= 0
+            Label {
+                visible: window.activeInputDevice === "controller" && controllerManager.connected
+                text: window.platformCycleButtonLabels()[0]
+                color: theme.textMuted
+                font.pixelSize: 10 * theme.fontScale
+                font.bold: true
+                leftPadding: 6; rightPadding: 6; topPadding: 2; bottomPadding: 2
+                background: Rectangle { radius: 4; color: "transparent"; border.color: theme.divider }
             }
             Label {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.margins: 16
-                text: window.selectedGame ? window.selectedGame.platform : ""
-                color: theme.textPrimary
+                text: (detailsContentFrame.gamePosition.index + 1) + " of " + detailsContentFrame.gamePosition.count
+                color: theme.textSecondary
                 font.pixelSize: 12 * theme.fontScale
+            }
+            Label {
+                visible: window.activeInputDevice === "controller" && controllerManager.connected
+                text: window.platformCycleButtonLabels()[1]
+                color: theme.textMuted
+                font.pixelSize: 10 * theme.fontScale
                 font.bold: true
+                leftPadding: 6; rightPadding: 6; topPadding: 2; bottomPadding: 2
+                background: Rectangle { radius: 4; color: "transparent"; border.color: theme.divider }
             }
         }
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 20
+        // Hero: cover, chips, title, metadata line, primary action.
+        Item {
+            id: detailsHero
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.leftMargin: detailsContentFrame.pageMargin
+            anchors.rightMargin: detailsContentFrame.pageMargin
+            anchors.topMargin: 76
+            readonly property real coverHeight: Math.round(Math.max(220, Math.min(360, detailsContentFrame.height * 0.36)))
+            height: coverHeight
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 12
-                ColumnLayout {
+            GameArtwork {
+                id: detailsCover
+                anchors.left: parent.left
+                anchors.top: parent.top
+                height: detailsHero.coverHeight
+                width: Math.round(height * LibraryGridLayout.frameRatioForPlatform(
+                    window.selectedGame ? window.selectedGame.platform : ""))
+                source: window.selectedGame ? window.selectedGame.artworkPath : ""
+                platform: window.selectedGame ? window.selectedGame.platform : ""
+                themeTokens: theme
+                reducedMotion: settingsManager.reducedMotion
+                frameMode: "platform"
+                frameInset: 0
+                showViewportBackground: false
+            }
+
+            ColumnLayout {
+                anchors.left: detailsCover.right
+                anchors.leftMargin: 36
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                spacing: 10
+
+                Flow {
                     Layout.fillWidth: true
-                    spacing: 4
-                    Label {
-                        Layout.fillWidth: true
-                        text: window.selectedGame ? window.selectedGame.title : ""
-                        color: theme.textPrimary
-                        font.pixelSize: 38 * theme.fontScale
-                        font.bold: true
-                        elide: Text.ElideRight
-                    }
-                    Label {
-                        text: window.selectedGame
-                            && window.selectedGame.metadataTitle.length > 0
-                            ? "GAME INFORMATION"
-                            : "LOCAL LIBRARY ENTRY"
-                        color: theme.accentHover
-                        font.pixelSize: 10 * theme.fontScale
-                        font.bold: true
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: theme.divider
-            }
-
-            ScrollView {
-                id: gameInfoScroll
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-                contentWidth: availableWidth
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-
-                ColumnLayout {
-                    width: gameInfoScroll.availableWidth
-                    spacing: 14
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 7
+                    spacing: 8
+                    Rectangle {
+                        height: 26
+                        width: detailsPlatformChipLabel.implicitWidth + 24
+                        radius: 13
+                        color: Qt.rgba(theme.textPrimary.r, theme.textPrimary.g, theme.textPrimary.b, 0.14)
                         Label {
-                            text: "ABOUT THIS GAME"
-                            color: theme.textMuted
-                            font.pixelSize: 10 * theme.fontScale
+                            id: detailsPlatformChipLabel
+                            anchors.centerIn: parent
+                            text: window.selectedGame
+                                ? window.platformDisplayName(window.selectedGame.platform).toUpperCase() : ""
+                            color: theme.textPrimary
+                            font.pixelSize: 11 * theme.fontScale
+                            font.bold: true
+                            font.letterSpacing: 0.6
+                        }
+                    }
+                    Rectangle {
+                        visible: gameDetailsPopup.selectedProject !== null
+                        height: 26
+                        width: detailsProjectChipLabel.implicitWidth + 24
+                        radius: 13
+                        color: gameDetailsPopup.installedProject !== null
+                            ? Qt.rgba(theme.success.r, theme.success.g, theme.success.b, 0.16)
+                            : Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.16)
+                        Label {
+                            id: detailsProjectChipLabel
+                            anchors.centerIn: parent
+                            text: !gameDetailsPopup.selectedProject ? ""
+                                : gameDetailsPopup.selectedProject.name
+                                    + (gameDetailsPopup.installedProject !== null ? " · Installed"
+                                        : (gameDetailsPopup.downloadState.loading || gameDetailsPopup.downloadState.installing)
+                                            ? " · Installing" : " · Available")
+                            color: gameDetailsPopup.installedProject !== null ? theme.success : theme.accentHover
+                            font.pixelSize: 11 * theme.fontScale
                             font.bold: true
                         }
-                        Rectangle {
-                            Layout.fillWidth: true
-                            visible: !!window.selectedGame
-                                && (!window.selectedGame.metadataTitle
-                                    || window.selectedGame.metadataTitle.length === 0)
-                            radius: theme.radiusCard
-                            color: theme.surface
-                            border.color: theme.divider
-                            border.width: 1
-                            implicitHeight: metadataEmptyContent.implicitHeight + 32
-
-                            ColumnLayout {
-                                id: metadataEmptyContent
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.margins: 16
-                                spacing: 10
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 10
-                                    Image {
-                                        source: "qrc:/icons/metadata.svg"
-                                        sourceSize.width: 24
-                                        sourceSize.height: 24
-                                        Layout.preferredWidth: 24
-                                        Layout.preferredHeight: 24
-                                        opacity: 0.8
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "GAME INFORMATION NOT FOUND"
-                                        color: theme.textPrimary
-                                        font.pixelSize: 13 * theme.fontScale
-                                        font.bold: true
-                                    }
-                                }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "We couldn't find matching game information. Try a different metadata provider in Settings → Metadata, then retry the lookup. Your local game entry is safe, and compatible launchers can still be installed and played."
-                                    color: theme.textSecondary
-                                    font.pixelSize: 15 * theme.fontScale
-                                    wrapMode: Text.Wrap
-                                    lineHeight: 1.18
-                                    lineHeightMode: Text.ProportionalHeight
-                                }
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 10
-                                    Button {
-                                        text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
-                                        enabled: (metadataManager.configured
-                                            || (settingsManager.launchBoxEnabled
-                                                && launchBoxCatalogManager.catalogAvailable))
-                                            && !metadataMatcher.busy
-                                        onClicked: {
-                                            console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
-                                            metadataMatcher.scrapeGame(window.selectedGame.id)
-                                        }
-                                    }
-                                    Button {
-                                        text: "View Metadata Settings"
-                                        onClicked: {
-                                            gameDetailsPopup.close()
-                                            currentPage = "Settings"
-                                            settingsPage.section = "Metadata"
-                                            Qt.callLater(function() {
-                                                metadataNavigationButton.forceActiveFocus()
-                                            })
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    }
+                    Rectangle {
+                        visible: gameDetailsPopup.selectedProject !== null
+                            && gameDetailsPopup.selectedProject.developmentStatus !== undefined
+                            && gameDetailsPopup.selectedProject.developmentStatus !== "playable"
+                        height: 26
+                        width: detailsDevStatusLabel.implicitWidth + 24
+                        radius: 13
+                        color: gameDetailsPopup.selectedProject
+                            && gameDetailsPopup.selectedProject.developmentStatus === "beta"
+                            ? theme.warningSurface : theme.neutralStatusSurface
                         Label {
-                            Layout.fillWidth: true
-                            visible: !!window.selectedGame
-                                && !!window.selectedGame.metadataTitle
-                                && window.selectedGame.metadataTitle.length > 0
-                            text: window.selectedGame ? window.selectedGame.metadataOverview : ""
-                            color: theme.textSecondary
-                            font.pixelSize: 17 * theme.fontScale
-                            wrapMode: Text.Wrap
-                            lineHeight: 1.18
-                            lineHeightMode: Text.ProportionalHeight
-                        }
-                        Label {
-                            Layout.fillWidth: true
-                            visible: !!window.selectedGame
-                                && (window.selectedGame.metadataReleaseDate.length > 0
-                                    || window.selectedGame.metadataRating.length > 0)
-                            text: window.selectedGame
-                                ? [window.selectedGame.metadataReleaseDate,
-                                   window.selectedGame.metadataRating.length > 0
-                                       ? "Rating " + window.selectedGame.metadataRating : ""]
-                                      .filter(value => value.length > 0).join("    •    ")
-                                : ""
-                            color: theme.textMuted
+                            id: detailsDevStatusLabel
+                            anchors.centerIn: parent
+                            text: gameDetailsPopup.selectedProject
+                                ? String(gameDetailsPopup.selectedProject.developmentStatus).replace("_", " ").toUpperCase() : ""
+                            color: theme.warningText
                             font.pixelSize: 11 * theme.fontScale
+                            font.bold: true
                         }
                     }
+                }
 
+                Label {
+                    Layout.fillWidth: true
+                    text: window.selectedGame
+                        ? (window.selectedGame.metadataTitle || window.selectedGame.title) : ""
+                    color: theme.textPrimary
+                    font.pixelSize: 46 * theme.fontScale
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                }
+                Label {
+                    Layout.fillWidth: true
+                    readonly property string year: window.selectedGame && window.selectedGame.metadataReleaseDate
+                        ? String(window.selectedGame.metadataReleaseDate).substring(0, 4) : ""
+                    readonly property string rating: window.selectedGame
+                        ? window.formatGameRating(window.selectedGame.metadataRating) : ""
+                    text: [year, rating].filter(part => part.length > 0).join("  ·  ")
+                        || (window.selectedGame && !window.selectedGame.metadataTitle
+                            ? "Local library entry" : "")
+                    visible: text.length > 0
+                    color: theme.textSecondary
+                    font.pixelSize: 15 * theme.fontScale
+                }
+
+                // Primary action, following the launcher lifecycle.
+                RowLayout {
+                    id: detailsActions
+                    Layout.topMargin: 8
+                    spacing: 10
+                    readonly property bool hasProject: gameDetailsPopup.selectedProject !== null
+                    readonly property bool installed: gameDetailsPopup.installedProject !== null
+                    readonly property bool busy: !!gameDetailsPopup.downloadState.loading
+                        || !!gameDetailsPopup.downloadState.installing
+                    readonly property bool running: hasProject
+                        && !!window.runningLaunchers[gameDetailsPopup.selectedProject.id]
+                    readonly property bool canInstall: hasProject && !installed && !busy
+                        && !gameDetailsPopup.releaseState.loading
+                        && gameDetailsPopup.releaseState.assets.length > 0
+                    readonly property bool canFind: hasProject && !installed && !busy
+                        && !gameDetailsPopup.releaseState.loading
+                        && !gameDetailsPopup.releaseInfo
+                        && gameDetailsPopup.releaseState.error.length === 0
+                    property bool moreOpen: false
+
+                    // Installed: Play.
+                    Button {
+                        id: detailsPlayButton
+                        visible: detailsActions.installed
+                        enabled: !detailsActions.running
+                        text: detailsActions.running ? "Running…" : "Play"
+                        icon.source: "qrc:/icons/play.svg"
+                        icon.width: 18
+                        icon.height: 18
+                        implicitHeight: 52
+                        Layout.preferredWidth: 150
+                        background: Rectangle {
+                            radius: height / 2
+                            color: detailsPlayButton.enabled ? theme.accent : theme.controlBackground
+                            border.width: detailsPlayButton.activeFocus ? 3 : 0
+                            border.color: theme.textPrimary
+                        }
+                        onClicked: window.launchSupportedGame(gameDetailsPopup.selectedProject.id)
+                    }
+                    // Not installed, release found: Install (asks to confirm below).
+                    Button {
+                        id: detailsInstallButton
+                        visible: detailsActions.canInstall && !gameDetailsPopup.installPromptVisible
+                        text: "Install " + (gameDetailsPopup.selectedProject ? gameDetailsPopup.selectedProject.name : "")
+                        icon.source: "qrc:/icons/install.svg"
+                        icon.width: 18
+                        icon.height: 18
+                        implicitHeight: 52
+                        leftPadding: 24
+                        rightPadding: 24
+                        background: Rectangle {
+                            radius: height / 2
+                            color: theme.accent
+                            border.width: detailsInstallButton.activeFocus ? 3 : 0
+                            border.color: theme.textPrimary
+                        }
+                        onClicked: gameDetailsPopup.installPromptVisible = true
+                    }
+                    // Install confirmation (unchanged behavior).
+                    Label {
+                        visible: gameDetailsPopup.installPromptVisible && !detailsActions.installed
+                        text: gameDetailsPopup.selectedProject
+                            ? (gameDetailsPopup.selectedProject.developmentStatus === "beta"
+                                ? "Install this BETA launcher?"
+                                : gameDetailsPopup.selectedProject.developmentStatus === "alpha"
+                                    ? "Install this ALPHA launcher?"
+                                    : "Install this launcher?")
+                            : "Install launcher?"
+                        color: theme.textPrimary
+                        font.pixelSize: 15 * theme.fontScale
+                        font.bold: true
+                    }
+                    Button {
+                        id: detailsInstallYesButton
+                        visible: gameDetailsPopup.installPromptVisible && !detailsActions.installed
+                        highlighted: true
+                        text: "Yes"
+                        icon.source: "qrc:/icons/check.svg"
+                        icon.width: 16
+                        icon.height: 16
+                        implicitHeight: 46
+                        Layout.minimumWidth: 96
+                        onClicked: {
+                            gameDetailsPopup.installPromptVisible = false
+                            const asset = gameDetailsPopup.selectedAsset
+                            if (asset)
+                                window.startAssetDownload(gameDetailsPopup.selectedProject, asset)
+                        }
+                    }
+                    Button {
+                        visible: gameDetailsPopup.installPromptVisible && !detailsActions.installed
+                        text: "No"
+                        icon.source: "qrc:/icons/close.svg"
+                        icon.width: 16
+                        icon.height: 16
+                        implicitHeight: 46
+                        Layout.minimumWidth: 96
+                        onClicked: gameDetailsPopup.installPromptVisible = false
+                    }
+                    // Not installed, release not checked yet: look it up.
+                    Button {
+                        id: detailsFindButton
+                        visible: detailsActions.canFind
+                        enabled: !window.pendingReleaseRequestsForProject(
+                            gameDetailsPopup.selectedProject ? gameDetailsPopup.selectedProject.id : "")
+                        text: "Find compatible launcher"
+                        implicitHeight: 52
+                        leftPadding: 24
+                        rightPadding: 24
+                        background: Rectangle {
+                            radius: height / 2
+                            color: theme.accent
+                            border.width: detailsFindButton.activeFocus ? 3 : 0
+                            border.color: theme.textPrimary
+                        }
+                        onClicked: window.checkProjectRelease(gameDetailsPopup.selectedProject)
+                    }
+                    // Checking for a release while not installed.
+                    Button {
+                        visible: detailsActions.hasProject && !detailsActions.installed && !detailsActions.busy
+                            && gameDetailsPopup.releaseState.loading
+                        enabled: false
+                        text: "Checking for releases…"
+                        implicitHeight: 52
+                        leftPadding: 24
+                        rightPadding: 24
+                    }
+                    // Downloading / installing progress.
+                    Rectangle {
+                        visible: detailsActions.busy
+                        Layout.preferredWidth: 320
+                        Layout.preferredHeight: 52
+                        radius: 26
+                        color: theme.controlBackground
+                        clip: true
+                        Accessible.role: Accessible.ProgressBar
+                        Accessible.name: detailsProgressLabel.text
+                        readonly property real progress: gameDetailsPopup.downloadState.installing ? 1
+                            : gameDetailsPopup.downloadState.bytesTotal > 0
+                                ? Math.max(0, Math.min(1, (gameDetailsPopup.downloadState.bytesReceived || 0)
+                                    / gameDetailsPopup.downloadState.bytesTotal)) : 0
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            width: parent.width * parent.progress
+                            color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.55)
+                        }
+                        Label {
+                            id: detailsProgressLabel
+                            anchors.centerIn: parent
+                            text: gameDetailsPopup.downloadState.installing
+                                ? "Installing…"
+                                : "Downloading…  " + Math.floor(parent.progress * 100) + "%"
+                            color: theme.textPrimary
+                            font.pixelSize: 14 * theme.fontScale
+                            font.bold: true
+                        }
+                    }
+                    // Release check failed: retry.
+                    Button {
+                        visible: detailsActions.hasProject && gameDetailsPopup.releaseState.error.length > 0
+                            && !detailsActions.installed
+                        text: "Retry"
+                        implicitHeight: 52
+                        Layout.minimumWidth: 110
+                        onClicked: window.checkProjectRelease(gameDetailsPopup.selectedProject)
+                    }
+                    // Installed: secondary actions.
+                    Button {
+                        visible: detailsActions.installed
+                        enabled: !gameDetailsPopup.releaseState.loading
+                            && !window.pendingReleaseRequestsForProject(gameDetailsPopup.selectedProject.id)
+                        text: gameDetailsPopup.releaseState.loading ? "Checking…" : "Check for updates"
+                        implicitHeight: 46
+                        leftPadding: 18
+                        rightPadding: 18
+                        onClicked: window.checkProjectRelease(gameDetailsPopup.selectedProject)
+                    }
+                    Button {
+                        id: detailsMoreButton
+                        visible: detailsActions.installed
+                        text: "⋯"
+                        Accessible.name: "More actions"
+                        implicitHeight: 46
+                        implicitWidth: 46
+                        onClicked: detailsActions.moreOpen = !detailsActions.moreOpen
+                    }
+                    // The ⋯ menu opens inline so it stays reachable with the
+                    // D-pad; Uninstall still asks for confirmation.
+                    Button {
+                        id: detailsUninstallButton
+                        visible: detailsActions.installed && detailsActions.moreOpen
+                        text: "Uninstall…"
+                        icon.source: "qrc:/icons/uninstall.svg"
+                        icon.width: 16
+                        icon.height: 16
+                        implicitHeight: 46
+                        leftPadding: 18
+                        rightPadding: 18
+                        onClicked: {
+                            detailsActions.moreOpen = false
+                            window.pendingUninstallProjectId = gameDetailsPopup.selectedProject.id
+                            uninstallDialog.open()
+                        }
+                    }
+                    Connections {
+                        target: gameDetailsPopup
+                        function onSelectedProjectChanged() { detailsActions.moreOpen = false }
+                        function onClosed() { detailsActions.moreOpen = false }
+                    }
+                }
+
+                // One line of context or the latest error.
+                Label {
+                    Layout.fillWidth: true
+                    readonly property string launchError: gameDetailsPopup.selectedProject
+                        ? (window.launchErrors[gameDetailsPopup.selectedProject.id] || "") : ""
+                    readonly property string downloadError: gameDetailsPopup.downloadState.error || ""
+                    readonly property string releaseError: gameDetailsPopup.releaseState.error || ""
+                    readonly property string errorText: launchError || downloadError || releaseError
+                    text: errorText.length > 0 ? errorText
+                        : !gameDetailsPopup.selectedProject ? ""
+                        : gameDetailsPopup.installedProject !== null ? "Uninstall is under ⋯."
+                        : gameDetailsPopup.releaseInfo && gameDetailsPopup.compatibleAssets.length === 0
+                            ? "No compatible Linux launcher package is available for " + projectCatalog.currentArchitecture + "."
+                        : gameDetailsPopup.releaseInfo
+                            ? "Version " + gameDetailsPopup.releaseTag + "  ·  Linux / " + projectCatalog.currentArchitecture
+                        : ""
+                    visible: text.length > 0
+                    color: errorText.length > 0 ? theme.error : theme.textMuted
+                    font.pixelSize: 12 * theme.fontScale
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
+        // About, screenshots and the recompilation card.
+        ScrollView {
+            id: gameInfoScroll
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: detailsHero.bottom
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: detailsContentFrame.pageMargin
+            anchors.rightMargin: detailsContentFrame.pageMargin
+            anchors.topMargin: 32
+            anchors.bottomMargin: 70
+            clip: true
+            contentWidth: availableWidth
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+            GridLayout {
+                width: gameInfoScroll.availableWidth
+                columns: width > 1100 ? 2 : 1
+                columnSpacing: 32
+                rowSpacing: 24
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 0
+                    Layout.horizontalStretchFactor: 5
+                    Layout.alignment: Qt.AlignTop
+                    spacing: 10
+
+                    Label {
+                        text: "ABOUT"
+                        color: theme.textMuted
+                        font.pixelSize: 11 * theme.fontScale
+                        font.bold: true
+                        font.letterSpacing: 0.8
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: !!window.selectedGame && !!window.selectedGame.metadataTitle
+                            && window.selectedGame.metadataTitle.length > 0
+                        text: window.selectedGame ? window.selectedGame.metadataOverview : ""
+                        color: theme.textSecondary
+                        font.pixelSize: 15 * theme.fontScale
+                        wrapMode: Text.Wrap
+                        lineHeight: 1.22
+                        lineHeightMode: Text.ProportionalHeight
+                    }
+                    // No metadata: same guidance and actions as before.
                     Rectangle {
                         Layout.fillWidth: true
+                        visible: !!window.selectedGame
+                            && (!window.selectedGame.metadataTitle
+                                || window.selectedGame.metadataTitle.length === 0)
                         radius: theme.radiusCard
-                        color: theme.surface
+                        color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.85)
                         border.color: theme.divider
-                        border.width: 1
-                        implicitHeight: supportContent.implicitHeight + 28
-
+                        implicitHeight: metadataEmptyContent.implicitHeight + 32
                         ColumnLayout {
-                            id: supportContent
+                            id: metadataEmptyContent
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.margins: 14
-                            spacing: 8
-
+                            anchors.margins: 16
+                            spacing: 10
                             Label {
-                                text: "RECOMPILATION SUPPORT"
-                                color: theme.textMuted
-                                font.pixelSize: 10 * theme.fontScale
+                                Layout.fillWidth: true
+                                text: "GAME INFORMATION NOT FOUND"
+                                color: theme.textPrimary
+                                font.pixelSize: 13 * theme.fontScale
                                 font.bold: true
                             }
-                            ComboBox {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.supportedProjects.length > 1
-                                textRole: "name"
-                                model: gameDetailsPopup.supportedProjects
-                                currentIndex: {
-                                    for (let i = 0; i < gameDetailsPopup.supportedProjects.length; ++i) {
-                                        if (gameDetailsPopup.supportedProjects[i].id
-                                                === gameDetailsPopup.selectedProjectId)
-                                            return i
-                                    }
-                                    return 0
-                                }
-                                onActivated: function(index) {
-                                    const project = gameDetailsPopup.supportedProjects[index]
-                                    if (project)
-                                        gameDetailsPopup.selectedProjectId = project.id
-                                }
-                            }
                             Label {
                                 Layout.fillWidth: true
-                                text: gameDetailsPopup.selectedProject
-                                    ? gameDetailsPopup.selectedProject.name
-                                    : "No supported recompilation project is currently listed for this game."
-                                color: gameDetailsPopup.selectedProject ? theme.success : theme.textSecondary
-                                font.pixelSize: 14 * theme.fontScale
-                                font.bold: true
-                                wrapMode: Text.Wrap
-                            }
-                            Rectangle {
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && gameDetailsPopup.selectedProject.developmentStatus !== "playable"
-                                radius: 5
-                                color: gameDetailsPopup.selectedProject
-                                    && gameDetailsPopup.selectedProject.developmentStatus === "beta"
-                                    ? theme.warningSurface : theme.neutralStatusSurface
-                                implicitWidth: projectStatusLabel.implicitWidth + 16
-                                implicitHeight: projectStatusLabel.implicitHeight + 8
-
-                                Label {
-                                    id: projectStatusLabel
-                                    anchors.centerIn: parent
-                                    text: gameDetailsPopup.selectedProject
-                                        ? String(gameDetailsPopup.selectedProject.developmentStatus)
-                                            .replace("_", " ").toUpperCase() : ""
-                                    color: theme.warningText
-                                    font.pixelSize: 10 * theme.fontScale
-                                    font.bold: true
-                                }
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && (gameDetailsPopup.selectedProject.developmentStatus === "beta"
-                                        || gameDetailsPopup.selectedProject.developmentStatus === "alpha")
-                                text: gameDetailsPopup.selectedProject
-                                    && gameDetailsPopup.selectedProject.developmentStatus === "beta"
-                                    ? "This project is in beta. Features may be incomplete and you may encounter bugs."
-                                    : "This project is in alpha. Expect incomplete features and potential instability."
+                                text: "We couldn't find matching game information. Try a different metadata provider in Settings → Metadata, then retry the lookup. Your local game entry is safe, and compatible launchers can still be installed and played."
                                 color: theme.textSecondary
-                                font.pixelSize: 11 * theme.fontScale
+                                font.pixelSize: 14 * theme.fontScale
                                 wrapMode: Text.Wrap
+                            }
+                            RowLayout {
+                                spacing: 10
+                                Button {
+                                    text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
+                                    enabled: (metadataManager.configured
+                                        || (settingsManager.launchBoxEnabled
+                                            && launchBoxCatalogManager.catalogAvailable))
+                                        && !metadataMatcher.busy
+                                    onClicked: {
+                                        console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
+                                        metadataMatcher.scrapeGame(window.selectedGame.id)
+                                    }
+                                }
+                                Button {
+                                    text: "View Metadata Settings"
+                                    onClicked: {
+                                        gameDetailsPopup.close()
+                                        currentPage = "Settings"
+                                        settingsPage.section = "Metadata"
+                                        Qt.callLater(function() {
+                                            metadataNavigationButton.forceActiveFocus()
+                                        })
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Label {
+                        Layout.topMargin: 12
+                        text: "SCREENSHOTS"
+                        color: theme.textMuted
+                        font.pixelSize: 11 * theme.fontScale
+                        font.bold: true
+                        font.letterSpacing: 0.8
+                    }
+                    Flow {
+                        id: detailsScreenshotStrip
+                        Layout.fillWidth: true
+                        spacing: 10
+                        readonly property var shots: window.selectedGame && window.selectedGame.screenshots
+                            ? window.selectedGame.screenshots.slice(0, 3) : []
+                        readonly property real thumbWidth: Math.min(240, (width - 20) / 3)
+                        Repeater {
+                            model: detailsScreenshotStrip.shots
+                            delegate: Rectangle {
+                                required property string modelData
+                                required property int index
+                                width: detailsScreenshotStrip.thumbWidth
+                                height: Math.round(width * 9 / 16)
+                                radius: theme.radiusSmall
+                                color: theme.surface
+                                clip: true
+                                // Marks the screenshot currently shown as the backdrop.
+                                border.width: index === gameDetailsPopup.screenshotIndex ? 2 : 0
+                                border.color: theme.textPrimary
+                                Image {
+                                    anchors.fill: parent
+                                    anchors.margins: parent.border.width
+                                    source: modelData
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    cache: true
+                                }
+                            }
+                        }
+                        Label {
+                            visible: detailsScreenshotStrip.shots.length === 0
+                            text: "No screenshots yet. Run Refresh All Metadata in Settings to fetch them."
+                            color: theme.textMuted
+                            font.pixelSize: 13 * theme.fontScale
+                        }
+                    }
+                }
+
+                // Recompilation card.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 0
+                    Layout.horizontalStretchFactor: 4
+                    Layout.alignment: Qt.AlignTop
+                    radius: theme.radiusLarge
+                    color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g, theme.sidebarBackground.b, 0.88)
+                    border.color: Qt.rgba(theme.divider.r, theme.divider.g, theme.divider.b, 0.7)
+                    implicitHeight: supportContent.implicitHeight + 40
+
+                    ColumnLayout {
+                        id: supportContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 20
+                        spacing: 10
+
+                        Label {
+                            text: "RECOMPILATION"
+                            color: theme.textMuted
+                            font.pixelSize: 11 * theme.fontScale
+                            font.bold: true
+                            font.letterSpacing: 0.8
+                        }
+                        // Games with several supported projects: pick one.
+                        Flow {
+                            Layout.fillWidth: true
+                            visible: gameDetailsPopup.supportedProjects.length > 1
+                            spacing: 8
+                            Repeater {
+                                model: gameDetailsPopup.supportedProjects
+                                delegate: Button {
+                                    id: projectChip
+                                    required property var modelData
+                                    readonly property bool selected: gameDetailsPopup.selectedProject !== null
+                                        && gameDetailsPopup.selectedProject.id === modelData.id
+                                    text: modelData.name
+                                    implicitHeight: 34
+                                    leftPadding: 14
+                                    rightPadding: 14
+                                    background: Rectangle {
+                                        radius: height / 2
+                                        color: projectChip.selected ? theme.textPrimary : theme.controlBackground
+                                        border.width: projectChip.activeFocus ? 2 : 0
+                                        border.color: theme.accent
+                                    }
+                                    contentItem: Label {
+                                        text: projectChip.text
+                                        color: projectChip.selected ? theme.windowBackground : theme.textPrimary
+                                        font.pixelSize: 12 * theme.fontScale
+                                        font.bold: projectChip.selected
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                    onClicked: gameDetailsPopup.selectedProjectId = modelData.id
+                                }
+                            }
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: gameDetailsPopup.selectedProject
+                                ? gameDetailsPopup.selectedProject.name
+                                : "No supported recompilation project is currently listed for this game."
+                            color: gameDetailsPopup.selectedProject ? theme.textPrimary : theme.textSecondary
+                            font.pixelSize: (gameDetailsPopup.selectedProject ? 19 : 14) * theme.fontScale
+                            font.bold: gameDetailsPopup.selectedProject !== null
+                            wrapMode: Text.Wrap
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            visible: gameDetailsPopup.selectedProject !== null
+                            text: gameDetailsPopup.selectedProject
+                                ? gameDetailsPopup.selectedProject.repositoryOwner + "/"
+                                    + gameDetailsPopup.selectedProject.repositoryName : ""
+                            color: theme.textMuted
+                            font.pixelSize: 12 * theme.fontScale
+                            elide: Text.ElideRight
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            visible: gameDetailsPopup.selectedProject !== null
+                                && (gameDetailsPopup.selectedProject.developmentStatus === "beta"
+                                    || gameDetailsPopup.selectedProject.developmentStatus === "alpha")
+                            text: gameDetailsPopup.selectedProject
+                                && gameDetailsPopup.selectedProject.developmentStatus === "beta"
+                                ? "This project is in beta. Features may be incomplete and you may encounter bugs."
+                                : "This project is in alpha. Expect incomplete features and potential instability."
+                            color: theme.warningText
+                            font.pixelSize: 12 * theme.fontScale
+                            wrapMode: Text.Wrap
+                        }
+
+                        GridLayout {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 4
+                            visible: gameDetailsPopup.selectedProject !== null
+                            columns: 2
+                            columnSpacing: 18
+                            rowSpacing: 8
+
+                            Label { text: "Status"; color: theme.textMuted; font.pixelSize: 13 * theme.fontScale }
+                            Label {
+                                Layout.fillWidth: true
+                                text: gameDetailsPopup.installedProject !== null ? "Installed"
+                                    : (gameDetailsPopup.downloadState.loading || gameDetailsPopup.downloadState.installing) ? "Installing"
+                                    : gameDetailsPopup.releaseState.loading ? "Checking for releases…"
+                                    : "Not installed"
+                                color: gameDetailsPopup.installedProject !== null ? theme.success : theme.accentHover
+                                font.pixelSize: 13 * theme.fontScale
+                                font.bold: true
+                                wrapMode: Text.Wrap
+                            }
+                            Label { text: "Release"; color: theme.textMuted; font.pixelSize: 13 * theme.fontScale }
+                            Label {
+                                Layout.fillWidth: true
+                                text: gameDetailsPopup.releaseInfo ? gameDetailsPopup.releaseTag : "Not checked yet"
+                                color: theme.textSecondary
+                                font.pixelSize: 13 * theme.fontScale
+                                wrapMode: Text.Wrap
+                            }
+                            Label { text: "Package"; color: theme.textMuted; font.pixelSize: 13 * theme.fontScale }
+                            Label {
+                                Layout.fillWidth: true
+                                text: gameDetailsPopup.selectedAsset
+                                    ? gameDetailsPopup.selectedAssetName
+                                    : "Linux / " + projectCatalog.currentArchitecture
+                                color: theme.textSecondary
+                                font.pixelSize: 13 * theme.fontScale
+                                wrapMode: Text.WrapAnywhere
+                            }
+                            Label {
+                                visible: !!(gameDetailsPopup.selectedProject && gameDetailsPopup.selectedProject.romRequirements)
+                                text: "ROM"
+                                color: theme.textMuted
+                                font.pixelSize: 13 * theme.fontScale
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: !!(gameDetailsPopup.selectedProject && gameDetailsPopup.selectedProject.romRequirements)
+                                text: gameDetailsPopup.selectedProject ? (gameDetailsPopup.selectedProject.romRequirements || "") : ""
+                                color: theme.warning
+                                font.pixelSize: 13 * theme.fontScale
+                                wrapMode: Text.Wrap
+                            }
+                            Label {
+                                visible: gameDetailsPopup.installedProject !== null
+                                text: "Installed at"
+                                color: theme.textMuted
+                                font.pixelSize: 13 * theme.fontScale
                             }
                             Label {
                                 Layout.fillWidth: true
                                 visible: gameDetailsPopup.installedProject !== null
                                 text: gameDetailsPopup.installedProject !== null
-                                    ? "Installed at  " + gameDetailsPopup.installedProject.executablePath
-                                    : ""
+                                    ? gameDetailsPopup.installedProject.executablePath : ""
                                 color: theme.textMuted
-                                font.pixelSize: 10 * theme.fontScale
+                                font.pixelSize: 11 * theme.fontScale
                                 wrapMode: Text.WrapAnywhere
                             }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                text: gameDetailsPopup.selectedProject
-                                    ? gameDetailsPopup.selectedProject.romRequirements : ""
-                                color: theme.textSecondary
-                                font.pixelSize: 11 * theme.fontScale
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && window.launchErrors[gameDetailsPopup.selectedProject.id] !== undefined
-                                text: gameDetailsPopup.selectedProject
-                                    ? (window.launchErrors[gameDetailsPopup.selectedProject.id] || "") : ""
-                                color: theme.error
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && gameDetailsPopup.releaseState.loading
-                                text: "Checking for the latest compatible Linux release…"
-                                color: theme.accentHover
-                                wrapMode: Text.Wrap
-                            }
-                            Button {
-                                visible: gameDetailsPopup.selectedProject !== null
-                                enabled: gameDetailsPopup.selectedProject !== null
-                                    && !gameDetailsPopup.releaseState.loading
-                                    && !window.pendingReleaseRequestsForProject(
-                                        gameDetailsPopup.selectedProject.id)
-                                text: gameDetailsPopup.releaseState.loading
-                                    ? "Checking…"
-                                    : gameDetailsPopup.installedProject !== null
-                                        ? "Check for Updates" : "Find Compatible Launcher"
-                                onClicked: window.checkProjectRelease(
-                                    gameDetailsPopup.selectedProject)
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && gameDetailsPopup.releaseState.error.length > 0
-                                text: gameDetailsPopup.releaseState.error
-                                color: theme.error
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && !!gameDetailsPopup.releaseInfo
-                                    && gameDetailsPopup.compatibleAssets.length === 0
-                                text: "No compatible Linux launcher package is available for "
-                                    + projectCatalog.currentArchitecture + "."
-                                color: theme.textMuted
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && !!gameDetailsPopup.releaseInfo
-                                    && gameDetailsPopup.selectedAsset !== null
-                                    && gameDetailsPopup.installedProject === null
-                                text: "Compatible launcher available"
-                                color: theme.success
-                                font.pixelSize: 12 * theme.fontScale
-                                font.bold: true
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.selectedProject !== null
-                                    && !!gameDetailsPopup.releaseInfo
-                                    && gameDetailsPopup.selectedAsset !== null
-                                    && gameDetailsPopup.installedProject === null
-                                text: "Version " + gameDetailsPopup.releaseTag
-                                    + "    •    Linux / " + projectCatalog.currentArchitecture
-                                    + "\n" + gameDetailsPopup.selectedAssetName
-                                color: theme.textSecondary
-                                font.pixelSize: 11 * theme.fontScale
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: !!gameDetailsPopup.selectedProject
-                                    && !!gameDetailsPopup.downloadState.error
-                                    && gameDetailsPopup.downloadState.error.length > 0
-                                text: gameDetailsPopup.downloadState.error || ""
-                                color: theme.error
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: !!gameDetailsPopup.selectedProject
-                                    && (!!gameDetailsPopup.downloadState.loading
-                                        || !!gameDetailsPopup.downloadState.installing)
-                                text: gameDetailsPopup.downloadState.installing
-                                    ? "Extracting and installing launcher…"
-                                    : "Downloading launcher… "
-                                        + (gameDetailsPopup.downloadState.bytesTotal > 0
-                                            ? Math.floor((gameDetailsPopup.downloadState.bytesReceived || 0)
-                                                / gameDetailsPopup.downloadState.bytesTotal * 100) + "%"
-                                            : "")
-                                color: theme.accentHover
-                            }
-                            ProgressBar {
-                                Layout.fillWidth: true
-                                visible: !!gameDetailsPopup.downloadState.loading
-                                from: 0
-                                to: 1
-                                value: gameDetailsPopup.downloadState.bytesTotal > 0
-                                    ? Math.max(0, Math.min(1,
-                                        (gameDetailsPopup.downloadState.bytesReceived || 0)
-                                        / gameDetailsPopup.downloadState.bytesTotal))
-                                    : 0
-                            }
-                                                        RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                Button {
-                                    visible: gameDetailsPopup.installedProject !== null
-                                    highlighted: true
-                                    text: gameDetailsPopup.selectedProject
-                                        && window.runningLaunchers[gameDetailsPopup.selectedProject.id]
-                                        ? "Running…" : "Play Game"
-                                    icon.source: "qrc:/icons/play.svg"
-                                    icon.width: 18
-                                    icon.height: 18
-                                    icon.color: theme.textPrimary
-                                    implicitHeight: 48
-                                    Layout.minimumWidth: 150
-                                    Layout.preferredWidth: 150
-                                    enabled: gameDetailsPopup.selectedProject !== null
-                                        && gameDetailsPopup.installedProject !== null
-                                        && !window.runningLaunchers[gameDetailsPopup.selectedProject.id]
-                                    onClicked: window.launchSupportedGame(gameDetailsPopup.selectedProject.id)
-                                }
-                                Button {
-                                    visible: gameDetailsPopup.installedProject !== null
-                                    text: "Uninstall"
-                                    icon.source: "qrc:/icons/uninstall.svg"
-                                    icon.width: 18
-                                    icon.height: 18
-                                    icon.color: theme.textPrimary
-                                    implicitHeight: 48
-                                    Layout.minimumWidth: 150
-                                    Layout.preferredWidth: 150
-                                    onClicked: {
-                                        window.pendingUninstallProjectId = gameDetailsPopup.selectedProject.id
-                                        uninstallDialog.open()
-                                    }
-                                }
-                                Button {
-                                    visible: gameDetailsPopup.selectedProject !== null
-                                        && gameDetailsPopup.installedProject === null
-                                        && !gameDetailsPopup.installPromptVisible
-                                        && !gameDetailsPopup.releaseState.loading
-                                        && gameDetailsPopup.releaseState.assets.length > 0
-                                    highlighted: true
-                                    text: "Install Launcher"
-                                    icon.source: "qrc:/icons/install.svg"
-                                    icon.width: 18
-                                    icon.height: 18
-                                    icon.color: theme.textPrimary
-                                    implicitHeight: 48
-                                    Layout.minimumWidth: 150
-                                    Layout.preferredWidth: 150
-                                    onClicked: gameDetailsPopup.installPromptVisible = true
-                                }
-                                RowLayout {
-                                    visible: gameDetailsPopup.installPromptVisible
-                                        && gameDetailsPopup.installedProject === null
-                                    spacing: 8
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: gameDetailsPopup.selectedProject
-                                            ? (gameDetailsPopup.selectedProject.developmentStatus === "beta"
-                                                ? "Install this BETA launcher?"
-                                                : gameDetailsPopup.selectedProject.developmentStatus === "alpha"
-                                                    ? "Install this ALPHA launcher?"
-                                                    : "Install this launcher?")
-                                            : "Install launcher?"
-                                        color: theme.textPrimary
-                                        wrapMode: Text.Wrap
-                                    }
-                                    Button {
-                                        highlighted: true
-                                        text: "Yes"
-                                        icon.source: "qrc:/icons/check.svg"
-                                        icon.width: 16
-                                        icon.height: 16
-                                        icon.color: theme.textPrimary
-                                        implicitHeight: 48
-                                        Layout.minimumWidth: 88
-                                        onClicked: {
-                                            gameDetailsPopup.installPromptVisible = false
-                                            const asset = gameDetailsPopup.selectedAsset
-                                            if (asset)
-                                                window.startAssetDownload(gameDetailsPopup.selectedProject, asset)
-                                        }
-                                    }
-                                    Button {
-                                        text: "No"
-                                        icon.source: "qrc:/icons/close.svg"
-                                        icon.width: 16
-                                        icon.height: 16
-                                        icon.color: theme.textPrimary
-                                        implicitHeight: 48
-                                        Layout.minimumWidth: 88
-                                        onClicked: gameDetailsPopup.installPromptVisible = false
-                                    }
-                                }
-                                Button {
-                                    visible: gameDetailsPopup.selectedProject !== null
-                                        && gameDetailsPopup.releaseState.error.length > 0
-                                    text: "Retry"
-                                    onClicked: window.checkProjectRelease(gameDetailsPopup.selectedProject)
-                                }
-                            }
-}
+                        }
                     }
                 }
             }
-
-
         }
+
+        // Focus the most useful action when the page opens or switches games,
+        // so A plays or installs straight away; Back otherwise.
+        function focusPrimaryAction() {
+            const candidates = [detailsPlayButton, detailsInstallButton, detailsFindButton]
+            for (let i = 0; i < candidates.length; ++i) {
+                if (candidates[i].visible && candidates[i].enabled) {
+                    candidates[i].forceActiveFocus()
+                    return
+                }
+            }
+            detailsBackButton.forceActiveFocus()
         }
     }
 }
+
