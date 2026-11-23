@@ -102,7 +102,8 @@ Direction chosen by the user from design mockups (Settings today; proposed Appea
 - [x] LaunchBox catalog: only RecompStation's platforms (N64, PS1, GameCube, Wii, Xbox) are indexed: games, file associations and images for other platforms are skipped. Takes effect at the next catalog update. `catalogSizeBytes` is shown in Settings.
 - [x] Metadata page: provider cards with status pills and on/off switches; key field (hidden input, Save / Cancel, Test, Remove; Escape cancels), key source and requests left; LaunchBox Download / Update / Cancel with progress and last update; "Ask first" cycler; automation toggles; Refresh all metadata with progress. Preview pane: how matching works, the latest run, and how to get a key.
 - [x] Tests: provider order, key save/permissions/clear/validation/environment priority, allowance parsing, `setApiKey`, LaunchBox-first preference, LaunchBox after a provider failure, failure without LaunchBox, platform-filtered catalog.
-- [ ] User validation: build and tests; add the key in the app and run without the environment variable; Test; provider order; catalog update shrinks the catalog (note the size before and after); add a new game while the app runs and check it is matched without a manual refresh. The rail showed "No providers enabled": check whether both switches were off.
+- [x] User validation (2026-11-23): all 20 test suites pass (after two test-only fixes); a game added while the app was running was matched and appeared in the Library without a manual refresh; removing it updated the Library. The page shows TheGamesDB switched off (which explains the earlier "No providers enabled") and LaunchBox installed at 498 MB, indexed before the platform filter.
+- [ ] Remaining: Update catalog and compare its size with 498 MB; add a TheGamesDB key in the app and Test it.
 
 **Step 5: Fix match** — planned: Game Details action to search either provider and pick the right game.
 
