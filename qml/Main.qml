@@ -43,6 +43,12 @@ ApplicationWindow {
         id: libraryVisualSettings
         category: "LibraryVisuals"
         property string wavePalette: "ocean"
+        // Custom wallpaper: "fill" (crop to cover) or "fit" (whole image
+        // over a blurred copy), and how much to darken it (percent).
+        property string wallpaperFit: "fill"
+        property int wallpaperDim: 15
+        // The Ember wave palette was retired with the Ember theme.
+        Component.onCompleted: if (wavePalette === "ember") wavePalette = "ocean"
     }
 
     function inputHintItems() {
@@ -217,6 +223,7 @@ ApplicationWindow {
     function scrollSettingsContent(direction, amount) {
         const scrollView = settingsPage.section === "Appearance" ? appearanceContent
             : settingsPage.section === "Display" ? displayContent
+            : settingsPage.section === "Background" ? backgroundContent
             : settingsPage.section === "Library" ? libraryContent
             : settingsPage.section === "Application" ? applicationContent
             : settingsPage.section === "Metadata" ? metadataContent
@@ -242,6 +249,7 @@ ApplicationWindow {
     function settingsNavigationButtonForSection(section) {
         switch (section) {
         case "Display": return displayNavigationButton
+        case "Background": return backgroundNavigationButton
         case "Library": return libraryNavigationButton
         case "Metadata": return metadataNavigationButton
         case "Controller": return controllerNavigationButton
@@ -663,16 +671,6 @@ ApplicationWindow {
             if (focused && focused.popup) {
                 if (focused.popup.visible) {
                     focused.popup.close()
-                    if (focused === displayModeSelector) {
-                        if (focused.currentValue === "fullscreen"
-                                && window.visibility !== Window.FullScreen) {
-                            window.preFullscreenMode = window.visibility === Window.Maximized
-                                ? "maximized" : "windowed"
-                            settingsManager.setRestoreDisplayMode(window.preFullscreenMode)
-                        }
-                        settingsManager.setDisplayMode(focused.currentValue)
-                        window.applyDisplayMode(focused.currentValue)
-                    }
                 } else {
                     focused.popup.open()
                 }
@@ -959,7 +957,7 @@ ApplicationWindow {
     }
     // Theme shown in the Appearance preview pane (follows the focused tile).
     property string previewThemeId: settingsManager.themeName
-    readonly property var settingsSections: ["Appearance", "Display", "Library", "Metadata", "Controller", "Application"]
+    readonly property var settingsSections: ["Appearance", "Display", "Background", "Library", "Metadata", "Controller", "Application"]
     // Settings pages stop growing past this width; the rest of a wide screen
     // goes to the preview pane.
     readonly property real settingsContentMaxWidth: 880
@@ -999,6 +997,14 @@ ApplicationWindow {
                 + (interfaceScaleInfo.external ? "Scale from environment"
                     : window.interfaceScaleLabel(settingsManager.interfaceScale))
         }
+        case "Background": {
+            const type = settingsManager.libraryBackgroundType
+            if (type === "animated")
+                return "Waves · " + window.wavePaletteLabel(libraryVisualSettings.wavePalette)
+            if (type === "custom")
+                return settingsManager.customLibraryBackground.length > 0 ? "Image" : "Image · none chosen"
+            return "Gradient"
+        }
         case "Library": {
             if (!platformManager.libraryConfigured)
                 return "No library folder"
@@ -1017,6 +1023,9 @@ ApplicationWindow {
             return "Version " + Qt.application.version + " · Logs"
         }
         return ""
+    }
+    function wavePaletteLabel(value) {
+        return value === "violet" ? "Violet" : value === "emerald" ? "Emerald" : "Ocean"
     }
     // A ValueCycler (or anything with stepValue) at or above the focused item.
     function focusedValueStepper(item) {
@@ -1225,6 +1234,7 @@ ApplicationWindow {
 
             const scrollView = settingsPage.section === "Appearance" ? appearanceContent
                 : settingsPage.section === "Display" ? displayContent
+                : settingsPage.section === "Background" ? backgroundContent
                 : settingsPage.section === "Library" ? libraryContent
                 : settingsPage.section === "Application" ? applicationContent
                 : settingsPage.section === "Metadata" ? metadataContent
@@ -1322,10 +1332,6 @@ ApplicationWindow {
         function onThemeNameChanged() {
             pendingThemeName = settingsManager.themeName
             console.info("[Settings QML] Applied theme changed:", settingsManager.themeName)
-        }
-        function onDisplayModeChanged() {
-            displayModeSelector.currentIndex =
-                displayModeSelector.indexOfValue(settingsManager.displayMode)
         }
     }
 
@@ -2683,29 +2689,18 @@ ApplicationWindow {
                 }
             }
 
-            // A single full-window image avoids the mismatched crop visible
-            // around the edges when separate fit/crop layers are combined.
-            Image {
+            // Custom wallpaper, loaded at the window's size (Fill crops to
+            // cover; Fit shows the whole image over a blurred copy) and dimmed
+            // by the user's chosen amount.
+            WallpaperBackground {
                 anchors.fill: parent
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "custom"
                     && settingsManager.customLibraryBackground.length > 0
-                source: settingsManager.customLibraryBackground
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
-                smooth: true
-                mipmap: true
-            }
-
-            // Keep the wallpaper vivid while gently separating it from cards and text.
-            Rectangle {
-                anchors.fill: parent
-                visible: currentPage === "Library"
-                    && settingsManager.libraryBackgroundType === "custom"
-                    && settingsManager.customLibraryBackground.length > 0
-                color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
-                               theme.windowBackground.b, 0.14)
+                source: visible ? settingsManager.customLibraryBackground : ""
+                fitMode: libraryVisualSettings.wallpaperFit
+                dimPercent: libraryVisualSettings.wallpaperDim
+                dimColor: theme.windowBackground
             }
 
             Rectangle {
@@ -2738,9 +2733,7 @@ ApplicationWindow {
                         ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
                         : libraryVisualSettings.wavePalette === "emerald"
                             ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
-                            : libraryVisualSettings.wavePalette === "ember"
-                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-ember.svg"
-                                : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                            : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     cache: true
@@ -2767,9 +2760,7 @@ ApplicationWindow {
                         ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
                         : libraryVisualSettings.wavePalette === "emerald"
                             ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
-                            : libraryVisualSettings.wavePalette === "ember"
-                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-ember.svg"
-                                : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                            : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     cache: true
@@ -4958,6 +4949,15 @@ ApplicationWindow {
                                     onClicked: settingsPage.section = "Display"
                                 }
                                 SettingsNavItem {
+                                    id: backgroundNavigationButton
+                                    Layout.fillWidth: true
+                                    text: "Background"
+                                    iconSource: "qrc:/icons/background.svg"
+                                    summary: window.settingsSectionSummary("Background")
+                                    current: settingsPage.section === "Background"
+                                    onClicked: settingsPage.section = "Background"
+                                }
+                                SettingsNavItem {
                                     id: libraryNavigationButton
                                     Layout.fillWidth: true
                                     text: "Library"
@@ -5011,7 +5011,7 @@ ApplicationWindow {
                                 anchors.bottom: parent.bottom
                                 anchors.left: parent.left
                                 anchors.topMargin: 6
-                                anchors.bottomMargin: 12
+                                anchors.bottomMargin: 64
                                 anchors.leftMargin: 8
                                 width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
@@ -5019,7 +5019,7 @@ ApplicationWindow {
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                                 ColumnLayout {
-                                    width: parent.width
+                                    width: appearanceContent.availableWidth
                                     spacing: 8
 
                                     Label {
@@ -5054,8 +5054,11 @@ ApplicationWindow {
                                                 title: modelData.title
                                                 description: modelData.description
                                                 inUse: settingsManager.themeName === modelData.id
-                                                onActiveFocusChanged: if (activeFocus) window.previewThemeId = modelData.id
-                                                onHoveredChanged: if (hovered) window.previewThemeId = modelData.id
+                                                // Preview the focused or hovered tile; fall back to the theme in use.
+                                                onActiveFocusChanged: window.previewThemeId = activeFocus || hovered
+                                                    ? modelData.id : settingsManager.themeName
+                                                onHoveredChanged: window.previewThemeId = activeFocus || hovered
+                                                    ? modelData.id : settingsManager.themeName
                                                 onClicked: settingsManager.themeName = modelData.id
                                             }
                                         }
@@ -5097,7 +5100,7 @@ ApplicationWindow {
                                 anchors.bottom: parent.bottom
                                 anchors.left: parent.left
                                 anchors.topMargin: 6
-                                anchors.bottomMargin: 12
+                                anchors.bottomMargin: 64
                                 anchors.leftMargin: 8
                                 width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
@@ -5105,20 +5108,21 @@ ApplicationWindow {
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                                 ColumnLayout {
-                                    width: parent.width
-                                    spacing: 16
+                                    width: displayContent.availableWidth
+                                    spacing: 8
 
                                     Label {
                                         text: "Display"
                                         color: theme.textPrimary
-                                        font.pixelSize: 27 * theme.fontScale
+                                        font.pixelSize: 30 * theme.fontScale
                                         font.bold: true
                                     }
                                     Label {
                                         Layout.fillWidth: true
+                                        Layout.bottomMargin: 8
                                         text: "How RecompStation fills your screen. Your monitor resolution is never changed."
                                         color: theme.textSecondary
-                                        font.pixelSize: 13 * theme.fontScale
+                                        font.pixelSize: 14 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     SettingsGroupLabel { text: "SCALING" }
@@ -5170,164 +5174,244 @@ ApplicationWindow {
                                             }
                                         }
                                     }
-                                    Label {
-                                        text: "CURRENT DISPLAY"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
+                                    SettingsGroupLabel { text: "WINDOW" }
+                                    SettingRow {
+                                        title: "Window mode"
+                                        description: "Fullscreen gives the console experience. F11 switches at any time."
+                                        ValueCycler {
+                                            id: displayModeSelector
+                                            options: [
+                                                { label: "Fullscreen", value: "fullscreen" },
+                                                { label: "Maximized", value: "maximized" },
+                                                { label: "Windowed", value: "windowed" }
+                                            ]
+                                            value: settingsManager.displayMode
+                                            onPicked: (mode) => {
+                                                if (mode === "fullscreen" && window.visibility !== Window.FullScreen) {
+                                                    window.preFullscreenMode = window.visibility === Window.Maximized
+                                                        ? "maximized" : "windowed"
+                                                    settingsManager.setRestoreDisplayMode(window.preFullscreenMode)
+                                                }
+                                                settingsManager.setDisplayMode(mode)
+                                                window.applyDisplayMode(mode)
+                                            }
+                                        }
                                     }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        implicitHeight: displayInfo.implicitHeight + 28
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: theme.divider
-                                        ColumnLayout {
-                                            id: displayInfo
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 7
-                                            Label {
-                                                text: Screen.name.length > 0 ? Screen.name : "Current display"
-                                                color: theme.textPrimary
-                                                font.pixelSize: 13 * theme.fontScale
-                                                font.bold: true
-                                            }
-                                            Label {
-                                                text: "Desktop resolution: " + Screen.width + " × " + Screen.height
-                                                color: theme.textSecondary
-                                                font.pixelSize: 12 * theme.fontScale
-                                            }
-                                            Label {
-                                                text: "Available screen area: " + Screen.desktopAvailableWidth + " × " + Screen.desktopAvailableHeight
-                                                color: theme.textMuted
-                                                font.pixelSize: 11 * theme.fontScale
+                                    SettingRow {
+                                        title: "Window size"
+                                        description: settingsManager.displayMode === "windowed"
+                                            ? "Sizes larger than your screen are scaled down to fit, keeping their shape."
+                                            : "Used when the window mode is Windowed."
+                                        dimmed: settingsManager.displayMode !== "windowed"
+                                        ValueCycler {
+                                            id: presentationSizeSelector
+                                            enabled: settingsManager.displayMode === "windowed"
+                                            options: [
+                                                { label: "Keep current size", value: "system" },
+                                                { label: "1280 × 720", value: "1280x720" },
+                                                { label: "1920 × 1080", value: "1920x1080" },
+                                                { label: "1920 × 1440 · 4:3", value: "1920x1440" },
+                                                { label: "3440 × 1440 · 21:9", value: "3440x1440" },
+                                                { label: "3840 × 2160", value: "3840x2160" },
+                                                { label: "5120 × 2160 · 21:9", value: "5120x2160" }
+                                            ]
+                                            value: settingsManager.preferredPresentationSize
+                                            onPicked: (size) => {
+                                                settingsManager.setPreferredPresentationSize(size)
+                                                if (size !== "system")
+                                                    window.applyPreferredPresentationSize()
                                             }
                                         }
                                     }
                                     Label {
-                                        text: "WINDOW MODE"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
-                                    ComboBox {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
-                                        }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        id: displayModeSelector
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 46
-                                        textRole: "label"
-                                        valueRole: "value"
-                                        model: [
-                                            { label: "Windowed", value: "windowed" },
-                                            { label: "Maximized", value: "maximized" },
-                                            { label: "Fullscreen", value: "fullscreen" }
-                                        ]
-                                        Component.onCompleted: {
-                                            const savedIndex = indexOfValue(settingsManager.displayMode)
-                                            currentIndex = savedIndex >= 0 ? savedIndex : 0
-                                        }
-                                        onActivated: {
-                                            if (currentValue === "fullscreen"
-                                                    && window.visibility !== Window.FullScreen) {
-                                                window.preFullscreenMode =
-                                                    window.visibility === Window.Maximized
-                                                    ? "maximized" : "windowed"
-                                                settingsManager.setRestoreDisplayMode(
-                                                    window.preFullscreenMode)
-                                            }
-                                            settingsManager.setDisplayMode(currentValue)
-                                            window.applyDisplayMode(currentValue)
-                                        }
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "Fullscreen hides the desktop window frame without changing your monitor resolution. Press F11 to toggle fullscreen and return to your previous window mode."
+                                        Layout.topMargin: 6
+                                        Layout.leftMargin: 4
+                                        visible: !settingsPreviewPane.visible
+                                        text: (interfaceScaleInfo.screenName || "This screen") + ": " + interfaceScaleInfo.logicalWidth
+                                            + " × " + interfaceScaleInfo.logicalHeight + " · Auto scale " + interfaceScaleInfo.auto + "%"
                                         color: theme.textMuted
-                                        font.pixelSize: 11 * theme.fontScale
+                                        font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
+                                    Item { Layout.preferredHeight: 16 }
+                                }
+                            }
+
+                            ScrollView {
+                                id: backgroundContent
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 64
+                                anchors.leftMargin: 8
+                                width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
+                                clip: true
+                                visible: settingsPage.section === "Background"
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                                ColumnLayout {
+                                    width: backgroundContent.availableWidth
+                                    spacing: 8
+
                                     Label {
-                                        text: "PREFERRED WINDOW SIZE"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
+                                        text: "Background"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 30 * theme.fontScale
                                         font.bold: true
-                                        font.letterSpacing: 1
-                                    }
-                                    ComboBox {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
-                                        }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        id: presentationSizeSelector
-                                        Layout.fillWidth: true
-                                        Layout.preferredHeight: 46
-                                        textRole: "label"
-                                        valueRole: "value"
-                                        model: [
-                                            { label: "Follow desktop / keep current size", value: "system" },
-                                            { label: "1280 × 720  •  16:9", value: "1280x720" },
-                                            { label: "1920 × 1080  •  16:9", value: "1920x1080" },
-                                            { label: "1920 × 1440  •  4:3", value: "1920x1440" },
-                                            { label: "3440 × 1440  •  21:9", value: "3440x1440" },
-                                            { label: "3840 × 2160  •  16:9", value: "3840x2160" },
-                                            { label: "5120 × 2160  •  21:9", value: "5120x2160" }
-                                        ]
-                                        Component.onCompleted: {
-                                            const savedIndex = indexOfValue(settingsManager.preferredPresentationSize)
-                                            currentIndex = savedIndex >= 0 ? savedIndex : 0
-                                        }
-                                    }
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        Item { Layout.fillWidth: true }
-                                        Button {
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                    : (parent.highlighted ? theme.accent : theme.surface)
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.preferredWidth: 190
-                                            Layout.preferredHeight: 44
-                                            text: "Apply Window Size"
-                                            highlighted: true
-                                            enabled: presentationSizeSelector.currentValue
-                                                !== settingsManager.preferredPresentationSize
-                                                || presentationSizeSelector.currentValue !== "system"
-                                            onClicked: {
-                                                settingsManager.setPreferredPresentationSize(
-                                                    presentationSizeSelector.currentValue)
-                                                window.applyPreferredPresentationSize()
-                                            }
-                                        }
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Presets are scaled down proportionally, when needed, to fit within 90% of the current screen's logical size. Their aspect ratios are preserved. On Wayland, the compositor may also apply its own window-size constraints. Selecting Follow desktop leaves the current window size unchanged."
-                                        color: theme.textMuted
-                                        font.pixelSize: 11 * theme.fontScale
+                                        Layout.bottomMargin: 8
+                                        text: "The backdrop behind your Library."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 14 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                    Item { Layout.fillHeight: true }
+                                    SettingsGroupLabel { text: "STYLE" }
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        columns: width >= 520 ? 3 : 1
+                                        columnSpacing: 10
+                                        rowSpacing: 10
+                                        Repeater {
+                                            model: [
+                                                { value: "static", title: "Gradient", description: "Static, follows the theme" },
+                                                { value: "animated", title: "Waves", description: "Animated ribbons" },
+                                                { value: "custom", title: "Image", description: "Your own wallpaper" }
+                                            ]
+                                            delegate: BackgroundStyleTile {
+                                                required property var modelData
+                                                Layout.fillWidth: true
+                                                Layout.preferredWidth: 1
+                                                styleValue: modelData.value
+                                                title: modelData.title
+                                                description: modelData.description
+                                                current: settingsManager.libraryBackgroundType === modelData.value
+                                                wallpaper: settingsManager.customLibraryBackground
+                                                wavePalette: libraryVisualSettings.wavePalette
+                                                onClicked: settingsManager.libraryBackgroundType = modelData.value
+                                            }
+                                        }
+                                    }
+
+                                    SettingsGroupLabel {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        text: "WAVES"
+                                    }
+                                    SettingRow {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        title: "Wave color"
+                                        description: settingsManager.reducedMotion
+                                            ? "Motion is paused while Reduced motion is on."
+                                            : "More colors and smoother motion arrive with the new wave renderer."
+                                        ValueCycler {
+                                            options: [
+                                                { label: "Ocean", value: "ocean" },
+                                                { label: "Violet", value: "violet" },
+                                                { label: "Emerald", value: "emerald" }
+                                            ]
+                                            value: libraryVisualSettings.wavePalette
+                                            onPicked: (palette) => libraryVisualSettings.wavePalette = palette
+                                        }
+                                    }
+
+                                    SettingsGroupLabel {
+                                        visible: settingsManager.libraryBackgroundType === "custom"
+                                        text: "IMAGE"
+                                    }
+                                    SettingRow {
+                                        id: customBackgroundActionsRow
+                                        visible: settingsManager.libraryBackgroundType === "custom"
+                                        title: settingsManager.customLibraryBackground.length > 0 ? "Wallpaper" : "Choose a wallpaper"
+                                        description: settingsManager.customLibraryBackground.length > 0
+                                            ? decodeURIComponent(settingsManager.customLibraryBackground.toString().split("/").pop())
+                                            : "PNG, JPEG or WebP. Large images are loaded at your screen's size to save memory."
+                                        RowLayout {
+                                            spacing: 8
+                                            Button {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                text: settingsManager.customLibraryBackground.length > 0 ? "Choose another" : "Choose image"
+                                                highlighted: settingsManager.customLibraryBackground.length === 0
+                                                onClicked: libraryBackgroundFileDialog.open()
+                                                background: Rectangle {
+                                                    radius: 9
+                                                    color: parent.activeFocus ? theme.elevatedSurface
+                                                        : (parent.highlighted ? theme.accent : theme.surface)
+                                                    border.color: theme.accent
+                                                    border.width: parent.activeFocus ? 2 : 0
+                                                }
+                                                contentItem: Label {
+                                                    text: parent.text
+                                                    color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                    opacity: parent.enabled ? 1 : 0.5
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                    font.weight: Font.DemiBold
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    verticalAlignment: Text.AlignVCenter
+                                                }
+                                                leftPadding: 16
+                                                rightPadding: 16
+                                                implicitHeight: 38
+                                            }
+                                            Button {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                visible: settingsManager.customLibraryBackground.length > 0
+                                                text: "Clear"
+                                                onClicked: settingsManager.setCustomLibraryBackground("")
+                                                background: Rectangle {
+                                                    radius: 9
+                                                    color: parent.activeFocus ? theme.elevatedSurface
+                                                        : (parent.highlighted ? theme.accent : theme.surface)
+                                                    border.color: theme.accent
+                                                    border.width: parent.activeFocus ? 2 : 0
+                                                }
+                                                contentItem: Label {
+                                                    text: parent.text
+                                                    color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                    opacity: parent.enabled ? 1 : 0.5
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                    font.weight: Font.DemiBold
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    verticalAlignment: Text.AlignVCenter
+                                                }
+                                                leftPadding: 16
+                                                rightPadding: 16
+                                                implicitHeight: 38
+                                            }
+                                        }
+                                    }
+                                    SettingRow {
+                                        visible: settingsManager.libraryBackgroundType === "custom"
+                                        dimmed: settingsManager.customLibraryBackground.length === 0
+                                        title: "Fit"
+                                        description: "Fill covers the screen and crops the edges. Fit shows the whole image over a blurred copy of itself."
+                                        ValueCycler {
+                                            options: [
+                                                { label: "Fill", value: "fill" },
+                                                { label: "Fit", value: "fit" }
+                                            ]
+                                            value: libraryVisualSettings.wallpaperFit
+                                            onPicked: (fit) => libraryVisualSettings.wallpaperFit = fit
+                                        }
+                                    }
+                                    SettingRow {
+                                        visible: settingsManager.libraryBackgroundType === "custom"
+                                        dimmed: settingsManager.customLibraryBackground.length === 0
+                                        title: "Dim"
+                                        description: "Darkens the wallpaper so covers and text stay readable on bright images."
+                                        ValueCycler {
+                                            options: [0, 15, 30, 45, 60].map(function(percent) {
+                                                return { label: percent === 0 ? "Off" : percent + "%", value: percent }
+                                            })
+                                            value: libraryVisualSettings.wallpaperDim
+                                            onPicked: (percent) => libraryVisualSettings.wallpaperDim = percent
+                                        }
+                                    }
+                                    Item { Layout.preferredHeight: 16 }
                                 }
                             }
 
@@ -5337,324 +5421,139 @@ ApplicationWindow {
                                 anchors.bottom: parent.bottom
                                 anchors.left: parent.left
                                 anchors.topMargin: 6
-                                anchors.bottomMargin: 12
+                                anchors.bottomMargin: 64
                                 anchors.leftMargin: 8
                                 width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
                                 visible: settingsPage.section === "Library"
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
                                 ColumnLayout {
-                                    width: parent.width
-                                    spacing: 16
-                                    Label { text: "Library"; color: theme.textPrimary; font.pixelSize: 27 * theme.fontScale; font.bold: true }
+                                    width: libraryContent.availableWidth
+                                    spacing: 8
+
+                                    Label {
+                                        text: "Library"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 30 * theme.fontScale
+                                        font.bold: true
+                                    }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Choose one home for your game collection. RecompStation organizes it into platform folders automatically."
-                                        color: theme.textSecondary; font.pixelSize: 13 * theme.fontScale; wrapMode: Text.Wrap
+                                        Layout.bottomMargin: 8
+                                        text: "Where your games live and how RecompStation finds them."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 14 * theme.fontScale
+                                        wrapMode: Text.Wrap
                                     }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label {
-                                        text: "LIBRARY LOCATION & SCANNING"
-                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true; font.letterSpacing: 1
-                                    }
-                                    Label {
-                                        text: "LIBRARY BACKGROUND"
-                                        color: theme.textMuted; font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true; font.letterSpacing: 1
-                                    }
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 16
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 4
-                                            Label { text: "Background treatment"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
-                                            Label { text: "Keep the collection backdrop coordinated with your active theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
-                                        }
-                                        ComboBox {
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.preferredWidth: 210
-                                            textRole: "label"; valueRole: "value"
-                                            model: [
-                                                { label: "Static theme", value: "static" },
-                                                { label: "Animated ambience", value: "animated" },
-                                                { label: "Custom image", value: "custom" }
-                                            ]
-                                            currentIndex: Math.max(0, indexOfValue(settingsManager.libraryBackgroundType))
-                                            onActivated: settingsManager.libraryBackgroundType = currentValue
-                                        }
-                                    }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        Layout.preferredHeight: 148
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: theme.divider
-                                        clip: true
-                                        gradient: Gradient {
-                                            GradientStop { position: 0.0; color: theme.backgroundTop }
-                                            GradientStop { position: 1.0; color: theme.backgroundBottom }
-                                        }
-                                        Image {
-                                            anchors.fill: parent
-                                            visible: settingsManager.libraryBackgroundType === "custom"
-                                                && settingsManager.customLibraryBackground.length > 0
-                                            source: settingsManager.customLibraryBackground
-                                            fillMode: Image.PreserveAspectCrop
-                                            asynchronous: true
-                                            cache: true
-                                            smooth: true
-                                        }
-                                        Image {
-                                            anchors.fill: parent
-                                            visible: settingsManager.libraryBackgroundType === "animated"
-                                            source: libraryVisualSettings.wavePalette === "violet"
-                                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
-                                                : libraryVisualSettings.wavePalette === "emerald"
-                                                    ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
-                                                    : libraryVisualSettings.wavePalette === "ember"
-                                                        ? "qrc:/qt/qml/RecompStation/assets/library-waves-ember.svg"
-                                                        : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
-                                            fillMode: Image.PreserveAspectCrop
-                                            asynchronous: true
-                                            cache: true
-                                        }
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            color: Qt.rgba(theme.windowBackground.r,
-                                                theme.windowBackground.g, theme.windowBackground.b, 0.24)
-                                        }
-                                        Label {
-                                            anchors.left: parent.left
-                                            anchors.bottom: parent.bottom
-                                            anchors.margins: 12
-                                            text: settingsManager.libraryBackgroundType === "custom"
-                                                && settingsManager.customLibraryBackground.length === 0
-                                                ? "Choose an image to preview it"
-                                                : settingsManager.libraryBackgroundType === "animated"
-                                                    ? "Animated ambience preview"
-                                                    : settingsManager.libraryBackgroundType === "custom"
-                                                        ? "Custom background preview" : "Current theme background"
-                                            color: theme.textPrimary
-                                            font.pixelSize: 12 * theme.fontScale
-                                            font.bold: true
-                                        }
-                                    }
-                                    RowLayout {
-                                        visible: settingsManager.libraryBackgroundType === "animated"
-                                        Layout.fillWidth: true
-                                        spacing: 16
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 4
-                                            Label { text: "Wave color"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
-                                            Label { text: "Choose the ambient color independently of your application theme."; color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap }
-                                        }
-                                        ComboBox {
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : theme.surface
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            Layout.preferredWidth: 210
-                                            textRole: "label"; valueRole: "value"
-                                            model: [
-                                                { label: "Ocean Blue", value: "ocean" },
-                                                { label: "Violet", value: "violet" },
-                                                { label: "Emerald", value: "emerald" },
-                                                { label: "Ember", value: "ember" }
-                                            ]
-                                            currentIndex: Math.max(0, indexOfValue(libraryVisualSettings.wavePalette))
-                                            onActivated: libraryVisualSettings.wavePalette = currentValue
-                                        }
-                                    }
-                                    RowLayout {
-                                        id: customBackgroundActionsRow
-                                        visible: settingsManager.libraryBackgroundType === "custom"
-                                        Layout.fillWidth: true
-                                        spacing: 10
+                                    SettingsGroupLabel { text: "LOCATION" }
+                                    SettingRow {
+                                        title: "Library folder"
+                                        description: platformManager.libraryConfigured
+                                            ? platformManager.libraryDirectory
+                                            : "No library folder selected yet."
                                         Button {
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                    : (parent.highlighted ? theme.accent : theme.surface)
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
-                                            text: settingsManager.customLibraryBackground.length > 0
-                                                ? "Choose another image" : "Choose image"
-                                            onClicked: libraryBackgroundFileDialog.open()
+                                            text: "Change folder"
+                                            enabled: platformManager.libraryConfigured
+                                            onClicked: libraryFolderDialog.open()
+                                        background: Rectangle {
+                                            radius: 9
+                                            color: parent.activeFocus ? theme.elevatedSurface
+                                                : (parent.highlighted ? theme.accent : theme.surface)
+                                            border.color: theme.accent
+                                            border.width: parent.activeFocus ? 2 : 0
                                         }
-                                        Button {
-                                            background: Rectangle {
-                                                radius: 8
-                                                color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                    : (parent.highlighted ? theme.accent : theme.surface)
-                                                border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                border.width: parent.activeFocus ? 2 : 1
-                                            }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                            visible: settingsManager.customLibraryBackground.length > 0
-                                            text: "Clear"
-                                            onClicked: settingsManager.setCustomLibraryBackground("")
+                                        contentItem: Label {
+                                            text: parent.text
+                                            color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                            opacity: parent.enabled ? 1 : 0.5
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.weight: Font.DemiBold
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        leftPadding: 16
+                                        rightPadding: 16
+                                        implicitHeight: 38
                                         }
                                     }
                                     Label {
-                                        visible: settingsManager.libraryBackgroundType === "animated"
                                         Layout.fillWidth: true
-                                        text: settingsManager.reducedMotion
-                                            ? "Ambient wave motion is paused while Reduced Motion is enabled."
-                                            : "Layered, flowing light ribbons create a console-hub atmosphere. Animation pauses when the app is inactive or minimized."
-                                        color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
-                                    }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label { text: "SUPPORTED PLATFORM FOLDERS"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1 }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "Your library location is selected during first-time setup. RecompStation organizes supported games into platform subfolders beneath that location."
-                                        color: theme.textSecondary; font.pixelSize: 12 * theme.fontScale; wrapMode: Text.Wrap
-                                    }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: theme.divider
-                                        implicitHeight: libraryRootColumn.implicitHeight + 28
-                                        ColumnLayout {
-                                            id: libraryRootColumn
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 9
-                                            Label {
-                                                text: "Current library folder"
-                                                color: theme.textPrimary
-                                                font.pixelSize: 13 * theme.fontScale
-                                                font.bold: true
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: platformManager.libraryConfigured
-                                                    ? platformManager.libraryDirectory
-                                                    : "No library folder selected"
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.WrapAnywhere
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: "Changing this location does not move or delete game files. Choose an existing folder; RecompStation will create its supported platform subfolders and scan it."
-                                                color: theme.textMuted
-                                                font.pixelSize: 10 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                            Button {
-                                                Layout.alignment: Qt.AlignRight
-                                                activeFocusOnTab: true
-                                                focusPolicy: Qt.StrongFocus
-                                                text: "Change Library Folder"
-                                                enabled: platformManager.libraryConfigured
-                                                onClicked: libraryFolderDialog.open()
-                                                background: Rectangle {
-                                                    radius: 8
-                                                    color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                        : (parent.highlighted ? theme.accent : theme.surface)
-                                                    border.color: parent.activeFocus ? theme.accent : theme.divider
-                                                    border.width: parent.activeFocus ? 2 : 1
-                                                }
-                                            }
-                                        }
+                                        Layout.leftMargin: 4
+                                        text: "Changing the folder doesn't move or delete game files. RecompStation creates a subfolder for each platform and scans it."
+                                        color: theme.textMuted
+                                        font.pixelSize: 12 * theme.fontScale
+                                        wrapMode: Text.Wrap
                                     }
                                     Flow {
                                         Layout.fillWidth: true
+                                        Layout.topMargin: 4
                                         spacing: 8
                                         Repeater {
                                             model: platformManager.platforms()
                                             delegate: Rectangle {
                                                 required property string modelData
-                                                radius: 12; color: theme.surface; border.color: theme.divider
-                                                width: platformChip.implicitWidth + 22; height: 30
-                                                Label { id: platformChip; anchors.centerIn: parent; text: modelData; color: theme.textSecondary; font.pixelSize: 11 * theme.fontScale }
-                                            }
-                                        }
-                                    }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label { text: "SCAN BEHAVIOR"; color: theme.textMuted; font.pixelSize: 10 * theme.fontScale; font.bold: true; font.letterSpacing: 1 }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        implicitHeight: scanStartupRow.implicitHeight + 24
-                                        radius: theme.radiusCard; color: theme.sidebarBackground; border.color: theme.divider
-                                        RowLayout {
-                                            id: scanStartupRow
-                                            anchors.fill: parent; anchors.margins: 12; spacing: 12
-                                            ColumnLayout {
-                                                Layout.fillWidth: true; spacing: 4
-                                                Label { text: "Scan library on startup"; color: theme.textPrimary; font.pixelSize: 13 * theme.fontScale; font.bold: true }
+                                                radius: 13
+                                                color: theme.surface
+                                                width: platformChip.implicitWidth + 24
+                                                height: 28
                                                 Label {
-                                                    Layout.fillWidth: true
-                                                    text: "Automatically check the configured platform folders when RecompStation launches."
-                                                    color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
+                                                    id: platformChip
+                                                    anchors.centerIn: parent
+                                                    text: window.platformDisplayName(modelData)
+                                                    color: theme.textSecondary
+                                                    font.pixelSize: 11.5 * theme.fontScale
                                                 }
-                                            }
-                                            Switch {
-                                                background: Rectangle {
-                                                    radius: 8
-                                                    color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-                                                    border.color: parent.activeFocus ? theme.accent : "transparent"
-                                                    border.width: parent.activeFocus ? 2 : 0
-                                                    anchors.margins: -6
-                                                }
-                                                activeFocusOnTab: true
-                                                focusPolicy: Qt.StrongFocus
-                                                checked: settingsManager.scanOnStartup
-                                                onToggled: settingsManager.setScanOnStartup(checked)
                                             }
                                         }
                                     }
-                                    Button {
+                                    SettingsGroupLabel { text: "SCANNING" }
+                                    SettingRow {
+                                        title: "Scan library on startup"
+                                        description: "Check the platform folders for new or removed games when RecompStation starts. Folders are also watched while it runs."
+                                        Switch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            checked: settingsManager.scanOnStartup
+                                            onToggled: settingsManager.setScanOnStartup(checked)
+                                            Accessible.name: "Scan library on startup"
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Scan now"
+                                        description: window.scanMessage.length > 0 ? window.scanMessage
+                                            : "Place game files in their platform folders, then scan."
+                                        Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: libraryScanner.scanning ? "Scanning…" : "Scan library"
+                                            highlighted: true
+                                            enabled: platformManager.libraryConfigured && !libraryScanner.scanning
+                                            onClicked: libraryScanner.scanAllAsync()
                                         background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
+                                            radius: 9
+                                            color: parent.activeFocus ? theme.elevatedSurface
                                                 : (parent.highlighted ? theme.accent : theme.surface)
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
+                                            border.color: theme.accent
+                                            border.width: parent.activeFocus ? 2 : 0
                                         }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        Layout.preferredWidth: 210
-                                        Layout.preferredHeight: 44
-                                        text: "Scan Library Now"; highlighted: true
-                                        enabled: platformManager.libraryConfigured && !libraryScanner.scanning
-                                        onClicked: { libraryScanner.scanAllAsync() }
+                                        contentItem: Label {
+                                            text: parent.text
+                                            color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                            opacity: parent.enabled ? 1 : 0.5
+                                            font.pixelSize: 13 * theme.fontScale
+                                            font.weight: Font.DemiBold
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        leftPadding: 16
+                                        rightPadding: 16
+                                        implicitHeight: 38
+                                        }
                                     }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "Place game files inside their matching platform folders. RecompStation monitors these folders and updates your library when games are added or removed."
-                                        color: theme.textMuted; font.pixelSize: 11 * theme.fontScale; wrapMode: Text.Wrap
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: window.scanMessage
-                                        visible: window.scanMessage.length > 0
-                                        color: theme.textSecondary
-                                        font.pixelSize: 11 * theme.fontScale
-                                        wrapMode: Text.Wrap
-                                    }
+                                    Item { Layout.preferredHeight: 16 }
                                 }
                             }
 
@@ -5664,7 +5563,7 @@ ApplicationWindow {
                                 anchors.bottom: parent.bottom
                                 anchors.left: parent.left
                                 anchors.topMargin: 6
-                                anchors.bottomMargin: 12
+                                anchors.bottomMargin: 64
                                 anchors.leftMargin: 8
                                 width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
@@ -5672,7 +5571,7 @@ ApplicationWindow {
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                                 ColumnLayout {
-                                    width: parent.width
+                                    width: applicationContent.availableWidth
                                     spacing: 16
                                 Label {
                                     text: "Application"
@@ -5955,7 +5854,7 @@ ApplicationWindow {
                                 anchors.bottom: parent.bottom
                                 anchors.left: parent.left
                                 anchors.topMargin: 6
-                                anchors.bottomMargin: 12
+                                anchors.bottomMargin: 64
                                 anchors.leftMargin: 8
                                 width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
@@ -5963,7 +5862,7 @@ ApplicationWindow {
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                                 ColumnLayout {
-                                    width: parent.width
+                                    width: metadataContent.availableWidth
                                     spacing: 16
 
                                     Label {
@@ -6341,7 +6240,7 @@ ApplicationWindow {
                                 anchors.bottom: parent.bottom
                                 anchors.left: parent.left
                                 anchors.topMargin: 6
-                                anchors.bottomMargin: 12
+                                anchors.bottomMargin: 64
                                 anchors.leftMargin: 8
                                 width: Math.min(parent.width - 16, window.settingsContentMaxWidth)
                                 clip: true
@@ -6349,7 +6248,7 @@ ApplicationWindow {
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                                 ColumnLayout {
-                                    width: parent.width
+                                    width: controllerContent.availableWidth
                                     spacing: 16
 
                                     Label {
@@ -6772,6 +6671,7 @@ ApplicationWindow {
                             id: settingsPreviewPane
                             readonly property bool hasContent: settingsPage.section === "Appearance"
                                 || settingsPage.section === "Display"
+                                || settingsPage.section === "Background"
                             visible: hasContent && settingsLayoutRow.width >= 1180
                             Layout.preferredWidth: Math.max(340, Math.min(460, settingsLayoutRow.width * 0.28))
                             Layout.fillHeight: true
@@ -6885,6 +6785,80 @@ ApplicationWindow {
                                 Label {
                                     Layout.fillWidth: true
                                     text: "The preview follows the focused theme. Select it to apply it everywhere."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Item { Layout.fillHeight: true }
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 20
+                                spacing: 10
+                                visible: settingsPage.section === "Background"
+
+                                SettingsGroupLabel { Layout.topMargin: 0; text: "LIVE PREVIEW" }
+                                Rectangle {
+                                    id: backgroundPreviewFrame
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: width * 9 / 16
+                                    radius: 12
+                                    clip: true
+                                    gradient: Gradient {
+                                        GradientStop { position: 0.0; color: theme.backgroundTop }
+                                        GradientStop { position: 1.0; color: theme.backgroundBottom }
+                                    }
+                                    Image {
+                                        anchors.fill: parent
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        source: libraryVisualSettings.wavePalette === "violet"
+                                            ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
+                                            : libraryVisualSettings.wavePalette === "emerald"
+                                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
+                                                : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
+                                        sourceSize.width: 640
+                                        fillMode: Image.PreserveAspectCrop
+                                        opacity: 0.78
+                                        asynchronous: true
+                                    }
+                                    WallpaperBackground {
+                                        anchors.fill: parent
+                                        visible: settingsManager.libraryBackgroundType === "custom"
+                                            && settingsManager.customLibraryBackground.length > 0
+                                        source: visible ? settingsManager.customLibraryBackground : ""
+                                        fitMode: libraryVisualSettings.wallpaperFit
+                                        dimPercent: libraryVisualSettings.wallpaperDim
+                                        dimColor: theme.windowBackground
+                                    }
+                                    // Stand-in covers, so the dim level can be judged against cards.
+                                    Row {
+                                        anchors.left: parent.left
+                                        anchors.bottom: parent.bottom
+                                        anchors.margins: 12
+                                        spacing: 7
+                                        Repeater {
+                                            model: 6
+                                            Rectangle {
+                                                required property int index
+                                                anchors.bottom: parent ? parent.bottom : undefined
+                                                width: backgroundPreviewFrame.width * 0.11
+                                                height: width * (index % 2 === 0 ? 1.4 : 1.15)
+                                                radius: 4
+                                                color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.92)
+                                                border.width: index === 1 ? 2 : 0
+                                                border.color: theme.accent
+                                            }
+                                        }
+                                    }
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: settingsManager.libraryBackgroundType === "custom"
+                                        ? "Your image is loaded at your screen's size. Fill crops the edges; Fit keeps the whole image."
+                                        : settingsManager.libraryBackgroundType === "animated"
+                                            ? "A new wave renderer with any color and smooth motion is coming in the next step."
+                                            : "A quiet gradient in your theme's colors."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap

@@ -73,9 +73,18 @@ Direction chosen by the user from design mockups (Settings today; proposed Appea
 - [x] Appearance: four theme tiles with miniature previews that apply immediately; Text size as a cycler; Reduced motion as a row.
 - [x] Display: Interface scale row and a "Restart now" banner when the saved scale differs from the one in use. The rest of Display is converted in Step 2.
 - [x] Tests: Ember migration, Aurora/Carbon, interface scale default, persistence, rejection, and the auto-scale table.
-- [ ] User validation: build and tests; themes and tiles; LB/RB and Q/E; cycler with D-pad and keyboard; preview pane; interface scale restart (manual value and back to Auto); first-run auto restart on a 1440p or 4K screen if available.
+- [x] First runtime check (2026-11-23): builds and runs; Carbon applied; Auto chose 125% on the user's screen; rail summaries and preview pane visible. Found: content column still narrow (fixed in Step 2).
+- [ ] Remaining checks: LB/RB and Q/E; cycler with D-pad and keyboard; interface scale restart (manual value and back to Auto).
 
-**Step 2: Display, Background section, Library rows** — planned
+**Step 2: Display, Background section, Library rows**
+- [x] Fix: section columns used `parent.width` inside their ScrollView, which follows the content's implicit width; they now use the ScrollView's `availableWidth`, so rows reach the 880 px cap (theme tiles show two per row). Sections leave 64 px at the bottom for the hint bar.
+- [x] Theme preview falls back to the theme in use when no tile is focused or hovered.
+- [x] Display: Interface scale, Window mode (Fullscreen / Maximized / Windowed) and Window size as cyclers. Window size is only active in Windowed mode and applies when picked (no Apply button). When the preview pane is hidden, the screen size and auto scale appear under the rows.
+- [x] New Background section (between Display and Library) with its own icon: style tiles (Gradient, Waves, Image) with previews; wave color cycler (Ocean, Violet, Emerald; the Ember wave palette is retired and migrates to Ocean); Image rows for Choose / Clear, Fit (Fill or Fit) and Dim (Off–60%). The preview pane shows the background with stand-in covers.
+- [x] New `qml/WallpaperBackground.qml` draws the custom wallpaper in the Library: decoded at the screen's size (memory stays bounded for very large photos; small images are not upscaled when decoded), Fill crops to cover, Fit shows the whole image over a blurred copy of itself, and the dim amount is configurable (default 15%, close to the previous fixed 14%). Fit and Dim are stored with the other Library visuals.
+- [x] Library: folder row with Change folder, platform chips, Scan on startup toggle, and Scan library row that shows the latest scan message.
+- [ ] User validation.
+
 **Step 3: Shader wave background** — planned (adds the Qt Shader Tools build dependency)
 **Step 4: Metadata** — planned: key entered in the app (stored in a separate file readable only by the user; the environment variable still wins), LaunchBox first by default, fall back to LaunchBox on TheGamesDB errors, re-run matching when a scan finishes while matching is busy, index only supported platforms in the LaunchBox catalog, Fix match in Game Details.
 

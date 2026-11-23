@@ -5,6 +5,7 @@
     <file alias="dpad.svg">../assets/icons/dpad.svg</file>
     <file alias="appearance.svg">../assets/icons/appearance.svg</file>
     <file alias="display.svg">../assets/icons/display.svg</file>
+    <file alias="background.svg">../assets/icons/background.svg</file>
     <file alias="application.svg">../assets/icons/application.svg</file>
     <file alias="game-artwork-unavailable.png">../assets/images/game-artwork-unavailable.png</file>
     <file alias="library.svg">../assets/icons/library.svg</file>

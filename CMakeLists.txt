@@ -98,11 +98,12 @@ qt_add_qml_module(RecompStationApp
         qml/SettingsGroupLabel.qml
         qml/SettingsNavItem.qml
         qml/ThemeTile.qml
+        qml/BackgroundStyleTile.qml
+        qml/WallpaperBackground.qml
     RESOURCES
         assets/library-waves.svg
         assets/library-waves-violet.svg
         assets/library-waves-emerald.svg
-        assets/library-waves-ember.svg
         assets/images/recompstation-controller.png
 )
 
