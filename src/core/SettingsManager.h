@@ -17,6 +17,9 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool automaticArtworkDownloadsEnabled READ automaticArtworkDownloadsEnabled NOTIFY automaticArtworkDownloadsEnabledChanged)
     Q_PROPERTY(bool theGamesDbEnabled READ theGamesDbEnabled NOTIFY theGamesDbEnabledChanged)
     Q_PROPERTY(bool launchBoxEnabled READ launchBoxEnabled NOTIFY launchBoxEnabledChanged)
+    Q_PROPERTY(QString metadataProviderOrder READ metadataProviderOrder WRITE setMetadataProviderOrder NOTIFY metadataProviderOrderChanged)
+    Q_PROPERTY(QString theGamesDbKeySource READ theGamesDbKeySource NOTIFY theGamesDbApiKeyChanged)
+    Q_PROPERTY(QString theGamesDbKeyHint READ theGamesDbKeyHint NOTIFY theGamesDbApiKeyChanged)
     Q_PROPERTY(QString launchBoxLastUpdated READ launchBoxLastUpdated NOTIFY launchBoxLastUpdatedChanged)
     Q_PROPERTY(QString preferredPresentationSize READ preferredPresentationSize WRITE setPreferredPresentationSize NOTIFY preferredPresentationSizeChanged)
     Q_PROPERTY(QString displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged)
@@ -56,6 +59,21 @@ public:
 
     bool launchBoxEnabled() const;
     Q_INVOKABLE void setLaunchBoxEnabled(bool enabled);
+    // "launchbox" (default: offline catalog first) or "thegamesdb".
+    QString metadataProviderOrder() const;
+    Q_INVOKABLE void setMetadataProviderOrder(const QString &order);
+
+    // TheGamesDB API key. RECOMPSTATION_TGDB_API_KEY wins when set; otherwise
+    // the key saved from Settings is used. The saved key lives in its own
+    // file next to settings.ini, readable and writable only by the user.
+    QString theGamesDbApiKey() const;
+    QString theGamesDbKeySource() const;   // "environment", "saved" or "none"
+    QString theGamesDbKeyHint() const;     // last four characters, or empty
+    QString theGamesDbKeyFilePath() const;
+    Q_INVOKABLE bool saveTheGamesDbApiKey(const QString &key);
+    Q_INVOKABLE bool clearTheGamesDbApiKey();
+    static bool isPlausibleTheGamesDbApiKey(const QString &key);
+
     QString launchBoxLastUpdated() const;
     Q_INVOKABLE void setLaunchBoxLastUpdated(const QString &timestamp);
 
@@ -118,6 +136,8 @@ signals:
     void theGamesDbEnabledChanged();
     void launchBoxEnabledChanged();
     void launchBoxLastUpdatedChanged();
+    void metadataProviderOrderChanged();
+    void theGamesDbApiKeyChanged();
     void preferredPresentationSizeChanged();
     void displayModeChanged();
     void restoreDisplayModeChanged();
@@ -140,6 +160,7 @@ private:
     QString m_restoreDisplayMode = QStringLiteral("windowed");
     QString m_fontSize = QStringLiteral("medium");
     QString m_interfaceScale = QStringLiteral("auto");
+    QString m_metadataProviderOrder = QStringLiteral("launchbox");
     bool m_reducedMotion = false;
     QString m_libraryView = QStringLiteral("carousel");
     QString m_libraryDensity = QStringLiteral("comfortable");

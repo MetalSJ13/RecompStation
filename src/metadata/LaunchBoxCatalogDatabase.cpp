@@ -1,5 +1,7 @@
 #include "LaunchBoxCatalogDatabase.h"
 
+#include <QSet>
+
 #include "LaunchBoxCatalogMatcher.h"
 
 #include <QDir>
@@ -190,6 +192,11 @@ bool LaunchBoxCatalogDatabase::createSchema()
     return true;
 }
 
+void LaunchBoxCatalogDatabase::setPlatformFilter(const QStringList &launchBoxPlatformNames)
+{
+    m_platformFilter = launchBoxPlatformNames;
+}
+
 bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     const QString &platformsXmlPath,
     const QString &filesXmlPath,
@@ -232,6 +239,13 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     int platformsInserted = 0;
     int filesInserted = 0;
     int gamesInserted = 0;
+    // Optional platform filter: only the platforms RecompStation supports
+    // are indexed, which keeps the catalog a small fraction of its full size.
+    QSet<QString> keptPlatformKeys;
+    for (const QString &name : m_platformFilter)
+        keptPlatformKeys.insert(platformKey(name));
+    const bool filtering = !keptPlatformKeys.isEmpty();
+    QSet<int> keptGameIds;
     QString parseError;
     QString insertError;
 
@@ -277,6 +291,8 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     const bool filesOk = LaunchBoxXmlParser::parseFilesFile(
         filesXmlPath,
         [&](const LaunchBoxFileAssociation &file) {
+            if (filtering && !keptPlatformKeys.contains(platformKey(file.platform)))
+                return true;
             insertFile.bindValue(0, file.platform);
             insertFile.bindValue(1, platformKey(file.platform));
             insertFile.bindValue(2, file.fileName);
@@ -304,6 +320,11 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     const bool gamesOk = LaunchBoxXmlParser::parseMetadataFile(
         metadataXmlPath,
         [&](const LaunchBoxGameRecord &game) {
+            if (filtering) {
+                if (!keptPlatformKeys.contains(platformKey(game.platform)))
+                    return true;
+                keptGameIds.insert(game.databaseId);
+            }
             insertGame.bindValue(0, game.databaseId);
             insertGame.bindValue(1, game.name);
             insertGame.bindValue(2, game.platform);
@@ -340,6 +361,8 @@ bool LaunchBoxCatalogDatabase::rebuildFromXmlFiles(
     const bool imagesOk = LaunchBoxXmlParser::parseGameImagesFile(
         metadataXmlPath,
         [&](const LaunchBoxGameImageRecord &image) {
+            if (filtering && !keptGameIds.contains(image.databaseId))
+                return true;
             QSqlQuery insertImage(m_database);
             insertImage.prepare(QStringLiteral(
                 "INSERT OR IGNORE INTO launchbox_game_images("

@@ -51,6 +51,11 @@ void ScreenshotManager::setStatus(const QString &status)
     emit statusChanged();
 }
 
+void ScreenshotManager::setApiKey(const QString &apiKey)
+{
+    m_apiKey = apiKey.trimmed();
+}
+
 void ScreenshotManager::setProviderEnabled(bool enabled)
 {
     m_providerEnabled = enabled;
@@ -65,7 +70,7 @@ void ScreenshotManager::refreshLibraryScreenshots()
         return;
     }
     if (m_apiKey.isEmpty()) {
-        setStatus("Screenshot downloads require a configured TheGamesDB API key.");
+        setStatus("Screenshot downloads need a TheGamesDB API key (Settings > Metadata).");
         emit refreshFinished(0, 0, 0, 0);
         return;
     }

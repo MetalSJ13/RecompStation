@@ -48,7 +48,17 @@ signals:
     void scrapeFinished(int matched, int unresolved);
 
 private:
-    bool tryLaunchBoxFallback(const QString &reason);
+    enum class LaunchBoxOutcome { Matched, NoMatch, Ambiguous, Unavailable, Failed };
+    // Looks the current game up in the LaunchBox catalog and saves a unique
+    // match. Does not record the attempt or advance the queue.
+    LaunchBoxOutcome attemptLaunchBoxMatch(QString *message);
+    // After TheGamesDB could not match (or failed): try LaunchBox unless it
+    // was already asked, record the result and move on. Always returns true.
+    bool tryLaunchBoxFallback(const QString &reason,
+                              const QString &unmatchedStatus = QStringLiteral("no_match"));
+    bool launchBoxAvailable() const;
+    void markCurrent(const QString &status);
+    void runPendingRescan();
     void processNext();
     void finishCurrent(bool matched, const QString &reason = {});
     void setBusy(bool busy);
@@ -67,5 +77,9 @@ private:
     int m_unresolvedCount = 0;
     bool m_busy = false;
     bool m_forceArtworkDownload = false;
+    bool m_theGamesDbUnavailable = false;
+    QString m_theGamesDbFailure;
+    bool m_rescanPending = false;
+    bool m_rescanIncludesChecked = false;
     QString m_status;
 };

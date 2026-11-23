@@ -894,6 +894,8 @@ ApplicationWindow {
             && !systemMenuVisible && !uninstallDialog.visible
             && !libraryFolderDialog.visible && !librarySetupDialog.visible
             && !libraryBackgroundFileDialog.visible
+            // A text field (the TheGamesDB key) handles Escape itself.
+            && !(window.activeFocusItem instanceof TextInput)
             && !(window.activeFocusItem && window.activeFocusItem.popup
                 && window.activeFocusItem.popup.visible)
         onActivated: window.controllerBack("keyboard")
@@ -1101,6 +1103,18 @@ ApplicationWindow {
     property string pendingUninstallProjectId: ""
     property int selectedMetadataPlatformId: 0
     property int launchBoxProgressPercent: 0
+    property string theGamesDbKeyMessage: ""
+    function formatBytes(bytes) {
+        if (!bytes || bytes <= 0)
+            return "0 MB"
+        if (bytes >= 1024 * 1024 * 1024)
+            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB"
+        return Math.max(1, Math.round(bytes / (1024 * 1024))) + " MB"
+    }
+    function formatShortDate(isoText) {
+        const date = new Date(isoText)
+        return isNaN(date.getTime()) ? isoText : date.toLocaleDateString(Qt.locale(), Locale.ShortFormat)
+    }
     property string launchBoxStatusMessage: launchBoxCatalogManager.catalogAvailable ? "LaunchBox catalog is ready." : ""
     property bool universalRefreshPending: false
     Connections {
@@ -1111,7 +1125,7 @@ ApplicationWindow {
         }
         function onUpdateCompleted(platforms, files, games) {
             launchBoxProgressPercent = 100
-            launchBoxStatusMessage = "Catalog updated: " + platforms + " platforms, " + files + " file associations, " + games + " games. LaunchBox artwork for your library is being checked. Run Refresh All Metadata to match games and retrieve missing screenshots."
+            launchBoxStatusMessage = "Catalog updated: " + games + " games for your platforms. Unmatched games in your library are being checked against it now."
         }
         function onUpdateFailed(message) {
             launchBoxStatusMessage = "Update failed: " + message
@@ -5896,374 +5910,548 @@ ApplicationWindow {
 
                                 ColumnLayout {
                                     width: metadataContent.availableWidth
-                                    spacing: 16
+                                    spacing: 8
 
                                     Label {
                                         text: "Metadata"
                                         color: theme.textPrimary
-                                        font.pixelSize: 27 * theme.fontScale
+                                        font.pixelSize: 30 * theme.fontScale
                                         font.bold: true
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Choose which services RecompStation can use to identify games and retrieve metadata."
+                                        Layout.bottomMargin: 8
+                                        text: "Where game names, descriptions, covers and screenshots come from."
                                         color: theme.textSecondary
-                                        font.pixelSize: 13 * theme.fontScale
+                                        font.pixelSize: 14 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
+                                    SettingsGroupLabel { text: "PROVIDERS" }
 
-                                    Label {
-                                        text: "AUTOMATION"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
+                                    // TheGamesDB: online, needs a key.
                                     Rectangle {
+                                        id: theGamesDbCard
                                         Layout.fillWidth: true
-                                        implicitHeight: automaticMetadataColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
+                                        implicitHeight: theGamesDbColumn.implicitHeight + 28
+                                        radius: 12
                                         color: theme.sidebarBackground
-                                        border.color: settingsManager.automaticMetadataMatchingEnabled
-                                            ? theme.accent : theme.divider
+                                        border.width: window.isDescendantOf(window.activeFocusItem, theGamesDbCard) ? 2 : 0
+                                        border.color: theme.accent
+                                        property bool editingKey: false
+                                        readonly property string keySource: settingsManager.theGamesDbKeySource
+                                        readonly property string connection: metadataManager.connectionState
+
                                         ColumnLayout {
-                                            id: automaticMetadataColumn
+                                            id: theGamesDbColumn
                                             anchors.left: parent.left
                                             anchors.right: parent.right
                                             anchors.top: parent.top
                                             anchors.margins: 14
-                                            spacing: 8
+                                            anchors.leftMargin: 18
+                                            spacing: 10
                                             RowLayout {
                                                 Layout.fillWidth: true
-                                                CheckBox {
+                                                spacing: 12
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 3
+                                                    Label {
+                                                        text: "TheGamesDB  <font color=\"" + theme.textMuted + "\">· online</font>"
+                                                        textFormat: Text.StyledText
+                                                        color: theme.textPrimary
+                                                        font.pixelSize: 14.5 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                    }
+                                                    Label {
+                                                        Layout.fillWidth: true
+                                                        text: "Descriptions, ratings, covers and gameplay screenshots. Needs a free API key."
+                                                        color: theme.textMuted
+                                                        font.pixelSize: 12 * theme.fontScale
+                                                        wrapMode: Text.Wrap
+                                                    }
+                                                }
+                                                StatusPill {
+                                                    text: !settingsManager.theGamesDbEnabled ? "Off"
+                                                        : theGamesDbCard.connection === "connected" ? "● Connected"
+                                                        : theGamesDbCard.connection === "checking" ? "Checking…"
+                                                        : theGamesDbCard.connection === "unconfigured" ? "No key"
+                                                        : "● Can't connect"
+                                                    tone: !settingsManager.theGamesDbEnabled ? "neutral"
+                                                        : theGamesDbCard.connection === "connected" ? "good"
+                                                        : theGamesDbCard.connection === "error" ? "bad" : "warning"
+                                                }
+                                                Switch {
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
-                                                    text: "Automatically match metadata"
-                                                    checked: settingsManager.automaticMetadataMatchingEnabled
-                                                    onToggled: settingsManager.setAutomaticMetadataMatchingEnabled(checked)
-                                                    background: Rectangle {
-                                                        radius: 8
-                                                        color: parent.activeFocus
-                                                            ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-                                                        border.width: parent.activeFocus ? 2 : 0
-                                                        anchors.margins: -6
-                                                    }
-                                                }
-                                                Item { Layout.fillWidth: true }
-                                                Label {
-                                                    text: settingsManager.automaticMetadataMatchingEnabled
-                                                        ? "Enabled" : "Disabled"
-                                                    color: settingsManager.automaticMetadataMatchingEnabled
-                                                        ? "#48C78E" : theme.textMuted
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                    font.bold: true
-                                                }
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: "Automatically identify newly discovered games after a library scan. When disabled, use Refresh All Metadata to run matching manually."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        implicitHeight: automaticArtworkColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: settingsManager.automaticArtworkDownloadsEnabled
-                                            ? theme.accent : theme.divider
-                                        ColumnLayout {
-                                            id: automaticArtworkColumn
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 8
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                CheckBox {
-                                                    activeFocusOnTab: true
-                                                    focusPolicy: Qt.StrongFocus
-                                                    text: "Automatically download artwork"
-                                                    checked: settingsManager.automaticArtworkDownloadsEnabled
-                                                    onToggled: settingsManager.setAutomaticArtworkDownloadsEnabled(checked)
-                                                    background: Rectangle {
-                                                        radius: 8
-                                                        color: parent.activeFocus
-                                                            ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-                                                        border.width: parent.activeFocus ? 2 : 0
-                                                        anchors.margins: -6
-                                                    }
-                                                }
-                                                Item { Layout.fillWidth: true }
-                                                Label {
-                                                    text: settingsManager.automaticArtworkDownloadsEnabled
-                                                        ? "Enabled" : "Disabled"
-                                                    color: settingsManager.automaticArtworkDownloadsEnabled
-                                                        ? "#48C78E" : theme.textMuted
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                    font.bold: true
-                                                }
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: "Download cover artwork and available gameplay screenshots automatically after games are matched. Refresh All Metadata can still retrieve them manually."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                        }
-                                    }
-
-                                    Label {
-                                        text: "AVAILABLE PROVIDERS"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
-                                    }
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        implicitHeight: theGamesDbProviderColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
-                                        color: theme.sidebarBackground
-                                        border.color: settingsManager.theGamesDbEnabled ? theme.accent : theme.divider
-                                        ColumnLayout {
-                                            id: theGamesDbProviderColumn
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            anchors.margins: 14
-                                            spacing: 8
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                CheckBox {
-
-                                                    background: Rectangle {
-
-                                                        radius: 8
-
-                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-
-                                                        border.width: parent.activeFocus ? 2 : 0
-
-                                                        anchors.margins: -6
-
-                                                    }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                                    text: "TheGamesDB"
                                                     checked: settingsManager.theGamesDbEnabled
                                                     onToggled: settingsManager.setTheGamesDbEnabled(checked)
+                                                    Accessible.name: "Use TheGamesDB"
                                                 }
-                                                Item { Layout.fillWidth: true }
-                                                Label {
-                                                    text: !settingsManager.theGamesDbEnabled ? "Disabled"
-                                                        : metadataManager.configured ? "Configured" : "API key required"
-                                                    color: !settingsManager.theGamesDbEnabled ? theme.textMuted
-                                                        : metadataManager.configured ? "#48C78E" : theme.textMuted
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                    font.bold: true
+                                            }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 8
+                                                visible: settingsManager.theGamesDbEnabled
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 38
+                                                    radius: 9
+                                                    color: theme.windowBackground
+                                                    border.width: theGamesDbKeyField.activeFocus ? 2 : 1
+                                                    border.color: theGamesDbKeyField.activeFocus ? theme.accent : theme.divider
+                                                    Label {
+                                                        anchors.fill: parent
+                                                        anchors.leftMargin: 12
+                                                        anchors.rightMargin: 12
+                                                        visible: !theGamesDbCard.editingKey
+                                                        verticalAlignment: Text.AlignVCenter
+                                                        elide: Text.ElideRight
+                                                        text: theGamesDbCard.keySource === "none" ? "No key yet"
+                                                            : "••••••••••••••••••••" + settingsManager.theGamesDbKeyHint
+                                                        color: theGamesDbCard.keySource === "none" ? theme.textMuted : theme.textSecondary
+                                                        font.family: "monospace"
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                    }
+                                                    TextField {
+                                                        id: theGamesDbKeyField
+                                                        anchors.fill: parent
+                                                        visible: theGamesDbCard.editingKey
+                                                        activeFocusOnTab: theGamesDbCard.editingKey
+                                                        placeholderText: "Paste your TheGamesDB API key"
+                                                        echoMode: TextInput.Password
+                                                        passwordMaskDelay: 600
+                                                        font.family: "monospace"
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        color: theme.textPrimary
+                                                        background: Item {}
+                                                        leftPadding: 12
+                                                        rightPadding: 12
+                                                        inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhSensitiveData
+                                                        onAccepted: theGamesDbSaveKeyButton.clicked()
+                                                        Keys.onEscapePressed: (event) => {
+                                                            theGamesDbCard.editingKey = false
+                                                            theGamesDbKeyChangeButton.forceActiveFocus()
+                                                            event.accepted = true
+                                                        }
+                                                    }
+                                                }
+                                                Button {
+                                                    id: theGamesDbKeyChangeButton
+                                                    visible: !theGamesDbCard.editingKey && theGamesDbCard.keySource !== "environment"
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: theGamesDbCard.keySource === "none" ? "Add key" : "Change key"
+                                                    highlighted: theGamesDbCard.keySource === "none"
+                                                    onClicked: {
+                                                        theGamesDbKeyField.text = ""
+                                                        theGamesDbCard.editingKey = true
+                                                        window.theGamesDbKeyMessage = ""
+                                                        Qt.callLater(function() { theGamesDbKeyField.forceActiveFocus() })
+                                                    }
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
+                                                }
+                                                Button {
+                                                    id: theGamesDbSaveKeyButton
+                                                    visible: theGamesDbCard.editingKey
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: "Save"
+                                                    highlighted: true
+                                                    onClicked: {
+                                                        if (settingsManager.saveTheGamesDbApiKey(theGamesDbKeyField.text)) {
+                                                            window.theGamesDbKeyMessage = "Key saved. Checking it with TheGamesDB…"
+                                                            theGamesDbCard.editingKey = false
+                                                            theGamesDbKeyField.text = ""
+                                                            Qt.callLater(function() { theGamesDbKeyChangeButton.forceActiveFocus() })
+                                                        } else {
+                                                            window.theGamesDbKeyMessage = "That doesn't look like a TheGamesDB key: it should be 16 to 128 letters and digits."
+                                                        }
+                                                    }
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
+                                                }
+                                                Button {
+                                                    visible: theGamesDbCard.editingKey
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: "Cancel"
+                                                    onClicked: {
+                                                        theGamesDbCard.editingKey = false
+                                                        theGamesDbKeyField.text = ""
+                                                        window.theGamesDbKeyMessage = ""
+                                                        theGamesDbKeyChangeButton.forceActiveFocus()
+                                                    }
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
+                                                }
+                                                Button {
+                                                    visible: !theGamesDbCard.editingKey && theGamesDbCard.keySource !== "none"
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: metadataManager.connectionState === "checking" ? "Testing…" : "Test"
+                                                    enabled: metadataManager.connectionState !== "checking"
+                                                    onClicked: {
+                                                        window.theGamesDbKeyMessage = ""
+                                                        metadataManager.refreshProvider()
+                                                    }
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
+                                                }
+                                                Button {
+                                                    visible: !theGamesDbCard.editingKey && theGamesDbCard.keySource === "saved"
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    text: "Remove"
+                                                    onClicked: {
+                                                        settingsManager.clearTheGamesDbApiKey()
+                                                        window.theGamesDbKeyMessage = "Saved key removed."
+                                                    }
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
                                                 }
                                             }
                                             Label {
                                                 Layout.fillWidth: true
-                                                text: "Game search, platform information, descriptions, ratings, and cover artwork. Uses the locally configured TheGamesDB API key."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
+                                                visible: settingsManager.theGamesDbEnabled && text.length > 0
+                                                text: {
+                                                    if (window.theGamesDbKeyMessage.length > 0 && theGamesDbCard.connection !== "connected"
+                                                            && theGamesDbCard.connection !== "error")
+                                                        return window.theGamesDbKeyMessage
+                                                    const parts = []
+                                                    if (theGamesDbCard.keySource === "environment")
+                                                        parts.push("Using the key from RECOMPSTATION_TGDB_API_KEY")
+                                                    else if (theGamesDbCard.keySource === "saved")
+                                                        parts.push("Key saved for your user only")
+                                                    if (theGamesDbCard.connection === "connected" && metadataManager.remainingAllowance >= 0)
+                                                        parts.push(metadataManager.remainingAllowance.toLocaleString(Qt.locale(), "f", 0)
+                                                            + " requests left this month")
+                                                    if (theGamesDbCard.connection === "error")
+                                                        parts.push(metadataManager.connectionError)
+                                                    return parts.join(" · ")
+                                                }
+                                                color: theGamesDbCard.connection === "error" ? theme.error : theme.textMuted
+                                                font.pixelSize: 11.5 * theme.fontScale
                                                 wrapMode: Text.Wrap
                                             }
                                         }
                                     }
 
+                                    // LaunchBox: offline catalog, no key.
                                     Rectangle {
+                                        id: launchBoxCard
                                         Layout.fillWidth: true
-                                        implicitHeight: launchBoxProviderColumn.implicitHeight + 28
-                                        radius: theme.radiusCard
+                                        implicitHeight: launchBoxColumn.implicitHeight + 28
+                                        radius: 12
                                         color: theme.sidebarBackground
-                                        border.color: settingsManager.launchBoxEnabled ? theme.accent : theme.divider
+                                        border.width: window.isDescendantOf(window.activeFocusItem, launchBoxCard) ? 2 : 0
+                                        border.color: theme.accent
+
                                         ColumnLayout {
-                                            id: launchBoxProviderColumn
+                                            id: launchBoxColumn
                                             anchors.left: parent.left
                                             anchors.right: parent.right
                                             anchors.top: parent.top
                                             anchors.margins: 14
-                                            spacing: 9
+                                            anchors.leftMargin: 18
+                                            spacing: 10
                                             RowLayout {
                                                 Layout.fillWidth: true
-                                                CheckBox {
-                                                    activeFocusOnTab: true
-                                                    focusPolicy: Qt.StrongFocus
-                                                    text: "LaunchBox Games Database"
-                                                    checked: settingsManager.launchBoxEnabled
-                                                    onToggled: settingsManager.setLaunchBoxEnabled(checked)
-                                                    background: Rectangle {
-                                                        radius: 8
-                                                        color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.18) : "transparent"
-                                                        border.color: parent.activeFocus ? theme.accent : "transparent"
-                                                        border.width: parent.activeFocus ? 2 : 0
-                                                        anchors.margins: -6
+                                                spacing: 12
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 3
+                                                    Label {
+                                                        text: "LaunchBox Games Database  <font color=\"" + theme.textMuted + "\">· offline catalog</font>"
+                                                        textFormat: Text.StyledText
+                                                        color: theme.textPrimary
+                                                        font.pixelSize: 14.5 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                    }
+                                                    Label {
+                                                        Layout.fillWidth: true
+                                                        text: "Matches by ROM file name and title, with covers and screenshots. Works without a key or internet once downloaded (about 106 MB)."
+                                                        color: theme.textMuted
+                                                        font.pixelSize: 12 * theme.fontScale
+                                                        wrapMode: Text.Wrap
                                                     }
                                                 }
-                                                Item { Layout.fillWidth: true }
-                                                Label {
-                                                    text: !settingsManager.launchBoxEnabled ? "Disabled"
-                                                        : launchBoxCatalogManager.catalogAvailable ? "Catalog ready" : "Enabled · catalog not downloaded"
-                                                    color: launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled
-                                                        ? "#48C78E" : theme.textMuted
-                                                    font.pixelSize: 10 * theme.fontScale
-                                                    font.bold: true
+                                                StatusPill {
+                                                    text: !settingsManager.launchBoxEnabled ? "Off"
+                                                        : launchBoxCatalogManager.busy ? "Updating " + window.launchBoxProgressPercent + "%"
+                                                        : launchBoxCatalogManager.catalogAvailable
+                                                            ? "● Installed · " + window.formatBytes(launchBoxCatalogManager.catalogSizeBytes)
+                                                            : "Not downloaded"
+                                                    tone: !settingsManager.launchBoxEnabled ? "neutral"
+                                                        : launchBoxCatalogManager.catalogAvailable ? "good" : "warning"
                                                 }
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: "Optional local catalog for LaunchBox metadata matching. TheGamesDB remains the primary provider. Enabling LaunchBox does not download anything automatically."
-                                                color: theme.textSecondary
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: launchBoxCatalogManager.catalogAvailable
-                                                    ? "Local catalog: available"
-                                                    : "Local catalog: not installed"
-                                                color: theme.textMuted
-                                                font.pixelSize: 11 * theme.fontScale
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                text: settingsManager.launchBoxLastUpdated.length > 0
-                                                    ? "Last successful update: " + settingsManager.launchBoxLastUpdated
-                                                    : "Last updated: never"
-                                                color: theme.textMuted
-                                                font.pixelSize: 11 * theme.fontScale
+                                                Switch {
+                                                    activeFocusOnTab: true
+                                                    focusPolicy: Qt.StrongFocus
+                                                    checked: settingsManager.launchBoxEnabled
+                                                    onToggled: settingsManager.setLaunchBoxEnabled(checked)
+                                                    Accessible.name: "Use LaunchBox"
+                                                }
                                             }
                                             RowLayout {
                                                 Layout.fillWidth: true
-                                                spacing: 10
+                                                spacing: 8
+                                                visible: settingsManager.launchBoxEnabled
+                                                Label {
+                                                    Layout.fillWidth: true
+                                                    text: launchBoxCatalogManager.busy || window.launchBoxStatusMessage.length > 0
+                                                            && !launchBoxCatalogManager.catalogAvailable
+                                                        ? window.launchBoxStatusMessage
+                                                        : settingsManager.launchBoxLastUpdated.length > 0
+                                                            ? "Updated " + window.formatShortDate(settingsManager.launchBoxLastUpdated)
+                                                                + " · indexes " + platformManager.platforms().map(window.platformDisplayName).join(", ")
+                                                            : "Download the catalog to start matching with LaunchBox."
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 11.5 * theme.fontScale
+                                                    wrapMode: Text.Wrap
+                                                }
                                                 Button {
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
-                                                    Layout.preferredWidth: 190
-                                                    Layout.preferredHeight: 40
-                                                    highlighted: true
-                                                    text: launchBoxCatalogManager.busy ? "Updating Catalog…" : "Update Catalog"
-                                                    enabled: settingsManager.launchBoxEnabled && !launchBoxCatalogManager.busy
+                                                    visible: !launchBoxCatalogManager.busy
+                                                    text: launchBoxCatalogManager.catalogAvailable ? "Update catalog" : "Download catalog"
+                                                    highlighted: !launchBoxCatalogManager.catalogAvailable
                                                     onClicked: launchBoxCatalogManager.updateCatalog()
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
                                                 }
                                                 Button {
                                                     activeFocusOnTab: true
                                                     focusPolicy: Qt.StrongFocus
-                                                    Layout.preferredWidth: 110
-                                                    Layout.preferredHeight: 40
-                                                    text: "Cancel"
                                                     visible: launchBoxCatalogManager.busy
-                                                    enabled: launchBoxCatalogManager.busy
+                                                    text: "Cancel"
                                                     onClicked: launchBoxCatalogManager.cancelUpdate()
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
                                                 }
                                             }
-                                            ProgressBar {
-                                                Layout.fillWidth: true
-                                                visible: launchBoxCatalogManager.busy
-                                                from: 0
-                                                to: 100
-                                                value: launchBoxProgressPercent
-                                            }
                                             Label {
                                                 Layout.fillWidth: true
-                                                visible: launchBoxCatalogManager.busy || launchBoxStatusMessage.length > 0
-                                                text: launchBoxStatusMessage
-                                                color: theme.textMuted
-                                                font.pixelSize: 11 * theme.fontScale
-                                                wrapMode: Text.Wrap
-                                            }
-                                            Label {
-                                                Layout.fillWidth: true
-                                                visible: launchBoxArtworkManager.status.length > 0
+                                                visible: settingsManager.launchBoxEnabled && launchBoxArtworkManager.status.length > 0
                                                 text: launchBoxArtworkManager.status
                                                 color: theme.textMuted
-                                                font.pixelSize: 11 * theme.fontScale
+                                                font.pixelSize: 11.5 * theme.fontScale
                                                 wrapMode: Text.Wrap
                                             }
                                         }
                                     }
 
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: "The catalog download is approximately 106 MB compressed. Updates are manual, and the existing catalog remains available until a replacement has been validated."
-                                        color: theme.textMuted
-                                        font.pixelSize: 11 * theme.fontScale
-                                        wrapMode: Text.Wrap
+                                    SettingRow {
+                                        title: "Ask first"
+                                        description: settingsManager.metadataProviderOrder === "launchbox"
+                                            ? "LaunchBox is checked first; TheGamesDB fills in games it doesn't know."
+                                            : "TheGamesDB is checked first; LaunchBox fills in games it can't match or when it's unreachable."
+                                        ValueCycler {
+                                            options: [
+                                                { label: "LaunchBox", value: "launchbox" },
+                                                { label: "TheGamesDB", value: "thegamesdb" }
+                                            ]
+                                            value: settingsManager.metadataProviderOrder
+                                            onPicked: (order) => settingsManager.setMetadataProviderOrder(order)
+                                        }
                                     }
 
-                                    Rectangle { Layout.fillWidth: true; height: 1; color: theme.divider }
-                                    Label {
-                                        text: "UNIVERSAL LIBRARY REFRESH"
-                                        color: theme.textMuted
-                                        font.pixelSize: 10 * theme.fontScale
-                                        font.bold: true
-                                        font.letterSpacing: 1
+                                    SettingsGroupLabel { text: "AUTOMATION" }
+                                    SettingRow {
+                                        title: "Match new games automatically"
+                                        description: "After every scan, including when files are added while RecompStation is open. Games skipped because a provider was unreachable are retried an hour later."
+                                        Switch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            checked: settingsManager.automaticMetadataMatchingEnabled
+                                            onToggled: settingsManager.setAutomaticMetadataMatchingEnabled(checked)
+                                            Accessible.name: "Match new games automatically"
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Download covers and screenshots"
+                                        description: "Right after a game is matched."
+                                        Switch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            checked: settingsManager.automaticArtworkDownloadsEnabled
+                                            onToggled: settingsManager.setAutomaticArtworkDownloadsEnabled(checked)
+                                            Accessible.name: "Download covers and screenshots automatically"
+                                        }
+                                    }
+
+                                    SettingsGroupLabel { text: "WHOLE LIBRARY" }
+                                    SettingRow {
+                                        title: "Refresh all metadata"
+                                        description: metadataMatcher.busy && metadataMatcher.totalCount > 0
+                                            ? "Matching " + metadataMatcher.completedCount + " of " + metadataMatcher.totalCount + "…"
+                                            : "Retries every game without a match, and fetches missing covers and screenshots. Existing matches are kept."
+                                        Button {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: window.universalRefreshPending || metadataMatcher.busy ? "Refreshing…" : "Refresh"
+                                            highlighted: true
+                                            enabled: (metadataManager.configured
+                                                || (settingsManager.launchBoxEnabled && launchBoxCatalogManager.catalogAvailable))
+                                                && !window.universalRefreshPending
+                                                && !metadataMatcher.busy
+                                                && !screenshotManager.busy
+                                                && !launchBoxCatalogManager.busy
+                                            onClicked: {
+                                                window.universalRefreshPending = true
+                                                window.scanMessage = "Refreshing metadata and available artwork for your library…"
+                                                metadataMatcher.scrapeLibrary(true, true)
+                                            }
+                                                    background: Rectangle {
+                                                        radius: 9
+                                                        color: parent.activeFocus ? theme.elevatedSurface
+                                                            : (parent.highlighted ? theme.accent : theme.surface)
+                                                        border.color: theme.accent
+                                                        border.width: parent.activeFocus ? 2 : 0
+                                                    }
+                                                    contentItem: Label {
+                                                        text: parent.text
+                                                        color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                        opacity: parent.enabled ? 1 : 0.5
+                                                        font.pixelSize: 13 * theme.fontScale
+                                                        font.weight: Font.DemiBold
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    leftPadding: 16
+                                                    rightPadding: 16
+                                                    implicitHeight: 38
+                                        }
                                     }
                                     Label {
                                         Layout.fillWidth: true
-                                        text: "Refresh missing game metadata, cover artwork, and gameplay screenshots across your library. Existing matches and downloaded images are preserved and skipped."
-                                        color: theme.textSecondary
+                                        Layout.leftMargin: 4
+                                        visible: !settingsPreviewPane.visible && metadataMatcher.status.length > 0
+                                        text: metadataMatcher.status
+                                        color: theme.textMuted
                                         font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                    Button {
-                                        background: Rectangle {
-                                            radius: 8
-                                            color: parent.activeFocus ? Qt.rgba(0.45, 0.45, 0.45, 0.20)
-                                                : (parent.highlighted ? theme.accent : theme.surface)
-                                            border.color: parent.activeFocus ? theme.accent : theme.divider
-                                            border.width: parent.activeFocus ? 2 : 1
-                                        }
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        Layout.preferredWidth: 230
-                                        Layout.preferredHeight: 44
-                                        text: window.universalRefreshPending || metadataMatcher.busy
-                                            ? "Refreshing Library…" : "Refresh All Metadata"
-                                        highlighted: true
-                                        enabled: (metadataManager.configured
-                                            || (settingsManager.launchBoxEnabled
-                                                && launchBoxCatalogManager.catalogAvailable))
-                                            && !window.universalRefreshPending
-                                            && !metadataMatcher.busy
-                                            && !screenshotManager.busy
-                                            && !launchBoxCatalogManager.busy
-                                        onClicked: {
-                                            window.universalRefreshPending = true
-                                            window.scanMessage = "Refreshing metadata and available artwork for your library…"
-                                            metadataMatcher.scrapeLibrary(true, true)
-                                        }
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: metadataMatcher.status
-                                        visible: metadataMatcher.status.length > 0
-                                        color: theme.textMuted
-                                        font.pixelSize: 11 * theme.fontScale
-                                        wrapMode: Text.Wrap
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: screenshotManager.status
-                                        visible: screenshotManager.status.length > 0
-                                        color: theme.textMuted
-                                        font.pixelSize: 11 * theme.fontScale
-                                        wrapMode: Text.Wrap
-                                    }
+                                    Item { Layout.preferredHeight: 16 }
                                 }
                             }
 
@@ -6705,6 +6893,7 @@ ApplicationWindow {
                             readonly property bool hasContent: settingsPage.section === "Appearance"
                                 || settingsPage.section === "Display"
                                 || settingsPage.section === "Background"
+                                || settingsPage.section === "Metadata"
                             visible: hasContent && settingsLayoutRow.width >= 1180
                             Layout.preferredWidth: Math.max(340, Math.min(460, settingsLayoutRow.width * 0.28))
                             Layout.fillHeight: true
@@ -6818,6 +7007,47 @@ ApplicationWindow {
                                 Label {
                                     Layout.fillWidth: true
                                     text: "The preview follows the focused theme. Select it to apply it everywhere."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Item { Layout.fillHeight: true }
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 20
+                                spacing: 10
+                                visible: settingsPage.section === "Metadata"
+
+                                SettingsGroupLabel { Layout.topMargin: 0; text: "HOW MATCHING WORKS" }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Each new game is looked up by its ROM file name and title, in the order you chose. A game is only matched when one result clearly fits; otherwise it stays unmatched rather than getting the wrong cover."
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                SettingsGroupLabel { text: "LATEST RUN" }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: metadataMatcher.status.length > 0 ? metadataMatcher.status : "Nothing has run yet in this session."
+                                    color: theme.textPrimary
+                                    font.pixelSize: 12.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: screenshotManager.status.length > 0
+                                    text: screenshotManager.status
+                                    color: theme.textMuted
+                                    font.pixelSize: 12 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                SettingsGroupLabel { text: "GETTING A THEGAMESDB KEY" }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Request a free key on the TheGamesDB forums, then choose Add key and paste it. It is stored in its own file in RecompStation's config folder, readable only by your user. If RECOMPSTATION_TGDB_API_KEY is set in your environment, that key is used instead."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap

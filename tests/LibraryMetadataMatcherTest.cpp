@@ -418,7 +418,7 @@ private slots:
         QCOMPARE(game.value("metadataGameId").toInt(), 162);
     }
 
-    void doesNotUseLaunchBoxAfterPrimaryProviderFailure()
+    void usesLaunchBoxAfterPrimaryProviderFailure()
     {
         QTemporaryDir directory;
         QVERIFY(directory.isValid());
@@ -426,6 +426,7 @@ private slots:
         QVERIFY(prepareLibraryGame(directory.path(), &database));
         SettingsManager settings(directory.path() + "/settings.ini");
         settings.setLaunchBoxEnabled(true);
+        settings.setMetadataProviderOrder(QStringLiteral("thegamesdb"));
         LaunchBoxCatalogManager catalogManager(directory.path());
         QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
         FakeMetadataProvider provider;
@@ -433,9 +434,64 @@ private slots:
         MetadataManager metadata(&provider, nullptr, true);
         LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
                                        &catalogManager, &settings);
+        QSignalSpy finished(&matcher, &LibraryMetadataMatcher::scrapeFinished);
 
         matcher.scrapeLibrary();
+        QCOMPARE(finished.size(), 1);
+        QCOMPARE(finished.first().at(0).toInt(), 1);
+        const QVariantMap game = database.games().first().toMap();
+        QCOMPARE(game.value("metadataProvider").toString(), QStringLiteral("launchbox"));
+        QCOMPARE(game.value("metadataGameId").toInt(), 162);
+    }
+
+    void providerFailureWithoutLaunchBoxLeavesGameUnmatched()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(false);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        FakeMetadataProvider provider;
+        provider.failRequest = true;
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+        QSignalSpy finished(&matcher, &LibraryMetadataMatcher::scrapeFinished);
+
+        matcher.scrapeLibrary();
+        QCOMPARE(finished.size(), 1);
+        QCOMPARE(finished.first().at(1).toInt(), 1);
         QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
+    }
+
+    void launchBoxFirstIsPreferredOverTheGamesDb()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(true);
+        QCOMPARE(settings.metadataProviderOrder(), QStringLiteral("launchbox"));
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        FakeMetadataProvider provider;
+        GameMetadata primary;
+        primary.provider = QStringLiteral("thegamesdb");
+        primary.providerGameId = 987;
+        primary.title = QStringLiteral("Banjo-Kazooie (USA) (Rev A)");
+        primary.platformId = 3;
+        provider.results.append(primary);
+        MetadataManager metadata(&provider, nullptr, true);
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+
+        matcher.scrapeLibrary();
+        const QVariantMap game = database.games().first().toMap();
+        QCOMPARE(game.value("metadataProvider").toString(), QStringLiteral("launchbox"));
+        QCOMPARE(game.value("metadataGameId").toInt(), 162);
     }
 
     void doesNotUseLaunchBoxWhenDisabled()
@@ -457,7 +513,7 @@ private slots:
         QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
     }
 
-    void primaryMatchRemainsPreferredOverLaunchBox()
+    void theGamesDbFirstOrderPrefersTheGamesDb()
     {
         QTemporaryDir directory;
         QVERIFY(directory.isValid());
@@ -465,6 +521,7 @@ private slots:
         QVERIFY(prepareLibraryGame(directory.path(), &database));
         SettingsManager settings(directory.path() + "/settings.ini");
         settings.setLaunchBoxEnabled(true);
+        settings.setMetadataProviderOrder(QStringLiteral("thegamesdb"));
         LaunchBoxCatalogManager catalogManager(directory.path());
         QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
         FakeMetadataProvider provider;

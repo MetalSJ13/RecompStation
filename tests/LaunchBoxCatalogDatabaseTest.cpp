@@ -158,6 +158,50 @@ private slots:
         QVERIFY(catalog.findGamesByTitle("64DD", "Banjo-Kazooie").isEmpty());
     }
 
+    void platformFilterKeepsOnlySupportedPlatforms()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString root = directory.path();
+        QVERIFY(writeFile(root + "/Platforms.xml", R"xml(
+            <LaunchBox>
+                <Platform><Name>Nintendo 64</Name></Platform>
+                <Platform><Name>Sega Saturn</Name></Platform>
+            </LaunchBox>)xml"));
+        QVERIFY(writeFile(root + "/Files.xml", R"xml(
+            <LaunchBox>
+                <File><Platform>Nintendo 64</Platform><FileName>Banjo-Kazooie (USA)</FileName>
+                    <GameName>Banjo-Kazooie</GameName></File>
+                <File><Platform>Sega Saturn</Platform><FileName>Nights (USA)</FileName>
+                    <GameName>Nights into Dreams</GameName></File>
+            </LaunchBox>)xml"));
+        QVERIFY(writeFile(root + "/Metadata.xml", R"xml(
+            <LaunchBox>
+                <Game><DatabaseID>162</DatabaseID><Name>Banjo-Kazooie</Name>
+                    <Platform>Nintendo 64</Platform></Game>
+                <Game><DatabaseID>900</DatabaseID><Name>Nights into Dreams</Name>
+                    <Platform>Sega Saturn</Platform></Game>
+                <GameImage><DatabaseID>162</DatabaseID><FileName>banjo.jpg</FileName>
+                    <Type>Box - Front</Type></GameImage>
+                <GameImage><DatabaseID>900</DatabaseID><FileName>nights.jpg</FileName>
+                    <Type>Box - Front</Type></GameImage>
+            </LaunchBox>)xml"));
+
+        LaunchBoxCatalogDatabase catalog;
+        QVERIFY(catalog.open(root + "/catalog.sqlite"));
+        catalog.setPlatformFilter({QStringLiteral("Nintendo 64")});
+        QVERIFY2(catalog.rebuildFromXmlFiles(root + "/Platforms.xml", root + "/Files.xml",
+                                             root + "/Metadata.xml"),
+                 qPrintable(catalog.lastError()));
+        QCOMPARE(catalog.platformCount(), 2);
+        QCOMPARE(catalog.fileAssociationCount(), 1);
+        QCOMPARE(catalog.gameCount(), 1);
+        QCOMPARE(catalog.gameImageCount(), 1);
+        LaunchBoxGameRecord game;
+        QVERIFY(catalog.gameByDatabaseId(162, &game));
+        QVERIFY(!catalog.gameByDatabaseId(900, &game));
+    }
+
     void failedRebuildPreservesPreviouslyIndexedCatalog()
     {
         QTemporaryDir directory;

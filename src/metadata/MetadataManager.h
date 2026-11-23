@@ -18,6 +18,11 @@ class MetadataManager : public QObject
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
     Q_PROPERTY(QVariantList platformOptions READ platformOptions NOTIFY platformOptionsChanged)
     Q_PROPERTY(bool platformsLoading READ platformsLoading NOTIFY platformsLoadingChanged)
+    // "disabled", "unconfigured" (no key), "checking", "connected" or "error".
+    Q_PROPERTY(QString connectionState READ connectionState NOTIFY connectionStateChanged)
+    Q_PROPERTY(QString connectionError READ connectionError NOTIFY connectionStateChanged)
+    // Requests left this month as last reported by TheGamesDB; -1 if unknown.
+    Q_PROPERTY(int remainingAllowance READ remainingAllowance NOTIFY remainingAllowanceChanged)
 
 public:
     explicit MetadataManager(MetadataProvider *provider, QObject *parent = nullptr,
@@ -32,6 +37,12 @@ public:
     QVariantList platformOptions() const;
     bool platformsLoading() const;
     Q_INVOKABLE int metadataPlatformId(const QString &internalPlatform) const;
+    QString connectionState() const;
+    QString connectionError() const;
+    int remainingAllowance() const;
+    // Re-reads the provider's configuration (for example after the API key
+    // changed) and checks the connection by loading its platform list.
+    Q_INVOKABLE void refreshProvider();
 
     Q_INVOKABLE void searchGames(const QString &searchTerm, int platformId = 0);
 
@@ -44,10 +55,14 @@ signals:
     void searchFailed(const QString &message);
     void platformOptionsChanged();
     void platformsLoadingChanged();
+    void connectionStateChanged();
+    void remainingAllowanceChanged();
 
 private:
     void setSearching(bool searching);
     void setErrorString(const QString &message);
+    void startPlatformFetch();
+    void setConnectionState(const QString &state, const QString &error = {});
 
     MetadataProvider *m_provider = nullptr;
     QVariantList m_results;
@@ -57,4 +72,7 @@ private:
     QList<TheGamesDbPlatform> m_platforms;
     QVariantList m_platformOptions;
     bool m_platformsLoading = true;
+    QString m_connectionState = QStringLiteral("checking");
+    QString m_connectionError;
+    int m_remainingAllowance = -1;
 };

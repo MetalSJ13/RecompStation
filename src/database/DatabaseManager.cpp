@@ -543,7 +543,11 @@ QVariantList DatabaseManager::gamesNeedingMetadata(bool includePreviouslyChecked
             ON metadata_lookup_attempts.game_id = games.id
         WHERE games.is_available = 1 AND (
             (game_metadata.game_id IS NULL
-             AND (metadata_lookup_attempts.game_id IS NULL OR :retry = 1))
+             AND (metadata_lookup_attempts.game_id IS NULL OR :retry = 1
+                  -- Provider outages (no key, rate limit, offline) are not
+                  -- answers: automatic scans try those games again after an hour.
+                  OR (metadata_lookup_attempts.status = 'provider_error'
+                      AND metadata_lookup_attempts.attempted_at <= datetime('now', '-1 hour'))))
             OR
             (:retry = 1 AND game_metadata.game_id IS NOT NULL
              AND (games.artwork_path IS NULL OR games.artwork_path = '')

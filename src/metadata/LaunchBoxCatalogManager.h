@@ -26,6 +26,7 @@ class LaunchBoxCatalogManager : public QObject
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     Q_PROPERTY(QString catalogPath READ catalogPath CONSTANT)
     Q_PROPERTY(bool catalogAvailable READ catalogAvailable NOTIFY catalogAvailableChanged)
+    Q_PROPERTY(qint64 catalogSizeBytes READ catalogSizeBytes NOTIFY catalogAvailableChanged)
 
 public:
     explicit LaunchBoxCatalogManager(const QString &dataDirectory,
@@ -35,6 +36,11 @@ public:
     bool busy() const;
     QString catalogPath() const;
     bool catalogAvailable() const;
+
+    qint64 catalogSizeBytes() const;
+    // RecompStation platform names (N64, PS1, ...) to keep when indexing.
+    // Other LaunchBox platforms are skipped. Empty indexes everything.
+    void setIndexedPlatforms(const QStringList &internalPlatforms);
 
     Q_INVOKABLE int updateCatalog();
     Q_INVOKABLE void cancelUpdate();
@@ -61,6 +67,7 @@ private:
     QString m_extractPath;
     QString m_temporaryDatabasePath;
     QString m_backupDatabasePath;
+    QStringList m_launchBoxPlatformFilter;
     bool m_busy = false;
     bool m_cancelRequested = false;
     int m_requestId = 0;

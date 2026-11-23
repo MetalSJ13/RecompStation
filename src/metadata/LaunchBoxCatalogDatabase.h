@@ -5,6 +5,7 @@
 #include <QList>
 #include <QString>
 #include <QSqlDatabase>
+#include <QStringList>
 #include <atomic>
 #include <functional>
 
@@ -30,6 +31,11 @@ public:
                              const std::atomic_bool *cancelled = nullptr,
                              const std::function<void(const QString &, int)> &progress = {});
 
+    // When set, rebuildFromXmlFiles() keeps only games, file associations
+    // and images for these LaunchBox platform names (for example
+    // "Nintendo 64"). The platform list itself is always kept. Empty keeps all.
+    void setPlatformFilter(const QStringList &launchBoxPlatformNames);
+
     QList<LaunchBoxFileAssociation> findFileAssociations(
         const QString &internalPlatform, const QString &localFileName) const;
     QList<LaunchBoxGameRecord> findGamesByTitle(
@@ -48,6 +54,7 @@ public:
 private:
     QSqlDatabase m_database;
     QString m_connectionName;
+    QStringList m_platformFilter;
     QString m_lastError;
 
     bool createSchema();

@@ -57,6 +57,11 @@ private slots:
     void persistsInterfaceScale();
     void rejectsUnsupportedInterfaceScale();
     void autoInterfaceScaleFollowsScreenHeight();
+    void defaultsToLaunchBoxFirstProviderOrder();
+    void persistsProviderOrderAndRejectsUnknownValues();
+    void savesTheGamesDbKeyPrivately();
+    void rejectsImplausibleTheGamesDbKeys();
+    void environmentTheGamesDbKeyTakesPriority();
 };
 
 void SettingsManagerTest::init()
@@ -64,6 +69,7 @@ void SettingsManagerTest::init()
     QCoreApplication::setOrganizationName(QStringLiteral("RecompStationSettingsTests"));
     QCoreApplication::setApplicationName(QStringLiteral("SettingsManagerTests"));
     QSettings().clear();
+    qunsetenv("RECOMPSTATION_TGDB_API_KEY");
 }
 
 void SettingsManagerTest::defaultsToScanningOnStartup()
@@ -866,6 +872,80 @@ void SettingsManagerTest::autoInterfaceScaleFollowsScreenHeight()
     QCOMPARE(SettingsManager::autoInterfaceScalePercent(1800), 150);
     QCOMPARE(SettingsManager::autoInterfaceScalePercent(2160), 175);
     QCOMPARE(SettingsManager::autoInterfaceScalePercent(2880), 200);
+}
+
+void SettingsManagerTest::defaultsToLaunchBoxFirstProviderOrder()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    SettingsManager manager(QDir(temporaryDirectory.path()).filePath("settings.ini"));
+    QCOMPARE(manager.metadataProviderOrder(), QStringLiteral("launchbox"));
+}
+
+void SettingsManagerTest::persistsProviderOrderAndRejectsUnknownValues()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("settings.ini");
+    SettingsManager manager(settingsPath);
+    QSignalSpy changed(&manager, &SettingsManager::metadataProviderOrderChanged);
+    manager.setMetadataProviderOrder(QStringLiteral("thegamesdb"));
+    manager.setMetadataProviderOrder(QStringLiteral("screenscraper"));
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(SettingsManager(settingsPath).metadataProviderOrder(), QStringLiteral("thegamesdb"));
+}
+
+void SettingsManagerTest::savesTheGamesDbKeyPrivately()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("none"));
+
+    QSignalSpy changed(&manager, &SettingsManager::theGamesDbApiKeyChanged);
+    const QString key = QStringLiteral("0123456789abcdef0123456789ABCDEF3f9a");
+    QVERIFY(manager.saveTheGamesDbApiKey(QStringLiteral("  ") + key + QStringLiteral("\n")));
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(manager.theGamesDbApiKey(), key);
+    QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("saved"));
+    QCOMPARE(manager.theGamesDbKeyHint(), QStringLiteral("3f9a"));
+
+    // Not in settings.ini, and only the owner can read or write the key file.
+    QVERIFY(!QSettings(settingsPath, QSettings::IniFormat).allKeys().join(",").contains("apiKey"));
+    const QFileInfo keyFile(manager.theGamesDbKeyFilePath());
+    QVERIFY(keyFile.exists());
+    QCOMPARE(keyFile.permissions() & (QFileDevice::ReadGroup | QFileDevice::ReadOther
+                                      | QFileDevice::WriteGroup | QFileDevice::WriteOther),
+             QFileDevice::Permissions());
+
+    QVERIFY(manager.clearTheGamesDbApiKey());
+    QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("none"));
+    QVERIFY(!keyFile.exists());
+}
+
+void SettingsManagerTest::rejectsImplausibleTheGamesDbKeys()
+{
+    QVERIFY(!SettingsManager::isPlausibleTheGamesDbApiKey(QString()));
+    QVERIFY(!SettingsManager::isPlausibleTheGamesDbApiKey(QStringLiteral("short")));
+    QVERIFY(!SettingsManager::isPlausibleTheGamesDbApiKey(QStringLiteral("has spaces in the middle of it")));
+    QVERIFY(!SettingsManager::isPlausibleTheGamesDbApiKey(QStringLiteral("key;rm -rf /;0123456789")));
+    QVERIFY(SettingsManager::isPlausibleTheGamesDbApiKey(
+        QStringLiteral("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")));
+}
+
+void SettingsManagerTest::environmentTheGamesDbKeyTakesPriority()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    SettingsManager manager(QDir(temporaryDirectory.path()).filePath("settings.ini"));
+    QVERIFY(manager.saveTheGamesDbApiKey(QStringLiteral("savedkey0123456789savedkey")));
+    qputenv("RECOMPSTATION_TGDB_API_KEY", "environmentkey0123456789env");
+    QCOMPARE(manager.theGamesDbApiKey(), QStringLiteral("environmentkey0123456789env"));
+    QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("environment"));
+    qunsetenv("RECOMPSTATION_TGDB_API_KEY");
+    QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("saved"));
 }
 
 QTEST_GUILESS_MAIN(SettingsManagerTest)

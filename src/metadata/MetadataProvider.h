@@ -29,4 +29,6 @@ signals:
     void requestFailed(int requestId, const QString &message);
     void platformsLoaded(const QList<TheGamesDbPlatform> &platforms);
     void platformsFailed(const QString &message);
+    // Requests left in the provider's allowance, when a response reports it.
+    void allowanceReported(int remaining);
 };

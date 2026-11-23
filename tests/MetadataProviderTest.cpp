@@ -25,7 +25,25 @@ private slots:
         const QList<QVariant> arguments = failureSpy.takeFirst();
         QCOMPARE(arguments.at(0).toInt(), 1);
         QVERIFY(arguments.at(1).toString().contains(
-            QStringLiteral("RECOMPSTATION_TGDB_API_KEY")));
+            QStringLiteral("Settings > Metadata")));
+    }
+
+    void readsRemainingAllowance()
+    {
+        QCOMPARE(TheGamesDbClient::remainingAllowance(
+                     R"({"code":200,"remaining_monthly_allowance":1842,"extra_allowance":10})"), 1852);
+        QCOMPARE(TheGamesDbClient::remainingAllowance(R"({"code":200})"), -1);
+        QCOMPARE(TheGamesDbClient::remainingAllowance("not json"), -1);
+    }
+
+    void setApiKeyConfiguresTheClient()
+    {
+        TheGamesDbClient client(QString());
+        QVERIFY(!client.isConfigured());
+        client.setApiKey(QStringLiteral("  key0123456789abcdef  "));
+        QVERIFY(client.isConfigured());
+        client.setApiKey(QString());
+        QVERIFY(!client.isConfigured());
     }
 
     void rejectsEmptySearchTerm()
@@ -216,7 +234,7 @@ private slots:
         QCOMPARE(failedSpy.count(), 1);
         QVERIFY(!manager.isSearching());
         QVERIFY(manager.errorString().contains(
-            QStringLiteral("RECOMPSTATION_TGDB_API_KEY")));
+            QStringLiteral("Settings > Metadata")));
         QVERIFY(manager.results().isEmpty());
     }
 };

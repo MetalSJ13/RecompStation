@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QSaveFile>
 #include <QUrl>
 #include <QStringList>
 #include <QRegularExpression>
@@ -60,6 +61,10 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("metadata/automaticArtworkDownloadsEnabled"), true).toBool();
     m_theGamesDbEnabled = settings.value(QStringLiteral("metadata/theGamesDbEnabled"), true).toBool();
     m_launchBoxEnabled = settings.value(QStringLiteral("metadata/launchBoxEnabled"), false).toBool();
+    const QString storedOrder = settings.value(
+        QStringLiteral("metadata/providerOrder"), QStringLiteral("launchbox")).toString();
+    m_metadataProviderOrder = storedOrder == QStringLiteral("thegamesdb")
+        ? storedOrder : QStringLiteral("launchbox");
     m_launchBoxLastUpdated = settings.value(QStringLiteral("metadata/launchBoxLastUpdated")).toString();
 
     const QString storedPresentationSize = settings.value(
@@ -288,6 +293,106 @@ void SettingsManager::setLaunchBoxEnabled(bool enabled)
     m_launchBoxEnabled = enabled;
     emit launchBoxEnabledChanged();
     qCInfo(lcSettings) << "LaunchBox metadata fallback enabled:" << m_launchBoxEnabled;
+}
+
+QString SettingsManager::metadataProviderOrder() const
+{
+    return m_metadataProviderOrder;
+}
+
+void SettingsManager::setMetadataProviderOrder(const QString &order)
+{
+    if (order != QStringLiteral("launchbox") && order != QStringLiteral("thegamesdb")) {
+        qCWarning(lcSettings) << "Rejected unsupported metadata provider order:" << order;
+        return;
+    }
+    if (m_metadataProviderOrder == order)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("metadata/providerOrder"), order);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist metadata provider order:" << order;
+        return;
+    }
+    m_metadataProviderOrder = order;
+    emit metadataProviderOrderChanged();
+    qCInfo(lcSettings) << "Saved metadata provider order:" << order;
+}
+
+QString SettingsManager::theGamesDbKeyFilePath() const
+{
+    return QFileInfo(m_settingsFilePath).absoluteDir().filePath(
+        QStringLiteral("thegamesdb.key"));
+}
+
+QString SettingsManager::theGamesDbApiKey() const
+{
+    const QString environmentKey = qEnvironmentVariable("RECOMPSTATION_TGDB_API_KEY").trimmed();
+    if (!environmentKey.isEmpty())
+        return environmentKey;
+    QFile file(theGamesDbKeyFilePath());
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return {};
+    return QString::fromUtf8(file.readAll()).trimmed();
+}
+
+QString SettingsManager::theGamesDbKeySource() const
+{
+    if (!qEnvironmentVariable("RECOMPSTATION_TGDB_API_KEY").trimmed().isEmpty())
+        return QStringLiteral("environment");
+    return theGamesDbApiKey().isEmpty() ? QStringLiteral("none") : QStringLiteral("saved");
+}
+
+QString SettingsManager::theGamesDbKeyHint() const
+{
+    const QString key = theGamesDbApiKey();
+    return key.size() >= 8 ? key.right(4) : QString();
+}
+
+bool SettingsManager::isPlausibleTheGamesDbApiKey(const QString &key)
+{
+    static const QRegularExpression pattern(QStringLiteral("^[A-Za-z0-9]{16,128}$"));
+    return pattern.match(key.trimmed()).hasMatch();
+}
+
+bool SettingsManager::saveTheGamesDbApiKey(const QString &key)
+{
+    const QString trimmed = key.trimmed();
+    if (!isPlausibleTheGamesDbApiKey(trimmed)) {
+        qCWarning(lcSettings) << "Rejected a TheGamesDB API key that is not 16-128 letters and digits.";
+        return false;
+    }
+    QDir().mkpath(QFileInfo(theGamesDbKeyFilePath()).absolutePath());
+    QSaveFile file(theGamesDbKeyFilePath());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qCCritical(lcSettings) << "Could not save the TheGamesDB API key:" << file.errorString();
+        return false;
+    }
+    // Owner read/write only, applied to the temporary file before it replaces
+    // the old one, so the key is never readable by other users.
+    file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
+    file.write(trimmed.toUtf8());
+    file.write("\n");
+    if (!file.commit()) {
+        qCCritical(lcSettings) << "Could not save the TheGamesDB API key:" << file.errorString();
+        return false;
+    }
+    qCInfo(lcSettings) << "Saved a TheGamesDB API key ending in" << trimmed.right(4);
+    emit theGamesDbApiKeyChanged();
+    return true;
+}
+
+bool SettingsManager::clearTheGamesDbApiKey()
+{
+    const QString path = theGamesDbKeyFilePath();
+    if (QFileInfo::exists(path) && !QFile::remove(path)) {
+        qCCritical(lcSettings) << "Could not remove the saved TheGamesDB API key.";
+        return false;
+    }
+    qCInfo(lcSettings) << "Removed the saved TheGamesDB API key.";
+    emit theGamesDbApiKeyChanged();
+    return true;
 }
 
 QString SettingsManager::launchBoxLastUpdated() const

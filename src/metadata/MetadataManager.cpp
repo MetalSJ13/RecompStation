@@ -44,6 +44,7 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent,
                 {QStringLiteral("id"), id}});
         }
         m_platformsLoading = false;
+        setConnectionState(QStringLiteral("connected"));
         emit platformOptionsChanged();
         emit platformsLoadingChanged();
     });
@@ -52,15 +53,20 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent,
         qCWarning(lcMetadata) << "Metadata platform catalog unavailable:" << message;
         m_platformsLoading = false;
         setErrorString(message);
+        setConnectionState(QStringLiteral("error"), message);
         emit platformsLoadingChanged();
         // Wake any queued library scrape so it can report the unavailable
         // platform catalog instead of silently waiting forever.
         emit platformOptionsChanged();
     });
-    if (m_providerEnabled)
-        m_provider->fetchPlatforms();
-    else
-        m_platformsLoading = false;
+    connect(m_provider, &MetadataProvider::allowanceReported,
+            this, [this](int remaining) {
+        if (m_remainingAllowance == remaining)
+            return;
+        m_remainingAllowance = remaining;
+        emit remainingAllowanceChanged();
+    });
+    startPlatformFetch();
 
     connect(m_provider, &MetadataProvider::searchCompleted,
             this, [this](int, const QList<GameMetadata> &games) {
@@ -114,15 +120,46 @@ void MetadataManager::setProviderEnabled(bool enabled)
     if (m_providerEnabled == enabled)
         return;
     m_providerEnabled = enabled;
-    if (m_providerEnabled && m_provider) {
-        m_platformsLoading = true;
-        emit platformsLoadingChanged();
-        m_provider->fetchPlatforms();
-    } else {
+    startPlatformFetch();
+    emit configurationChanged();
+}
+
+void MetadataManager::refreshProvider()
+{
+    startPlatformFetch();
+    emit configurationChanged();
+}
+
+void MetadataManager::startPlatformFetch()
+{
+    if (!m_provider)
+        return;
+    if (!m_providerEnabled || !m_provider->isConfigured()) {
         m_platformsLoading = false;
         emit platformsLoadingChanged();
+        setConnectionState(m_providerEnabled ? QStringLiteral("unconfigured")
+                                             : QStringLiteral("disabled"));
+        // Wake a queued library scrape that was waiting for the platform list.
+        emit platformOptionsChanged();
+        return;
     }
-    emit configurationChanged();
+    m_platformsLoading = true;
+    emit platformsLoadingChanged();
+    setConnectionState(QStringLiteral("checking"));
+    m_provider->fetchPlatforms();
+}
+
+QString MetadataManager::connectionState() const { return m_connectionState; }
+QString MetadataManager::connectionError() const { return m_connectionError; }
+int MetadataManager::remainingAllowance() const { return m_remainingAllowance; }
+
+void MetadataManager::setConnectionState(const QString &state, const QString &error)
+{
+    if (m_connectionState == state && m_connectionError == error)
+        return;
+    m_connectionState = state;
+    m_connectionError = error;
+    emit connectionStateChanged();
 }
 
 bool MetadataManager::isSearching() const

@@ -1,5 +1,7 @@
 #include "LibraryMetadataMatcher.h"
 
+#include <QTimer>
+
 #include "ArtworkManager.h"
 #include "../database/DatabaseManager.h"
 #include "../metadata/MetadataManager.h"
@@ -211,37 +213,26 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
 
     connect(m_metadata, &MetadataManager::searchFailed,
             this, [this](const QString &message) {
-        if (!m_busy)
+        if (!m_busy || m_currentGame.isEmpty())
             return;
         qCWarning(lcMetadata) << "Metadata lookup failed for the current game:"
                                << m_currentGame.value(QStringLiteral("title")).toString()
                                << message;
-        // A provider/network failure is not a definitive no-match, but it
-        // should not be retried on every filesystem event. Persist the failure
-        // so automatic scans skip it; the explicit Refresh Metadata action
-        // can still retry previously checked games.
-        auto recordProviderFailure = [this](const QVariantMap &game) {
-            const int gameId = game.value(QStringLiteral("id")).toInt();
-            if (m_database && gameId > 0
-                && !m_database->markMetadataLookupAttempt(
-                    gameId, QStringLiteral("provider_error"))) {
-                qCWarning(lcMetadata) << "Could not record provider failure for game"
-                                      << gameId << m_database->lastError();
-            }
-        };
-        recordProviderFailure(m_currentGame);
-        for (const QVariantMap &queuedGame : m_queue)
-            recordProviderFailure(queuedGame);
-
-        m_unresolvedCount += 1 + m_queue.size();
-        m_completedCount += 1 + m_queue.size();
-        m_queue.clear();
-        m_currentGame.clear();
-        m_forceArtworkDownload = false;
-        emit progressChanged();
-        setStatus(QStringLiteral("Metadata lookup stopped: %1").arg(message));
-        setBusy(false);
-        emit scrapeFinished(m_matchedCount, m_unresolvedCount);
+        // A provider or network failure (no key, rate limit, offline) is not
+        // a definitive no-match. Stop asking TheGamesDB for the rest of this
+        // run, but keep matching with LaunchBox. Games nobody could match are
+        // recorded as "provider_error", which automatic scans retry after an
+        // hour (DatabaseManager::gamesNeedingMetadata).
+        m_theGamesDbUnavailable = true;
+        m_theGamesDbFailure = message;
+        if (!m_currentGame.value(QStringLiteral("launchBoxTried")).toBool()
+                && launchBoxAvailable()) {
+            tryLaunchBoxFallback(QStringLiteral("TheGamesDB request failed."),
+                                 QStringLiteral("provider_error"));
+            return;
+        }
+        markCurrent(QStringLiteral("provider_error"));
+        finishCurrent(false, QStringLiteral("TheGamesDB unavailable: %1").arg(message));
     });
 }
 
@@ -339,16 +330,24 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
                        << "busy:" << m_busy
                        << "database available:" << (m_database != nullptr)
                        << "provider available:" << (m_metadata != nullptr);
-    if (m_busy || !m_database || !m_metadata) {
-        qCInfo(lcMetadata) << "Library metadata scan skipped because the matcher is busy or unavailable.";
+    if (!m_database || !m_metadata) {
+        qCInfo(lcMetadata) << "Library metadata scan skipped because the matcher is unavailable.";
+        return;
+    }
+    if (m_busy) {
+        // A scan finished while matching was still running (for example,
+        // files copied in several batches). Run again once this pass ends so
+        // the newly found games are not left until the next manual refresh.
+        m_rescanPending = true;
+        m_rescanIncludesChecked = m_rescanIncludesChecked || includePreviouslyChecked;
+        qCInfo(lcMetadata) << "Library metadata scan queued until the current pass finishes.";
         return;
     }
 
+    m_theGamesDbUnavailable = false;
+    m_theGamesDbFailure.clear();
     const bool primaryAvailable = m_metadata->isConfigured();
-    const bool launchBoxAvailable = m_settings && m_settings->launchBoxEnabled()
-        && m_launchBoxCatalog && m_launchBoxCatalog->catalogAvailable()
-        && !m_launchBoxCatalog->busy();
-    if (!primaryAvailable && !launchBoxAvailable) {
+    if (!primaryAvailable && !launchBoxAvailable()) {
         qCWarning(lcMetadata) << "Library metadata scan skipped: no metadata provider is available.";
         setStatus(QStringLiteral("No metadata provider is available. Configure TheGamesDB or enable LaunchBox and install its catalog."));
         return;
@@ -371,6 +370,7 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
     if (m_queue.isEmpty()) {
         setStatus(QStringLiteral("All games already have metadata or have been checked."));
         emit scrapeFinished(0, 0);
+        runPendingRescan();
         return;
     }
 
@@ -390,11 +390,10 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
         setStatus(QStringLiteral("A valid library game is required."));
         return;
     }
+    m_theGamesDbUnavailable = false;
+    m_theGamesDbFailure.clear();
     const bool primaryAvailable = m_metadata->isConfigured();
-    const bool launchBoxAvailable = m_settings && m_settings->launchBoxEnabled()
-        && m_launchBoxCatalog && m_launchBoxCatalog->catalogAvailable()
-        && !m_launchBoxCatalog->busy();
-    if (!primaryAvailable && !launchBoxAvailable) {
+    if (!primaryAvailable && !launchBoxAvailable()) {
         setStatus(QStringLiteral("No metadata provider is available. Configure TheGamesDB or enable LaunchBox and install its catalog."));
         return;
     }
@@ -438,38 +437,28 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
     processNext();
 }
 
-bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason)
+LibraryMetadataMatcher::LaunchBoxOutcome
+LibraryMetadataMatcher::attemptLaunchBoxMatch(QString *message)
 {
+    m_currentGame.insert(QStringLiteral("launchBoxTried"), true);
     const int gameId = m_currentGame.value(QStringLiteral("id")).toInt();
     const QString title = m_currentGame.value(QStringLiteral("title")).toString();
     const QString platform = m_currentGame.value(QStringLiteral("platform")).toString();
-    const bool alreadyLaunchBox =
-        m_currentGame.value(QStringLiteral("metadataProvider")).toString()
-            == QStringLiteral("launchbox");
-    if (alreadyLaunchBox) {
-        if (m_database)
-            m_database->markMetadataLookupAttempt(gameId, QStringLiteral("matched"));
-        finishCurrent(true, QStringLiteral("Existing LaunchBox metadata retained; no artwork source configured."));
-        return true;
+    if (m_currentGame.value(QStringLiteral("metadataProvider")).toString()
+            == QStringLiteral("launchbox")) {
+        *message = QStringLiteral("Existing LaunchBox metadata retained.");
+        return LaunchBoxOutcome::Matched;
     }
-    if (!m_settings || !m_settings->launchBoxEnabled()
-        || !m_launchBoxCatalog || !m_launchBoxCatalog->catalogAvailable()
-        || m_launchBoxCatalog->busy()) {
-        qCInfo(lcMetadata) << "LaunchBox fallback skipped for" << title
-                           << "- disabled, unavailable, or catalog update active.";
-        if (m_database)
-            m_database->markMetadataLookupAttempt(gameId, QStringLiteral("no_match"));
-        finishCurrent(false, QStringLiteral("No TheGamesDB match; LaunchBox fallback unavailable."));
-        return true;
+    if (!launchBoxAvailable()) {
+        *message = QStringLiteral("LaunchBox is disabled, not installed, or updating.");
+        return LaunchBoxOutcome::Unavailable;
     }
 
     LaunchBoxCatalogDatabase catalog;
     if (!catalog.open(m_launchBoxCatalog->catalogPath())) {
         qCWarning(lcMetadata) << "Could not open LaunchBox catalog:" << catalog.lastError();
-        if (m_database)
-            m_database->markMetadataLookupAttempt(gameId, QStringLiteral("no_match"));
-        finishCurrent(false, QStringLiteral("LaunchBox catalog could not be opened."));
-        return true;
+        *message = QStringLiteral("LaunchBox catalog could not be opened.");
+        return LaunchBoxOutcome::Failed;
     }
 
     const QString localPath = m_currentGame.value(QStringLiteral("path")).toString();
@@ -503,16 +492,13 @@ bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason)
         : LaunchBoxCatalogMatcher::matchByTitle(platform, title, candidates);
 
     if (!result.isMatch()) {
-        qCInfo(lcMetadata) << "LaunchBox fallback did not produce a unique match for"
+        qCInfo(lcMetadata) << "LaunchBox did not produce a unique match for"
                            << title << "reason:" << result.reason;
-        if (m_database)
-            m_database->markMetadataLookupAttempt(
-                gameId, result.status == LaunchBoxMatchResult::Status::Ambiguous
-                    ? QStringLiteral("ambiguous") : QStringLiteral("no_match"));
-        finishCurrent(false, result.status == LaunchBoxMatchResult::Status::Ambiguous
-            ? QStringLiteral("LaunchBox found ambiguous candidates; left unresolved.")
-            : QStringLiteral("No confident LaunchBox match; left unresolved."));
-        return true;
+        const bool ambiguous = result.status == LaunchBoxMatchResult::Status::Ambiguous;
+        *message = ambiguous
+            ? QStringLiteral("LaunchBox found ambiguous candidates.")
+            : QStringLiteral("No confident LaunchBox match.");
+        return ambiguous ? LaunchBoxOutcome::Ambiguous : LaunchBoxOutcome::NoMatch;
     }
 
     const LaunchBoxGameRecord &match = candidates.at(result.index);
@@ -526,17 +512,64 @@ bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason)
         gameId, QStringLiteral("launchbox"), match.databaseId, match.name,
         match.overview, releaseDate, 0, match.communityRating, QString());
     if (!saved) {
-        qCWarning(lcMetadata) << "LaunchBox fallback association was not saved for"
+        qCWarning(lcMetadata) << "LaunchBox association was not saved for"
                               << title << (m_database ? m_database->lastError() : QString());
-        finishCurrent(false, QStringLiteral("LaunchBox metadata could not be saved."));
+        *message = QStringLiteral("LaunchBox metadata could not be saved.");
+        return LaunchBoxOutcome::Failed;
+    }
+    qCInfo(lcMetadata) << "LaunchBox matched" << title << "to" << match.name;
+    *message = QStringLiteral("Matched with LaunchBox.");
+    return LaunchBoxOutcome::Matched;
+}
+
+bool LibraryMetadataMatcher::tryLaunchBoxFallback(const QString &reason,
+                                                  const QString &unmatchedStatus)
+{
+    if (m_currentGame.value(QStringLiteral("launchBoxTried")).toBool()) {
+        // LaunchBox was asked first and had nothing; TheGamesDB had nothing either.
+        markCurrent(unmatchedStatus);
+        finishCurrent(false, QStringLiteral("No confident match from LaunchBox or TheGamesDB."));
         return true;
     }
-
-    m_database->markMetadataLookupAttempt(gameId, QStringLiteral("matched"));
-    qCInfo(lcMetadata) << "LaunchBox fallback matched" << title
-                       << "to" << match.name << "after" << reason;
-    finishCurrent(true, QStringLiteral("Matched with LaunchBox metadata; artwork remains unchanged."));
+    QString message;
+    const LaunchBoxOutcome outcome = attemptLaunchBoxMatch(&message);
+    qCInfo(lcMetadata) << "LaunchBox fallback after:" << reason << "-" << message;
+    if (outcome == LaunchBoxOutcome::Matched) {
+        markCurrent(QStringLiteral("matched"));
+        finishCurrent(true, message);
+        return true;
+    }
+    markCurrent(outcome == LaunchBoxOutcome::Ambiguous && unmatchedStatus == QStringLiteral("no_match")
+        ? QStringLiteral("ambiguous") : unmatchedStatus);
+    finishCurrent(false, message);
     return true;
+}
+
+bool LibraryMetadataMatcher::launchBoxAvailable() const
+{
+    return m_settings && m_settings->launchBoxEnabled()
+        && m_launchBoxCatalog && m_launchBoxCatalog->catalogAvailable()
+        && !m_launchBoxCatalog->busy();
+}
+
+void LibraryMetadataMatcher::markCurrent(const QString &status)
+{
+    const int gameId = m_currentGame.value(QStringLiteral("id")).toInt();
+    if (m_database && gameId > 0 && !m_database->markMetadataLookupAttempt(gameId, status))
+        qCWarning(lcMetadata) << "Could not record metadata lookup status" << status
+                              << "for game" << gameId << m_database->lastError();
+}
+
+void LibraryMetadataMatcher::runPendingRescan()
+{
+    if (!m_rescanPending)
+        return;
+    const bool includeChecked = m_rescanIncludesChecked;
+    m_rescanPending = false;
+    m_rescanIncludesChecked = false;
+    QTimer::singleShot(0, this, [this, includeChecked]() {
+        scrapeLibrary(includeChecked);
+    });
 }
 
 void LibraryMetadataMatcher::processNext()
@@ -547,9 +580,13 @@ void LibraryMetadataMatcher::processNext()
     if (m_queue.isEmpty()) {
         setBusy(false);
         m_forceArtworkDownload = false;
-        setStatus(QStringLiteral("Metadata complete: %1 matched, %2 left unresolved.")
-                      .arg(m_matchedCount).arg(m_unresolvedCount));
+        setStatus(m_theGamesDbUnavailable
+            ? QStringLiteral("Metadata complete: %1 matched, %2 left unresolved. TheGamesDB was unavailable: %3")
+                  .arg(m_matchedCount).arg(m_unresolvedCount).arg(m_theGamesDbFailure)
+            : QStringLiteral("Metadata complete: %1 matched, %2 left unresolved.")
+                  .arg(m_matchedCount).arg(m_unresolvedCount));
         emit scrapeFinished(m_matchedCount, m_unresolvedCount);
+        runPendingRescan();
         return;
     }
 
@@ -582,11 +619,34 @@ void LibraryMetadataMatcher::processNext()
 
     const QString platform =
         m_currentGame.value(QStringLiteral("platform")).toString();
-    // When TheGamesDB is not configured, bypass its platform catalog entirely
-    // and use the local LaunchBox catalog as the primary available provider.
-    if (!m_metadata->isConfigured()) {
-        if (tryLaunchBoxFallback(QStringLiteral("TheGamesDB is not configured.")))
+    const bool theGamesDbReady = m_metadata->isConfigured() && !m_theGamesDbUnavailable;
+    const bool launchBoxFirst = !m_settings
+        || m_settings->metadataProviderOrder() == QStringLiteral("launchbox");
+
+    // LaunchBox goes first when it is the preferred provider, or when it is
+    // the only one available. If it has no match, TheGamesDB is asked next.
+    if (launchBoxAvailable() && (launchBoxFirst || !theGamesDbReady)) {
+        QString message;
+        const LaunchBoxOutcome outcome = attemptLaunchBoxMatch(&message);
+        if (outcome == LaunchBoxOutcome::Matched) {
+            markCurrent(QStringLiteral("matched"));
+            finishCurrent(true, message);
             return;
+        }
+        if (!theGamesDbReady) {
+            markCurrent(m_theGamesDbUnavailable ? QStringLiteral("provider_error")
+                : outcome == LaunchBoxOutcome::Ambiguous ? QStringLiteral("ambiguous")
+                : QStringLiteral("no_match"));
+            finishCurrent(false, message);
+            return;
+        }
+    }
+    if (!theGamesDbReady) {
+        markCurrent(m_theGamesDbUnavailable ? QStringLiteral("provider_error")
+                                            : QStringLiteral("no_match"));
+        finishCurrent(false, m_theGamesDbUnavailable
+            ? QStringLiteral("TheGamesDB unavailable and LaunchBox is not installed.")
+            : QStringLiteral("No metadata provider is available."));
         return;
     }
 

@@ -2,6 +2,7 @@
 
 #include "LaunchBoxArchiveExtractor.h"
 #include "LaunchBoxCatalogDatabase.h"
+#include "LaunchBoxCatalogMatcher.h"
 
 #include <QDir>
 #include <QFile>
@@ -48,6 +49,22 @@ QString LaunchBoxCatalogManager::catalogPath() const { return m_catalogPath; }
 bool LaunchBoxCatalogManager::catalogAvailable() const
 {
     return QFileInfo(m_catalogPath).isFile() && QFileInfo(m_catalogPath).size() > 0;
+}
+
+qint64 LaunchBoxCatalogManager::catalogSizeBytes() const
+{
+    const QFileInfo info(m_catalogPath);
+    return info.isFile() ? info.size() : 0;
+}
+
+void LaunchBoxCatalogManager::setIndexedPlatforms(const QStringList &internalPlatforms)
+{
+    m_launchBoxPlatformFilter.clear();
+    for (const QString &platform : internalPlatforms) {
+        const QString name = LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(platform);
+        if (!name.isEmpty() && !m_launchBoxPlatformFilter.contains(name))
+            m_launchBoxPlatformFilter.append(name);
+    }
 }
 
 void LaunchBoxCatalogManager::setBusy(bool value)
@@ -187,8 +204,9 @@ void LaunchBoxCatalogManager::startBackgroundBuild()
     const auto cancelFlag = m_cancelFlag;
     emit updateProgress(QStringLiteral("Extracting LaunchBox metadata"), 0);
 
+    const QStringList platformFilter = m_launchBoxPlatformFilter;
     m_buildWatcher.setFuture(QtConcurrent::run(
-        [this, archivePath, extractPath, databasePath, cancelFlag]() {
+        [this, archivePath, extractPath, databasePath, cancelFlag, platformFilter]() {
         LaunchBoxCatalogBuildResult result;
         const auto extracted = LaunchBoxArchiveExtractor::extractMetadataArchive(
             archivePath, extractPath, cancelFlag.get(),
@@ -213,6 +231,7 @@ void LaunchBoxCatalogManager::startBackgroundBuild()
             result.error = catalog.lastError();
             return result;
         }
+        catalog.setPlatformFilter(platformFilter);
         const bool indexed = catalog.rebuildFromXmlFiles(
             extracted.files.platformsXmlPath, extracted.files.filesXmlPath,
             extracted.files.metadataXmlPath, cancelFlag.get(),

@@ -10,11 +10,15 @@ class TheGamesDbClient : public MetadataProvider
 
 public:
     explicit TheGamesDbClient(
-        const QString &apiKey = qEnvironmentVariable("RECOMPSTATION_TGDB_API_KEY"),
+        const QString &apiKey = QString(),
         QObject *parent = nullptr);
 
     QString providerId() const override;
     bool isConfigured() const override;
+    void setApiKey(const QString &apiKey);
+    // TheGamesDB reports "remaining_monthly_allowance" (plus any
+    // "extra_allowance") in every response. Returns -1 when absent.
+    static int remainingAllowance(const QByteArray &response);
     void searchGames(const QString &searchTerm,
                      int platformId = 0) override;
     void fetchPlatforms() override;

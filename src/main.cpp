@@ -188,10 +188,11 @@ int main(int argc, char *argv[])
     qCInfo(lcApplication) << "Library database initialized.";
 
     LibraryScanner libraryScanner(&platformManager, &databaseManager);
-    TheGamesDbClient metadataProvider;
+    TheGamesDbClient metadataProvider(settingsManager.theGamesDbApiKey());
     MetadataManager metadataManager(&metadataProvider, nullptr,
                                     settingsManager.theGamesDbEnabled());
     LaunchBoxCatalogManager launchBoxCatalogManager(platformManager.dataDirectory());
+    launchBoxCatalogManager.setIndexedPlatforms(platformManager.platforms());
     QObject::connect(&launchBoxCatalogManager, &LaunchBoxCatalogManager::updateCompleted,
                      &settingsManager, [&settingsManager](int, int, int) {
         settingsManager.setLaunchBoxLastUpdated(
@@ -218,7 +219,7 @@ int main(int argc, char *argv[])
     });
     ScreenshotManager screenshotManager(&databaseManager,
                                         platformManager.dataDirectory() + "/artwork",
-                                        qEnvironmentVariable("RECOMPSTATION_TGDB_API_KEY"));
+                                        settingsManager.theGamesDbApiKey());
     screenshotManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
     QObject::connect(&settingsManager, &SettingsManager::theGamesDbEnabledChanged,
                      &screenshotManager, [&settingsManager, &screenshotManager]() {
@@ -227,6 +228,27 @@ int main(int argc, char *argv[])
     LibraryMetadataMatcher metadataMatcher(&databaseManager, &metadataManager,
                                            &artworkManager, &launchBoxCatalogManager,
                                            &settingsManager);
+    // A key entered or removed in Settings takes effect immediately.
+    QObject::connect(&settingsManager, &SettingsManager::theGamesDbApiKeyChanged,
+                     &app, [&settingsManager, &metadataProvider, &screenshotManager,
+                            &metadataManager]() {
+        const QString key = settingsManager.theGamesDbApiKey();
+        metadataProvider.setApiKey(key);
+        screenshotManager.setApiKey(key);
+        metadataManager.refreshProvider();
+    });
+    // When LaunchBox becomes usable (enabled, or its catalog installed or
+    // updated), give games it may now match another try. LaunchBox-first
+    // order keeps this offline for games LaunchBox knows.
+    auto rematchWithLaunchBox = [&settingsManager, &launchBoxCatalogManager, &metadataMatcher]() {
+        if (settingsManager.launchBoxEnabled() && launchBoxCatalogManager.catalogAvailable()
+                && settingsManager.automaticMetadataMatchingEnabled())
+            metadataMatcher.scrapeLibrary(true);
+    };
+    QObject::connect(&launchBoxCatalogManager, &LaunchBoxCatalogManager::updateCompleted,
+                     &metadataMatcher, [rematchWithLaunchBox](int, int, int) { rematchWithLaunchBox(); });
+    QObject::connect(&settingsManager, &SettingsManager::launchBoxEnabledChanged,
+                     &metadataMatcher, rematchWithLaunchBox);
     QObject::connect(&metadataMatcher, &LibraryMetadataMatcher::scrapeFinished,
                      &launchBoxArtworkManager, [&launchBoxArtworkManager](int, int) {
         launchBoxArtworkManager.refreshLibraryArtwork();

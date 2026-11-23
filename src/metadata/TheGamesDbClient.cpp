@@ -129,10 +129,27 @@ bool TheGamesDbClient::isConfigured() const
     return !m_apiKey.isEmpty();
 }
 
+void TheGamesDbClient::setApiKey(const QString &apiKey)
+{
+    m_apiKey = apiKey.trimmed();
+}
+
+int TheGamesDbClient::remainingAllowance(const QByteArray &response)
+{
+    const QJsonDocument document = QJsonDocument::fromJson(response);
+    if (!document.isObject())
+        return -1;
+    const QJsonObject root = document.object();
+    if (!root.contains(QStringLiteral("remaining_monthly_allowance")))
+        return -1;
+    return root.value(QStringLiteral("remaining_monthly_allowance")).toInt()
+        + root.value(QStringLiteral("extra_allowance")).toInt();
+}
+
 void TheGamesDbClient::fetchPlatforms()
 {
     if (!isConfigured()) {
-        emit platformsFailed(QStringLiteral("TheGamesDB API key is not configured. Set RECOMPSTATION_TGDB_API_KEY."));
+        emit platformsFailed(QStringLiteral("No TheGamesDB API key. Add one in Settings > Metadata."));
         return;
     }
 
@@ -158,7 +175,11 @@ void TheGamesDbClient::fetchPlatforms()
 
         QList<TheGamesDbPlatform> platforms;
         QString error;
-        const bool ok = parsePlatformResponse(reply->readAll(), &platforms, &error);
+        const QByteArray body = reply->readAll();
+        const int allowance = remainingAllowance(body);
+        if (allowance >= 0)
+            emit allowanceReported(allowance);
+        const bool ok = parsePlatformResponse(body, &platforms, &error);
         reply->deleteLater();
         if (!ok) {
             emit platformsFailed(error);
@@ -186,8 +207,7 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
 
     if (!isConfigured()) {
         emit requestFailed(requestId,
-                           QStringLiteral("TheGamesDB API key is not configured. "
-                                          "Set RECOMPSTATION_TGDB_API_KEY."));
+                           QStringLiteral("No TheGamesDB API key. Add one in Settings > Metadata."));
         return;
     }
 
@@ -236,7 +256,11 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
 
         QList<GameMetadata> results;
         QString parseError;
-        if (!parseSearchResponse(reply->readAll(), &results, &parseError)) {
+        const QByteArray body = reply->readAll();
+        const int allowance = remainingAllowance(body);
+        if (allowance >= 0)
+            emit allowanceReported(allowance);
+        if (!parseSearchResponse(body, &results, &parseError)) {
             reply->deleteLater();
             qCWarning(lcMetadata) << "TheGamesDB response could not be parsed:" << parseError;
             emit requestFailed(requestId, parseError);

@@ -23,6 +23,7 @@ public:
     QString status() const;
     Q_INVOKABLE void refreshLibraryScreenshots();
     void setProviderEnabled(bool enabled);
+    void setApiKey(const QString &apiKey);
 
 signals:
     void busyChanged();
