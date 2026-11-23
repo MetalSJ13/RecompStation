@@ -86,6 +86,16 @@ ApplicationWindow {
                 { icon: "", key: "Esc", label: "Back", color: "#A9B7CA", round: false }
             ]
         }
+        if (currentPage === "Library") {
+            return [
+                { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
+                { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
+                { icon: "", key: "PgUp / PgDn", label: "Platform", color: "#A9B7CA", round: false },
+                { icon: "", key: "/", label: "Search", color: "#A9B7CA", round: false },
+                { icon: "", key: "F11", label: "Fullscreen", color: "#A9B7CA", round: false },
+                { icon: "", key: "Ctrl+Q", label: "Quit", color: "#A9B7CA", round: false }
+            ]
+        }
         return [
             { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
             { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
@@ -254,6 +264,13 @@ ApplicationWindow {
         return true
     }
 
+    function libraryKeyboardShortcutsAllowed() {
+        return window.visible && currentPage === "Library"
+            && !systemMenuVisible && !gameDetailsPopup.visible
+            && !uninstallDialog.visible && !librarySetupDialog.visible
+            && window.keyboardDirectionalNavigationAllowed()
+    }
+
     function keyboardDirectionalNavigationAllowed() {
         if (!window.visible)
             return false
@@ -323,16 +340,7 @@ ApplicationWindow {
             if (direction === "left" || direction === "right") {
                 window.moveDirectionalFocus(libraryFilterPanel, direction)
             } else if (direction === "down") {
-                gameGrid.currentIndex = Math.max(0, gameGrid.currentIndex)
-                if (settingsManager.libraryView === "shelves") {
-                    shelvesView.focusSpotlight()
-                } else if (window.sectionedLibraryGrid) {
-                    sectionedGrid.forceActiveFocus()
-                    sectionedGrid.positionAtIndex(gameGrid.currentIndex)
-                } else {
-                    gameGrid.forceActiveFocus()
-                    gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
-                }
+                window.focusLibraryContent()
             }
             return
         }
@@ -733,6 +741,37 @@ ApplicationWindow {
             window.scrollSettingsContent("up", Math.max(120, settingsContentCard.height * 0.72))
         }
     }
+    // Library keyboard shortcuts, matching the controller: PgUp/PgDn or Q/E
+    // cycle platform filters (LB/RB), "/" or Ctrl+F opens search. They are
+    // disabled while a text field or open popup owns the keyboard.
+    Shortcut {
+        sequences: ["PageUp", "Q"]
+        context: Qt.ApplicationShortcut
+        enabled: window.libraryKeyboardShortcutsAllowed()
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.cycleLibraryPlatform(-1)
+        }
+    }
+    Shortcut {
+        sequences: ["PageDown", "E"]
+        context: Qt.ApplicationShortcut
+        enabled: window.libraryKeyboardShortcutsAllowed()
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.cycleLibraryPlatform(1)
+        }
+    }
+    Shortcut {
+        sequences: ["/", "Ctrl+F"]
+        context: Qt.ApplicationShortcut
+        enabled: window.libraryKeyboardShortcutsAllowed()
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.openLibrarySearch()
+        }
+    }
+
     Shortcut {
         sequence: "Escape"
         context: Qt.ApplicationShortcut
@@ -1188,6 +1227,35 @@ ApplicationWindow {
         const index = Math.max(0, platforms.indexOf(window.selectedPlatform))
         const next = (index + step + platforms.length) % platforms.length
         window.selectLibraryPlatform(platforms[next])
+    }
+
+    // Move focus from the toolbar (or search field) into the current
+    // Library view: the spotlight in Shelves, otherwise the selected game.
+    function focusLibraryContent() {
+        if (gameGrid.count === 0)
+            return
+        gameGrid.currentIndex = Math.max(0, gameGrid.currentIndex)
+        if (settingsManager.libraryView === "shelves") {
+            shelvesView.focusSpotlight()
+        } else if (settingsManager.libraryView === "list") {
+            gameList.forceActiveFocus()
+            gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+        } else if (settingsManager.libraryView === "carousel") {
+            consoleView.currentIndex = gameGrid.currentIndex
+            consoleView.forceActiveFocus()
+        } else if (window.sectionedLibraryGrid) {
+            sectionedGrid.forceActiveFocus()
+            sectionedGrid.positionAtIndex(gameGrid.currentIndex)
+        } else {
+            gameGrid.forceActiveFocus()
+            gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
+        }
+    }
+
+    // Open and focus the Library search field.
+    function openLibrarySearch() {
+        librarySearchControl.openRequested = true
+        Qt.callLater(function() { librarySearchField.forceActiveFocus() })
     }
 
     // Open Game Details for an entry of the Library model (gameGrid.model).
@@ -7654,6 +7722,22 @@ ApplicationWindow {
                                     if (!activeFocus)
                                         librarySearchControl.openRequested = false
                                 }
+                                // Keyboard: Enter or Down moves to the results; Escape
+                                // clears the search, then leaves the field.
+                                onAccepted: window.focusLibraryContent()
+                                Keys.onDownPressed: function(event) {
+                                    window.activeInputDevice = "keyboard"
+                                    window.focusLibraryContent()
+                                    event.accepted = true
+                                }
+                                Keys.onEscapePressed: function(event) {
+                                    window.activeInputDevice = "keyboard"
+                                    if (text.length > 0)
+                                        text = ""
+                                    else
+                                        window.focusLibraryContent()
+                                    event.accepted = true
+                                }
                                 onTextChanged: {
                                     window.librarySearchText = text
                                     gameGrid.currentIndex = 0
@@ -7681,10 +7765,7 @@ ApplicationWindow {
                                     border.width: librarySearchButton.activeFocus ? 2 : 0
                                     border.color: theme.accent
                                 }
-                                onClicked: {
-                                    librarySearchControl.openRequested = true
-                                    Qt.callLater(function() { librarySearchField.forceActiveFocus() })
-                                }
+                                onClicked: window.openLibrarySearch()
                             }
                             // Magnifier glyph shared by both states.
                             Item {

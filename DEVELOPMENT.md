@@ -93,6 +93,10 @@ Scope is the Library page only; Game Details and Settings adjustments follow lat
   - [x] Polish: the RB glyph sits right after the platform pills (the pill strip hugs its content and clips only in narrow windows); shelf headers align with the first card and every shelf keeps its leading/trailing margin at either end; the spotlight is shorter (220–300 px, about a third of the view) so more shelf rows fit.
   - [ ] Confirm the polish at runtime.
 - [ ] **Step 5 — Keyboard parity:** Complete keyboard navigation to match controller navigation and show keyboard keys in the adaptive hint bar when keyboard input is active. Proposed bindings: arrows to move, Enter to play, I for details, Esc to go back, PgUp/PgDn (or Q/E) to cycle platforms, `/` for search.
+  - [x] PgUp/PgDn (alternates Q/E) cycle platform filters on the Library page, matching LB/RB; `/` (alternate Ctrl+F) opens and focuses search. These shortcuts are disabled while a text field, open popup, Game Details, the system menu, or a dialog owns the keyboard, and the existing Settings PgUp/PgDn scrolling is unchanged.
+  - [x] Search field: Enter or Down moves focus into the current view; Escape clears the text, then leaves the field. Moving from the toolbar into the content now targets the active view (Shelves spotlight, List, Carousel, sectioned or filtered Grid) through one `focusLibraryContent()` helper; previously it always targeted the Grid.
+  - [x] Keyboard hint bar on the Library page: arrows Navigate, Enter Select, PgUp / PgDn Platform, / Search, F11, Ctrl+Q. Enter already opens Game Details from any card, so no separate details key was added.
+  - [ ] User validation: build and all CTest suites pass; keyboard-only pass through toolbar, search (open with `/`, type, Enter/Down to results, Escape to clear and leave), platform cycling with PgUp/PgDn and Q/E, every view, and Game Details; confirm Q/E do nothing while typing in search and Settings PgUp/PgDn still scroll.
 
 ## Recent stabilization notes (2026-11-21)
 
