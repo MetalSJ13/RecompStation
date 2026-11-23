@@ -6,7 +6,7 @@ This document is the current development status and implementation order for Rec
 
 - **Development branch:** `ui/interface-redesign`. Feature work happens on short-lived branches from it and is fast-forward merged after the user validates it. `main` stays untouched until the redesign is reviewed and explicitly approved for merge.
 - **Build:** C++20 / Qt 6.5+ / QML, 22 CTest suites (`./scripts/build.sh --test`).
-- **Last validated:** seamless play (Banjo-Kazooie, Shipwright, Ghostship), first-time setup and adding games, the Settings redesign (all seven sections) and the LaunchBox progress fix (2026-11-23).
+- **Last validated:** README, license, logo and the Carousel on the chosen background; seamless play (Banjo-Kazooie, Shipwright, Ghostship), first-time setup and adding games, the Settings redesign (all seven sections) and the LaunchBox progress fix (2026-11-23).
 
 ## What is done
 
@@ -122,9 +122,8 @@ Not decided. Points to discuss before any work starts:
 ### 9. Application updates — deferred
 RecompStation does not publish GitHub releases yet. When it does: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.
 
-### 10. Documentation and licensing
-- [ ] GPL-3.0 `LICENSE` file in the repository.
-- [ ] End-user `README.md`: a clear statement that RecompStation does not supply, host or distribute games, summary, contents, features, screenshots of the views, download and install.
+### 10. Documentation and licensing — done
+GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, features, screenshots (metadata stripped, see `docs/screenshots/README.md`), building from source and file locations; the original logo (pixel d-pad) in `assets/logo/`, used in the header, first-time setup, the README and as the window icon. Follow-up when packaging: a `.desktop` file and hicolor icons so Wayland taskbars show the icon.
 
 ## Key decisions
 
