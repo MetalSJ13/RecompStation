@@ -69,6 +69,7 @@ signals:
     void menuRequested();
     void previousSectionRequested();
     void nextSectionRequested();
+    void detailsRequested();
     void rightStickScrollRequested(qreal amount);
     void mappingCaptureStateChanged();
     void controllerProfileChanged();

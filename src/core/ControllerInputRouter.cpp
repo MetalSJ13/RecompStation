@@ -130,7 +130,8 @@ void ControllerInputRouter::processFrame(const QString &direction,
                                          bool menuPressed,
                                          bool previousSectionPressed,
                                          bool nextSectionPressed,
-                                         qint64 elapsedMs)
+                                         qint64 elapsedMs,
+                                         bool detailsPressed)
 {
     // Always track physical button states while suspended. This prevents a
     // held button from firing unexpectedly when input is re-enabled.
@@ -140,6 +141,7 @@ void ControllerInputRouter::processFrame(const QString &direction,
         m_previousMenu = menuPressed;
         m_previousPreviousSection = previousSectionPressed;
         m_previousNextSection = nextSectionPressed;
+        m_previousDetails = detailsPressed;
         m_currentDirection.clear();
         m_lastNavigationMs = 0;
         m_directionStartedMs = 0;
@@ -156,12 +158,15 @@ void ControllerInputRouter::processFrame(const QString &direction,
         emit previousSectionRequested();
     if (nextSectionPressed && !m_previousNextSection)
         emit nextSectionRequested();
+    if (detailsPressed && !m_previousDetails)
+        emit detailsRequested();
 
     m_previousSelect = selectPressed;
     m_previousBack = backPressed;
     m_previousMenu = menuPressed;
     m_previousPreviousSection = previousSectionPressed;
     m_previousNextSection = nextSectionPressed;
+    m_previousDetails = detailsPressed;
 
     if (direction.isEmpty()) {
         m_currentDirection.clear();

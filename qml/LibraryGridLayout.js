@@ -230,3 +230,30 @@ function contentYForRow(rowTop, rowHeight, contentY, viewportHeight, contentHeig
         next = rowTop + rowHeight - viewportHeight
     return Math.max(0, Math.min(maxY, next))
 }
+
+// ---------------------------------------------------------------------------
+// Hero carousel: one row with the selected cover centered and enlarged.
+
+// Left edge (x) of every card. widths are the unselected card widths; the
+// selected card uses selectedWidth and is centered on centerX. Neighbors are
+// laid out outward from it with a constant gap.
+function carouselPositions(widths, selectedIndex, selectedWidth, gap, centerX) {
+    var count = widths ? widths.length : 0
+    var xs = new Array(count)
+    if (count === 0)
+        return xs
+    var selected = Math.max(0, Math.min(count - 1, selectedIndex))
+    xs[selected] = centerX - selectedWidth / 2
+    var x = xs[selected] + selectedWidth + gap
+    for (var i = selected + 1; i < count; ++i) {
+        xs[i] = x
+        x += widths[i] + gap
+    }
+    x = xs[selected] - gap
+    for (var j = selected - 1; j >= 0; --j) {
+        x -= widths[j]
+        xs[j] = x
+        x -= gap
+    }
+    return xs
+}

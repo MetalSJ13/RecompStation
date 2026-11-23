@@ -47,11 +47,22 @@ The responsive Library presentation work is being tracked as a focused five-phas
 - [x] **Phase 2 — Grid View:** Refine responsive column limits, card proportions, and centered layout. User confirmed the intended row density at 4K and 2560×1080, including Compact (10), Comfortable (8), and Spacious (6) at 4K. On 2026-11-22, corrected density-toolbar initialization synchronization and constrained the GridView itself to the intended column block; the user confirmed the sizing issue is resolved.
 - [ ] Validate the 2026-11-22 pointer-input change: confirm mouse-wheel and drag gestures no longer scroll Grid or Carousel, while clicks, toolbar interaction, and keyboard/controller navigation remain functional. The code change is committed; runtime validation is pending.
 - [x] **Phase 3 — List View:** Refine comfortable artwork sizing, viewport-edge fading, and selection/transition behavior. User confirmed the artwork sizing and smoother edge fade; existing selection scaling/transitions were reviewed and retained.
-- [ ] **Phase 4 — Carousel View:** In progress. Refine viewport-edge fading, selection/scrolling response, and clipping without changing the current card-sizing formula, density values, or artwork proportions.
+- [ ] **Phase 4 — Carousel View:** Superseded by the hero carousel (see "Hero carousel" above). Original notes: Refine viewport-edge fading, selection/scrolling response, and clipping without changing the current card-sizing formula, density values, or artwork proportions.
   - [x] Establish a softer two-sided viewport fade while preserving the first card at the initial scroll position; refine the right fade to respond to the card's trailing edge. User reviewed the result and said it looks good.
   - [ ] Review selected-card emphasis and horizontal scrolling/navigation animations.
   - [ ] Verify clipping at viewport edges, including selected-card enlargement and card borders.
 - [ ] **Phase 5 — Full Library composition:** Revisit the larger home-screen composition and make the middle/lower screen areas purposeful after the individual presentations are stable. The planned Shelves view and spotlight panel (Library presentation redesign, step 4 below) are the intended direction for this phase.
+
+## Hero carousel (2026-11-22)
+
+The user lifted the Phase 4 Carousel freeze and chose a hero carousel after reviewing design mockups (Carousel today, hero with an installed GameCube game, hero with an N64 game). Work is on `ui/carousel-hero`, branched from `ui/interface-redesign`. This replaces the remaining Phase 4 Carousel review items.
+
+- [x] Full-window backdrop of the selected game's first screenshot (blurred cover when none exists), cross-fading between selections, with a legibility gradient. Shown only in Carousel on the Library page; the collection heading is hidden in Carousel.
+- [x] One edge-to-edge row in library order. The selected cover is centered and about 1.43× larger; covers use platform frame shapes and fade toward the window edges. Row height follows the Carousel size preference (170 / 210 / 250 px base, scaled with window height). Positions come from `LibraryGridLayout.carouselPositions` (covered by `ArtworkLayoutTests`) and animate, respecting Reduced Motion.
+- [x] Beneath the selection: platform, recompilation status, and "N of M" chips; metadata title; year and rating; Play (installed only; "Running…" while running) and Details.
+- [x] Actions: in Carousel, A / Enter / clicking the selected cover plays an installed recompilation and otherwise opens Game Details. New **Details** controller action (default Y; △ on PlayStation and X on Nintendo layouts in hints) and the `I` key open Game Details from any Library view. Hovering highlights without changing the selection (the row recenters under the pointer); clicking another cover selects it; the wheel steps the selection.
+- [x] `ControllerInputRouter` gains `detailsRequested` (optional `detailsPressed` frame argument, so existing callers are unchanged). The default profile maps Details to Y, the action is listed in Controller settings for remapping, and saved profiles that predate it keep their mappings and receive the default instead of being reset. New `ControllerInputRouterTests` and `SettingsManagerTests` cases.
+- [ ] User validation: build and all CTest suites pass; backdrop with and without screenshots and cross-fade; row centering and animation at each size and window size; mixed cover shapes; info and actions; A plays or opens Details; Y and `I` open Details in every view; hover/click/wheel; LB/RB platform cycling; up to the toolbar; Reduced Motion; existing controller mappings preserved after upgrade.
 
 ## Library presentation redesign (planned, 2026-11-22)
 

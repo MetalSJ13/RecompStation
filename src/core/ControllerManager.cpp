@@ -23,6 +23,8 @@ ControllerManager::ControllerManager(QObject *parent)
             this, &ControllerManager::previousSectionRequested);
     connect(&m_inputRouter, &ControllerInputRouter::nextSectionRequested,
             this, &ControllerManager::nextSectionRequested);
+    connect(&m_inputRouter, &ControllerInputRouter::detailsRequested,
+            this, &ControllerManager::detailsRequested);
     connect(&m_inputRouter, &ControllerInputRouter::inputEnabledChanged,
             this, [this]() {
         emit inputEnabledChanged();
@@ -118,7 +120,8 @@ bool ControllerManager::startMappingCapture(const QString &action, bool replaceE
         QStringLiteral("navigateUp"), QStringLiteral("navigateDown"),
         QStringLiteral("navigateLeft"), QStringLiteral("navigateRight"),
         QStringLiteral("select"), QStringLiteral("back"), QStringLiteral("menu"),
-        QStringLiteral("previousSection"), QStringLiteral("nextSection")
+        QStringLiteral("previousSection"), QStringLiteral("nextSection"),
+        QStringLiteral("details")
     };
     if (!m_connected || !m_settingsManager || !actions.contains(action))
         return false;
@@ -438,6 +441,8 @@ void ControllerManager::pollController()
                                              QStringLiteral("previousSection"), activeInputs),
         ControllerInputRouter::actionPressed(m_controllerProfile,
                                              QStringLiteral("nextSection"), activeInputs),
-        m_elapsedTimer.elapsed());
+        m_elapsedTimer.elapsed(),
+        ControllerInputRouter::actionPressed(m_controllerProfile,
+                                             QStringLiteral("details"), activeInputs));
 #endif
 }

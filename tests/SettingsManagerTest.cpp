@@ -46,6 +46,8 @@ private slots:
     void defaultsToCuratedLibraryPresentation();
     void persistsCarouselLibraryView();
     void persistsShelvesLibraryView();
+    void defaultControllerProfileMapsDetailsToY();
+    void legacyControllerProfileGainsDetailsDefault();
     void rejectsUnknownLibraryView();
     void persistsLibraryPresentationPreferences();
     void rejectsUnsupportedLibraryPresentationPreferences();
@@ -588,6 +590,52 @@ void SettingsManagerTest::persistsShelvesLibraryView()
 
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.libraryView(), QStringLiteral("shelves"));
+}
+
+void SettingsManagerTest::defaultControllerProfileMapsDetailsToY()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    // An unsaved controller receives the default profile.
+    const QVariantMap defaults = manager.controllerProfile(
+        QStringLiteral("030000005e0400008e02000000000000"));
+    QCOMPARE(defaults.value(QStringLiteral("details")).toStringList(),
+             QStringList{QStringLiteral("y")});
+}
+
+void SettingsManagerTest::legacyControllerProfileGainsDetailsDefault()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+    const QString guid = QStringLiteral("030000005e0400008e02000000000000");
+
+    // A profile saved before the details action existed, with a custom select.
+    QVariantMap legacy;
+    {
+        SettingsManager defaultsSource(settingsPath);
+        legacy = defaultsSource.controllerProfile(guid);
+    }
+    legacy.remove(QStringLiteral("details"));
+    legacy[QStringLiteral("select")] = QVariantList{QStringLiteral("x")};
+    {
+        QSettings settings(settingsPath, QSettings::IniFormat);
+        settings.setValue(QStringLiteral("controllers/profiles/") + guid
+                              + QStringLiteral("/mappings"), legacy);
+        settings.sync();
+    }
+
+    SettingsManager manager(settingsPath);
+    const QVariantMap profile = manager.controllerProfile(guid);
+    QCOMPARE(profile.value(QStringLiteral("select")).toStringList(),
+             QStringList{QStringLiteral("x")});
+    QCOMPARE(profile.value(QStringLiteral("details")).toStringList(),
+             QStringList{QStringLiteral("y")});
 }
 
 void SettingsManagerTest::rejectsUnknownLibraryView()

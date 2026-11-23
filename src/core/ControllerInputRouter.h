@@ -31,7 +31,8 @@ public:
                       bool menuPressed,
                       bool previousSectionPressed,
                       bool nextSectionPressed,
-                      qint64 elapsedMs);
+                      qint64 elapsedMs,
+                      bool detailsPressed = false);
 
     bool inputEnabled() const;
     bool navigationActive() const;
@@ -46,6 +47,7 @@ signals:
     void menuRequested();
     void previousSectionRequested();
     void nextSectionRequested();
+    void detailsRequested();
     void inputEnabledChanged();
 
 private:
@@ -57,6 +59,7 @@ private:
     bool m_previousMenu = false;
     bool m_previousPreviousSection = false;
     bool m_previousNextSection = false;
+    bool m_previousDetails = false;
     QString m_currentDirection;
     qint64 m_lastNavigationMs = 0;
     qint64 m_directionStartedMs = 0;

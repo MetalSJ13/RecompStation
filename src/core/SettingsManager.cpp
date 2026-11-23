@@ -312,8 +312,17 @@ QVariantMap SettingsManager::defaultControllerProfile()
         {QStringLiteral("back"), QVariantList{QStringLiteral("b"), QStringLiteral("guide")}},
         {QStringLiteral("menu"), QVariantList{QStringLiteral("start")}},
         {QStringLiteral("previousSection"), QVariantList{QStringLiteral("leftshoulder")}},
-        {QStringLiteral("nextSection"), QVariantList{QStringLiteral("rightshoulder")}}
+        {QStringLiteral("nextSection"), QVariantList{QStringLiteral("rightshoulder")}},
+        {QStringLiteral("details"), QVariantList{QStringLiteral("y")}}
     };
+}
+
+// Actions added after controller profiles were first saved. A stored profile
+// that predates one of these keeps its mappings and receives the default.
+static const QStringList &controllerActionsAddedLater()
+{
+    static const QStringList actions = { QStringLiteral("details") };
+    return actions;
 }
 
 bool SettingsManager::isValidControllerGuid(const QString &guid)
@@ -333,8 +342,13 @@ QVariantMap SettingsManager::controllerProfile(const QString &guid) const
     if (!settings.contains(key))
         return defaultControllerProfile();
 
-    const QVariantMap stored = settings.value(key).toMap();
+    QVariantMap stored = settings.value(key).toMap();
     const QVariantMap defaults = defaultControllerProfile();
+    // Profiles saved before an action existed receive that action's default.
+    for (const QString &action : controllerActionsAddedLater()) {
+        if (!stored.contains(action))
+            stored.insert(action, defaults.value(action));
+    }
     // Reject incomplete or malformed profiles as a whole. Returning defaults
     // is safer than exposing a partially corrupted mapping to the input layer.
     QStringList storedKeys = stored.keys();

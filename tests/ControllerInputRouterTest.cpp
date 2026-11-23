@@ -14,6 +14,7 @@ private slots:
     void handlesExtremeAnalogAxisValues();
     void respectsAnalogDeadZone();
     void emitsButtonActionsOnlyOnPressEdges();
+    void emitsDetailsOnlyOnPressEdges();
     void emitsNavigationImmediatelyAndRepeatsAtCadence();
     void acceleratesHeldNavigationWhenEnabled();
     void keepsDefaultNavigationCadenceWhenAccelerationDisabled();
@@ -82,6 +83,27 @@ void ControllerInputRouterTest::respectsAnalogDeadZone()
     QCOMPARE(ControllerInputRouter::directionFromAxes(0, -16000), QString());
     QCOMPARE(ControllerInputRouter::directionFromAxes(16001, 0), QStringLiteral("right"));
     QCOMPARE(ControllerInputRouter::directionFromAxes(0, -16001), QStringLiteral("up"));
+}
+
+void ControllerInputRouterTest::emitsDetailsOnlyOnPressEdges()
+{
+    ControllerInputRouter router;
+    QSignalSpy details(&router, &ControllerInputRouter::detailsRequested);
+    QSignalSpy select(&router, &ControllerInputRouter::selectRequested);
+
+    router.processFrame({}, false, false, false, false, false, 0, true);
+    router.processFrame({}, false, false, false, false, false, 16, true);
+    QCOMPARE(details.count(), 1);
+    QCOMPARE(select.count(), 0);
+
+    router.processFrame({}, false, false, false, false, false, 32, false);
+    router.processFrame({}, false, false, false, false, false, 48, true);
+    QCOMPARE(details.count(), 2);
+
+    // Omitting the argument means not pressed, as for existing callers.
+    router.processFrame({}, false, false, false, false, false, 64);
+    router.processFrame({}, false, false, false, false, false, 80, true);
+    QCOMPARE(details.count(), 3);
 }
 
 void ControllerInputRouterTest::emitsButtonActionsOnlyOnPressEdges()

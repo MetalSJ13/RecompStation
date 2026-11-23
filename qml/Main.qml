@@ -50,34 +50,44 @@ ApplicationWindow {
             let selectButton = "A"
             let backButton = "B"
             let switchButtons = "LB / RB"
+            let detailsButton = "Y"
             let selectColor = "#48C78E"
             let backColor = "#E58B78"
             if (controllerManager.controllerType === "playstation") {
                 selectButton = "✕"
                 backButton = "○"
                 switchButtons = "L1 / R1"
+                detailsButton = "△"
                 selectColor = "#55A9F4"
                 backColor = "#F06B8B"
             } else if (controllerManager.controllerType === "nintendo") {
                 selectButton = "B"
                 backButton = "A"
                 switchButtons = "L / R"
+                detailsButton = "X"
                 selectColor = "#E58B78"
                 backColor = "#48A8E8"
             } else if (controllerManager.controllerType !== "xbox") {
                 selectButton = "S"
                 backButton = "E"
                 switchButtons = "L / R"
+                detailsButton = "N"
             }
-            return [
+            const libraryActive = currentPage === "Library" && !gameDetailsPopup.visible
+            const carouselPlays = libraryActive && settingsManager.libraryView === "carousel"
+                && window.libraryGameInstalled(consoleView.currentGame)
+            const items = [
                 { icon: "qrc:/icons/dpad.svg", key: "", label: "Navigate", color: "#B8C7D9", round: false },
-                { icon: "", key: selectButton, label: "Select", color: selectColor, round: true },
+                { icon: "", key: selectButton, label: carouselPlays ? "Play" : "Select", color: selectColor, round: true },
                 { icon: "", key: backButton, label: "Back", color: backColor, round: true },
                 { icon: "", key: switchButtons,
                   label: gameDetailsPopup.visible ? "Switch game"
                       : currentPage === "Library" ? "Platform" : "Library",
                   color: "#A9B7CA", round: false }
             ]
+            if (libraryActive)
+                items.splice(2, 0, { icon: "", key: detailsButton, label: "Details", color: "#E8C27F", round: true })
+            return items
         }
         if (activeInputDevice === "mouse") {
             return [
@@ -89,7 +99,10 @@ ApplicationWindow {
         if (currentPage === "Library") {
             return [
                 { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
-                { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
+                { icon: "", key: "Enter", label: settingsManager.libraryView === "carousel"
+                    && window.libraryGameInstalled(consoleView.currentGame) ? "Play" : "Select",
+                  color: "#A9B7CA", round: false },
+                { icon: "", key: "I", label: "Details", color: "#A9B7CA", round: false },
                 { icon: "", key: "Q / E", label: "Platform", color: "#A9B7CA", round: false },
                 { icon: "", key: "/", label: "Search", color: "#A9B7CA", round: false },
                 { icon: "", key: "F11", label: "Fullscreen", color: "#A9B7CA", round: false },
@@ -574,9 +587,7 @@ ApplicationWindow {
                 if (tile && tile.openDetails)
                     tile.openDetails()
             } else if (settingsManager.libraryView === "carousel") {
-                const tile = consoleView.itemAtIndex(index)
-                if (tile && tile.openDetails)
-                    tile.openDetails()
+                window.libraryPrimaryAction(index)
             } else if (window.sectionedLibraryGrid) {
                 window.openLibraryGameDetails(gameGrid.model[index])
             } else {
@@ -760,6 +771,15 @@ ApplicationWindow {
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.cycleLibraryPlatform(1)
+        }
+    }
+    Shortcut {
+        sequence: "I"
+        context: Qt.ApplicationShortcut
+        enabled: window.libraryKeyboardShortcutsAllowed()
+        onActivated: {
+            window.activeInputDevice = "keyboard"
+            window.openSelectedGameDetails()
         }
     }
     Shortcut {
@@ -1003,6 +1023,12 @@ ApplicationWindow {
                 window.cycleLibraryPlatform(1)
             else
                 window.navigateToPage("Library")
+        }
+        function onDetailsRequested() {
+            window.activeInputDevice = "controller"
+            if (currentPage === "Library" && !gameDetailsPopup.visible
+                    && !window.systemMenuVisible)
+                window.openSelectedGameDetails()
         }
         function onRightStickScrollRequested(amount) {
             if (!controllerManager.navigationActive) {
@@ -1250,6 +1276,43 @@ ApplicationWindow {
             gameGrid.forceActiveFocus()
             gameGrid.positionViewAtIndex(gameGrid.currentIndex, GridView.Contain)
         }
+    }
+
+    // Supported recompilation project for a Library model entry, or null.
+    function libraryGameProject(game) {
+        if (!game)
+            return null
+        const projects = projectCatalog.projectsForGame(
+            game.metadataTitle ? game.metadataTitle : game.title, game.platform)
+        return projects.length > 0 ? projects[0] : null
+    }
+    function libraryGameInstalled(game) {
+        const project = window.libraryGameProject(game)
+        return project !== null && window.installedLauncherProjectIds[project.id] === true
+    }
+
+    // Carousel primary action (A / Enter / click on the selected card): play
+    // when the game's recompilation is installed, otherwise open Game Details.
+    function libraryPrimaryAction(index) {
+        const games = gameGrid.model || []
+        const game = games[Math.max(0, Math.min(games.length - 1, index))]
+        if (!game)
+            return
+        const project = window.libraryGameProject(game)
+        if (project !== null && window.installedLauncherProjectIds[project.id] === true) {
+            if (!window.runningLaunchers[project.id])
+                window.launchSupportedGame(project.id)
+            return
+        }
+        window.openLibraryGameDetails(game)
+    }
+
+    // Y / I: open Game Details for the selected game in any Library view.
+    function openSelectedGameDetails() {
+        const games = gameGrid.model || []
+        if (games.length === 0)
+            return
+        window.openLibraryGameDetails(games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))])
     }
 
     // Open and focus the Library search field.
@@ -3556,6 +3619,88 @@ ApplicationWindow {
                 }
             }
 
+            // Hero carousel backdrop: the selected game's first screenshot fills
+            // the window (or its blurred cover when it has none). Two layers
+            // cross-fade when the selection changes.
+            Item {
+                id: carouselHeroBackdrop
+                anchors.fill: parent
+                readonly property bool active: currentPage === "Library"
+                    && settingsManager.libraryView === "carousel" && gameGrid.count > 0
+                visible: opacity > 0
+                opacity: active ? 1 : 0
+                Behavior on opacity {
+                    enabled: !settingsManager.reducedMotion
+                    NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+                }
+                readonly property var game: consoleView.currentGame
+                readonly property bool hasScreenshot: game !== null
+                    && game.screenshots !== undefined && game.screenshots.length > 0
+                readonly property string source: !game ? ""
+                    : hasScreenshot ? game.screenshots[0] : game.artworkPath
+                property bool showFirst: true
+                Component.onCompleted: {
+                    heroLayerA.source = source
+                    heroLayerA.blurred = !hasScreenshot
+                }
+                onSourceChanged: {
+                    if (showFirst) {
+                        heroLayerB.source = source
+                        heroLayerB.blurred = !hasScreenshot
+                    } else {
+                        heroLayerA.source = source
+                        heroLayerA.blurred = !hasScreenshot
+                    }
+                    showFirst = !showFirst
+                }
+
+                Repeater {
+                    model: 2
+                    delegate: Item {
+                        required property int index
+                        anchors.fill: parent
+                        opacity: (index === 0) === carouselHeroBackdrop.showFirst ? 1 : 0
+                        Behavior on opacity {
+                            enabled: !settingsManager.reducedMotion
+                            NumberAnimation { duration: 420; easing.type: Easing.InOutQuad }
+                        }
+                        Image {
+                            id: heroLayerImage
+                            anchors.fill: parent
+                            source: index === 0 ? heroLayerA.source : heroLayerB.source
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            cache: true
+                            visible: false
+                        }
+                        MultiEffect {
+                            anchors.fill: parent
+                            source: heroLayerImage
+                            blurEnabled: index === 0 ? heroLayerA.blurred : heroLayerB.blurred
+                            blur: 1.0
+                            blurMax: 64
+                            autoPaddingEnabled: false
+                            opacity: heroLayerImage.status === Image.Ready
+                                ? ((index === 0 ? heroLayerA.blurred : heroLayerB.blurred) ? 0.5 : 1) : 0
+                        }
+                    }
+                }
+                QtObject { id: heroLayerA; property string source: ""; property bool blurred: false }
+                QtObject { id: heroLayerB; property string source: ""; property bool blurred: false }
+
+                // Keep the header and the details under the row legible.
+                Rectangle {
+                    anchors.fill: parent
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.78) }
+                        GradientStop { position: 0.22; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.18) }
+                        GradientStop { position: 0.45; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.28) }
+                        GradientStop { position: 0.72; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.88) }
+                        GradientStop { position: 1.0; color: Qt.rgba(theme.backgroundBottom.r, theme.backgroundBottom.g, theme.backgroundBottom.b, 0.98) }
+                    }
+                }
+            }
+
             StackLayout {
                 id: mainPageStack
                 anchors.fill: parent
@@ -3576,7 +3721,10 @@ ApplicationWindow {
                                 : settingsManager.libraryDensity === "comfortable" ? 2 : 8)
                             : 18
 
+                        // The hero carousel shows the selected game instead of the
+                        // collection heading.
                         RowLayout {
+                            visible: settingsManager.libraryView !== "carousel"
                             Layout.fillWidth: true
                             spacing: 16
 
@@ -4939,60 +5087,46 @@ ApplicationWindow {
                             }
                         }
 
-                        ListView {
+                        // Hero carousel: the selected game's screenshot fills the
+                        // window (carouselHeroBackdrop), one row of covers crosses the
+                        // screen with the selected cover centered and enlarged, and the
+                        // selected game's details and actions sit beneath it. Card
+                        // positions come from LibraryGridLayout.carouselPositions.
+                        // Selection mirrors gameGrid.currentIndex.
+                        Item {
                             id: consoleView
                             anchors.fill: parent
+                            // Run edge to edge across the window.
+                            anchors.leftMargin: -30
+                            anchors.rightMargin: -30
+                            anchors.bottomMargin: gameGrid.hintBarClearance
                             visible: settingsManager.libraryView === "carousel" || opacity > 0
                             opacity: settingsManager.libraryView === "carousel" ? 1 : 0
                             Behavior on opacity {
                                 enabled: !settingsManager.reducedMotion
                                 NumberAnimation { duration: 210; easing.type: Easing.OutCubic }
                             }
-                            orientation: ListView.Horizontal
                             clip: true
-                            // Keep carousel movement under keyboard/controller navigation;
-                            // pointer wheel and drag gestures must not move the game row.
-                            interactive: false
-                            model: gameGrid.model
-                            keyNavigationEnabled: false
-                            spacing: 24
-                            // Scale card dimensions gently with the available carousel
-                            // height. This preserves the density choices on smaller windows
-                            // while giving fullscreen/high-resolution layouts more presence.
-                            readonly property real layoutScale:
-                                Math.min(1.2, Math.max(0.9, height / 900))
-                            readonly property real cardWidth:
-                                (settingsManager.libraryConsoleDensity === "compact" ? 220
-                                : settingsManager.libraryConsoleDensity === "comfortable" ? 270 : 320)
-                                * layoutScale
-                            // Keep the complete hover enlargement inside the viewport.
-                            readonly property real cardHeight:
-                                Math.min(cardWidth * 1.48, Math.max(220, height - 64))
-                            topMargin: Math.max(24, (height - cardHeight) / 2)
-                            bottomMargin: topMargin
-                            // Pin the current card to the same left inset throughout
-                            // navigation. Matching trailing space allows the final card
-                            // to settle on that exact inset too.
-                            leftMargin: 34
-                            rightMargin: Math.max(leftMargin, width - leftMargin - cardWidth)
-                            preferredHighlightBegin: leftMargin
-                            preferredHighlightEnd: preferredHighlightBegin + cardWidth
-                            highlightRangeMode: ListView.StrictlyEnforceRange
-                            highlightMoveDuration: settingsManager.reducedMotion ? 0 : 230
-                            snapMode: ListView.NoSnap
-                            currentIndex: gameGrid.currentIndex
-                            Component.onCompleted: {
-                                if (currentIndex < 0 && count > 0)
-                                    currentIndex = 0
-                            }
+
+                            property int currentIndex: -1
+                            readonly property int count: games.length
+                            readonly property var games: gameGrid.model || []
+                            readonly property var currentGame: count > 0
+                                ? games[Math.max(0, Math.min(count - 1, currentIndex))] : null
+
+                            // Kept for callers shared with the list-based views; card
+                            // positions follow currentIndex automatically.
+                            function positionViewAtIndex(index, mode) {}
+
                             onCountChanged: {
-                                if (currentIndex < 0 && count > 0)
-                                    currentIndex = 0
+                                if (count > 0 && currentIndex < 0)
+                                    currentIndex = Math.max(0, gameGrid.currentIndex)
                             }
                             onCurrentIndexChanged: {
                                 if (currentIndex !== gameGrid.currentIndex)
                                     gameGrid.currentIndex = currentIndex
                             }
+                            Component.onCompleted: currentIndex = Math.max(0, gameGrid.currentIndex)
                             Connections {
                                 target: gameGrid
                                 function onCurrentIndexChanged() {
@@ -5000,208 +5134,255 @@ ApplicationWindow {
                                         consoleView.currentIndex = gameGrid.currentIndex
                                 }
                             }
-                            delegate: Item {
-                                id: consoleTile
-                                required property string title
-                                required property string platform
-                                required property string artworkPath
-                                required property string metadataTitle
-                                required property string metadataOverview
-                                required property string metadataReleaseDate
-                                required property string metadataRating
-                                required property var screenshots
-                                required property string path
-                                required property int id
-                                required property int index
-                                width: consoleView.cardWidth
-                                height: consoleView.cardHeight
-                                readonly property bool highlighted:
-                                    ListView.isCurrentItem || consoleTileMouse.containsMouse
-                                // Fade cards symmetrically as they pass either viewport
-                                // edge. Keep the leading edge fully visible at the initial
-                                // scroll position, where the first card is intentionally inset.
-                                readonly property real leftEdgeDistance:
-                                    consoleTile.x + consoleTile.width / 2 - consoleView.contentX
-                                // Begin fading when the card's trailing edge approaches
-                                // the viewport boundary, so it is already transparent as
-                                // clipping begins instead of fading too late from its center.
-                                readonly property real rightEdgeDistance:
-                                    consoleView.width
-                                    - (consoleTile.x + consoleTile.width - consoleView.contentX)
-                                readonly property real edgeFadeDistance:
-                                    Math.max(180, consoleView.cardWidth)
-                                readonly property real leftEdgeProgress:
-                                    Math.max(0, Math.min(1, leftEdgeDistance / edgeFadeDistance))
-                                readonly property real rightEdgeProgress:
-                                    Math.max(0, Math.min(1, rightEdgeDistance / edgeFadeDistance))
-                                readonly property real leftEdgeEase:
-                                    leftEdgeProgress * leftEdgeProgress
-                                    * (3 - 2 * leftEdgeProgress)
-                                readonly property real rightEdgeEase:
-                                    rightEdgeProgress * rightEdgeProgress
-                                    * (3 - 2 * rightEdgeProgress)
-                                readonly property real leftEdgeOpacity:
-                                    consoleView.contentX <= 0 ? 1 : leftEdgeEase
-                                readonly property real rightEdgeOpacity: rightEdgeEase
-                                opacity: settingsManager.reducedMotion ? 1
-                                    : Math.min(leftEdgeOpacity, rightEdgeOpacity)
-                                scale: highlighted ? 1.045 : 1
-                                z: highlighted ? 2 : 1
-                                Behavior on scale {
-                                    enabled: !settingsManager.reducedMotion
-                                    NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
-                                }
-                                function openDetails() {
-                                    window.selectedGame = {
-                                        id: consoleTile.id, title: consoleTile.title,
-                                        platform: consoleTile.platform, path: consoleTile.path,
-                                        artworkPath: consoleTile.artworkPath,
-                                        screenshots: consoleTile.screenshots,
-                                        metadataTitle: consoleTile.metadataTitle,
-                                        metadataOverview: consoleTile.metadataOverview,
-                                        metadataReleaseDate: consoleTile.metadataReleaseDate,
-                                        metadataRating: consoleTile.metadataRating
-                                    }
-                                    gameDetailsPopup.open()
-                                }
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: theme.radiusCard + 3
-                                    color: consoleTile.highlighted ? theme.elevatedSurface : theme.surface
-                                    Behavior on color {
-                                        enabled: !settingsManager.reducedMotion
-                                        ColorAnimation {
-                                            duration: 170
-                                            easing.type: Easing.OutCubic
-                                        }
-                                    }
-                                    opacity: consoleTile.highlighted ? 0.96 : 0.72
-                                    Behavior on opacity {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation {
-                                            duration: 170
-                                            easing.type: Easing.OutCubic
-                                        }
-                                    }
-                                    border.width: consoleTile.highlighted ? 2 : 1
-                                    Behavior on border.width {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation {
-                                            duration: 160
-                                            easing.type: Easing.OutCubic
-                                        }
-                                    }
-                                    border.color: consoleTile.highlighted ? theme.accent : theme.divider
-                                    Behavior on border.color {
-                                        enabled: !settingsManager.reducedMotion
-                                        ColorAnimation {
-                                            duration: 170
-                                            easing.type: Easing.OutCubic
-                                        }
-                                    }
-                                }
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 11
-                                    spacing: 9
-                                    Item {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
+                            Keys.onReturnPressed: window.libraryPrimaryAction(consoleView.currentIndex)
+                            Keys.onEnterPressed: window.libraryPrimaryAction(consoleView.currentIndex)
 
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            radius: theme.radiusSmall
-                                            color: theme.sidebarBackground
-                                        }
+                            // Sizes scale gently with the available height.
+                            readonly property real layoutScale:
+                                Math.min(1.25, Math.max(0.85, height / 760))
+                            readonly property real baseHeight: Math.round(
+                                (settingsManager.libraryConsoleDensity === "compact" ? 170
+                                : settingsManager.libraryConsoleDensity === "spacious" ? 250 : 210)
+                                * layoutScale)
+                            readonly property real selectedHeight: Math.round(baseHeight * 1.43)
+                            readonly property real gap: Math.round(30 * layoutScale)
+                            readonly property real infoHeight: Math.ceil(196 * theme.fontScale)
+                            readonly property real rowCenterY: Math.round(Math.max(
+                                selectedHeight / 2 + 16,
+                                Math.min(height * 0.42, height - infoHeight - selectedHeight / 2 - 20)))
 
-                                        // Match Grid: the inner frame adapts to each portrait
-                                        // cover's native ratio while remaining within the viewport.
-                                        Rectangle {
-                                            id: consoleArtworkFrame
-                                            anchors.centerIn: parent
-                                            // Match Grid's inset so the artwork frame never
-                                            // crowds or touches the outer carousel card border.
-                                            readonly property real frameInset: 4
-                                            readonly property real availableWidth:
-                                                Math.max(1, parent.width - frameInset * 2)
-                                            readonly property real availableHeight:
-                                                Math.max(1, parent.height - frameInset * 2)
-                                            // Use the actual cover ratio for portrait and
-                                            // landscape artwork alike, matching Grid exactly.
-                                            readonly property real coverRatio:
-                                                consoleCover.status === Image.Ready
-                                                && consoleCover.sourceSize.width > 0
-                                                && consoleCover.sourceSize.height > 0
-                                                    ? consoleCover.sourceSize.width / consoleCover.sourceSize.height
-                                                    : availableWidth / availableHeight
-                                            width: Math.min(availableWidth, availableHeight * coverRatio)
-                                            height: Math.min(availableHeight, availableWidth / Math.max(0.01, coverRatio))
-                                            radius: theme.radiusSmall
-                                            color: theme.sidebarBackground
-                                            border.width: 1
-                                            border.color: consoleTile.highlighted ? theme.accent : theme.divider
-                                            clip: true
-                                            Image {
-                                                id: consoleCover
-                                                anchors.fill: parent
-                                                anchors.margins: 0
-                                                source: consoleTile.artworkPath
-                                                fillMode: Image.PreserveAspectFit
-                                                asynchronous: true
-                                                cache: true
-                                                smooth: true
-                                                mipmap: true
-                                                visible: status === Image.Ready
-                                            }
-                                            Image {
-                                                anchors.fill: parent
-                                                anchors.margins: 5
-                                                source: "qrc:/icons/game-artwork-unavailable.png"
-                                                fillMode: Image.PreserveAspectFit
-                                                asynchronous: true
-                                                cache: true
-                                                visible: consoleCover.status !== Image.Ready
-                                            }
-                                        }
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: consoleTile.title
-                                        color: theme.textPrimary
-                                        font.pixelSize: 15 * theme.fontScale
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: consoleTile.platform
-                                        color: theme.textSecondary
-                                        font.pixelSize: 11 * theme.fontScale
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                                MouseArea {
-                                    id: consoleTileMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onEntered: {
-                                        // A card can slide beneath a stationary pointer as the
-                                        // carousel recenters. Do not treat that as a new hover
-                                        // selection or it can trigger a rapid card-to-card cascade.
+                            function ratioAt(index) {
+                                const game = games[index]
+                                return LibraryGridLayout.frameRatioForPlatform(game ? game.platform : "")
+                            }
+                            readonly property var baseWidths: {
+                                const widths = []
+                                for (let i = 0; i < games.length; ++i)
+                                    widths.push(Math.round(baseHeight * ratioAt(i)))
+                                return widths
+                            }
+                            readonly property var positions: LibraryGridLayout.carouselPositions(
+                                baseWidths, Math.max(0, currentIndex),
+                                Math.round(selectedHeight * ratioAt(Math.max(0, currentIndex))),
+                                gap, width / 2)
+
+                            // Horizontal wheel or trackpad gestures step the selection.
+                            WheelHandler {
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                property real accumulated: 0
+                                onWheel: function(event) {
+                                    const delta = event.angleDelta.x !== 0 ? event.angleDelta.x : event.angleDelta.y
+                                    accumulated += delta
+                                    if (Math.abs(accumulated) >= 120) {
+                                        const step = accumulated > 0 ? -1 : 1
+                                        accumulated = 0
+                                        consoleView.currentIndex = Math.max(0, Math.min(
+                                            consoleView.count - 1, consoleView.currentIndex + step))
                                         window.activeInputDevice = "mouse"
                                     }
-                                    onPositionChanged: {
-                                        // Only pointer movement should change the hovered card.
-                                        if (containsMouse)
-                                            consoleView.currentIndex = consoleTile.index
+                                    event.accepted = true
+                                }
+                            }
+
+                            Repeater {
+                                model: consoleView.count
+                                delegate: Item {
+                                    id: carouselCard
+                                    required property int index
+                                    readonly property var game: consoleView.games[index]
+                                    readonly property bool isCurrent: index === consoleView.currentIndex
+                                    readonly property real cardHeight:
+                                        isCurrent ? consoleView.selectedHeight : consoleView.baseHeight
+                                    readonly property real centerDistance:
+                                        Math.abs(x + width / 2 - consoleView.width / 2)
+                                    x: consoleView.positions[index] !== undefined ? consoleView.positions[index] : 0
+                                    y: consoleView.rowCenterY - height / 2
+                                    width: Math.round(cardHeight * consoleView.ratioAt(index))
+                                    height: cardHeight
+                                    z: isCurrent ? 2 : 1
+                                    // Skip cards well outside the window.
+                                    visible: x + width > -consoleView.width * 0.25
+                                        && x < consoleView.width * 1.25
+                                    opacity: isCurrent ? 1
+                                        : Math.max(0.16, 0.86 - centerDistance / (consoleView.width * 0.62))
+                                    Behavior on x {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
                                     }
-                                    onClicked: {
-                                        gameGrid.currentIndex = consoleTile.index
-                                        consoleTile.openDetails()
+                                    Behavior on width {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+                                    }
+                                    Behavior on height {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+                                    }
+
+                                    GameArtwork {
+                                        anchors.fill: parent
+                                        source: carouselCard.game ? carouselCard.game.artworkPath : ""
+                                        platform: carouselCard.game ? carouselCard.game.platform : ""
+                                        highlighted: carouselCard.isCurrent || carouselCardMouse.containsMouse
+                                        focused: carouselCard.isCurrent
+                                        hovered: carouselCardMouse.containsMouse
+                                        reducedMotion: settingsManager.reducedMotion
+                                        themeTokens: theme
+                                        frameMode: "platform"
+                                        frameInset: 0
+                                        showViewportBackground: false
+                                        showFocusRing: true
+                                    }
+
+                                    // Hover only highlights: the row recenters under the
+                                    // pointer, so hovering must not change the selection.
+                                    // Click selects a card, or runs the primary action on
+                                    // the selected one.
+                                    MouseArea {
+                                        id: carouselCardMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        Accessible.name: carouselCard.game
+                                            ? (carouselCard.game.metadataTitle || carouselCard.game.title) : ""
+                                        onEntered: window.activeInputDevice = "mouse"
+                                        onClicked: {
+                                            if (carouselCard.isCurrent)
+                                                window.libraryPrimaryAction(carouselCard.index)
+                                            else
+                                                consoleView.currentIndex = carouselCard.index
+                                        }
                                     }
                                 }
                             }
-                            ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AlwaysOff }
+
+                            // Selected game details and actions.
+                            ColumnLayout {
+                                id: carouselInfo
+                                readonly property var game: consoleView.currentGame
+                                readonly property var project: window.libraryGameProject(game)
+                                readonly property bool installed: window.libraryGameInstalled(game)
+                                readonly property bool running: project !== null
+                                    && window.runningLaunchers[project.id] === true
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                y: consoleView.rowCenterY + consoleView.selectedHeight / 2 + 26
+                                width: Math.min(parent.width - 120, 900)
+                                spacing: 8
+                                visible: game !== null
+
+                                Row {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    spacing: 8
+                                    Rectangle {
+                                        height: 24
+                                        width: carouselPlatformLabel.implicitWidth + 20
+                                        radius: 12
+                                        color: Qt.rgba(theme.textPrimary.r, theme.textPrimary.g, theme.textPrimary.b, 0.14)
+                                        Label {
+                                            id: carouselPlatformLabel
+                                            anchors.centerIn: parent
+                                            text: carouselInfo.game
+                                                ? window.platformDisplayName(carouselInfo.game.platform).toUpperCase() : ""
+                                            color: theme.textPrimary
+                                            font.pixelSize: 11 * theme.fontScale
+                                            font.bold: true
+                                            font.letterSpacing: 0.6
+                                        }
+                                    }
+                                    Rectangle {
+                                        visible: carouselInfo.project !== null
+                                        height: 24
+                                        width: carouselStatusLabel.implicitWidth + 20
+                                        radius: 12
+                                        color: carouselInfo.installed
+                                            ? Qt.rgba(theme.success.r, theme.success.g, theme.success.b, 0.16)
+                                            : Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.16)
+                                        Label {
+                                            id: carouselStatusLabel
+                                            anchors.centerIn: parent
+                                            text: !carouselInfo.project ? ""
+                                                : carouselInfo.project.name
+                                                    + (carouselInfo.installed ? " · Installed" : " · Available")
+                                            color: carouselInfo.installed ? theme.success : theme.accentHover
+                                            font.pixelSize: 11 * theme.fontScale
+                                            font.bold: true
+                                        }
+                                    }
+                                    Rectangle {
+                                        height: 24
+                                        width: carouselPositionLabel.implicitWidth + 20
+                                        radius: 12
+                                        color: Qt.rgba(theme.textPrimary.r, theme.textPrimary.g, theme.textPrimary.b, 0.08)
+                                        Label {
+                                            id: carouselPositionLabel
+                                            anchors.centerIn: parent
+                                            text: (consoleView.currentIndex + 1) + " of " + consoleView.count
+                                            color: theme.textSecondary
+                                            font.pixelSize: 11 * theme.fontScale
+                                        }
+                                    }
+                                }
+
+                                Label {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: carouselInfo.game
+                                        ? (carouselInfo.game.metadataTitle || carouselInfo.game.title) : ""
+                                    color: theme.textPrimary
+                                    font.pixelSize: 36 * theme.fontScale
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    readonly property string year: carouselInfo.game && carouselInfo.game.metadataReleaseDate
+                                        ? String(carouselInfo.game.metadataReleaseDate).substring(0, 4) : ""
+                                    readonly property string rating: carouselInfo.game && carouselInfo.game.metadataRating
+                                        ? carouselInfo.game.metadataRating : ""
+                                    visible: text.length > 0
+                                    text: [year, rating].filter(part => part.length > 0).join("  ·  ")
+                                    color: theme.textSecondary
+                                    font.pixelSize: 14 * theme.fontScale
+                                }
+
+                                Row {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.topMargin: 6
+                                    spacing: 10
+                                    Button {
+                                        id: carouselPlayButton
+                                        visible: carouselInfo.installed
+                                        enabled: !carouselInfo.running
+                                        focusPolicy: Qt.NoFocus
+                                        text: carouselInfo.running ? "Running…" : "Play"
+                                        icon.source: "qrc:/icons/play.svg"
+                                        icon.width: 16
+                                        icon.height: 16
+                                        implicitHeight: 44
+                                        width: 130
+                                        background: Rectangle {
+                                            radius: height / 2
+                                            color: carouselPlayButton.enabled ? theme.accent : theme.controlBackground
+                                            border.width: 3
+                                            border.color: theme.textPrimary
+                                        }
+                                        onClicked: window.libraryPrimaryAction(consoleView.currentIndex)
+                                    }
+                                    Button {
+                                        id: carouselDetailsButton
+                                        focusPolicy: Qt.NoFocus
+                                        text: "Details"
+                                        implicitHeight: 44
+                                        width: 120
+                                        background: Rectangle {
+                                            radius: height / 2
+                                            color: carouselDetailsButton.hovered ? theme.controlHover : theme.controlBackground
+                                            border.width: carouselInfo.installed ? 0 : 3
+                                            border.color: theme.textPrimary
+                                        }
+                                        onClicked: window.openLibraryGameDetails(carouselInfo.game)
+                                    }
+                                }
+                            }
                         }
                         }
 
@@ -7322,7 +7503,8 @@ ApplicationWindow {
                                             { key: "back", label: "Back" },
                                             { key: "menu", label: "Open menu" },
                                             { key: "previousSection", label: "Previous section" },
-                                            { key: "nextSection", label: "Next section" }
+                                            { key: "nextSection", label: "Next section" },
+                                            { key: "details", label: "Game details" }
                                         ]
                                         delegate: Rectangle {
                                             Layout.fillWidth: true

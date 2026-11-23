@@ -158,4 +158,29 @@ TestCase {
         // Clamped to the content end.
         compare(GridLayout.contentYForRow(1900, 200, 0, 400, 2000), 1600)
     }
+
+    function test_carouselCentersSelectedCard() {
+        // Widths: portrait 150, landscape 294, portrait 150.
+        const xs = GridLayout.carouselPositions([150, 294, 150], 1, 420, 30, 800)
+        compare(xs[1], 800 - 210)
+        compare(xs[2], 800 + 210 + 30)
+        compare(xs[0], 800 - 210 - 30 - 150)
+    }
+
+    function test_carouselSelectedAtEnds() {
+        const first = GridLayout.carouselPositions([100, 100, 100], 0, 140, 20, 500)
+        compare(first[0], 430)
+        compare(first[1], 590)
+        compare(first[2], 710)
+        const last = GridLayout.carouselPositions([100, 100, 100], 2, 140, 20, 500)
+        compare(last[2], 430)
+        compare(last[1], 310)
+        compare(last[0], 190)
+    }
+
+    function test_carouselClampsSelectionAndHandlesEmpty() {
+        compare(GridLayout.carouselPositions([], 0, 100, 10, 0).length, 0)
+        const xs = GridLayout.carouselPositions([100, 100], 5, 140, 20, 500)
+        compare(xs[1], 430)
+    }
 }
