@@ -1278,6 +1278,18 @@ ApplicationWindow {
         }
     }
 
+    // Ratings arrive either as an age rating ("T - Teen") or as a numeric
+    // community score ("4.7578..."). Show numbers as a short star score.
+    function formatGameRating(value) {
+        const text = value === undefined || value === null ? "" : String(value).trim()
+        if (text.length === 0)
+            return ""
+        const number = Number(text)
+        if (!isNaN(number) && isFinite(number))
+            return number > 0 ? "★ " + number.toFixed(1) : ""
+        return text
+    }
+
     // Supported recompilation project for a Library model entry, or null.
     function libraryGameProject(game) {
         if (!game)
@@ -4643,8 +4655,7 @@ ApplicationWindow {
                                             && shelvesSpotlight.game.metadataReleaseDate
                                             ? String(shelvesSpotlight.game.metadataReleaseDate).substring(0, 4) : ""
                                         readonly property string rating: shelvesSpotlight.game
-                                            && shelvesSpotlight.game.metadataRating
-                                            ? shelvesSpotlight.game.metadataRating : ""
+                                            ? window.formatGameRating(shelvesSpotlight.game.metadataRating) : ""
                                         visible: text.length > 0
                                         text: [year, rating].filter(part => part.length > 0).join("  ·  ")
                                         color: theme.textSecondary
@@ -5147,9 +5158,12 @@ ApplicationWindow {
                             readonly property real selectedHeight: Math.round(baseHeight * 1.43)
                             readonly property real gap: Math.round(30 * layoutScale)
                             readonly property real infoHeight: Math.ceil(196 * theme.fontScale)
+                            // Center the row and the details beneath it as one block,
+                            // biased slightly low so more of the backdrop shows above.
+                            readonly property real blockHeight: selectedHeight + 26 + infoHeight
                             readonly property real rowCenterY: Math.round(Math.max(
                                 selectedHeight / 2 + 16,
-                                Math.min(height * 0.42, height - infoHeight - selectedHeight / 2 - 20)))
+                                (height - blockHeight) * 0.6 + selectedHeight / 2))
 
                             function ratioAt(index) {
                                 const game = games[index]
@@ -5336,8 +5350,8 @@ ApplicationWindow {
                                     horizontalAlignment: Text.AlignHCenter
                                     readonly property string year: carouselInfo.game && carouselInfo.game.metadataReleaseDate
                                         ? String(carouselInfo.game.metadataReleaseDate).substring(0, 4) : ""
-                                    readonly property string rating: carouselInfo.game && carouselInfo.game.metadataRating
-                                        ? carouselInfo.game.metadataRating : ""
+                                    readonly property string rating: carouselInfo.game
+                                        ? window.formatGameRating(carouselInfo.game.metadataRating) : ""
                                     visible: text.length > 0
                                     text: [year, rating].filter(part => part.length > 0).join("  ·  ")
                                     color: theme.textSecondary
