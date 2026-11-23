@@ -240,7 +240,11 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
 
         if (normalizedPath == expectedExecutable)
             exactExecutablePath = normalizedPath;
-        if (QFileInfo(normalizedPath).fileName() == QFileInfo(expectedExecutable).fileName())
+        // Projects change the capitalisation of their release files between
+        // versions (Ghostship.appimage became ghostship.appimage), so the file
+        // name is matched without case. It must still be the only match.
+        if (QFileInfo(normalizedPath).fileName().compare(
+                QFileInfo(expectedExecutable).fileName(), Qt::CaseInsensitive) == 0)
             executableNameMatches.append(normalizedPath);
 
         // Do not preserve setuid/setgid/sticky bits or world-writable mode.

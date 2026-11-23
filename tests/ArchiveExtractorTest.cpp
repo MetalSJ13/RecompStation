@@ -29,6 +29,7 @@ private slots:
     void rejectsAbsolutePaths();
     void rejectsSymbolicLinks();
     void rejectsMissingExpectedExecutable();
+    void matchesExecutableNameWithoutCase();
     void refusesExistingDestination();
 };
 
@@ -335,6 +336,37 @@ void ArchiveExtractorTest::rejectsMissingExpectedExecutable()
         archivePath, destination, QStringLiteral("BanjoRecompiled"));
     QVERIFY(!result.success);
     QVERIFY(!QFileInfo::exists(destination));
+}
+
+void ArchiveExtractorTest::matchesExecutableNameWithoutCase()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString archivePath = QDir(temp.path()).filePath("ghostship.zip");
+    QVERIFY(createArchive(archivePath, {
+        {{QStringLiteral("name"), QStringLiteral("ghostship.appimage")},
+         {QStringLiteral("data"), QByteArray("appimage-binary")},
+         {QStringLiteral("mode"), 0755}},
+        {{QStringLiteral("name"), QStringLiteral("config.yml")},
+         {QStringLiteral("data"), QByteArray("config")}}
+    }, true, true));
+
+    const auto result = ArchiveExtractor::extractArchive(
+        archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("Ghostship.appimage"));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QCOMPARE(QFileInfo(result.executablePath).fileName(), QStringLiteral("ghostship.appimage"));
+
+    // Two files that differ only in case: still refuses to guess.
+    const QString ambiguousPath = QDir(temp.path()).filePath("ambiguous.zip");
+    QVERIFY(createArchive(ambiguousPath, {
+        {{QStringLiteral("name"), QStringLiteral("a/ghostship.appimage")},
+         {QStringLiteral("data"), QByteArray("one")}},
+        {{QStringLiteral("name"), QStringLiteral("b/GHOSTSHIP.appimage")},
+         {QStringLiteral("data"), QByteArray("two")}}
+    }, true, true));
+    const auto ambiguous = ArchiveExtractor::extractArchive(
+        ambiguousPath, QDir(temp.path()).filePath("out2"), QStringLiteral("Ghostship.appimage"));
+    QVERIFY(!ambiguous.success);
 }
 
 void ArchiveExtractorTest::refusesExistingDestination()

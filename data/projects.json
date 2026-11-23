@@ -414,7 +414,7 @@
         "x86_64": {
           "assetNameRegex": "^.+-Linux\\.zip$",
           "packageFormat": "zip",
-          "executablePath": "Ghostship.appimage"
+          "executablePath": "ghostship.appimage"
         }
       },
       "launch": {
