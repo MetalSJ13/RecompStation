@@ -329,6 +329,14 @@ ApplicationWindow {
             return
         }
 
+        if (screenshotViewer.visible) {
+            if (direction === "left")
+                screenshotViewer.step(-1)
+            else if (direction === "right")
+                screenshotViewer.step(1)
+            return
+        }
+
         if (currentPage === "Settings" && window.activeFocusItem
                 && window.activeFocusItem.popup
                 && window.activeFocusItem.popup.visible) {
@@ -395,6 +403,24 @@ ApplicationWindow {
                 return
             }
             if (settingsManager.libraryView === "list") {
+                // Preview screenshots: left/right between them, left from the
+                // first or up/down returns to the list.
+                if (window.isDescendantOf(window.activeFocusItem, listPreviewShots)) {
+                    if (direction === "left" || direction === "right") {
+                        if (!window.moveDirectionalFocus(listPreviewShots, direction) && direction === "left")
+                            gameList.forceActiveFocus()
+                    } else {
+                        gameList.forceActiveFocus()
+                    }
+                    return
+                }
+                if (direction === "right") {
+                    const shots = []
+                    window.collectFocusableItems(listPreviewShots, shots, [])
+                    if (shots.length > 0)
+                        shots[0].forceActiveFocus()
+                    return
+                }
                 if (direction === "up" && next === 0) {
                     const toolbarItems = []
                     window.collectFocusableItems(libraryFilterPanel, toolbarItems, [])
@@ -571,6 +597,16 @@ ApplicationWindow {
                 toolbarAction.click()
             return
         }
+        if (screenshotViewer.visible)
+            return
+        // List preview screenshots open the full-screen viewer.
+        if (currentPage === "Library"
+                && window.isDescendantOf(window.activeFocusItem, listPreview)) {
+            const previewAction = window.focusedActionItem(window.activeFocusItem)
+            if (previewAction && typeof previewAction.click === "function")
+                previewAction.click()
+            return
+        }
         // Spotlight buttons (Play, Details) in the Shelves view.
         if (currentPage === "Library"
                 && window.isDescendantOf(window.activeFocusItem, shelvesSpotlight)) {
@@ -646,8 +682,15 @@ ApplicationWindow {
             closeSystemMenu()
             return
         }
+        if (screenshotViewer.visible) {
+            screenshotViewer.close()
+            return
+        }
         if (gameDetailsPopup.visible)
             gameDetailsPopup.close()
+        else if (currentPage === "Library"
+                 && window.isDescendantOf(window.activeFocusItem, listPreviewShots))
+            gameList.forceActiveFocus()
         else if (currentPage !== "Library")
             navigateToPage("Library")
     }
@@ -2467,6 +2510,18 @@ ApplicationWindow {
         id: gameDetailsPopup
     }
 
+    // Full-screen screenshot viewer (List preview). Paging updates the List
+    // preview header so it shows the screenshot last viewed.
+    ScreenshotViewer {
+        id: screenshotViewer
+        themeTokens: theme
+        reducedMotion: settingsManager.reducedMotion
+        onShown: function(index) {
+            if (settingsManager.libraryView === "list")
+                listPreviewBackdrop.show(index)
+        }
+    }
+
     Item {
         id: mainNavigationRow
         anchors.fill: parent
@@ -3530,30 +3585,18 @@ ApplicationWindow {
                                 readonly property bool running: project !== null
                                     && window.runningLaunchers[project.id] === true
 
-                                Image {
+                                // Screenshot slideshow, shown whole on the right over a
+                                // blurred fill (blurred cover when there are none).
+                                ScreenshotBackdrop {
                                     id: spotlightBackdrop
                                     anchors.fill: parent
-                                    source: shelvesSpotlight.backdropSource
-                                    fillMode: Image.PreserveAspectCrop
-                                    asynchronous: true
-                                    cache: true
-                                    visible: false
-                                }
-                                // Screenshots are shown as-is; a cover used as a
-                                // fallback backdrop is blurred and dimmed.
-                                MultiEffect {
-                                    anchors.fill: parent
-                                    source: spotlightBackdrop
-                                    blurEnabled: shelvesSpotlight.backdropIsCover
-                                    blur: 1.0
-                                    blurMax: 48
-                                    autoPaddingEnabled: false
-                                    opacity: spotlightBackdrop.status === Image.Ready
-                                        ? (shelvesSpotlight.backdropIsCover ? 0.45 : 0.9) : 0
-                                    Behavior on opacity {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation { duration: 220 }
-                                    }
+                                    alignment: "right"
+                                    sources: shelvesSpotlight.game && shelvesSpotlight.game.screenshots
+                                        ? shelvesSpotlight.game.screenshots : []
+                                    fallbackSource: shelvesSpotlight.game ? shelvesSpotlight.game.artworkPath : ""
+                                    cycling: shelvesView.visible && currentPage === "Library"
+                                        && !gameDetailsPopup.visible
+                                    reducedMotion: settingsManager.reducedMotion
                                 }
                                 // Legibility gradient behind the text.
                                 Rectangle {
@@ -3701,7 +3744,8 @@ ApplicationWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     height: parent.height - 56
                                     width: Math.round(height * 1.4)
-                                    visible: parent.width > 1100
+                                    // The cover shows only when there is no screenshot on the right.
+                                    visible: parent.width > 1100 && !spotlightBackdrop.hasScreenshots
                                     source: shelvesSpotlight.game ? shelvesSpotlight.game.artworkPath : ""
                                     platform: shelvesSpotlight.game ? shelvesSpotlight.game.platform : ""
                                     themeTokens: theme
@@ -4139,29 +4183,15 @@ ApplicationWindow {
                                 anchors.top: parent.top
                                 height: Math.round(parent.height * 0.42)
                                 clip: true
-                                Image {
-                                    id: listPreviewHeaderImage
+                                ScreenshotBackdrop {
+                                    id: listPreviewBackdrop
                                     anchors.fill: parent
-                                    source: !listPreview.game ? ""
-                                        : listPreview.hasScreenshot ? listPreview.shots[0] : listPreview.game.artworkPath
-                                    fillMode: Image.PreserveAspectCrop
-                                    asynchronous: true
-                                    cache: true
-                                    visible: false
-                                }
-                                MultiEffect {
-                                    anchors.fill: parent
-                                    source: listPreviewHeaderImage
-                                    blurEnabled: !listPreview.hasScreenshot
-                                    blur: 1.0
-                                    blurMax: 48
-                                    autoPaddingEnabled: false
-                                    opacity: listPreviewHeaderImage.status === Image.Ready
-                                        ? (listPreview.hasScreenshot ? 1 : 0.5) : 0
-                                    Behavior on opacity {
-                                        enabled: !settingsManager.reducedMotion
-                                        NumberAnimation { duration: 220 }
-                                    }
+                                    alignment: "center"
+                                    sources: listPreview.shots
+                                    fallbackSource: listPreview.game ? listPreview.game.artworkPath : ""
+                                    cycling: listPreview.active && currentPage === "Library"
+                                        && !gameDetailsPopup.visible && !screenshotViewer.visible
+                                    reducedMotion: settingsManager.reducedMotion
                                 }
                                 Rectangle {
                                     anchors.fill: parent
@@ -4343,20 +4373,36 @@ ApplicationWindow {
                                     spacing: 10
                                     Repeater {
                                         model: listPreview.shots.slice(0, 3)
-                                        delegate: Rectangle {
+                                        // Right from the list (or a click) reaches these; A
+                                        // opens the screenshot full screen.
+                                        delegate: Button {
+                                            id: listShotButton
                                             required property string modelData
+                                            required property int index
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
                                             width: listPreviewShots.thumbWidth
                                             height: Math.round(width * 9 / 16)
-                                            radius: theme.radiusSmall
-                                            color: theme.surface
-                                            clip: true
-                                            Image {
-                                                anchors.fill: parent
-                                                source: modelData
-                                                fillMode: Image.PreserveAspectCrop
-                                                asynchronous: true
-                                                cache: true
+                                            padding: 0
+                                            Accessible.name: "Screenshot " + (index + 1)
+                                            contentItem: Item {}
+                                            background: Rectangle {
+                                                radius: theme.radiusSmall
+                                                color: theme.surface
+                                                clip: true
+                                                border.width: listShotButton.activeFocus ? 3
+                                                    : listShotButton.index === listPreviewBackdrop.currentIndex ? 2 : 0
+                                                border.color: listShotButton.activeFocus ? theme.accent : theme.textPrimary
+                                                Image {
+                                                    anchors.fill: parent
+                                                    anchors.margins: parent.border.width
+                                                    source: listShotButton.modelData
+                                                    fillMode: Image.PreserveAspectCrop
+                                                    asynchronous: true
+                                                    cache: true
+                                                }
                                             }
+                                            onClicked: screenshotViewer.show(listPreview.shots, index, listShotButton)
                                         }
                                     }
                                     Label {

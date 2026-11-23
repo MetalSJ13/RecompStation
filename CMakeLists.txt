@@ -91,6 +91,8 @@ qt_add_qml_module(RecompStationApp
         qml/LibraryCoverCard.qml
         qml/LibraryGridLayout.js
         qml/GameDetailsPage.qml
+        qml/ScreenshotBackdrop.qml
+        qml/ScreenshotViewer.qml
     RESOURCES
         assets/library-waves.svg
         assets/library-waves-violet.svg

@@ -78,6 +78,14 @@ Direction chosen by the user from design mockups (today; recompilation installed
 - [x] Polish: the page centers vertically when its content fits (hero moved down by part of the spare height); screenshots grow to share the left column (up to 380 px wide); installed games show "Latest release <tag> · Linux / <arch>" instead of "Uninstall is under ⋯."; the hint bar matches the Library pill with button glyphs, and A reads "Play" or "Install" when that button has focus. Keyboard hints inside Game Details no longer show Library-only keys.
 - [ ] Confirm the polish at runtime; remaining state checks (downloading/installing, release and launch errors, several projects, no metadata) when convenient.
 
+
+**Screenshot follow-up (2026-11-23, user request)**
+- [x] New `qml/ScreenshotBackdrop.qml`: wide panels show each screenshot whole at its own aspect ratio over a blurred, dimmed copy of itself (instead of cropping to a thin band), cycle through screenshots every 9 s with a cross-fade (still under Reduced Motion), and fall back to the blurred cover. Used by the Shelves spotlight (screenshot on the right; the spotlight cover shows only when there are no screenshots) and the List preview header (centered).
+- [x] List preview screenshots are focusable buttons: Right from the list (or a click) reaches them, Left from the first one, Up/Down, or B return to the list, and A / Enter / click opens them full screen.
+- [x] New `qml/ScreenshotViewer.qml`: full-window viewer with Left/Right (D-pad, keyboard, edge buttons) to page, B / Escape / the × button or clicking outside the image to close, and an "N of M" hint. Focus returns to the thumbnail that opened it, and the List preview header shows the screenshot last viewed.
+- [x] Game Details screenshots are focusable and clickable; choosing one cross-fades the background to it and restarts the slideshow from there. The focused thumbnail has an accent ring; the one shown as the background keeps the white outline.
+- [ ] User validation: Shelves and List screenshots fit and cycle; List thumbnails reachable with Right, A opens the viewer, paging, B / × / Escape close and focus returns; Game Details thumbnails change the background with the D-pad and mouse; Reduced Motion stops cycling.
+
 ## List with preview pane (2026-11-22)
 
 Chosen by the user from design mockups (List today; list + preview at Comfortable with an installed GameCube game; Compact with an N64 game that is not installed and has no screenshots). Work is on `ui/list-preview`, branched from `ui/interface-redesign`.

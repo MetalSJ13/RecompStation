@@ -152,6 +152,19 @@ Popup {
         : ({ loading: false, installing: false, error: "",
              bytesReceived: 0, bytesTotal: 0 })
 
+    // Show a chosen screenshot as the background (cross-fade, like the
+    // slideshow) and restart the slideshow timer from it.
+    function selectScreenshot(index) {
+        const shots = window.selectedGame && window.selectedGame.screenshots
+            ? window.selectedGame.screenshots : []
+        if (index < 0 || index >= shots.length || index === screenshotIndex)
+            return
+        previousScreenshotIndex = screenshotIndex
+        screenshotIndex = index
+        screenshotLayerA = !screenshotLayerA
+        detailsScreenshotTimer.restart()
+    }
+
     function revealSwitchedBackground() {
         if (!backgroundFadePending)
             return
@@ -416,6 +429,7 @@ Popup {
         }
 
         Timer {
+            id: detailsScreenshotTimer
             interval: 9000
             repeat: true
             running: !!(gameDetailsPopup.visible && window.active
@@ -1090,25 +1104,37 @@ Popup {
                         readonly property real thumbWidth: Math.floor(Math.min(380, (width - 20) / 3))
                         Repeater {
                             model: detailsScreenshotStrip.shots
-                            delegate: Rectangle {
+                            // D-pad / click: choosing a screenshot makes it the background.
+                            delegate: Button {
+                                id: detailsShotButton
                                 required property string modelData
                                 required property int index
+                                activeFocusOnTab: true
+                                focusPolicy: Qt.StrongFocus
                                 width: detailsScreenshotStrip.thumbWidth
                                 height: Math.round(width * 9 / 16)
-                                radius: theme.radiusSmall
-                                color: theme.surface
-                                clip: true
-                                // Marks the screenshot currently shown as the backdrop.
-                                border.width: index === gameDetailsPopup.screenshotIndex ? 2 : 0
-                                border.color: theme.textPrimary
-                                Image {
-                                    anchors.fill: parent
-                                    anchors.margins: parent.border.width
-                                    source: modelData
-                                    fillMode: Image.PreserveAspectCrop
-                                    asynchronous: true
-                                    cache: true
+                                padding: 0
+                                Accessible.name: "Show screenshot " + (index + 1) + " as background"
+                                contentItem: Item {}
+                                background: Rectangle {
+                                    radius: theme.radiusSmall
+                                    color: theme.surface
+                                    clip: true
+                                    // Accent ring when focused; white outline on the
+                                    // screenshot currently shown as the background.
+                                    border.width: detailsShotButton.activeFocus ? 3
+                                        : detailsShotButton.index === gameDetailsPopup.screenshotIndex ? 2 : 0
+                                    border.color: detailsShotButton.activeFocus ? theme.accent : theme.textPrimary
+                                    Image {
+                                        anchors.fill: parent
+                                        anchors.margins: parent.border.width
+                                        source: detailsShotButton.modelData
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                        cache: true
+                                    }
                                 }
+                                onClicked: gameDetailsPopup.selectScreenshot(index)
                             }
                         }
                         Label {
