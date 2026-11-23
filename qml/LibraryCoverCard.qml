@@ -24,6 +24,10 @@ Item {
     property var installedProjectIds: ({})
 
     readonly property real fontScale: themeTokens ? themeTokens.fontScale : 1
+    // Prefer the matched metadata title ("The Legend of Zelda: The Wind Waker")
+    // over the ROM file name ("Legend of Zelda, The - The Wind Waker (USA)").
+    readonly property string displayTitle:
+        metadataTitle.length > 0 ? metadataTitle : title
 
     readonly property var supportedProject: {
         const projects = projectCatalog.projectsForGame(
@@ -65,7 +69,7 @@ Item {
 
         Label {
             width: parent.width
-            text: root.title
+            text: root.displayTitle
             color: root.themeTokens ? root.themeTokens.textPrimary : "white"
             font.pixelSize: 16 * root.fontScale
             font.bold: true
@@ -73,8 +77,10 @@ Item {
         }
         Label {
             width: parent.width
+            // Keep the card status short; Game Details shows the full
+            // project name and install state.
             text: root.launcherInstalled
-                ? root.supportedProject.name + " · Installed"
+                ? "Recomp installed"
                 : root.supportedProject !== null
                     ? "Recompilation available"
                     : root.platform

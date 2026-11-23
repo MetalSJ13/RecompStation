@@ -3441,6 +3441,10 @@ ApplicationWindow {
                             id: gameGrid
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
+                            // End the grid above the floating input-hint bar so it
+                            // never covers the last visible row.
+                            anchors.bottomMargin: hintBarClearance
+                            readonly property real hintBarClearance: 36
                             anchors.horizontalCenter: parent.horizontalCenter
                             // Constrain the GridView itself to the intended column
                             // block. Margins alone do not limit GridView's layout width.
@@ -3527,12 +3531,18 @@ ApplicationWindow {
                             readonly property int responsiveColumns:
                                 Math.max(1, Math.floor(Math.max(0, parent.width - 16)
                                     / Math.max(1, gridCellWidth)))
-                            // Keep 4K ultrawide grids visually balanced instead of
-                            // allowing the full width to become an excessive number of columns.
-                            // Smaller reference resolutions retain their natural column count.
+                            // Keep 4K and ultrawide grids visually balanced instead of
+                            // allowing the full width to become an excessive number of
+                            // columns. Each card size has its own cap so smaller cards
+                            // still add columns: Compact 10, Comfortable 8, Spacious 6.
+                            // Smaller reference resolutions retain their natural count.
+                            readonly property int wideScreenColumnCap:
+                                settingsManager.libraryDensity === "compact" ? 10
+                                : settingsManager.libraryDensity === "spacious" ? 6 : 8
                             readonly property int visibleColumns:
                                 parent.width >= 3000
-                                    ? Math.min(8, responsiveColumns) : responsiveColumns
+                                    ? Math.min(wideScreenColumnCap, responsiveColumns)
+                                    : responsiveColumns
                             function logGridGeometry(reason) {
                                 console.info("[Grid Geometry]", reason,
                                     "density:", settingsManager.libraryDensity,
@@ -3596,7 +3606,10 @@ ApplicationWindow {
                                 const query = window.librarySearchText.trim().toLowerCase()
                                 return query.length === 0
                                     ? games
-                                    : games.filter(game => game.title.toLowerCase().includes(query))
+                                    // Match the ROM file name and the metadata title shown
+                                    // on Grid cards.
+                                    : games.filter(game => game.title.toLowerCase().includes(query)
+                                        || (game.metadataTitle || "").toLowerCase().includes(query))
                             }
                             delegate: Item {
                                 id: gameTile
@@ -3824,6 +3837,7 @@ ApplicationWindow {
                             id: sectionedGrid
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
+                            anchors.bottomMargin: gameGrid.hintBarClearance
                             anchors.horizontalCenter: parent.horizontalCenter
                             width: gameGrid.width
                             visible: window.sectionedLibraryGrid || opacity > 0
