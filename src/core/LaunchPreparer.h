@@ -34,6 +34,7 @@ public:
         bool prepareFiles = true;
         bool fullscreen = true;
         QString windowMode = QStringLiteral("default"); // default, fullscreen, windowed
+        bool defaultFullscreenApplied = false; // "Start in fullscreen" already set once
         QString homeDirectory;  // empty: the user's home
         QString dataHome;       // empty: $XDG_DATA_HOME or ~/.local/share
     };
@@ -43,8 +44,11 @@ public:
         bool ok = false;
         QString error;
         QHash<QString, QString> environment;
-        QVariantList steps;     // {title, detail} shown while the game starts
+        QVariantList steps;     // {title, detail, warning} shown while the game starts
+        bool defaultFullscreenApplied = false; // remember: don't set it again
     };
+
+    enum class WindowModeResult { Unchanged, Changed, DefaultApplied, Pending };
 
     // What the line under Play says. Keys: state, tone (ok, warn, info),
     // title, detail, method, dataFolder, savesFolder, gameFile.
@@ -65,12 +69,13 @@ public:
                                const QString &installDirectory,
                                const Options &options);
 
-    // Writes {"wm_option": ...} into a launcher graphics file: creates it when
-    // it is missing (default mode), or changes only that key when the player
-    // chose a window mode for this game. Leaves unreadable files alone.
-    static bool applyWindowMode(const QString &graphicsPath,
-                                const Options &options,
-                                QString *summary = nullptr);
+    // Changes only "wm_option" in a launcher's own graphics file: once for
+    // "Start games in fullscreen", or whenever the player chose a window mode
+    // for this game. Never creates the file (Pending: the launcher writes it
+    // on its first start), and leaves unreadable files alone.
+    static WindowModeResult applyWindowMode(const QString &graphicsPath,
+                                            const Options &options,
+                                            QString *summary = nullptr);
 
 private:
     N64RomInfo inspect(const QString &path);

@@ -73,6 +73,7 @@ LaunchPreparer::Options GameLaunchManager::preparationOptions(const QString &pro
         options.prepareFiles = m_settingsManager->prepareGameFiles();
         options.fullscreen = m_settingsManager->startGamesFullscreen();
         options.windowMode = m_settingsManager->launchWindowMode(projectId);
+        options.defaultFullscreenApplied = m_settingsManager->defaultFullscreenApplied(projectId);
     }
     return options;
 }
@@ -122,6 +123,8 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
         const QVariantMap project = m_projectCatalog->project(projectId);
         if (!project.isEmpty())
             plan = m_preparer.prepare(project, gamePath, workingDirectory, preparationOptions(projectId));
+        if (plan.defaultFullscreenApplied && m_settingsManager)
+            m_settingsManager->markDefaultFullscreenApplied(projectId);
     }
     emit launchPrepared(projectId, plan.steps);
 

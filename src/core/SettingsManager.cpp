@@ -1137,3 +1137,19 @@ int SettingsManager::launchSettingsRevision() const
 {
     return m_launchSettingsRevision;
 }
+
+bool SettingsManager::defaultFullscreenApplied(const QString &projectId) const
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    return settings.value(QStringLiteral("launch/fullscreenApplied/") + projectId, false).toBool();
+}
+
+void SettingsManager::markDefaultFullscreenApplied(const QString &projectId)
+{
+    static const QRegularExpression idPattern(QStringLiteral("^[a-z0-9][a-z0-9-]*$"));
+    if (!idPattern.match(projectId).hasMatch())
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("launch/fullscreenApplied/") + projectId, true);
+    settings.sync();
+}

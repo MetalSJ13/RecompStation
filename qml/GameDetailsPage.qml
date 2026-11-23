@@ -940,7 +940,8 @@ Popup {
                     Button {
                         visible: detailsActions.installed
                         enabled: !gameDetailsPopup.releaseState.loading
-                            && !window.pendingReleaseRequestsForProject(gameDetailsPopup.selectedProject.id)
+                            && !(gameDetailsPopup.selectedProject
+                                 && window.pendingReleaseRequestsForProject(gameDetailsPopup.selectedProject.id))
                         text: gameDetailsPopup.releaseState.loading ? "Checking…" : "Check for updates"
                         implicitHeight: 46
                         leftPadding: 18
@@ -1461,9 +1462,9 @@ Popup {
                                     id: detailsWindowModeCycler
                                     visible: detailsLaunchSection.method === "n64recomp"
                                     Layout.columnSpan: 2
-                                    preferredWidth: 220
+                                    preferredWidth: 270
                                     options: [
-                                        { label: settingsManager.startGamesFullscreen ? "Use default (fullscreen)" : "Use default", value: "default" },
+                                        { label: settingsManager.startGamesFullscreen ? "Default (fullscreen)" : "Default", value: "default" },
                                         { label: "Fullscreen", value: "fullscreen" },
                                         { label: "Windowed", value: "windowed" }
                                     ]
@@ -1504,7 +1505,7 @@ Popup {
                             Label {
                                 Layout.fillWidth: true
                                 visible: detailsLaunchSection.method === "n64recomp"
-                                text: "A window choice here is applied the next time this game starts; \"Use default\" leaves the launcher's own setting alone."
+                                text: "A window choice here is applied each time this game starts (from its second start, once the launcher has created its settings). \"Default\" follows Settings › Library."
                                 color: theme.textMuted
                                 font.pixelSize: 11.5 * theme.fontScale
                                 wrapMode: Text.Wrap

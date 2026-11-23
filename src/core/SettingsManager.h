@@ -143,6 +143,9 @@ public:
     Q_INVOKABLE QString launchWindowMode(const QString &projectId) const;
     Q_INVOKABLE void setLaunchWindowMode(const QString &projectId, const QString &mode);
     int launchSettingsRevision() const;
+    // "Start games in fullscreen" is set once per launcher, then left alone.
+    bool defaultFullscreenApplied(const QString &projectId) const;
+    void markDefaultFullscreenApplied(const QString &projectId);
 
 signals:
     void launchSettingsChanged();

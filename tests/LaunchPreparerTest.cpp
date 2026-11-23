@@ -182,8 +182,8 @@ void LaunchPreparerTest::preparesN64RecompLauncherOnce()
     QVERIFY(root.isValid());
     const QByteArray rom = makeRom("TEST GAME", 'E');
     const QVariantMap project = n64Project(RomInspector::inspectN64(rom).xxh3Hex());
-    const LaunchPreparer::Options opts = options(root);
-    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test (USA).v64"));
+    LaunchPreparer::Options opts = options(root);
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test (USA).n64"));
     QVERIFY(writeFile(game, byteSwapped(rom)));
     const QByteArray original = readFile(game);
 
@@ -191,27 +191,33 @@ void LaunchPreparerTest::preparesN64RecompLauncherOnce()
     LaunchPreparer::Plan plan = preparer.prepare(project, game, QString(), opts);
     QVERIFY(plan.ok);
     QVERIFY(plan.environment.isEmpty());
-    QCOMPARE(plan.steps.size(), 3);
+    QCOMPARE(plan.steps.size(), 3); // checked, placed, fullscreen from the next start
+    QVERIFY(!plan.defaultFullscreenApplied);
 
     const QString folder = QDir(opts.homeDirectory).filePath(QStringLiteral(".config/TestRecompiled"));
     const QString stored = QDir(folder).filePath(QStringLiteral("test.n64.us.1.0.z64"));
+    const QString graphics = QDir(folder).filePath(QStringLiteral("graphics.json"));
     QCOMPARE(readFile(stored), rom); // big-endian, as the launcher stores it
     QCOMPARE(readFile(game), original); // the library file is only read
+    QVERIFY(!QFileInfo::exists(graphics)); // the launcher writes its own settings
 
-    const QJsonObject graphics = QJsonDocument::fromJson(
-        readFile(QDir(folder).filePath(QStringLiteral("graphics.json")))).object();
-    QCOMPARE(graphics.value("wm_option").toString(), QStringLiteral("Fullscreen"));
-    QCOMPARE(graphics.size(), 1);
-
-    // Second start: nothing is replaced.
+    // The launcher's first start wrote its complete settings.
     QVERIFY(writeFile(stored, QByteArray("launcher's own copy")));
-    QVERIFY(writeFile(QDir(folder).filePath(QStringLiteral("graphics.json")),
-                      QByteArray("{\"wm_option\":\"Windowed\",\"res_option\":\"Original\"}")));
+    QVERIFY(writeFile(graphics, QByteArray("{\"wm_option\":\"Windowed\",\"ds_option\":1}")));
     plan = preparer.prepare(project, game, QString(), opts);
     QCOMPARE(readFile(stored), QByteArray("launcher's own copy"));
-    QCOMPARE(QJsonDocument::fromJson(readFile(QDir(folder).filePath(QStringLiteral("graphics.json"))))
-                 .object().value("wm_option").toString(),
-             QStringLiteral("Windowed"));
+    QJsonObject settings = QJsonDocument::fromJson(readFile(graphics)).object();
+    QCOMPARE(settings.value("wm_option").toString(), QStringLiteral("Fullscreen"));
+    QCOMPARE(settings.value("ds_option").toInt(), 1);
+    QVERIFY(plan.defaultFullscreenApplied);
+    QCOMPARE(plan.steps.size(), 2);
+
+    // Set once: a later change inside the launcher is kept.
+    opts.defaultFullscreenApplied = true;
+    QVERIFY(writeFile(graphics, QByteArray("{\"wm_option\":\"Windowed\",\"ds_option\":1}")));
+    plan = preparer.prepare(project, game, QString(), opts);
+    settings = QJsonDocument::fromJson(readFile(graphics)).object();
+    QCOMPARE(settings.value("wm_option").toString(), QStringLiteral("Windowed"));
     QCOMPARE(plan.steps.size(), 1);
 }
 
@@ -222,24 +228,32 @@ void LaunchPreparerTest::windowModeChangesOnlyThatSetting()
     const QString path = QDir(root.path()).filePath(QStringLiteral("graphics.json"));
     LaunchPreparer::Options opts;
 
+    QVERIFY(LaunchPreparer::applyWindowMode(path, opts) == LaunchPreparer::WindowModeResult::Pending);
     opts.fullscreen = false;
-    QVERIFY(!LaunchPreparer::applyWindowMode(path, opts));
+    QVERIFY(LaunchPreparer::applyWindowMode(path, opts) == LaunchPreparer::WindowModeResult::Unchanged);
+    opts.windowMode = QStringLiteral("windowed");
+    QVERIFY(LaunchPreparer::applyWindowMode(path, opts) == LaunchPreparer::WindowModeResult::Pending);
     QVERIFY(!QFileInfo::exists(path));
 
     QVERIFY(writeFile(path, QByteArray("{\"wm_option\":\"Fullscreen\",\"ar_option\":\"Expand\"}")));
-    opts.windowMode = QStringLiteral("windowed");
     QString summary;
-    QVERIFY(LaunchPreparer::applyWindowMode(path, opts, &summary));
+    QVERIFY(LaunchPreparer::applyWindowMode(path, opts, &summary) == LaunchPreparer::WindowModeResult::Changed);
     const QJsonObject object = QJsonDocument::fromJson(readFile(path)).object();
     QCOMPARE(object.value("wm_option").toString(), QStringLiteral("Windowed"));
     QCOMPARE(object.value("ar_option").toString(), QStringLiteral("Expand"));
     QVERIFY(!summary.isEmpty());
-    QVERIFY(!LaunchPreparer::applyWindowMode(path, opts)); // already windowed
+    QVERIFY(LaunchPreparer::applyWindowMode(path, opts) == LaunchPreparer::WindowModeResult::Unchanged);
 
     QVERIFY(writeFile(path, QByteArray("not json")));
     opts.windowMode = QStringLiteral("fullscreen");
-    QVERIFY(!LaunchPreparer::applyWindowMode(path, opts));
+    QVERIFY(LaunchPreparer::applyWindowMode(path, opts) == LaunchPreparer::WindowModeResult::Unchanged);
     QCOMPARE(readFile(path), QByteArray("not json"));
+
+    // A file with only wm_option (written by an earlier build) stops the
+    // launcher from starting: it is removed so the launcher writes its own.
+    QVERIFY(writeFile(path, QByteArray("{\"wm_option\":\"Fullscreen\"}")));
+    QVERIFY(LaunchPreparer::applyWindowMode(path, opts) == LaunchPreparer::WindowModeResult::Pending);
+    QVERIFY(!QFileInfo::exists(path));
 }
 
 void LaunchPreparerTest::portableLauncherUsesItsInstallFolder()

@@ -254,49 +254,64 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
                QStringLiteral("%1 asks once to extract game files from your copy. After that, Play opens straight to the game.").arg(name));
 }
 
-bool LaunchPreparer::applyWindowMode(const QString &graphicsPath,
-                                     const Options &options,
-                                     QString *summary)
+LaunchPreparer::WindowModeResult LaunchPreparer::applyWindowMode(const QString &graphicsPath,
+                                                                const Options &options,
+                                                                QString *summary)
 {
-    QString value;
-    const bool exists = QFileInfo::exists(graphicsPath);
-    if (options.windowMode == QStringLiteral("fullscreen")) {
-        value = QStringLiteral("Fullscreen");
-    } else if (options.windowMode == QStringLiteral("windowed")) {
-        value = QStringLiteral("Windowed");
-    } else {
-        // Default: set once, only for a launcher without settings yet.
-        if (exists || !options.fullscreen)
-            return false;
-        value = QStringLiteral("Fullscreen");
+    if (!QFileInfo::exists(graphicsPath)) {
+        // Never create the file: launchers expect every option in it (a
+        // missing number makes RecompFrontend launchers abort while loading).
+        // They write a complete one on their first start; set it from then.
+        const bool wanted = options.windowMode != QStringLiteral("default")
+            || (options.fullscreen && !options.defaultFullscreenApplied);
+        return wanted ? WindowModeResult::Pending : WindowModeResult::Unchanged;
     }
 
-    QJsonObject object;
-    if (exists) {
-        QFile file(graphicsPath);
-        if (!file.open(QIODevice::ReadOnly) || file.size() > 1024 * 1024)
-            return false;
-        QJsonParseError error;
-        const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
-        if (error.error != QJsonParseError::NoError || !document.isObject())
-            return false;
-        object = document.object();
-        if (object.value(QStringLiteral("wm_option")).toString() == value)
-            return false;
+    QFile file(graphicsPath);
+    if (!file.open(QIODevice::ReadOnly) || file.size() > 1024 * 1024)
+        return WindowModeResult::Unchanged;
+    QJsonParseError error;
+    const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
+    file.close();
+    if (error.error != QJsonParseError::NoError || !document.isObject())
+        return WindowModeResult::Unchanged;
+    QJsonObject object = document.object();
+
+    // An earlier RecompStation build wrote a file with only this key, which
+    // stops the launcher from starting. Remove it so the launcher writes its own.
+    if (object.size() == 1 && object.contains(QStringLiteral("wm_option"))) {
+        QFile::remove(graphicsPath);
+        qCInfo(lcGameLaunch) << "Removed an incomplete launcher graphics file:" << graphicsPath;
+        return applyWindowMode(graphicsPath, options, summary);
     }
+
+    QString value;
+    if (options.windowMode == QStringLiteral("fullscreen"))
+        value = QStringLiteral("Fullscreen");
+    else if (options.windowMode == QStringLiteral("windowed"))
+        value = QStringLiteral("Windowed");
+    else if (options.fullscreen && !options.defaultFullscreenApplied)
+        value = QStringLiteral("Fullscreen");
+    else
+        return WindowModeResult::Unchanged;
+
+    if (object.value(QStringLiteral("wm_option")).toString() == value)
+        return options.windowMode == QStringLiteral("default") ? WindowModeResult::DefaultApplied
+                                                               : WindowModeResult::Unchanged;
     object.insert(QStringLiteral("wm_option"), value);
 
-    QSaveFile file(graphicsPath);
+    QSaveFile output(graphicsPath);
     const QByteArray data = QJsonDocument(object).toJson(QJsonDocument::Indented);
-    if (!file.open(QIODevice::WriteOnly) || file.write(data) != data.size() || !file.commit())
-        return false;
+    if (!output.open(QIODevice::WriteOnly) || output.write(data) != data.size() || !output.commit())
+        return WindowModeResult::Unchanged;
     if (summary) {
-        *summary = value == QStringLiteral("Fullscreen")
-            ? (exists ? QStringLiteral("Fullscreen, as chosen for this game")
-                      : QStringLiteral("Fullscreen for the first start"))
-            : QStringLiteral("Windowed, as chosen for this game");
+        *summary = options.windowMode == QStringLiteral("default")
+            ? QStringLiteral("Set to fullscreen")
+            : (value == QStringLiteral("Fullscreen") ? QStringLiteral("Fullscreen, as chosen for this game")
+                                                     : QStringLiteral("Windowed, as chosen for this game"));
     }
-    return true;
+    return options.windowMode == QStringLiteral("default") ? WindowModeResult::DefaultApplied
+                                                           : WindowModeResult::Changed;
 }
 
 LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
@@ -387,8 +402,24 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
     const QString graphicsFile = recipe.value(QStringLiteral("graphicsFile")).toString();
     if (method == QStringLiteral("n64recomp") && !graphicsFile.isEmpty()) {
         QString summary;
-        if (applyWindowMode(QDir(folder).filePath(graphicsFile), options, &summary))
-            plan.steps.append(step(summary, QStringLiteral("Change it any time in the launcher's own settings")));
+        switch (applyWindowMode(QDir(folder).filePath(graphicsFile), options, &summary)) {
+        case WindowModeResult::DefaultApplied:
+            plan.defaultFullscreenApplied = true;
+            if (!summary.isEmpty())
+                plan.steps.append(step(summary, QStringLiteral("Change it any time in the launcher's own settings")));
+            break;
+        case WindowModeResult::Changed:
+            plan.steps.append(step(summary, QStringLiteral("Change it any time on the game's page")));
+            break;
+        case WindowModeResult::Pending:
+            plan.steps.append(step(options.windowMode == QStringLiteral("windowed")
+                                       ? QStringLiteral("Windowed from the next start")
+                                       : QStringLiteral("Fullscreen from the next start"),
+                                   QStringLiteral("The launcher creates its settings the first time it starts")));
+            break;
+        case WindowModeResult::Unchanged:
+            break;
+        }
     }
     return plan;
 }

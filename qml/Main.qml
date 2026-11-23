@@ -5980,7 +5980,7 @@ ApplicationWindow {
                                     }
                                     SettingRow {
                                         title: "Start games in fullscreen"
-                                        description: "Set once, the first time each launcher starts. If you change it inside the launcher later, that choice is kept. Widescreen is already the launchers' default."
+                                        description: "Switches each launcher to fullscreen once. Launchers create their settings on their first start, so it applies from the second. If you change it inside the launcher later, that choice is kept. Widescreen is already the launchers' default."
                                         dimmed: !settingsManager.prepareGameFiles
                                         ToggleSwitch {
                                             activeFocusOnTab: true
