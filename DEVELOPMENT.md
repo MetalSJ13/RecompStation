@@ -83,9 +83,15 @@ Direction chosen by the user from design mockups (Settings today; proposed Appea
 - [x] New Background section (between Display and Library) with its own icon: style tiles (Gradient, Waves, Image) with previews; wave color cycler (Ocean, Violet, Emerald; the Ember wave palette is retired and migrates to Ocean); Image rows for Choose / Clear, Fit (Fill or Fit) and Dim (Off–60%). The preview pane shows the background with stand-in covers.
 - [x] New `qml/WallpaperBackground.qml` draws the custom wallpaper in the Library: decoded at the screen's size (memory stays bounded for very large photos; small images are not upscaled when decoded), Fill crops to cover, Fit shows the whole image over a blurred copy of itself, and the dim amount is configurable (default 15%, close to the previous fixed 14%). Fit and Dim are stored with the other Library visuals.
 - [x] Library: folder row with Change folder, platform chips, Scan on startup toggle, and Scan library row that shows the latest scan message.
-- [ ] User validation.
+- [x] User validation (2026-11-23): Background section with a custom image (Fill, Dim 30%), style tiles and preview pane, Aurora theme, rail summaries confirmed at runtime. The Metadata rail shows "No providers enabled"; the user may have switched both off earlier. To check in Step 4.
 
-**Step 3: Shader wave background** — planned (adds the Qt Shader Tools build dependency)
+**Step 3: Shader wave background**
+- [x] `shaders/waves.frag` (GLSL 440) ports the reviewed WebGL prototype: two ribbons of 14 lines interpolated between moving curves, a soft haze, vignette and dithering. Compiled with `qt_add_shaders` to `qrc:/shaders/waves.frag.qsb`. New build dependency: Qt Shader Tools (`qt6-shadertools` on Arch, `qt6-shadertools-dev` on Debian/Ubuntu, `qt6-qtshadertools-devel` on Fedora).
+- [x] `qml/WaveBackground.qml` wraps it: color, theme top/bottom colors, speed, quality (render scale 1.0 / 0.75 / 0.5 through a layer texture) and fps (60 via FrameAnimation, 30 via a timer, so the scene is only redrawn that often). When not running it keeps its current frame. Falls back to the theme gradient on Qt's software renderer.
+- [x] The Library's waves pause under Reduced motion, while a game session is active, and when the window is inactive or minimized. The old SVG wave images and their slide animation are removed.
+- [x] Background settings: Color swatches (Ocean, Violet, Aurora, Sunset, Rose, Ice, Theme accent, Custom) in a new `qml/ColorSwatchPicker.qml` (left/right like a cycler); Custom hue (14 named hues); Motion (Calm 0.6×, Normal, Lively 1.7×); Quality (Auto: High up to 2560 × 1440 physical pixels, Balanced above; High; Balanced; Low = half resolution at 30 fps). Saved wave palettes carry over (Emerald → Aurora).
+- [x] The Waves style tile shows a still frame in the chosen color; the preview pane animates while Background is open.
+- [ ] User validation: builds with Shader Tools; look and motion match the prototype; colors and custom hue; Motion and Quality; pausing while a game runs; CPU/GPU use on your machine.
 **Step 4: Metadata** — planned: key entered in the app (stored in a separate file readable only by the user; the environment variable still wins), LaunchBox first by default, fall back to LaunchBox on TheGamesDB errors, re-run matching when a scan finishes while matching is busy, index only supported platforms in the LaunchBox catalog, Fix match in Game Details.
 
 ## Game Details redesign (2026-11-22)
@@ -551,7 +557,7 @@ The following notes record focused implementation and user-validation updates. T
 ## Build and development workflow
 
 Dependencies:
-- Qt 6.5 or newer (including Qt SVG)
+- Qt 6.5 or newer (including Qt SVG and Qt Shader Tools: `qt6-shadertools` on Arch Linux)
 - C++20 compiler and CMake
 - Ninja (recommended by the build script)
 - libarchive (Arch Linux package: `libarchive`)

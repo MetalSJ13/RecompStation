@@ -12,7 +12,7 @@ Button {
     property string description
     property bool current: false
     property url wallpaper
-    property string wavePalette: "ocean"
+    property color waveColor: "#3d8bff"
 
     activeFocusOnTab: true
     focusPolicy: Qt.StrongFocus
@@ -41,17 +41,15 @@ Button {
                 GradientStop { position: 0.0; color: theme.backgroundTop }
                 GradientStop { position: 1.0; color: theme.backgroundBottom }
             }
-            Image {
+            // A still frame of the waves in the chosen color.
+            WaveBackground {
                 anchors.fill: parent
                 visible: tile.styleValue === "animated"
-                source: tile.wavePalette === "violet"
-                    ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
-                    : tile.wavePalette === "emerald"
-                        ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
-                        : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
-                sourceSize.width: 320
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
+                waveColor: tile.waveColor
+                topColor: theme.backgroundTop
+                bottomColor: theme.backgroundBottom
+                quality: 0.5
+                running: false
             }
             Image {
                 anchors.fill: parent

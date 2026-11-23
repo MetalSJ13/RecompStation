@@ -42,13 +42,24 @@ ApplicationWindow {
     Settings {
         id: libraryVisualSettings
         category: "LibraryVisuals"
-        property string wavePalette: "ocean"
+        // Retired SVG wave palette; read once to carry the choice over.
+        property string wavePalette: "migrated"
+        // Shader waves: a preset id from window.waveColorPresets or "custom".
+        property string waveColor: "ocean"
+        property int waveCustomHue: 220
+        property string waveMotion: "normal"
+        property string waveQuality: "auto"
         // Custom wallpaper: "fill" (crop to cover) or "fit" (whole image
         // over a blurred copy), and how much to darken it (percent).
         property string wallpaperFit: "fill"
         property int wallpaperDim: 15
-        // The Ember wave palette was retired with the Ember theme.
-        Component.onCompleted: if (wavePalette === "ember") wavePalette = "ocean"
+        Component.onCompleted: {
+            if (wavePalette !== "migrated") {
+                waveColor = wavePalette === "violet" ? "violet"
+                    : wavePalette === "emerald" ? "aurora" : "ocean"
+                wavePalette = "migrated"
+            }
+        }
     }
 
     function inputHintItems() {
@@ -1000,7 +1011,7 @@ ApplicationWindow {
         case "Background": {
             const type = settingsManager.libraryBackgroundType
             if (type === "animated")
-                return "Waves · " + window.wavePaletteLabel(libraryVisualSettings.wavePalette)
+                return "Waves · " + window.wavePreset(libraryVisualSettings.waveColor).label
             if (type === "custom")
                 return settingsManager.customLibraryBackground.length > 0 ? "Image" : "Image · none chosen"
             return "Gradient"
@@ -1024,9 +1035,41 @@ ApplicationWindow {
         }
         return ""
     }
-    function wavePaletteLabel(value) {
-        return value === "violet" ? "Violet" : value === "emerald" ? "Emerald" : "Ocean"
+    readonly property var waveColorPresets: [
+        { label: "Ocean", value: "ocean", color: "#3d8bff" },
+        { label: "Violet", value: "violet", color: "#8a6bff" },
+        { label: "Aurora", value: "aurora", color: "#2fd4a8" },
+        { label: "Sunset", value: "sunset", color: "#ff7a59" },
+        { label: "Rose", value: "rose", color: "#ff5c9a" },
+        { label: "Ice", value: "ice", color: "#bcd7ff" },
+        { label: "Theme", value: "theme", color: theme.accent },
+        { label: "Custom", value: "custom", color: Qt.hsva(libraryVisualSettings.waveCustomHue / 360, 0.72, 1.0, 1.0) }
+    ]
+    readonly property var waveHueOptions: [
+        { label: "Red", value: 0 }, { label: "Orange", value: 25 }, { label: "Amber", value: 42 },
+        { label: "Yellow", value: 55 }, { label: "Lime", value: 85 }, { label: "Green", value: 130 },
+        { label: "Teal", value: 165 }, { label: "Cyan", value: 185 }, { label: "Sky", value: 200 },
+        { label: "Blue", value: 220 }, { label: "Indigo", value: 245 }, { label: "Purple", value: 270 },
+        { label: "Magenta", value: 300 }, { label: "Pink", value: 330 }
+    ]
+    function wavePreset(value) {
+        for (let i = 0; i < waveColorPresets.length; ++i) {
+            if (waveColorPresets[i].value === value)
+                return waveColorPresets[i]
+        }
+        return waveColorPresets[0]
     }
+    readonly property color waveColorValue: wavePreset(libraryVisualSettings.waveColor).color
+    readonly property real waveSpeed: libraryVisualSettings.waveMotion === "calm" ? 0.6
+        : libraryVisualSettings.waveMotion === "lively" ? 1.7 : 1.0
+    // Auto: full quality up to 2560 × 1440 physical pixels, Balanced above.
+    readonly property string waveQualityResolved: libraryVisualSettings.waveQuality !== "auto"
+        ? libraryVisualSettings.waveQuality
+        : (Screen.width * Screen.height * Screen.devicePixelRatio * Screen.devicePixelRatio > 3686400
+            ? "balanced" : "high")
+    readonly property real waveRenderScale: waveQualityResolved === "low" ? 0.5
+        : waveQualityResolved === "balanced" ? 0.75 : 1.0
+    readonly property int waveFps: waveQualityResolved === "low" ? 30 : 60
     // A ValueCycler (or anything with stepValue) at or above the focused item.
     function focusedValueStepper(item) {
         let current = item
@@ -2714,69 +2757,22 @@ ApplicationWindow {
                 }
             }
 
-            // The wave artwork is rasterized once by Qt and then animated as
-            // a textured scene-graph item. No JavaScript painting or frame timer.
-            Item {
+            // Waves: drawn live by a GPU shader (WaveBackground.qml). The animation
+            // pauses (keeping its current frame) under Reduced motion, while a game
+            // is running, and when the window is inactive or minimized.
+            WaveBackground {
                 id: libraryWaveLayer
                 anchors.fill: parent
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "animated"
-                clip: true
-
-                Image {
-                    id: libraryWaveImage
-                    width: parent.width * 1.22
-                    height: parent.height * 1.05
-                    x: (parent.width - width) / 2 + parent.width * 0.07
-                    y: (parent.height - height) / 2
-                    source: libraryVisualSettings.wavePalette === "violet"
-                        ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
-                        : libraryVisualSettings.wavePalette === "emerald"
-                            ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
-                            : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    cache: true
-                    smooth: true
-                    mipmap: true
-                    opacity: 0.78
-
-                    SequentialAnimation {
-                        running: libraryWaveLayer.visible && !settingsManager.reducedMotion
-                            && window.active && window.visibility !== Window.Minimized
-                        loops: Animation.Infinite
-                        NumberAnimation { target: libraryWaveImage; property: "x"; to: (libraryWaveLayer.width - libraryWaveImage.width) / 2 - libraryWaveLayer.width * 0.07; duration: 22000; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: libraryWaveImage; property: "x"; to: (libraryWaveLayer.width - libraryWaveImage.width) / 2 + libraryWaveLayer.width * 0.07; duration: 22000; easing.type: Easing.InOutSine }
-                    }
-                }
-
-                Image {
-                    id: libraryWaveImageSecondary
-                    width: parent.width * 1.22
-                    height: parent.height * 1.05
-                    x: (parent.width - width) / 2 - parent.width * 0.07
-                    y: (parent.height - height) / 2
-                    source: libraryVisualSettings.wavePalette === "violet"
-                        ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
-                        : libraryVisualSettings.wavePalette === "emerald"
-                            ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
-                            : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    cache: true
-                    smooth: true
-                    mipmap: true
-                    opacity: 0.24
-                    rotation: 180
-
-                    SequentialAnimation {
-                        running: libraryWaveLayer.visible && !settingsManager.reducedMotion
-                            && window.active && window.visibility !== Window.Minimized
-                        loops: Animation.Infinite
-                        NumberAnimation { target: libraryWaveImageSecondary; property: "x"; to: (libraryWaveLayer.width - libraryWaveImageSecondary.width) / 2 + libraryWaveLayer.width * 0.07; duration: 28000; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: libraryWaveImageSecondary; property: "x"; to: (libraryWaveLayer.width - libraryWaveImageSecondary.width) / 2 - libraryWaveLayer.width * 0.07; duration: 28000; easing.type: Easing.InOutSine }
-                    }
-                }
+                waveColor: window.waveColorValue
+                topColor: theme.backgroundTop
+                bottomColor: theme.backgroundBottom
+                speed: window.waveSpeed
+                quality: window.waveRenderScale
+                fps: window.waveFps
+                running: !settingsManager.reducedMotion && !controllerManager.gameSessionActive
+                    && window.active && window.visibility !== Window.Minimized
             }
 
             // Hero carousel backdrop: the selected game's first screenshot fills
@@ -5290,7 +5286,7 @@ ApplicationWindow {
                                                 description: modelData.description
                                                 current: settingsManager.libraryBackgroundType === modelData.value
                                                 wallpaper: settingsManager.customLibraryBackground
-                                                wavePalette: libraryVisualSettings.wavePalette
+                                                waveColor: window.waveColorValue
                                                 onClicked: settingsManager.libraryBackgroundType = modelData.value
                                             }
                                         }
@@ -5302,18 +5298,55 @@ ApplicationWindow {
                                     }
                                     SettingRow {
                                         visible: settingsManager.libraryBackgroundType === "animated"
-                                        title: "Wave color"
+                                        title: "Color"
+                                        description: libraryVisualSettings.waveColor === "theme" ? "Follows your theme's accent."
+                                            : libraryVisualSettings.waveColor === "custom" ? "Pick the hue below." : ""
+                                        ColorSwatchPicker {
+                                            options: window.waveColorPresets
+                                            value: libraryVisualSettings.waveColor
+                                            onPicked: (color) => libraryVisualSettings.waveColor = color
+                                        }
+                                    }
+                                    SettingRow {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                            && libraryVisualSettings.waveColor === "custom"
+                                        title: "Custom hue"
+                                        description: "Any color around the wheel."
+                                        ValueCycler {
+                                            options: window.waveHueOptions
+                                            value: libraryVisualSettings.waveCustomHue
+                                            onPicked: (hue) => libraryVisualSettings.waveCustomHue = hue
+                                        }
+                                    }
+                                    SettingRow {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        title: "Motion"
                                         description: settingsManager.reducedMotion
-                                            ? "Motion is paused while Reduced motion is on."
-                                            : "More colors and smoother motion arrive with the new wave renderer."
+                                            ? "Paused while Reduced motion is on (Appearance)."
+                                            : "Calm drifts slowly; Lively moves faster."
                                         ValueCycler {
                                             options: [
-                                                { label: "Ocean", value: "ocean" },
-                                                { label: "Violet", value: "violet" },
-                                                { label: "Emerald", value: "emerald" }
+                                                { label: "Calm", value: "calm" },
+                                                { label: "Normal", value: "normal" },
+                                                { label: "Lively", value: "lively" }
                                             ]
-                                            value: libraryVisualSettings.wavePalette
-                                            onPicked: (palette) => libraryVisualSettings.wavePalette = palette
+                                            value: libraryVisualSettings.waveMotion
+                                            onPicked: (motion) => libraryVisualSettings.waveMotion = motion
+                                        }
+                                    }
+                                    SettingRow {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        title: "Quality"
+                                        description: "Balanced renders at 75% resolution; Low at half resolution and 30 fps, for older or integrated graphics."
+                                        ValueCycler {
+                                            options: [
+                                                { label: "Auto · " + (window.waveQualityResolved === "balanced" ? "Balanced" : "High"), value: "auto" },
+                                                { label: "High", value: "high" },
+                                                { label: "Balanced", value: "balanced" },
+                                                { label: "Low", value: "low" }
+                                            ]
+                                            value: libraryVisualSettings.waveQuality
+                                            onPicked: (quality) => libraryVisualSettings.waveQuality = quality
                                         }
                                     }
 
@@ -6809,19 +6842,18 @@ ApplicationWindow {
                                         GradientStop { position: 0.0; color: theme.backgroundTop }
                                         GradientStop { position: 1.0; color: theme.backgroundBottom }
                                     }
-                                    Image {
-                                        anchors.fill: parent
-                                        visible: settingsManager.libraryBackgroundType === "animated"
-                                        source: libraryVisualSettings.wavePalette === "violet"
-                                            ? "qrc:/qt/qml/RecompStation/assets/library-waves-violet.svg"
-                                            : libraryVisualSettings.wavePalette === "emerald"
-                                                ? "qrc:/qt/qml/RecompStation/assets/library-waves-emerald.svg"
-                                                : "qrc:/qt/qml/RecompStation/assets/library-waves.svg"
-                                        sourceSize.width: 640
-                                        fillMode: Image.PreserveAspectCrop
-                                        opacity: 0.78
-                                        asynchronous: true
-                                    }
+                                        WaveBackground {
+                                            anchors.fill: parent
+                                            visible: settingsManager.libraryBackgroundType === "animated"
+                                            waveColor: window.waveColorValue
+                                            topColor: theme.backgroundTop
+                                            bottomColor: theme.backgroundBottom
+                                            speed: window.waveSpeed
+                                            quality: window.waveRenderScale
+                                            fps: window.waveFps
+                                            running: settingsPreviewPane.visible && settingsPage.section === "Background"
+                                                && !settingsManager.reducedMotion && window.active
+                                        }
                                     WallpaperBackground {
                                         anchors.fill: parent
                                         visible: settingsManager.libraryBackgroundType === "custom"
@@ -6857,7 +6889,7 @@ ApplicationWindow {
                                     text: settingsManager.libraryBackgroundType === "custom"
                                         ? "Your image is loaded at your screen's size. Fill crops the edges; Fit keeps the whole image."
                                         : settingsManager.libraryBackgroundType === "animated"
-                                            ? "A new wave renderer with any color and smooth motion is coming in the next step."
+                                            ? "Drawn live by your graphics card. It pauses while a game is running and under Reduced motion."
                                             : "A quiet gradient in your theme's colors."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale

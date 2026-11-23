@@ -14,7 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS
-    Core Gui Quick QuickControls2 Sql Network Concurrent Svg
+    Core Gui Quick QuickControls2 Sql Network Concurrent Svg ShaderTools
 )
 find_package(LibArchive REQUIRED)
 
@@ -100,11 +100,18 @@ qt_add_qml_module(RecompStationApp
         qml/ThemeTile.qml
         qml/BackgroundStyleTile.qml
         qml/WallpaperBackground.qml
+        qml/WaveBackground.qml
+        qml/ColorSwatchPicker.qml
     RESOURCES
-        assets/library-waves.svg
-        assets/library-waves-violet.svg
-        assets/library-waves-emerald.svg
         assets/images/recompstation-controller.png
+)
+
+# Library wave background shader, compiled to .qsb (Qt Shader Tools) and
+# served as qrc:/shaders/waves.frag.qsb.
+qt_add_shaders(RecompStationApp "recompstation_shaders"
+    PREFIX "/"
+    FILES
+        shaders/waves.frag
 )
 
 # GCC 16 enables -Wsfinae-incomplete by default. Qt 6's generated moc code
