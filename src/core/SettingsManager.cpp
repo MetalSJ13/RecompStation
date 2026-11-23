@@ -748,7 +748,8 @@ bool SettingsManager::isSupportedLibraryView(const QString &view)
 {
     return view == QStringLiteral("grid")
         || view == QStringLiteral("list")
-        || view == QStringLiteral("carousel");
+        || view == QStringLiteral("carousel")
+        || view == QStringLiteral("shelves");
 }
 
 bool SettingsManager::isSupportedLibraryDensity(const QString &density)

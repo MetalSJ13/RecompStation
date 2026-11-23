@@ -169,3 +169,64 @@ function contentYForCard(rect, contentY, viewportHeight, contentHeight, topPaddi
         next = Math.min(top, bottom - viewportHeight)
     return Math.max(0, Math.min(maxY, next))
 }
+
+// ---------------------------------------------------------------------------
+// Shelves view: one horizontal row per section (platform).
+
+// Sentinel: move focus up into the spotlight panel.
+var toSpotlight = -3
+
+// Section index containing a flat model index, or -1.
+function sectionIndexOf(sections, index) {
+    for (var i = 0; i < sections.length; ++i) {
+        if (index >= sections[i].start && index < sections[i].start + sections[i].count)
+            return i
+    }
+    return -1
+}
+
+// Directional movement between shelves. Left/right move along a shelf without
+// wrapping. Up/down move to the previous/next shelf and return to the card
+// last focused on that shelf (memory: { platform: localIndex }), or its first
+// card. Up from the first shelf returns toSpotlight.
+function moveShelfIndex(sections, index, direction, memory) {
+    var s = sectionIndexOf(sections, index)
+    if (s < 0)
+        return sections.length > 0 && sections[0].count > 0 ? sections[0].start : noMove
+    var section = sections[s]
+    var local = index - section.start
+
+    if (direction === "left")
+        return local > 0 ? index - 1 : noMove
+    if (direction === "right")
+        return local + 1 < section.count ? index + 1 : noMove
+
+    var target
+    if (direction === "up") {
+        if (s === 0)
+            return toSpotlight
+        target = sections[s - 1]
+    } else if (direction === "down") {
+        if (s + 1 >= sections.length)
+            return noMove
+        target = sections[s + 1]
+    } else {
+        return noMove
+    }
+
+    var remembered = memory && memory[target.platform] !== undefined
+        ? memory[target.platform] : 0
+    return target.start + Math.max(0, Math.min(target.count - 1, remembered))
+}
+
+// Vertical scroll position that brings a shelf row fully into view. rowTop and
+// rowHeight are in content coordinates.
+function contentYForRow(rowTop, rowHeight, contentY, viewportHeight, contentHeight) {
+    var maxY = Math.max(0, contentHeight - viewportHeight)
+    var next = contentY
+    if (rowTop < next)
+        next = rowTop
+    else if (rowTop + rowHeight > next + viewportHeight)
+        next = rowTop + rowHeight - viewportHeight
+    return Math.max(0, Math.min(maxY, next))
+}

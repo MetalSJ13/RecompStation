@@ -45,6 +45,8 @@ private slots:
     void rejectsUnsupportedFontSize();
     void defaultsToCuratedLibraryPresentation();
     void persistsCarouselLibraryView();
+    void persistsShelvesLibraryView();
+    void rejectsUnknownLibraryView();
     void persistsLibraryPresentationPreferences();
     void rejectsUnsupportedLibraryPresentationPreferences();
 };
@@ -566,6 +568,41 @@ void SettingsManagerTest::persistsCarouselLibraryView()
 
     SettingsManager reloaded(settingsPath);
     QCOMPARE(reloaded.libraryView(), QStringLiteral("carousel"));
+}
+
+void SettingsManagerTest::persistsShelvesLibraryView()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    {
+        SettingsManager manager(settingsPath);
+        manager.setLibraryView(QStringLiteral("grid"));
+        QSignalSpy changed(&manager, &SettingsManager::libraryViewChanged);
+        manager.setLibraryView(QStringLiteral("shelves"));
+        QCOMPARE(manager.libraryView(), QStringLiteral("shelves"));
+        QCOMPARE(changed.count(), 1);
+    }
+
+    SettingsManager reloaded(settingsPath);
+    QCOMPARE(reloaded.libraryView(), QStringLiteral("shelves"));
+}
+
+void SettingsManagerTest::rejectsUnknownLibraryView()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    manager.setLibraryView(QStringLiteral("grid"));
+    QSignalSpy changed(&manager, &SettingsManager::libraryViewChanged);
+    manager.setLibraryView(QStringLiteral("mosaic"));
+    QCOMPARE(manager.libraryView(), QStringLiteral("grid"));
+    QCOMPARE(changed.count(), 0);
 }
 
 void SettingsManagerTest::persistsLibraryPresentationPreferences()

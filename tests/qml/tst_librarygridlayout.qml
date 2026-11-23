@@ -114,4 +114,48 @@ TestCase {
         compare(GridLayout.contentYForCard(first, first.y + 100, 600, result.contentHeight, 16, 18),
                 result.sections[1].top)
     }
+
+    // Shelves: GameCube [0 1 2], N64 [3 4 5 6 7].
+    function test_shelfHorizontalMovementStaysOnShelf() {
+        const sections = GridLayout.buildSections(games())
+        compare(GridLayout.moveShelfIndex(sections, 0, "right", {}), 1)
+        compare(GridLayout.moveShelfIndex(sections, 2, "right", {}), GridLayout.noMove)
+        compare(GridLayout.moveShelfIndex(sections, 3, "left", {}), GridLayout.noMove)
+        compare(GridLayout.moveShelfIndex(sections, 7, "right", {}), GridLayout.noMove)
+    }
+
+    function test_shelfVerticalMovementUsesMemory() {
+        const sections = GridLayout.buildSections(games())
+        // No memory: land on the first card of the target shelf.
+        compare(GridLayout.moveShelfIndex(sections, 1, "down", {}), 3)
+        compare(GridLayout.moveShelfIndex(sections, 6, "up", {}), 0)
+        // Memory returns to the last focused card, clamped to the shelf.
+        compare(GridLayout.moveShelfIndex(sections, 1, "down", { "N64": 3 }), 6)
+        compare(GridLayout.moveShelfIndex(sections, 6, "up", { "GameCube": 9 }), 2)
+        compare(GridLayout.moveShelfIndex(sections, 7, "down", {}), GridLayout.noMove)
+    }
+
+    function test_shelfUpFromFirstShelfGoesToSpotlight() {
+        const sections = GridLayout.buildSections(games())
+        compare(GridLayout.moveShelfIndex(sections, 2, "up", {}), GridLayout.toSpotlight)
+    }
+
+    function test_shelfIndexOutsideSectionsStartsAtFirstCard() {
+        const sections = GridLayout.buildSections(games())
+        compare(GridLayout.moveShelfIndex(sections, -1, "right", {}), 0)
+        compare(GridLayout.moveShelfIndex([], -1, "right", {}), GridLayout.noMove)
+        compare(GridLayout.sectionIndexOf(sections, 4), 1)
+        compare(GridLayout.sectionIndexOf(sections, 42), -1)
+    }
+
+    function test_contentYForRow() {
+        // Visible already.
+        compare(GridLayout.contentYForRow(100, 200, 50, 400, 2000), 50)
+        // Above the viewport.
+        compare(GridLayout.contentYForRow(100, 200, 300, 400, 2000), 100)
+        // Below the viewport.
+        compare(GridLayout.contentYForRow(900, 200, 300, 400, 2000), 700)
+        // Clamped to the content end.
+        compare(GridLayout.contentYForRow(1900, 200, 0, 400, 2000), 1600)
+    }
 }

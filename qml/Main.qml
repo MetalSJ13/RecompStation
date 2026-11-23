@@ -324,7 +324,9 @@ ApplicationWindow {
                 window.moveDirectionalFocus(libraryFilterPanel, direction)
             } else if (direction === "down") {
                 gameGrid.currentIndex = Math.max(0, gameGrid.currentIndex)
-                if (window.sectionedLibraryGrid) {
+                if (settingsManager.libraryView === "shelves") {
+                    shelvesView.focusSpotlight()
+                } else if (window.sectionedLibraryGrid) {
                     sectionedGrid.forceActiveFocus()
                     sectionedGrid.positionAtIndex(gameGrid.currentIndex)
                 } else {
@@ -337,6 +339,37 @@ ApplicationWindow {
 
         if (currentPage === "Library" && gameGrid.count > 0) {
             let next = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
+            if (settingsManager.libraryView === "shelves") {
+                const focusToolbar = function() {
+                    const toolbarItems = []
+                    window.collectFocusableItems(libraryFilterPanel, toolbarItems, [])
+                    if (toolbarItems.length > 0)
+                        toolbarItems[0].forceActiveFocus()
+                }
+                // Spotlight actions: left/right between buttons, up to the
+                // toolbar, down to the shelves.
+                if (window.isDescendantOf(window.activeFocusItem, shelvesSpotlight)) {
+                    if (direction === "left" || direction === "right")
+                        window.moveDirectionalFocus(spotlightActions, direction)
+                    else if (direction === "up")
+                        focusToolbar()
+                    else if (direction === "down")
+                        shelvesView.focusShelves()
+                    return
+                }
+                const moved = LibraryGridLayout.moveShelfIndex(
+                    shelvesView.sections, next, direction, shelvesView.shelfMemory)
+                if (moved === LibraryGridLayout.toSpotlight) {
+                    shelvesView.focusSpotlight()
+                    return
+                }
+                if (moved < 0)
+                    return
+                gameGrid.currentIndex = moved
+                shelvesView.positionAtIndex(moved)
+                shelvesFlick.forceActiveFocus()
+                return
+            }
             if (settingsManager.libraryView === "list") {
                 if (direction === "up" && next === 0) {
                     const toolbarItems = []
@@ -514,8 +547,20 @@ ApplicationWindow {
                 toolbarAction.click()
             return
         }
+        // Spotlight buttons (Play, Details) in the Shelves view.
+        if (currentPage === "Library"
+                && window.isDescendantOf(window.activeFocusItem, shelvesSpotlight)) {
+            const spotlightAction = window.focusedActionItem(window.activeFocusItem)
+            if (spotlightAction && typeof spotlightAction.click === "function")
+                spotlightAction.click()
+            return
+        }
         if (currentPage === "Library" && gameGrid.count > 0) {
             const index = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
+            if (settingsManager.libraryView === "shelves") {
+                window.openLibraryGameDetails(gameGrid.model[index])
+                return
+            }
             if (settingsManager.libraryView === "list") {
                 const tile = gameList.itemAtIndex(index)
                 if (tile && tile.openDetails)
@@ -833,7 +878,8 @@ ApplicationWindow {
             if (window.currentPage !== "Library" || window.systemMenuVisible
                     || gameDetailsPopup.visible
                     || (settingsManager.libraryView !== "grid"
-                        && settingsManager.libraryView !== "list")) {
+                        && settingsManager.libraryView !== "list"
+                        && settingsManager.libraryView !== "shelves")) {
                 stop()
                 inputAmount = 0
                 velocity = 0
@@ -841,6 +887,7 @@ ApplicationWindow {
             }
 
             const view = settingsManager.libraryView === "list" ? gameList
+                : settingsManager.libraryView === "shelves" ? shelvesFlick
                 : window.sectionedLibraryGrid ? sectionedGrid : gameGrid
             const maxY = Math.max(0, view.contentHeight - view.height)
             const targetVelocity = inputAmount * 9.0
@@ -927,7 +974,8 @@ ApplicationWindow {
             if (window.currentPage === "Library" && !window.systemMenuVisible
                     && !gameDetailsPopup.visible
                     && (settingsManager.libraryView === "grid"
-                        || settingsManager.libraryView === "list")) {
+                        || settingsManager.libraryView === "list"
+                        || settingsManager.libraryView === "shelves")) {
                 window.activeInputDevice = "controller"
                 libraryRightStickScrollTimer.inputAmount = amount
                 if (Math.abs(amount) > 0.02)
@@ -1103,6 +1151,13 @@ ApplicationWindow {
             counts[game.platform] = (counts[game.platform] || 0) + 1
         }
         return counts
+    }
+
+    // Display names for the internal platform identifiers.
+    function platformDisplayName(platform) {
+        const names = { "N64": "Nintendo 64", "PS1": "PlayStation", "GameCube": "GameCube",
+                        "Wii": "Wii", "Xbox": "Xbox" }
+        return names[platform] || platform
     }
 
     // Shoulder-button names for the controller in use, as [previous, next].
@@ -2432,6 +2487,8 @@ ApplicationWindow {
                     gameList.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
                 else if (settingsManager.libraryView === "carousel")
                     consoleView.positionViewAtIndex(gameGrid.currentIndex, ListView.Contain)
+                else if (settingsManager.libraryView === "shelves")
+                    shelvesView.positionAtIndex(gameGrid.currentIndex)
                 else if (window.sectionedLibraryGrid)
                     sectionedGrid.positionAtIndex(gameGrid.currentIndex)
                 else
@@ -3984,10 +4041,7 @@ ApplicationWindow {
                                         spacing: 10
                                         Label {
                                             anchors.verticalCenter: parent.verticalCenter
-                                            text: ({ "N64": "Nintendo 64", "PS1": "PlayStation",
-                                                     "GameCube": "GameCube", "Wii": "Wii",
-                                                     "Xbox": "Xbox" })[gridSection.modelData.platform]
-                                                  || gridSection.modelData.platform
+                                            text: window.platformDisplayName(gridSection.modelData.platform)
                                             color: theme.textPrimary
                                             font.pixelSize: 20 * theme.fontScale
                                             font.bold: true
@@ -4149,6 +4203,451 @@ ApplicationWindow {
                                                 onClicked: {
                                                     gameGrid.currentIndex = sectionCard.gameIndex
                                                     window.openLibraryGameDetails(sectionCard.game)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Shelves view: a spotlight panel for the selected game, then
+                        // one horizontal shelf per platform. Cards share a height per
+                        // card size; each width follows the platform's box shape.
+                        // Selection is gameGrid.currentIndex; navigation comes from
+                        // LibraryGridLayout.moveShelfIndex.
+                        Item {
+                            id: shelvesView
+                            anchors.fill: parent
+                            anchors.bottomMargin: gameGrid.hintBarClearance
+                            visible: settingsManager.libraryView === "shelves" || opacity > 0
+                            opacity: settingsManager.libraryView === "shelves" ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !settingsManager.reducedMotion
+                                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                            }
+
+                            readonly property var sections:
+                                LibraryGridLayout.buildSections(gameGrid.model || [])
+                            // Last focused card per shelf: { platform: localIndex }.
+                            property var shelfMemory: ({})
+                            readonly property real cardHeight:
+                                settingsManager.libraryDensity === "compact" ? 150
+                                : settingsManager.libraryDensity === "spacious" ? 236 : 190
+                            readonly property real headerHeight: Math.ceil(34 * theme.fontScale)
+                            // Room for the focus ring and the focused card's scale.
+                            readonly property real cardPadding: 14
+                            readonly property real rowHeight:
+                                headerHeight + cardHeight + cardPadding * 2
+                            readonly property real rowSpacing: 10
+                            readonly property var currentGame: {
+                                const games = gameGrid.model || []
+                                if (games.length === 0)
+                                    return null
+                                return games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))]
+                            }
+
+                            Connections {
+                                target: gameGrid
+                                function onCurrentIndexChanged() {
+                                    const s = LibraryGridLayout.sectionIndexOf(
+                                        shelvesView.sections, gameGrid.currentIndex)
+                                    if (s < 0)
+                                        return
+                                    const memory = Object.assign({}, shelvesView.shelfMemory)
+                                    memory[shelvesView.sections[s].platform] =
+                                        gameGrid.currentIndex - shelvesView.sections[s].start
+                                    shelvesView.shelfMemory = memory
+                                }
+                            }
+                            onSectionsChanged: shelfMemory = ({})
+
+                            function focusShelves() {
+                                gameGrid.currentIndex = Math.max(0, gameGrid.currentIndex)
+                                shelvesFlick.forceActiveFocus()
+                                positionAtIndex(gameGrid.currentIndex)
+                            }
+                            function focusSpotlight() {
+                                const target = spotlightPlayButton.visible
+                                    ? spotlightPlayButton : spotlightDetailsButton
+                                target.forceActiveFocus()
+                            }
+                            function positionAtIndex(index) {
+                                const s = LibraryGridLayout.sectionIndexOf(sections, index)
+                                if (s < 0)
+                                    return
+                                shelvesFlick.contentY = LibraryGridLayout.contentYForRow(
+                                    s * (rowHeight + rowSpacing), rowHeight,
+                                    shelvesFlick.contentY, shelvesFlick.height,
+                                    shelvesFlick.contentHeight)
+                                const row = shelfRepeater.itemAt(s)
+                                if (row && row.shelfList)
+                                    row.shelfList.positionViewAtIndex(
+                                        index - sections[s].start, ListView.Contain)
+                            }
+
+                            // Spotlight panel.
+                            Rectangle {
+                                id: shelvesSpotlight
+                                anchors.top: parent.top
+                                anchors.topMargin: 8
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                height: Math.round(Math.max(230, Math.min(360, shelvesView.height * 0.4)))
+                                radius: theme.radiusLarge
+                                color: theme.sidebarBackground
+                                clip: true
+
+                                readonly property var game: shelvesView.currentGame
+                                readonly property string backdropSource: game
+                                    ? (game.screenshots && game.screenshots.length > 0
+                                        ? game.screenshots[0] : game.artworkPath)
+                                    : ""
+                                readonly property bool backdropIsCover: game
+                                    ? !(game.screenshots && game.screenshots.length > 0) : false
+                                readonly property var project: {
+                                    if (!game)
+                                        return null
+                                    const projects = projectCatalog.projectsForGame(
+                                        game.metadataTitle ? game.metadataTitle : game.title,
+                                        game.platform)
+                                    return projects.length > 0 ? projects[0] : null
+                                }
+                                readonly property bool installed: project !== null
+                                    && window.installedLauncherProjectIds[project.id] === true
+                                readonly property bool running: project !== null
+                                    && window.runningLaunchers[project.id] === true
+
+                                Image {
+                                    id: spotlightBackdrop
+                                    anchors.fill: parent
+                                    source: shelvesSpotlight.backdropSource
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    cache: true
+                                    visible: false
+                                }
+                                // Screenshots are shown as-is; a cover used as a
+                                // fallback backdrop is blurred and dimmed.
+                                MultiEffect {
+                                    anchors.fill: parent
+                                    source: spotlightBackdrop
+                                    blurEnabled: shelvesSpotlight.backdropIsCover
+                                    blur: 1.0
+                                    blurMax: 48
+                                    autoPaddingEnabled: false
+                                    opacity: spotlightBackdrop.status === Image.Ready
+                                        ? (shelvesSpotlight.backdropIsCover ? 0.45 : 0.9) : 0
+                                    Behavior on opacity {
+                                        enabled: !settingsManager.reducedMotion
+                                        NumberAnimation { duration: 220 }
+                                    }
+                                }
+                                // Legibility gradient behind the text.
+                                Rectangle {
+                                    anchors.fill: parent
+                                    gradient: Gradient {
+                                        orientation: Gradient.Horizontal
+                                        GradientStop { position: 0.0; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.96) }
+                                        GradientStop { position: 0.42; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.82) }
+                                        GradientStop { position: 0.75; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.25) }
+                                        GradientStop { position: 1.0; color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g, theme.windowBackground.b, 0.1) }
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    anchors.left: parent.left
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.margins: 30
+                                    width: Math.min(760, parent.width * 0.55)
+                                    spacing: 8
+
+                                    Row {
+                                        spacing: 8
+                                        Rectangle {
+                                            height: 24
+                                            width: spotlightPlatformLabel.implicitWidth + 20
+                                            radius: 12
+                                            color: Qt.rgba(theme.textPrimary.r, theme.textPrimary.g, theme.textPrimary.b, 0.12)
+                                            Label {
+                                                id: spotlightPlatformLabel
+                                                anchors.centerIn: parent
+                                                text: shelvesSpotlight.game
+                                                    ? window.platformDisplayName(shelvesSpotlight.game.platform).toUpperCase() : ""
+                                                color: theme.textPrimary
+                                                font.pixelSize: 11 * theme.fontScale
+                                                font.bold: true
+                                                font.letterSpacing: 0.6
+                                            }
+                                        }
+                                        Rectangle {
+                                            visible: shelvesSpotlight.project !== null
+                                            height: 24
+                                            width: spotlightStatusLabel.implicitWidth + 20
+                                            radius: 12
+                                            color: shelvesSpotlight.installed
+                                                ? Qt.rgba(theme.success.r, theme.success.g, theme.success.b, 0.16)
+                                                : Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.16)
+                                            Label {
+                                                id: spotlightStatusLabel
+                                                anchors.centerIn: parent
+                                                text: !shelvesSpotlight.project ? ""
+                                                    : shelvesSpotlight.project.name
+                                                        + (shelvesSpotlight.installed ? " · Installed" : " · Available")
+                                                color: shelvesSpotlight.installed ? theme.success : theme.accentHover
+                                                font.pixelSize: 11 * theme.fontScale
+                                                font.bold: true
+                                            }
+                                        }
+                                    }
+
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: !shelvesSpotlight.game ? ""
+                                            : (shelvesSpotlight.game.metadataTitle || shelvesSpotlight.game.title)
+                                        color: theme.textPrimary
+                                        font.pixelSize: 38 * theme.fontScale
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 1
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        readonly property string year: shelvesSpotlight.game
+                                            && shelvesSpotlight.game.metadataReleaseDate
+                                            ? String(shelvesSpotlight.game.metadataReleaseDate).substring(0, 4) : ""
+                                        readonly property string rating: shelvesSpotlight.game
+                                            && shelvesSpotlight.game.metadataRating
+                                            ? shelvesSpotlight.game.metadataRating : ""
+                                        visible: text.length > 0
+                                        text: [year, rating].filter(part => part.length > 0).join("  ·  ")
+                                        color: theme.textSecondary
+                                        font.pixelSize: 14 * theme.fontScale
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        text: shelvesSpotlight.game && shelvesSpotlight.game.metadataOverview
+                                            ? shelvesSpotlight.game.metadataOverview : ""
+                                        color: theme.textSecondary
+                                        font.pixelSize: 13 * theme.fontScale
+                                        wrapMode: Text.WordWrap
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 3
+                                        verticalAlignment: Text.AlignTop
+                                    }
+
+                                    RowLayout {
+                                        id: spotlightActions
+                                        spacing: 10
+                                        Button {
+                                            id: spotlightPlayButton
+                                            visible: shelvesSpotlight.installed
+                                            enabled: !shelvesSpotlight.running
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            highlighted: true
+                                            text: shelvesSpotlight.running ? "Running…" : "Play"
+                                            icon.source: "qrc:/icons/play.svg"
+                                            icon.width: 16
+                                            icon.height: 16
+                                            implicitHeight: 44
+                                            Layout.preferredWidth: 130
+                                            background: Rectangle {
+                                                radius: height / 2
+                                                color: spotlightPlayButton.enabled ? theme.accent : theme.controlBackground
+                                                border.width: spotlightPlayButton.activeFocus ? 3 : 0
+                                                border.color: theme.textPrimary
+                                            }
+                                            onClicked: {
+                                                if (shelvesSpotlight.project)
+                                                    window.launchSupportedGame(shelvesSpotlight.project.id)
+                                            }
+                                        }
+                                        Button {
+                                            id: spotlightDetailsButton
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            text: "Details"
+                                            implicitHeight: 44
+                                            Layout.preferredWidth: 120
+                                            background: Rectangle {
+                                                radius: height / 2
+                                                color: spotlightDetailsButton.hovered ? theme.controlHover : theme.controlBackground
+                                                border.width: spotlightDetailsButton.activeFocus ? 2 : 0
+                                                border.color: theme.accent
+                                            }
+                                            onClicked: window.openLibraryGameDetails(shelvesView.currentGame)
+                                        }
+                                    }
+                                }
+
+                                // The selected game's cover at its true shape.
+                                GameArtwork {
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 36
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: parent.height - 56
+                                    width: Math.round(height * 1.4)
+                                    visible: parent.width > 1100
+                                    source: shelvesSpotlight.game ? shelvesSpotlight.game.artworkPath : ""
+                                    platform: shelvesSpotlight.game ? shelvesSpotlight.game.platform : ""
+                                    themeTokens: theme
+                                    reducedMotion: settingsManager.reducedMotion
+                                    frameMode: "platform"
+                                    frameInset: 0
+                                    showViewportBackground: false
+                                }
+                            }
+
+                            Flickable {
+                                id: shelvesFlick
+                                anchors.top: shelvesSpotlight.bottom
+                                anchors.topMargin: 14
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                clip: true
+                                interactive: false
+                                contentWidth: width
+                                contentHeight: shelvesColumn.height
+                                boundsBehavior: Flickable.StopAtBounds
+
+                                Keys.onReturnPressed: window.openLibraryGameDetails(shelvesView.currentGame)
+                                Keys.onEnterPressed: window.openLibraryGameDetails(shelvesView.currentGame)
+
+                                // One handler for the whole area: vertical wheel movement
+                                // scrolls the shelves; horizontal movement (tilt wheel or
+                                // trackpad) scrolls the shelf under the pointer.
+                                WheelHandler {
+                                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                    onWheel: function(event) {
+                                        const dx = event.pixelDelta.x !== 0 ? event.pixelDelta.x
+                                            : (event.angleDelta.x / 120) * shelvesView.cardHeight
+                                        const dy = event.pixelDelta.y !== 0 ? event.pixelDelta.y
+                                            : (event.angleDelta.y / 120) * shelvesView.rowHeight * 0.6
+                                        if (Math.abs(dx) > Math.abs(dy)) {
+                                            const rowIndex = Math.floor((event.y + shelvesFlick.contentY)
+                                                / (shelvesView.rowHeight + shelvesView.rowSpacing))
+                                            const row = shelfRepeater.itemAt(rowIndex)
+                                            if (row && row.shelfList) {
+                                                const list = row.shelfList
+                                                const minX = -list.leftMargin
+                                                const maxX = Math.max(minX,
+                                                    list.contentWidth + list.rightMargin - list.width)
+                                                list.contentX = Math.max(minX, Math.min(maxX, list.contentX - dx))
+                                            }
+                                        } else {
+                                            const maxY = Math.max(0, shelvesFlick.contentHeight - shelvesFlick.height)
+                                            shelvesFlick.contentY = Math.max(0, Math.min(maxY, shelvesFlick.contentY - dy))
+                                        }
+                                        event.accepted = true
+                                    }
+                                }
+
+                                Column {
+                                    id: shelvesColumn
+                                    width: shelvesFlick.width
+                                    spacing: shelvesView.rowSpacing
+
+                                    Repeater {
+                                        id: shelfRepeater
+                                        model: shelvesView.sections
+                                        delegate: Item {
+                                            id: shelfRow
+                                            required property var modelData
+                                            required property int index
+                                            property alias shelfList: shelfList
+                                            readonly property real cardRatio:
+                                                LibraryGridLayout.frameRatioForPlatform(modelData.platform)
+                                            width: shelvesColumn.width
+                                            height: shelvesView.rowHeight
+
+                                            Row {
+                                                height: shelvesView.headerHeight
+                                                spacing: 10
+                                                Label {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: window.platformDisplayName(shelfRow.modelData.platform)
+                                                    color: theme.textPrimary
+                                                    font.pixelSize: 19 * theme.fontScale
+                                                    font.bold: true
+                                                }
+                                                Label {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: shelfRow.modelData.count
+                                                        + (shelfRow.modelData.count === 1 ? " game" : " games")
+                                                    color: theme.textMuted
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                }
+                                            }
+
+                                            ListView {
+                                                id: shelfList
+                                                anchors.top: parent.top
+                                                anchors.topMargin: shelvesView.headerHeight
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                height: shelvesView.cardHeight + shelvesView.cardPadding * 2
+                                                orientation: ListView.Horizontal
+                                                spacing: 16
+                                                leftMargin: shelvesView.cardPadding
+                                                rightMargin: shelvesView.cardPadding
+                                                clip: true
+                                                interactive: false
+                                                keyNavigationEnabled: false
+                                                boundsBehavior: Flickable.StopAtBounds
+                                                model: shelfRow.modelData.count
+
+                                                delegate: Item {
+                                                    id: shelfCard
+                                                    required property int index
+                                                    readonly property int gameIndex: shelfRow.modelData.start + index
+                                                    readonly property var game: gameGrid.model
+                                                        ? gameGrid.model[gameIndex] : null
+                                                    readonly property bool isCurrent: gameGrid.currentIndex === gameIndex
+                                                    width: Math.round(shelvesView.cardHeight * shelfRow.cardRatio)
+                                                    height: shelfList.height
+                                                    z: isCurrent ? 2 : 1
+                                                    scale: isCurrent ? 1.05 : 1.0
+                                                    Behavior on scale {
+                                                        enabled: !settingsManager.reducedMotion
+                                                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                                                    }
+
+                                                    GameArtwork {
+                                                        anchors.centerIn: parent
+                                                        width: parent.width
+                                                        height: shelvesView.cardHeight
+                                                        source: shelfCard.game ? shelfCard.game.artworkPath : ""
+                                                        platform: shelfCard.game ? shelfCard.game.platform : ""
+                                                        highlighted: shelfCard.isCurrent || shelfCardMouse.containsMouse
+                                                        focused: shelfCard.isCurrent
+                                                        hovered: shelfCardMouse.containsMouse
+                                                        reducedMotion: settingsManager.reducedMotion
+                                                        themeTokens: theme
+                                                        frameMode: "platform"
+                                                        frameInset: 0
+                                                        showViewportBackground: false
+                                                        showFocusRing: true
+                                                    }
+
+                                                    MouseArea {
+                                                        id: shelfCardMouse
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        Accessible.name: shelfCard.game
+                                                            ? (shelfCard.game.metadataTitle || shelfCard.game.title) : ""
+                                                        onEntered: {
+                                                            gameGrid.currentIndex = shelfCard.gameIndex
+                                                            window.activeInputDevice = "mouse"
+                                                        }
+                                                        onClicked: {
+                                                            gameGrid.currentIndex = shelfCard.gameIndex
+                                                            window.openLibraryGameDetails(shelfCard.game)
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -7206,6 +7705,7 @@ ApplicationWindow {
                                 spacing: 2
                                 Repeater {
                                     model: [
+                                        { label: "Shelves", value: "shelves" },
                                         { label: "Grid", value: "grid" },
                                         { label: "List", value: "list" },
                                         { label: "Carousel", value: "carousel" }
