@@ -71,8 +71,8 @@ jobs:
           for driver in "$QT_ROOT_DIR"/plugins/sqldrivers/libqsql*.so; do
             name="$(basename "$driver" .so)"; name="${name#libqsql}"
             [[ "$name" == "ite" ]] && continue   # libqsqlite: SQLite, kept
-            upper="${name^^}"
-            rm -v "$driver" "$QT_ROOT_DIR"/lib/cmake/Qt6Sql/Qt6Q${upper}DriverPlugin*.cmake
+            rm -v "$driver"
+            find "$QT_ROOT_DIR/lib/cmake/Qt6Sql" -iname "Qt6Q${name}*DriverPlugin*.cmake" -print -delete
           done
           ls "$QT_ROOT_DIR/plugins/sqldrivers" "$QT_ROOT_DIR/lib/cmake/Qt6Sql"
 
