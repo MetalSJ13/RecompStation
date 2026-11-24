@@ -60,7 +60,8 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 - [x] Game Details plays Open from every view, including Grid and List (validated 2026-11-24).
 - [x] Accessibility (validated 2026-11-24): muted text is easier to read on panels in every theme; Midnight Violet's accent is a little lighter; with a screen reader (Orca), moving in each Library view reads the game and system.
 - [x] Capture states (validated 2026-11-24): Add with ✕/A shows "Let go of ✕ first", then the listening panel and countdown; Replace strikes out the old inputs; adding an input another action uses shows the warning; waiting 15 s shows "Nothing was pressed"; Cancel works and focus returns to the row's Add; other rows dim while one listens.
-- [ ] Launch recipes: Conker, Pokémon Snap, Snowboard Kids and Luigi's Mansion open straight to the game from Play (Luigi's Mansion builds itself from the disc on its first start); Snap's and Snowboard Kids' saves sit under `~/.local/share/<launcher>`; the Saves row on Game Details points there.
+- [x] Luigi's Mansion opens straight to the game from Play with `--disc`, builds its shaders on the first start and starts fullscreen (validated 2026-11-24).
+- [ ] Launch recipes not yet tried: Conker, Pokémon Snap and Snowboard Kids open straight to the game from Play; Snap's and Snowboard Kids' saves sit under `~/.local/share/<launcher>`; the Saves row on Game Details points there.
 - [ ] Saves on reinstall: with a launcher in portable mode (or any file it wrote in its folder), Uninstall then Install keeps those files; the uninstall dialog says so.
 - [ ] Opening a game page for the first time doesn't stall; the Play line briefly says "Checking your copy…".
 - [x] Controller: a second connected controller takes over navigation when it is used (fixed on `fix/validation-round-1`; only the first controller used to be read), confirmed 2026-11-24.
