@@ -27,7 +27,9 @@ jobs:
     # (2.35) or newer.
     runs-on: ubuntu-22.04
     env:
-      QT_VERSION: 6.8.3
+      # 6.9 or newer: sends the window icon on Wayland (xdg-toplevel-icon),
+      # so KDE Plasma 6.3+ shows RecompStation's icon instead of a generic one.
+      QT_VERSION: '6.10.*'
     steps:
       - uses: actions/checkout@v4
         with:

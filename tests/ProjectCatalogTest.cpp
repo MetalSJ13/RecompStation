@@ -547,6 +547,10 @@ void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
         const QVariantMap launch = entry.toMap().value("launch").toMap();
         const QString method = launch.value("method").toString();
         QVERIFY(!method.isEmpty());
+        // Every project names the game file it needs, briefly.
+        const QString romFile = entry.toMap().value("romFile").toString();
+        QVERIFY2(!romFile.isEmpty() && romFile.size() <= 60,
+                 qPrintable(entry.toMap().value("id").toString()));
         if (method == QStringLiteral("n64recomp")) {
             QVERIFY(!launch.value("romXxh3").toString().isEmpty());
             QVERIFY(!launch.value("romVersion").toString().isEmpty());

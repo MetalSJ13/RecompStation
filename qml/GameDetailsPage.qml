@@ -1645,72 +1645,33 @@ Popup {
                                 font.bold: true
                                 wrapMode: Text.Wrap
                             }
-                            Label { text: "Release"; color: theme.textMuted; font.pixelSize: 13 * theme.fontScale }
+                            // One version line: what is installed (and any newer
+                            // release), or the latest release when not installed.
+                            Label { text: "Version"; color: theme.textMuted; font.pixelSize: 13 * theme.fontScale }
                             Label {
                                 Layout.fillWidth: true
-                                text: gameDetailsPopup.releaseInfo ? gameDetailsPopup.releaseTag : "Not checked yet"
-                                color: theme.textSecondary
-                                font.pixelSize: 13 * theme.fontScale
-                                wrapMode: Text.Wrap
-                            }
-                            Label { text: "Package"; color: theme.textMuted; font.pixelSize: 13 * theme.fontScale }
-                            Label {
-                                Layout.fillWidth: true
-                                text: gameDetailsPopup.selectedAsset
-                                    ? gameDetailsPopup.selectedAssetName
-                                    : "Linux / " + projectCatalog.currentArchitecture
-                                color: theme.textSecondary
-                                font.pixelSize: 13 * theme.fontScale
-                                wrapMode: Text.WrapAnywhere
-                            }
-                            Label {
-                                visible: !!(gameDetailsPopup.selectedProject && gameDetailsPopup.selectedProject.romRequirements)
-                                text: "ROM"
-                                color: theme.textMuted
-                                font.pixelSize: 13 * theme.fontScale
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: !!(gameDetailsPopup.selectedProject && gameDetailsPopup.selectedProject.romRequirements)
-                                text: gameDetailsPopup.selectedProject ? (gameDetailsPopup.selectedProject.romRequirements || "") : ""
-                                color: theme.warning
-                                font.pixelSize: 13 * theme.fontScale
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                visible: gameDetailsPopup.installedProject !== null
-                                text: "Installed"
-                                color: theme.textMuted
-                                font.pixelSize: 13 * theme.fontScale
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.installedProject !== null
-                                text: gameDetailsPopup.installedProject === null ? ""
-                                    : (gameDetailsPopup.installedVersion.length > 0
-                                        ? gameDetailsPopup.installedVersion : "Version not recorded (installed before versions were tracked)")
-                                      + (gameDetailsPopup.installedVersion.length === 0 ? ""
-                                        : gameDetailsPopup.installedProject.checksumVerified
-                                            ? "  ·  matched the project's published checksum"
-                                            : "  ·  the project published no checksum")
-                                color: theme.textSecondary
-                                font.pixelSize: 13 * theme.fontScale
-                                wrapMode: Text.Wrap
-                            }
-                            Label {
-                                visible: gameDetailsPopup.installedProject !== null
-                                text: "Installed at"
-                                color: theme.textMuted
-                                font.pixelSize: 13 * theme.fontScale
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                visible: gameDetailsPopup.installedProject !== null
                                 text: gameDetailsPopup.installedProject !== null
-                                    ? gameDetailsPopup.installedProject.executablePath : ""
+                                    ? (gameDetailsPopup.installedVersion.length > 0 ? gameDetailsPopup.installedVersion : "Unknown")
+                                      + (gameDetailsPopup.updateAvailable ? "  ·  " + gameDetailsPopup.releaseTag + " available" : "")
+                                    : gameDetailsPopup.releaseInfo ? gameDetailsPopup.releaseTag + " (latest)"
+                                    : "Not checked yet"
+                                color: gameDetailsPopup.updateAvailable ? theme.accentHover : theme.textSecondary
+                                font.pixelSize: 13 * theme.fontScale
+                                wrapMode: Text.Wrap
+                            }
+                            Label {
+                                visible: !!(gameDetailsPopup.selectedProject && gameDetailsPopup.selectedProject.romFile)
+                                text: "Requires"
                                 color: theme.textMuted
-                                font.pixelSize: 11 * theme.fontScale
-                                wrapMode: Text.WrapAnywhere
+                                font.pixelSize: 13 * theme.fontScale
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: !!(gameDetailsPopup.selectedProject && gameDetailsPopup.selectedProject.romFile)
+                                text: gameDetailsPopup.selectedProject ? (gameDetailsPopup.selectedProject.romFile || "") : ""
+                                color: theme.textSecondary
+                                font.pixelSize: 13 * theme.fontScale
+                                wrapMode: Text.Wrap
                             }
                         }
 
@@ -1803,7 +1764,7 @@ Popup {
                             Label {
                                 Layout.fillWidth: true
                                 visible: detailsLaunchSection.method === "n64recomp"
-                                text: "A window choice here is applied each time this game starts (from its second start, once the launcher has created its settings). \"Default\" follows Settings › Library."
+                                text: "Applied each time the game starts, from its second start on. \"Default\" follows Settings › Library."
                                 color: theme.textMuted
                                 font.pixelSize: 11.5 * theme.fontScale
                                 wrapMode: Text.Wrap

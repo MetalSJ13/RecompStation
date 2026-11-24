@@ -495,6 +495,9 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         project.insert(QStringLiteral("repositoryName"), repository);
         project.insert(QStringLiteral("romRequirements"),
                        object.value(QStringLiteral("romRequirements")).toString());
+        // The short name Game Details shows ("Banjo-Tooie (USA) ROM").
+        project.insert(QStringLiteral("romFile"),
+                       object.value(QStringLiteral("romFile")).toString().left(120));
         project.insert(QStringLiteral("architectures"), architectureRules);
         project.insert(QStringLiteral("launch"), launchRecipe);
         // Projects that publish only pre-releases.

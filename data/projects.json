@@ -12,6 +12,7 @@
       "repositoryOwner": "BanjoRecomp",
       "repositoryName": "BanjoRecomp",
       "romRequirements": "Requires a North American 1.0 copy of Banjo-Kazooie.",
+      "romFile": "Banjo-Kazooie (USA, 1.0) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^BanjoRecompiled-.*-Linux-X64\\.tar\\.gz$",
@@ -56,6 +57,7 @@
       "repositoryOwner": "sciaschi",
       "repositoryName": "CBFD-Recompiled",
       "romRequirements": "Requires a legally obtained US version of Conker's Bad Fur Day. The project does not include game data; you supply your own ROM.",
+      "romFile": "Conker's Bad Fur Day (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^ConkerRecompiled-V[0-9.]+-Linux\\.tar\\.gz$",
@@ -77,6 +79,7 @@
       "repositoryOwner": "ThatGuyMcd",
       "repositoryName": "DKR-R",
       "romRequirements": "Requires a legally obtained US v1.0 or US Rev A/v1.1 Diddy Kong Racing ROM. Linux AppImage builds require a compatible Vulkan driver and glibc 2.38 or newer.",
+      "romFile": "Diddy Kong Racing (USA, 1.0 or 1.1) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^DKR-R-.*-Linux-x86_64\\.AppImage$",
@@ -122,6 +125,7 @@
       "repositoryOwner": "JackandBeans",
       "repositoryName": "Snap64Recomp",
       "romRequirements": "Requires the US Pokémon Snap ROM (SHA-1 edc7c49cc568c045fe48be0d18011c30f393cbaf); other regional ROMs are not supported. The Linux port is explicitly experimental and requires SDL2 2.26+, GTK 3, and a Vulkan 1.2 driver. The project does not include game data.",
+      "romFile": "Pokémon Snap (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Snap64Recomp-.*-linux-x86_64\\.tar\\.gz$",
@@ -148,6 +152,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "super-mario-64-recomp",
       "romRequirements": "Requires the USA Super Mario 64 ROM (big-endian .z64, SHA-1 9bef1128717f958171a4afac3ed78ee2bb4e86ce). The project does not include game data. The desktop build is playable but experimental; almost all code was AI-written. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3 and FreeType.",
+      "romFile": "Super Mario 64 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^SuperMario64Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -177,6 +182,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "perfect-dark-recomp",
       "romRequirements": "Requires the USA second revision of Perfect Dark (Perfect Dark (U) (V1.1)), a big-endian 32 MiB .z64 ROM with MD5 e03b088b6ac9e0080440efed07c1e40f. The project does not include game data. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3 and FreeType.",
+      "romFile": "Perfect Dark (USA, 1.1) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^PerfectDarkRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -208,6 +214,7 @@
       "repositoryOwner": "sonicdcer",
       "repositoryName": "Starfox64Recomp",
       "romRequirements": "Requires the North American Star Fox 64 version 1.1 (Rev A) ROM. The project does not include game assets; the game prompts you to select your own supported ROM.",
+      "romFile": "Star Fox 64 (USA, 1.1) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Starfox64Recompiled-v[0-9.]+-Linux-X64-Release\\.zip$",
@@ -244,6 +251,7 @@
       "repositoryOwner": "Rainchus",
       "repositoryName": "Donkey-Kong-64-Recompiled",
       "romRequirements": "Requires the US Nintendo 64 version of Donkey Kong 64. Other games and arbitrary ROMs are not supported. The project does not include game assets.",
+      "romFile": "Donkey Kong 64 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^DK64Recompiled-Linux-X64-Release-[0-9-]+\\.zip$",
@@ -280,6 +288,7 @@
       "repositoryOwner": "sonicdcer",
       "repositoryName": "MarioKart64Recomp",
       "romRequirements": "Requires the North American Nintendo 64 version of Mario Kart 64. The project does not include game assets; you supply your own supported ROM.",
+      "romFile": "Mario Kart 64 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MarioKart64Recompiled-v[0-9.]+-Linux-X64-Release\\.zip$",
@@ -315,6 +324,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "mario-party-recomp",
       "romRequirements": "Requires the USA Mario Party ROM as a big-endian .z64, 32 MiB, SHA-1 1159bd56730094bfc71be30113e1cfc8bacf34f3. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "romFile": "Mario Party (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MarioPartyRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -345,6 +355,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "mario-party-2-recomp",
       "romRequirements": "Requires the USA Mario Party 2 ROM as a big-endian .z64, 32 MiB, SHA-1 166eda1c05670d337e2c3f15a5db528ae1e5d6e3. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "romFile": "Mario Party 2 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MarioParty2Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -375,6 +386,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "mario-party-3-recomp",
       "romRequirements": "Requires the USA Mario Party 3 ROM as a big-endian .z64, 32 MiB, SHA-1 6beb80ff822b96bcf85dcdb512e8b2b7969d8259. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "romFile": "Mario Party 3 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MarioParty3Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -406,6 +418,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "super-smash-bros-recomp",
       "romRequirements": "Requires the USA Super Smash Bros. ROM as a big-endian .z64, 16 MiB, SHA-1 e2929e10fccc0aa84e5776227e798abc07cedabf. Linux x86-64 requires glibc 2.35+, Vulkan, GTK 3, and FreeType.",
+      "romFile": "Super Smash Bros. (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^SmashBrosRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -436,6 +449,7 @@
       "repositoryOwner": "HarbourMasters",
       "repositoryName": "Ghostship",
       "romRequirements": "Requires a supported USA or Japan Super Mario 64 ROM in big-endian .z64 format. USA SHA-1: 9bef1128717f958171a4afac3ed78ee2bb4e86ce; Japan SHA-1: 8a20a5c83d6ceb0f0506cfc9fa20d8f438cafe51. The Linux release is an AppImage distributed inside a ZIP archive.",
+      "romFile": "Super Mario 64 (USA or Japan) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^.+-Linux\\.zip$",
@@ -474,6 +488,7 @@
       "repositoryOwner": "Vidanox",
       "repositoryName": "BanjoTooieRecompiled",
       "romRequirements": "Requires the USA Banjo-Tooie ROM (SHA-1 AF1A89E12B638B8D82CC4C085C8E01D4CBA03FB3). The ROM is selected in the launcher on first run. The Linux x86-64 archive includes the executable, assets, and run.sh launcher script.",
+      "romFile": "Banjo-Tooie (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^BanjoTooieRecompiled-linux-x64\\.tar\\.gz$",
@@ -504,6 +519,7 @@
       "repositoryOwner": "HarbourMasters",
       "repositoryName": "PaperBoat",
       "romRequirements": "Requires the supported USA Paper Mario 64 ROM in big-endian .z64 format (SHA-1 3837f44cda784b466c9a2d99df70d77c322b97a0). The Linux release distributes paperboat.appimage inside a ZIP archive.",
+      "romFile": "Paper Mario (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Paperboat-.*-Linux\\.zip$",
@@ -539,6 +555,7 @@
       "repositoryOwner": "wootbeer",
       "repositoryName": "dinotale",
       "romRequirements": "Requires the USA Yoshi's Story ROM (SHA-1 B13072FEF6C6DF48C07D8822C01E5BC59036F6DA). The project does not include game files; later levels and boss fights are still being tested.",
+      "romFile": "Yoshi's Story (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^DinoTale-[0-9.]+-linux\\.tar\\.gz$",
@@ -569,6 +586,7 @@
       "repositoryOwner": "MegaMan64Recomp",
       "repositoryName": "MegaMan64Recompiled",
       "romRequirements": "Requires your own supported Mega Man 64 ROM; the project does not include game assets.",
+      "romFile": "Mega Man 64 ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MegaMan64Recompiled-v[0-9.]+-Linux-X64\\.zip$",
@@ -604,6 +622,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "f-zero-x-recomp",
       "romRequirements": "Requires the USA first-release F-Zero X ROM (big-endian .z64, 16 MiB, SHA-1 5f658e88ffa9de23cba6986a8fd3d3a90d7b4340). Other regions, revisions and the 64DD Expansion Kit are not supported.",
+      "romFile": "F-Zero X (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^FZeroXRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -634,6 +653,7 @@
       "repositoryOwner": "n64hub",
       "repositoryName": "mario-golf-recomp",
       "romRequirements": "Requires the USA Mario Golf ROM as a big-endian .z64 (32 MiB, SHA-1 e2c4e7a905b29529b49a1619a401fe699224829b), or the supported 24 MiB dump. Other regions and revisions are not supported.",
+      "romFile": "Mario Golf (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MarioGolfRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
@@ -665,6 +685,7 @@
       "repositoryOwner": "Zelda64Recomp",
       "repositoryName": "Zelda64Recomp",
       "romRequirements": "Requires the North American Majora's Mask ROM. The project does not include game assets. Note: this release is for Majora's Mask; Ocarina of Time support is still in development.",
+      "romFile": "The Legend of Zelda: Majora's Mask (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Zelda64Recompiled-v[0-9.]+-Linux-X64\\.zip$",
@@ -701,6 +722,7 @@
       "repositoryOwner": "HarbourMasters",
       "repositoryName": "Shipwright",
       "romRequirements": "Requires a legally acquired supported Ocarina of Time ROM. The Linux AppImage does not include the original game's copyrighted assets.",
+      "romFile": "The Legend of Zelda: Ocarina of Time ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^SoH-.*\\.appimage$",
@@ -738,6 +760,7 @@
       "repositoryOwner": "SSunnKing",
       "repositoryName": "Open-Nectar---Pikmin-Native-PC-Mobile-Port",
       "romRequirements": "Supports legally obtained Pikmin and Pikmin 2 GameCube discs. The project does not include game data; install each game from your own disc image through the Open Nectar launcher. Linux AppImage requires x86-64 and glibc 2.29 or newer.",
+      "romFile": "Pikmin or Pikmin 2 disc image",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Open_Nectar-x86_64\\.AppImage$",
@@ -759,6 +782,7 @@
       "repositoryOwner": "new-coke",
       "repositoryName": "strikers",
       "romRequirements": "Requires game data from your own supported Super Mario Strikers disc image. Linux AppImages are available for x86-64 and ARM64; the release also provides Linux tar.gz archives.",
+      "romFile": "Super Mario Strikers disc image",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^strikers-linux-x86_64\\.AppImage$",
@@ -786,6 +810,7 @@
       "repositoryOwner": "TwilitRealm",
       "repositoryName": "dusklight",
       "romRequirements": "Requires your own Twilight Princess disc image. Dusklight accepts commercial GameCube and Wii discs except the Korean Wii release, but is based on the GameCube decompilation and presents the GameCube version's HUD and related behavior. Linux AppImages are published for x86-64 and ARM64.",
+      "romFile": "Twilight Princess disc image (GameCube or Wii)",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Dusklight-v[0-9.]+-linux-x86_64\\.AppImage$",
@@ -830,6 +855,7 @@
       "repositoryOwner": "rob646464",
       "repositoryName": "luigis-mansion-recompiled",
       "romRequirements": "Requires your own USA (GLME01) and/or European (GLMP01) Luigi's Mansion disc image. No game data is included.",
+      "romFile": "Luigi's Mansion (USA or Europe) disc image",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^LuigisMansionRecompiled-[0-9.]+-linux-x86_64\\.tar\\.gz$",
@@ -849,6 +875,7 @@
       "repositoryOwner": "BlackLabelHQ",
       "repositoryName": "MediEvilRecomp",
       "romRequirements": "Requires your own USA MediEvil disc image: the .cue file with its .bin tracks. The launcher checks for the .NET 10 runtime and installs it in your home folder if it is missing.",
+      "romFile": "MediEvil (USA) disc image (.cue and .bin)",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MediEvilRecomp-.*-linux-x64\\.tar\\.gz$",
@@ -871,6 +898,7 @@
       "repositoryOwner": "novapowers0",
       "repositoryName": "BloodyRoar2Recomp",
       "romRequirements": "Requires your own Bloody Roar II disc image (.bin/.cue, .iso or .chd), USA (SCUS-94424) or Europe (SLES-01722); Japan is experimental. The launcher asks for it on first run.",
+      "romFile": "Bloody Roar II (USA or Europe) disc image",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^BloodyRoar2-linux-x64-.*\\.zip$",
@@ -890,6 +918,7 @@
       "repositoryOwner": "FoxWorkshop",
       "repositoryName": "ShadowRecomp",
       "romRequirements": "Requires files from your own original Xbox copy of Shadow the Hedgehog. GameCube and PlayStation 2 versions do not work.",
+      "romFile": "Shadow the Hedgehog (Xbox) game files",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^ShadowRecomp-Linux-x86_64-.*\\.tar\\.gz$",
@@ -909,6 +938,7 @@
       "repositoryOwner": "gamboozino",
       "repositoryName": "ngbrecomp",
       "romRequirements": "Requires your own Ninja Gaiden Black disc image (.iso, a full Redump dump, or the .7z/.zip it came in) or a folder of extracted files with default.xbe. It is installed once on first start (about 6 GB).",
+      "romFile": "Ninja Gaiden Black disc image",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^NinjaGaidenBlack-x86_64\\.AppImage$",
@@ -929,6 +959,7 @@
       "repositoryOwner": "freefrank",
       "repositoryName": "LostOdysseyRecomp",
       "romRequirements": "Requires your own Lost Odyssey discs: one four-disc set (Asian multilingual or USA/Europe), as ISOs, extracted folders or GOD data. Disc 1 is needed to start. Experimental: not every scene has been tested.",
+      "romFile": "Lost Odyssey disc images",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^LostOdysseyRecomp-linux-x64-.*\\.AppImage$",
@@ -949,6 +980,7 @@
       "repositoryOwner": "YesterMester",
       "repositoryName": "TheSimpsonsGameRecomp",
       "romRequirements": "Requires your own Xbox 360 ISO of The Simpsons Game (USA is the main target; Europe works with less testing) and about 5 GB of space. Needs a CPU with AVX2.",
+      "romFile": "The Simpsons Game (Xbox 360) disc image",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^TheSimpsonsGame-Recompiled-Linux-x64\\.tar\\.gz$",
@@ -970,6 +1002,7 @@
       "repositoryOwner": "mstan",
       "repositoryName": "SuperMetroidRecomp",
       "romRequirements": "Requires your own unmodified Super Metroid (Japan, USA) ROM (.sfc or .smc, 3,145,728 bytes). The launcher asks for it on first start.",
+      "romFile": "Super Metroid (Japan, USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^supermetroid-[0-9.]+-linux-x64\\.zip$",
@@ -991,6 +1024,7 @@
       "repositoryOwner": "mstan",
       "repositoryName": "MegaManXSNESRecomp",
       "romRequirements": "Requires your own Mega Man X (USA) (Rev 1) ROM (.sfc or .smc, with or without a copier header). The launcher asks for it on first start. Optional mods use your own Mega Man X2 or X3 USA ROMs.",
+      "romFile": "Mega Man X (USA, Rev 1) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^MegaMan.*[Ll]inux.*x86_64\\.AppImage$",
@@ -1011,6 +1045,7 @@
       "repositoryOwner": "RevoSucks",
       "repositoryName": "BM64Recomp",
       "romRequirements": "Requires your own US Bomberman 64 ROM; the project does not include game assets.",
+      "romFile": "Bomberman 64 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^BM64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
@@ -1045,6 +1080,7 @@
       "repositoryOwner": "RevoSucks",
       "repositoryName": "BMHeroRecomp",
       "romRequirements": "Requires your own US Bomberman Hero ROM; the project does not include game assets.",
+      "romFile": "Bomberman Hero (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^BMHeroRecompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
@@ -1075,6 +1111,7 @@
       "repositoryOwner": "HarvestMoon64Recomp",
       "repositoryName": "HarvestMoon64Recomp",
       "romRequirements": "Requires your own North American Harvest Moon 64 ROM; the project does not include game assets.",
+      "romFile": "Harvest Moon 64 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^HarvestMoon64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
@@ -1104,6 +1141,7 @@
       "repositoryOwner": "cdlewis",
       "repositoryName": "snowboardkids2-recomp",
       "romRequirements": "Requires your own US Snowboard Kids 2 ROM; the project does not include game assets.",
+      "romFile": "Snowboard Kids 2 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^SnowboardKids2Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
@@ -1133,6 +1171,7 @@
       "repositoryOwner": "Cellenseres",
       "repositoryName": "SSSV_Recomp",
       "romRequirements": "Requires your own US 1.0 Space Station Silicon Valley ROM; the project does not include game assets.",
+      "romFile": "Space Station Silicon Valley (USA, 1.0) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^SSSVRecompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.tar\\.gz$",
@@ -1162,6 +1201,7 @@
       "repositoryOwner": "Rainchus",
       "repositoryName": "Quest64-Recomp",
       "romRequirements": "Requires your own US Quest 64 ROM; the project does not include game assets.",
+      "romFile": "Quest 64 (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Quest64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
@@ -1202,6 +1242,7 @@
       "repositoryOwner": "boricuapab",
       "repositoryName": "snowboardkids-recompiled",
       "romRequirements": "Requires your own unmodified US Snowboard Kids ROM. Choose it in the launcher on first start. The Linux build targets Ubuntu 24.04-era system libraries (SDL2, GTK 3, Vulkan).",
+      "romFile": "Snowboard Kids (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^snowboard.?kids(?!.?2)(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
@@ -1222,6 +1263,7 @@
       "repositoryOwner": "ThatGuyMcd",
       "repositoryName": "Glover-R",
       "romRequirements": "Requires your own unmodified USA Glover ROM (revision 0, game code NGVE, 8 MiB). Choose it in the launcher on first start.",
+      "romFile": "Glover (USA) ROM",
       "architectures": {
         "x86_64": {
           "assetNameRegex": "^Glover-R-[0-9.]+-Linux-x86_64\\.AppImage$",
