@@ -84,6 +84,11 @@ private slots:
 
     void asynchronousScanReportsLifecycleAndUnsupportedFiles()
     {
+        // Only the scan started here is under test. With the folder watcher
+        // on, the files written below can start a second, automatic scan as
+        // soon as this one ends (seen on slower CI machines); the watcher has
+        // its own tests.
+        m_scanner->stopMonitoring();
         QVERIFY(writeGameFile("N64", "Mario.z64"));
         QVERIFY(writeGameFile("N64", "notes.txt"));
         QVERIFY(writeGameFile("PS1", "FinalFantasy.chd"));
