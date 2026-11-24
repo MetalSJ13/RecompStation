@@ -41,8 +41,9 @@ def repitch(y, cents):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    # Edge (end of a row) was dropped on 2026-11-24: Move alone is enough.
     kept = {name: g2.finish(x, name) for name, x in g2.build().items()
-            if name not in ("select", "launch")}
+            if name not in ("select", "launch", "edge")}
     base.LEVELS.update(g3.LEVELS)
     # Same random state as when the options were reviewed, so the files
     # match the approved sounds exactly.

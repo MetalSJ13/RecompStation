@@ -1,7 +1,7 @@
 <RCC>
   <qresource prefix="/sounds">
     <file alias="back.wav">../assets/sounds/back.wav</file>
-    <file alias="edge.wav">../assets/sounds/edge.wav</file>
+    <file alias="cycle.wav">../assets/sounds/cycle.wav</file>
     <file alias="error.wav">../assets/sounds/error.wav</file>
     <file alias="launch.wav">../assets/sounds/launch.wav</file>
     <file alias="menu.wav">../assets/sounds/menu.wav</file>

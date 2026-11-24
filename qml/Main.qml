@@ -372,7 +372,7 @@ ApplicationWindow {
     }
 
     // Directional input from the controller or keyboard, with its sound:
-    // Move when something changed, the end-of-row sound when nothing could.
+    // Move when something changed, nothing when it could not move.
     function controllerNavigate(direction) {
         const before = window.navigationState()
         window.navigateFocus(direction)
@@ -384,7 +384,8 @@ ApplicationWindow {
                 break
             }
         }
-        uiSounds.play(changed ? "move" : "edge")
+        if (changed)
+            uiSounds.play("move")
     }
 
     function navigateFocus(direction) {
@@ -1158,7 +1159,7 @@ ApplicationWindow {
         const sections = window.settingsSections
         const index = Math.max(0, sections.indexOf(settingsPage.section))
         settingsPage.section = sections[(index + step + sections.length) % sections.length]
-        uiSounds.play("switch")
+        uiSounds.play("cycle")
         Qt.callLater(function() {
             window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
         })
@@ -1787,7 +1788,7 @@ ApplicationWindow {
     onLibrarySystemsChanged: {
         if (window.selectedPlatform !== "All Platforms"
                 && window.librarySystems.indexOf(window.selectedPlatform) < 0)
-            window.selectLibraryPlatform("All Platforms")
+            window.selectLibraryPlatform("All Platforms", "none")
     }
 
     // Shoulder-button names for the controller in use, as [previous, next].
@@ -1797,10 +1798,14 @@ ApplicationWindow {
     }
 
     // Select a Library platform filter and return to the top of the results.
-    function selectLibraryPlatform(platform) {
+    // sound: "switch" when picked in the system picker, "cycle" (the
+    // swoosh alone) when stepping with the shoulder buttons or Q/E, "none"
+    // when the app changes it by itself.
+    function selectLibraryPlatform(platform, sound) {
         if (window.selectedPlatform === platform)
             return
-        uiSounds.play("switch")
+        if (sound !== "none")
+            uiSounds.play(sound || "switch")
         window.selectedPlatform = platform
         gameGrid.currentIndex = 0
         Qt.callLater(function() {
@@ -1816,7 +1821,7 @@ ApplicationWindow {
         const platforms = ["All Platforms"].concat(window.librarySystems)
         const index = Math.max(0, platforms.indexOf(window.selectedPlatform))
         const next = (index + step + platforms.length) % platforms.length
-        window.selectLibraryPlatform(platforms[next])
+        window.selectLibraryPlatform(platforms[next], "cycle")
     }
 
     // Move focus from the toolbar (or search field) into the current
@@ -3276,7 +3281,9 @@ ApplicationWindow {
 
     GameDetailsPage {
         id: gameDetailsPopup
-        onClosed: uiSounds.play("back")
+        // On starting to close, not after the closing animation, so it
+        // lands in the same moment as Back from B or Esc and plays once.
+        onAboutToHide: uiSounds.play("back")
     }
 
     LaunchOverlay {
@@ -8134,7 +8141,6 @@ ApplicationWindow {
                                 focus: true
                                 closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
                                 onOpened: Qt.callLater(function() {
-                                    uiSounds.play("menu")
                                     const items = []
                                     window.collectFocusableItems(systemPickerContent, items, [])
                                     const current = items.find(function(item) {

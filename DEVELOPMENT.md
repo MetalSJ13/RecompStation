@@ -56,7 +56,7 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 - [x] Metadata: Update catalog refreshes the catalog and its size; a TheGamesDB key added in the app tests successfully and shows the remaining request quota (2026-11-24).
 - [ ] Metadata: with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
 - [x] Metadata request savings (validated 2026-11-24): after one start with the key, the next start shows **Ready** without a request (the count on your TheGamesDB API key page does not go up); **Test** shows **Connected** and the requests left; screenshots for several games arrive after one lookup; the allowance line shows the pause note when 50 or fewer requests are left.
-- [ ] Interface sounds: Move when focus moves (library, Settings, dialogs, Game Details), end-of-row when it can't; Open a game, Back (B, Esc and the close button), switching system with LB/RB or Q/E and Settings sections, the system picker, ⋯ and system menus, switches, Play, a failed launch; the volume row plays a sample per step; off means silent; no sounds while a game runs.
+- [ ] Interface sounds: Move when focus moves (library, Settings, dialogs, Game Details); Open a game, Back once (B, Esc and the close button), the swoosh for LB/RB or Q/E in the library and Settings, the switch sound for picking a system in the picker (opening it is silent), ⋯ and system menus, switches, Play, a failed launch; the volume row plays a sample per step; off means silent; no sounds while a game runs.
 - [x] Controller: a second connected controller takes over navigation when it is used (fixed on `fix/validation-round-1`; only the first controller used to be read), confirmed 2026-11-24.
 - [ ] Controller: a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
 - [x] First-time setup: the simplified first step (folder choice only), confirmed 2026-11-24.
@@ -136,7 +136,7 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [ ] Contrast, accessible names, tab order and scaling review across all pages.
 - [ ] Theme polish of the button-mapping capture states.
 - [ ] Multi-display placement.
-- [x] Interface sounds (branch `feature/navigation-sounds`, needs validation): the "Glass, refined" set, synthesized by `tools/sounds/generate.py` and played through SDL2 audio with a small mixer (Qt Multimedia 6.12 reported playback but stayed silent on PipeWire, 2026-11-24). Move and end-of-row on every directional input, Open a game, Back, switch system or Settings section, menus, switches, Play and launch errors. Settings › Appearance › Sounds: on/off and volume (default on, 60%). Silent while a game is running.
+- [x] Interface sounds (branch `feature/navigation-sounds`, needs validation): the "Glass, refined" set, synthesized by `tools/sounds/generate.py` and played through SDL2 audio with a small mixer (Qt Multimedia 6.12 reported playback but stayed silent on PipeWire, 2026-11-24). Move on every directional input that moves something, Open a game, Back, a swoosh for cycling with the shoulder buttons, the switch sound for picking a system, menus, switches, Play and launch errors. Settings › Appearance › Sounds: on/off and volume (default on, 60%). Silent while a game is running.
 
 ### 7. Desktop environment compatibility
 Developed and tested on KDE Plasma (Wayland). Before a public release, check the app on XFCE, Cinnamon and MATE (all X11-based), and GNOME:

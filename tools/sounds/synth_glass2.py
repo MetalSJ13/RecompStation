@@ -110,6 +110,10 @@ def build():
     s["error"] = stereo_air(lowpass(place([(0.0, bell(note("B4"), 0.14, 0.05, partials=((1, 1.0), (2.0, 0.08)))),
                                            (0.12, bell(note("G#4"), 0.2, 0.065, partials=((1, 1.0), (2.0, 0.08))))],
                                           0.34), 3000), length=0.2, mix=0.1)
+    # Cycling systems with the shoulder buttons: the switch sound's breath of
+    # air without its two taps (2026-11-24). Made last so the random state of
+    # every sound above stays as approved.
+    s["cycle"] = stereo_air(place([(0.0, air_breath)], 0.14), length=0.22, mix=0.16, width=0.9)
     return s
 
 

@@ -6,10 +6,10 @@ const QHash<QString, int> &ranks()
 {
     static const QHash<QString, int> table{
         {QStringLiteral("move"), 0},
-        {QStringLiteral("edge"), 1},
         {QStringLiteral("toggle-on"), 2},
         {QStringLiteral("toggle-off"), 2},
         {QStringLiteral("switch"), 3},
+        {QStringLiteral("cycle"), 3},
         {QStringLiteral("menu"), 3},
         {QStringLiteral("back"), 3},
         {QStringLiteral("error"), 3},
@@ -29,9 +29,6 @@ int UiSoundGate::minimumGapMs(const QString &sound)
 {
     if (sound == QStringLiteral("move"))
         return 45;
-    // Pushing against the end of a list repeats quickly while held.
-    if (sound == QStringLiteral("edge"))
-        return 150;
     return 90;
 }
 

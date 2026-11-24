@@ -6,7 +6,7 @@
 // Decides whether an interface sound may play right now, so sounds never
 // pile up:
 // - the same sound is not repeated faster than its minimum gap (holding a
-//   direction plays Move at most every 45 ms);
+//   direction plays Move at most every 45 ms, others every 90 ms);
 // - a quieter, more frequent sound is skipped right after a more important
 //   one (focus landing on a game as Game Details opens plays only Open).
 // Times are milliseconds from any monotonic clock.

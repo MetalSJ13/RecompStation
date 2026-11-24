@@ -175,7 +175,7 @@ def build(voice):
 
 
 # Relative loudness (dB below the loudest). Frequent sounds sit lower.
-LEVELS = {"move": -12, "edge": -11, "switch": -9, "toggle-on": -9, "toggle-off": -9,
+LEVELS = {"move": -12, "edge": -11, "switch": -9, "cycle": -11, "toggle-on": -9, "toggle-off": -9,
           "menu": -8, "back": -7, "select": -5, "error": -7, "launch": -3}
 
 

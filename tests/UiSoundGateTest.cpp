@@ -22,12 +22,15 @@ private slots:
         QVERIFY(gate.allow(QStringLiteral("move"), 1050));
     }
 
-    void holdingAgainstTheEndRepeatsSlowly()
+    void theSameSoundTwiceInOneActionPlaysOnce()
     {
+        // Back from two hooks for one press (B, then the page closing).
         UiSoundGate gate;
-        QVERIFY(gate.allow(QStringLiteral("edge"), 0));
-        QVERIFY(!gate.allow(QStringLiteral("edge"), 100));
-        QVERIFY(gate.allow(QStringLiteral("edge"), 160));
+        QVERIFY(gate.allow(QStringLiteral("back"), 0));
+        QVERIFY(!gate.allow(QStringLiteral("back"), 5));
+        QVERIFY(gate.allow(QStringLiteral("back"), 100));
+        QVERIFY(!gate.isKnown(QStringLiteral("edge")));
+        QVERIFY(gate.isKnown(QStringLiteral("cycle")));
     }
 
     void anImportantSoundSilencesAQuieterOneRightAfterIt()

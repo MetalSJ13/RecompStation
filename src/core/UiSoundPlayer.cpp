@@ -166,7 +166,7 @@ void UiSoundPlayer::loadSounds()
             ++loaded;
         }
     }
-    for (const QString &name : {QStringLiteral("edge"), QStringLiteral("select"),
+    for (const QString &name : {QStringLiteral("select"), QStringLiteral("cycle"),
                                 QStringLiteral("back"), QStringLiteral("switch"),
                                 QStringLiteral("menu"), QStringLiteral("toggle-on"),
                                 QStringLiteral("toggle-off"), QStringLiteral("launch"),
