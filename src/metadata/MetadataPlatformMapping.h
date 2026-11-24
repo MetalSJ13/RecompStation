@@ -93,6 +93,8 @@ public:
         else if (key == QStringLiteral("xbox"))
             accepted = {QStringLiteral("xbox"), QStringLiteral("microsoftxbox"),
                         QStringLiteral("originalxbox")};
+        else if (key == QStringLiteral("xbox 360"))
+            accepted = {QStringLiteral("xbox360"), QStringLiteral("microsoftxbox360")};
         else
             return 0;
 

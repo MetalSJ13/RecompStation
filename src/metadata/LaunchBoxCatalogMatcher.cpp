@@ -60,6 +60,8 @@ QString LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(
         return QStringLiteral("Nintendo Wii");
     if (key == QStringLiteral("xbox"))
         return QStringLiteral("Microsoft Xbox");
+    if (key == QStringLiteral("xbox360"))
+        return QStringLiteral("Microsoft Xbox 360");
     return {};
 }
 

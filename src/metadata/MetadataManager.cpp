@@ -32,7 +32,9 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent,
             {QStringLiteral("N64"), QStringLiteral("Nintendo 64")},
             {QStringLiteral("PS1"), QStringLiteral("PlayStation")},
             {QStringLiteral("GameCube"), QStringLiteral("Nintendo GameCube")},
-            {QStringLiteral("Wii"), QStringLiteral("Nintendo Wii")}
+            {QStringLiteral("Wii"), QStringLiteral("Nintendo Wii")},
+            {QStringLiteral("Xbox"), QStringLiteral("Microsoft Xbox")},
+            {QStringLiteral("Xbox 360"), QStringLiteral("Microsoft Xbox 360")}
         };
         for (const auto &entry : supported) {
             const int id = MetadataPlatformMapping::platformIdForInternalName(entry.first, m_platforms);

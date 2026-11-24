@@ -179,6 +179,8 @@ QStringList LibraryScanner::supportedExtensions(const QString &platform) const
         return {"iso", "wbfs", "rvz", "wud", "wux"};
     if (platform == "Xbox")
         return {"iso", "xiso"};
+    if (platform == "Xbox 360")
+        return {"iso"};
 
     return {};
 }

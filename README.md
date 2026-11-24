@@ -80,7 +80,7 @@ RecompStation brings them together in a single library that you can use from the
 
 ## Supported systems and projects
 
-**Library systems:** Nintendo 64, PlayStation, GameCube, Wii and the original Xbox. More systems are planned.
+**Library systems:** Nintendo 64, PlayStation, GameCube, Wii, Xbox and Xbox 360. More systems are planned.
 
 | System | Recognised files |
 | --- | --- |
@@ -88,9 +88,10 @@ RecompStation brings them together in a single library that you can use from the
 | PlayStation | `.cue` + `.bin`, `.chd`, `.pbp`, `.iso`, `.img` |
 | GameCube | `.iso` `.gcm` `.rvz` `.ciso` |
 | Wii | `.iso` `.wbfs` `.rvz` |
-| Xbox | `.iso` (XISO) `.xiso` |
+| Xbox | `.iso` (XISO or full disc image) `.xiso` |
+| Xbox 360 | `.iso` (XISO or full disc image) |
 
-**Recompilation projects:** the catalog currently lists 26 projects for Nintendo 64 and GameCube, including Zelda64Recomp, Banjo: Recompiled, Ship of Harkinian, Star Fox 64 Recompiled, Mario Kart 64 Recompiled, Perfect Dark, Ghostship and PaperBoat. The full list, with the game version each project needs, is in [`data/projects.json`](data/projects.json) and on each game's page in the app.
+**Recompilation projects:** the catalog currently lists 32 projects for Nintendo 64, GameCube, PlayStation, Xbox and Xbox 360. They include Zelda64Recomp, Banjo: Recompiled, Ship of Harkinian, Star Fox 64 Recompiled, Mario Kart 64 Recompiled, MediEvil, Bloody Roar II, Shadow the Hedgehog, Ninja Gaiden Black, Lost Odyssey and The Simpsons Game. The full list, with the game version each project needs, is in [`data/projects.json`](data/projects.json) and on each game's page in the app.
 
 A system appears in your library even if no recompilation project supports it yet, so you can keep your whole collection in one place.
 

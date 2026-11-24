@@ -30,6 +30,8 @@ private slots:
                  QStringLiteral("Nintendo Wii"));
         QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("Xbox"),
                  QStringLiteral("Microsoft Xbox"));
+        QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("Xbox 360"),
+                 QStringLiteral("Microsoft Xbox 360"));
         QVERIFY(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("Nintendo 64").isEmpty());
         QVERIFY(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("64DD").isEmpty());
     }

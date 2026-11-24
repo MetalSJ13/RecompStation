@@ -1642,7 +1642,7 @@ ApplicationWindow {
     // Display names for the internal platform identifiers.
     function platformDisplayName(platform) {
         const names = { "N64": "Nintendo 64", "PS1": "PlayStation", "GameCube": "GameCube",
-                        "Wii": "Wii", "Xbox": "Xbox" }
+                        "Wii": "Wii", "Xbox": "Xbox", "Xbox 360": "Xbox 360" }
         return names[platform] || platform
     }
 
@@ -1895,7 +1895,7 @@ ApplicationWindow {
         }
         releaseStates = nextStates
         const requestId = githubManager.fetchLatestRelease(
-            project.repositoryOwner, project.repositoryName)
+            project.repositoryOwner, project.repositoryName, project.includePrereleases === true)
         let pending = Object.assign({}, pendingReleaseRequests)
         pending[requestId] = project.id
         pendingReleaseRequests = pending

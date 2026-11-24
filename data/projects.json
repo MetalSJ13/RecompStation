@@ -792,6 +792,127 @@
           "executablePath": "LuigisMansionRecompiled.sh"
         }
       }
+    },
+    {
+      "id": "medievil-recompiled",
+      "name": "MediEvil Recompiled",
+      "platform": "PS1",
+      "gameTitles": [
+        "MediEvil",
+        "Medievil"
+      ],
+      "repositoryOwner": "BlackLabelHQ",
+      "repositoryName": "MediEvilRecomp",
+      "romRequirements": "Requires your own USA MediEvil disc image: the .cue file with its .bin tracks. The launcher checks for the .NET 10 runtime and installs it in your home folder if it is missing.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MediEvilRecomp-.*-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "run.sh"
+        }
+      },
+      "developmentStatus": "playable"
+    },
+    {
+      "id": "bloody-roar-2-recompiled",
+      "name": "Bloody Roar II Recompiled",
+      "platform": "PS1",
+      "gameTitles": [
+        "Bloody Roar II",
+        "Bloody Roar 2",
+        "Bloody Roar II: The New Breed",
+        "Bloody Roar 2: Bringer of the New Age"
+      ],
+      "repositoryOwner": "novapowers0",
+      "repositoryName": "BloodyRoar2Recomp",
+      "romRequirements": "Requires your own Bloody Roar II disc image (.bin/.cue, .iso or .chd), USA (SCUS-94424) or Europe (SLES-01722); Japan is experimental. The launcher asks for it on first run.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^BloodyRoar2-linux-x64-.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BloodyRoar2/BloodyRoar2_Recompiled"
+        }
+      },
+      "developmentStatus": "playable"
+    },
+    {
+      "id": "shadow-recompiled",
+      "name": "Shadow Recompiled",
+      "platform": "Xbox",
+      "gameTitles": [
+        "Shadow the Hedgehog"
+      ],
+      "repositoryOwner": "FoxWorkshop",
+      "repositoryName": "ShadowRecomp",
+      "romRequirements": "Requires files from your own original Xbox copy of Shadow the Hedgehog. GameCube and PlayStation 2 versions do not work.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^ShadowRecomp-Linux-x86_64-.*\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "ShadowRecomp"
+        }
+      },
+      "developmentStatus": "playable"
+    },
+    {
+      "id": "ninja-gaiden-black-recompiled",
+      "name": "Ninja Gaiden Black Recompiled",
+      "platform": "Xbox",
+      "gameTitles": [
+        "Ninja Gaiden Black"
+      ],
+      "repositoryOwner": "gamboozino",
+      "repositoryName": "ngbrecomp",
+      "romRequirements": "Requires your own Ninja Gaiden Black disc image (.iso, a full Redump dump, or the .7z/.zip it came in) or a folder of extracted files with default.xbe. It is installed once on first start (about 6 GB).",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^NinjaGaidenBlack-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "NinjaGaidenBlack-x86_64.AppImage"
+        }
+      },
+      "includePrereleases": true,
+      "developmentStatus": "playable"
+    },
+    {
+      "id": "lost-odyssey-recompiled",
+      "name": "Lost Odyssey Recomp",
+      "platform": "Xbox 360",
+      "gameTitles": [
+        "Lost Odyssey"
+      ],
+      "repositoryOwner": "freefrank",
+      "repositoryName": "LostOdysseyRecomp",
+      "romRequirements": "Requires your own Lost Odyssey discs: one four-disc set (Asian multilingual or USA/Europe), as ISOs, extracted folders or GOD data. Disc 1 is needed to start. Experimental: not every scene has been tested.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^LostOdysseyRecomp-linux-x64-.*\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "LostOdysseyRecomp.AppImage"
+        }
+      },
+      "includePrereleases": true,
+      "developmentStatus": "beta"
+    },
+    {
+      "id": "the-simpsons-game-recompiled",
+      "name": "The Simpsons Game Recompiled",
+      "platform": "Xbox 360",
+      "gameTitles": [
+        "The Simpsons Game"
+      ],
+      "repositoryOwner": "YesterMester",
+      "repositoryName": "TheSimpsonsGameRecomp",
+      "romRequirements": "Requires your own Xbox 360 ISO of The Simpsons Game (USA is the main target; Europe works with less testing) and about 5 GB of space. Needs a CPU with AVX2.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^TheSimpsonsGame-Recompiled-Linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Play.sh"
+        }
+      },
+      "includePrereleases": true,
+      "developmentStatus": "beta"
     }
   ]
 }

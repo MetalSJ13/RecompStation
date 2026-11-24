@@ -69,6 +69,31 @@ void GitHubManagerTest::parsesLatestReleaseAndAssets()
         QStringLiteral("https://")));
 }
 
+void GitHubManagerTest::picksNewestNonDraftReleaseFromList()
+{
+    const QByteArray json = R"([
+        {"tag_name": "v0.10-draft", "draft": true, "prerelease": true,
+         "html_url": "https://github.com/ExampleOrg/xbox-recomp/releases/tag/v0.10-draft", "assets": []},
+        {"tag_name": "v0.9.68", "draft": false, "prerelease": true,
+         "html_url": "https://github.com/ExampleOrg/xbox-recomp/releases/tag/v0.9.68",
+         "assets": [{"name": "Game-x86_64.AppImage",
+                     "browser_download_url": "https://github.com/ExampleOrg/xbox-recomp/releases/download/v0.9.68/Game-x86_64.AppImage",
+                     "content_type": "application/octet-stream", "size": 1000}]},
+        {"tag_name": "v0.9.67", "draft": false, "prerelease": true,
+         "html_url": "https://github.com/ExampleOrg/xbox-recomp/releases/tag/v0.9.67", "assets": []}
+    ])";
+
+    GitHubRelease release;
+    QString error;
+    QVERIFY2(GitHubManager::parseNewestReleaseFromList(json, &release, &error), qPrintable(error));
+    QCOMPARE(release.tagName, QStringLiteral("v0.9.68"));
+    QCOMPARE(release.assets.size(), 1);
+
+    QVERIFY(!GitHubManager::parseNewestReleaseFromList("[]", &release, &error));
+    QVERIFY(!error.isEmpty());
+    QVERIFY(!GitHubManager::parseNewestReleaseFromList("{}", &release, &error));
+}
+
 void GitHubManagerTest::convertsReleaseToQmlData()
 {
     GitHubRelease release;

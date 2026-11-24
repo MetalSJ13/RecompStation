@@ -78,6 +78,20 @@ private slots:
         QVERIFY(writeImage(root + "/xbox.iso", 0x11000, {{0x10000, QByteArray("MICROSOFT*XBOX*MEDIA")}}));
         QCOMPARE(GameImporter::detectPlatform(root + "/xbox.iso", &sure), QStringLiteral("Xbox"));
 
+        // Trimmed Xbox 360 image: the root directory (sector 0x22) lists default.xex.
+        QVERIFY(writeImage(root + "/x360.iso", 0x11800,
+                           {{0x10000, QByteArray("MICROSOFT*XBOX*MEDIA")},
+                            {0x10014, QByteArray::fromHex("22000000")},
+                            {0x10018, QByteArray::fromHex("00080000")},
+                            {0x11000 + 14, QByteArray("default.xex")}}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/x360.iso", &sure), QStringLiteral("Xbox 360"));
+        QVERIFY(sure);
+
+        // Full (redump) images: the game partition's offset tells the console.
+        QVERIFY(writeImage(root + "/x360-xgd3.iso", 0x2090000 + 0x800,
+                           {{0x2090000, QByteArray("MICROSOFT*XBOX*MEDIA")}}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/x360-xgd3.iso", &sure), QStringLiteral("Xbox 360"));
+
         QVERIFY(writeImage(root + "/ps1.iso", 0x9000,
                            {{0x8001, QByteArray("CD001")}, {0x8008, QByteArray("PLAYSTATION")}}));
         QCOMPARE(GameImporter::detectPlatform(root + "/ps1.iso", &sure), QStringLiteral("PS1"));

@@ -341,6 +341,9 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
                        object.value(QStringLiteral("romRequirements")).toString());
         project.insert(QStringLiteral("architectures"), architectureRules);
         project.insert(QStringLiteral("launch"), launchRecipe);
+        // Projects that publish only pre-releases.
+        project.insert(QStringLiteral("includePrereleases"),
+                       object.value(QStringLiteral("includePrereleases")).toBool(false));
         parsedProjects.append(project);
         projectIds.insert(id);
     }
