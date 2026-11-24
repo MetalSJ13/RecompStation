@@ -1919,7 +1919,6 @@ ApplicationWindow {
             metadataReleaseDate: game.metadataReleaseDate,
             metadataRating: game.metadataRating
         }
-        uiSounds.play("select")
         gameDetailsPopup.open()
     }
 
@@ -3281,8 +3280,10 @@ ApplicationWindow {
 
     GameDetailsPage {
         id: gameDetailsPopup
-        // On starting to close, not after the closing animation, so it
-        // lands in the same moment as Back from B or Esc and plays once.
+        // Played by the page itself, so every way of opening or closing it
+        // sounds the same (some views open it directly). On starting to
+        // close, not after the animation, so Back from B or Esc plays once.
+        onAboutToShow: uiSounds.play("select")
         onAboutToHide: uiSounds.play("back")
     }
 
