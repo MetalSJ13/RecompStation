@@ -80,22 +80,7 @@ RecompStation brings them together in a single library that you can use from the
 
 ## Supported systems and projects
 
-**Library systems:** twelve systems, each with its own folder in your library.
-
-| System | Recognised files |
-| --- | --- |
-| Game Boy | `.gb` |
-| Game Boy Color | `.gbc` `.gb` |
-| Game Boy Advance | `.gba` |
-| Super Nintendo | `.sfc` `.smc` |
-| Nintendo 64 | `.z64` `.n64` `.v64` (and `.zip` when adding games) |
-| GameCube | `.iso` `.gcm` `.rvz` `.ciso` |
-| Wii | `.iso` `.wbfs` `.rvz` |
-| Wii U | `.wua` `.wud` `.wux` |
-| PlayStation | `.cue` + `.bin`, `.chd`, `.pbp`, `.iso`, `.img` |
-| PlayStation 2 | `.iso` `.chd` `.cue` + `.bin` |
-| Xbox | `.iso` (XISO or full disc image) `.xiso` |
-| Xbox 360 | `.iso` (XISO or full disc image) |
+**Library systems:** Game Boy, Game Boy Color, Game Boy Advance, Super Nintendo, Nintendo 64, GameCube, Wii, Wii U, PlayStation, PlayStation 2, Xbox and Xbox 360. Each has its own folder in your library.
 
 **Recompilation projects:** the catalog currently lists 42 projects for Nintendo 64, Super Nintendo, GameCube, PlayStation, Xbox and Xbox 360. They include Zelda64Recomp, Banjo: Recompiled, Ship of Harkinian, Star Fox 64 Recompiled, Mario Kart 64 Recompiled, DKR-R (Diddy Kong Racing), Super Metroid Recompiled, Luigi's Mansion Recompiled, MediEvil, Bloody Roar II, Shadow the Hedgehog, Ninja Gaiden Black, Lost Odyssey and The Simpsons Game. The full list, with the game version each project needs, is in [`data/projects.json`](data/projects.json) and on each game's page in the app.
 
