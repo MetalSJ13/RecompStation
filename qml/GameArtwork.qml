@@ -25,8 +25,6 @@ Item {
     // Inputs
     property string source: ""
     property string platform: ""
-    // Shown on the placeholder cover when no artwork is available.
-    property string title: ""
     property bool highlighted: false
     property bool reducedMotion: false
     property QtObject themeTokens: null
@@ -137,14 +135,13 @@ Item {
             mipmap: true
             visible: status === Image.Ready
         }
-        // Placeholder cover, drawn at the frame's (the system's box) shape:
-        // the system's name in a band along the top, the RecompStation mark
-        // faintly in the middle, and the game's title at the bottom.
+        // Placeholder cover at the frame's (the system's box) shape: the
+        // theme's dark surface with the RecompStation mark, faintly. The
+        // title and system are already shown around the cover.
         Item {
             id: placeholder
             anchors.fill: parent
             visible: cover.status !== Image.Ready
-            readonly property real shortSide: Math.min(width, height)
 
             Rectangle {
                 anchors.fill: parent
@@ -155,56 +152,15 @@ Item {
                     GradientStop { position: 1.0; color: "#141724" }
                 }
             }
-            Rectangle {
-                id: placeholderBand
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                height: Math.max(10, Math.round(parent.height * 0.11))
-                color: ArtworkLayout.placeholderBandColor(root.platform)
-                visible: parent.height >= 48
-                Text {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: Math.round(placeholder.width * 0.05)
-                    anchors.rightMargin: anchors.leftMargin
-                    text: ArtworkLayout.placeholderSystemName(root.platform)
-                    color: Qt.rgba(1, 1, 1, 0.75)
-                    font.pixelSize: Math.max(7, Math.round(placeholder.height * 0.05))
-                    font.weight: Font.ExtraBold
-                    font.letterSpacing: 1.2
-                    elide: Text.ElideRight
-                    visible: parent.height >= 12
-                }
-            }
             Image {
                 anchors.centerIn: parent
-                anchors.verticalCenterOffset: placeholderBand.visible ? placeholderBand.height * 0.2 : 0
-                width: Math.round(placeholder.shortSide * 0.34)
+                width: Math.round(Math.min(placeholder.width, placeholder.height) * 0.34)
                 height: width
                 source: "qrc:/qt/qml/RecompStation/assets/logo/recompstation-mark.svg"
                 sourceSize: Qt.size(128, 128)
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 opacity: 0.22
-            }
-            Text {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.leftMargin: Math.round(placeholder.width * 0.07)
-                anchors.rightMargin: anchors.leftMargin
-                anchors.bottomMargin: Math.round(placeholder.height * 0.07)
-                text: root.title
-                visible: root.title.length > 0 && placeholder.width >= 64
-                color: Qt.rgba(0.957, 0.961, 0.984, 0.92)
-                font.pixelSize: Math.max(9, Math.round(placeholder.shortSide * 0.085))
-                font.weight: Font.ExtraBold
-                lineHeight: 1.12
-                wrapMode: Text.Wrap
-                maximumLineCount: 3
-                elide: Text.ElideRight
             }
         }
     }

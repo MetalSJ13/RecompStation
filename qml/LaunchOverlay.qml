@@ -13,7 +13,6 @@ Popup {
     property var steps: []
     property string artworkPath: ""
     property string platform: ""
-    property string gameTitle: ""
     property bool opening: true
 
     function show(id, preparedSteps) {
@@ -66,7 +65,6 @@ Popup {
                 Layout.preferredWidth: Math.round(220 * LibraryGridLayout.frameRatioForPlatform(overlay.platform))
                 source: overlay.artworkPath
                 platform: overlay.platform
-                title: overlay.gameTitle
                 themeTokens: theme
                 reducedMotion: settingsManager.reducedMotion
                 frameMode: "platform"

@@ -689,7 +689,6 @@ Popup {
                     window.selectedGame ? window.selectedGame.platform : ""))
                 source: window.selectedGame ? window.selectedGame.artworkPath : ""
                 platform: window.selectedGame ? window.selectedGame.platform : ""
-                title: window.selectedGame ? (window.selectedGame.metadataTitle || window.selectedGame.title) : ""
                 themeTokens: theme
                 reducedMotion: settingsManager.reducedMotion
                 frameMode: "platform"

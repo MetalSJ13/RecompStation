@@ -48,7 +48,6 @@ Item {
         height: root.artworkHeight
         source: root.artworkPath
         platform: root.platform
-        title: root.displayTitle
         highlighted: root.focused || root.hovered
         focused: root.focused
         hovered: root.hovered
