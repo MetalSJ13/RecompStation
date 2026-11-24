@@ -32,6 +32,8 @@ public:
     Q_INVOKABLE void play(const QString &name);
     // Plays a sound even when sounds are off, for the volume preview.
     Q_INVOKABLE void preview(const QString &name);
+    // Playback gain for a Settings volume (0-100).
+    static qreal gainForVolume(int percent);
 
 signals:
     void suppressedChanged();
@@ -48,4 +50,5 @@ private:
     QHash<QString, QList<QSoundEffect *>> m_effects;
     int m_lastMoveVariant = -1;
     bool m_suppressed = false;
+    bool m_loggedFirstPlay = false;
 };
