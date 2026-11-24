@@ -3684,7 +3684,7 @@ ApplicationWindow {
                             anchors.horizontalCenter: parent.horizontalCenter
                             // Constrain the GridView itself to the intended column
                             // block. Margins alone do not limit GridView's layout width.
-                            width: Math.min(parent.width, visibleColumns * gridCellWidth)
+                            width: Math.min(parent.width, visibleColumns * gridCellWidth + edgeInset)
                             onCountChanged: {
                                 if (count > 0 && window.initialGridRevealPending
                                         && settingsManager.libraryView === "grid") {
@@ -3764,8 +3764,13 @@ ApplicationWindow {
                                 settingsManager.libraryDensity === "compact" ? 220
                                 : settingsManager.libraryDensity === "spacious" ? 350 : 270
                             readonly property real gridCellWidth: targetCardWidth + 14
+                            // Room left of the first column for the selected card, which
+                            // grows 3.5% and draws its focus ring 7 px outside the art
+                            // (about 13 px at Spacious). It matches the 14 px every cell
+                            // leaves on its right, so the block stays centered.
+                            readonly property real edgeInset: 14
                             readonly property int responsiveColumns:
-                                Math.max(1, Math.floor(Math.max(0, parent.width - 16)
+                                Math.max(1, Math.floor(Math.max(0, parent.width - 16 - edgeInset)
                                     / Math.max(1, gridCellWidth)))
                             // Keep 4K and ultrawide grids visually balanced instead of
                             // allowing the full width to become an excessive number of
@@ -3806,7 +3811,7 @@ ApplicationWindow {
                                     })
                                 }
                             }
-                            leftMargin: 0
+                            leftMargin: edgeInset
                             rightMargin: 0
                             cellWidth: gridCellWidth
                             // Artwork-forward cards: the cover art is the card. The
@@ -4153,9 +4158,11 @@ ApplicationWindow {
                                 delegate: Item {
                                     id: gridSection
                                     required property var modelData
-                                    x: 0
+                                    // Inset like the single-system grid, so the selected
+                                    // card's ring isn't clipped and headers line up with cards.
+                                    x: gameGrid.edgeInset
                                     y: modelData.top
-                                    width: sectionedGrid.width
+                                    width: sectionedGrid.width - gameGrid.edgeInset
                                     height: modelData.height
 
                                     Row {
