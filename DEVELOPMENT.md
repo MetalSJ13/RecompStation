@@ -52,23 +52,64 @@ This document is the current development status and implementation order for Rec
 
 Runtime checks for implemented features that have not been fully confirmed yet. Tick them as they are exercised.
 
-- [ ] Settings: LB/RB and Q/E switch sections; ◀ value ▶ rows with D-pad and keyboard; interface scale change and restart (a manual value, then back to Auto).
+- [x] Settings: LB/RB and Q/E switch sections; ◀ value ▶ rows with D-pad and keyboard; interface scale change and restart (2026-11-24).
 - [x] Metadata: Update catalog refreshes the catalog and its size; a TheGamesDB key added in the app tests successfully and shows the remaining request quota (2026-11-24).
 - [ ] Metadata: with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
 - [x] Controller: a second connected controller takes over navigation when it is used (fixed on `fix/validation-round-1`; only the first controller used to be read), confirmed 2026-11-24.
 - [ ] Controller: a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
-- [ ] Application: Remove for a launcher whose game is gone; Reset settings.
 - [x] First-time setup: the simplified first step (folder choice only), confirmed 2026-11-24.
 - [ ] First-time setup: from scratch; adding from Downloads and another folder; a zipped N64 ROM; a `.cue`/`.bin` game; an unsure `.iso` with the system picker; Move; drag-and-drop onto the Library; Settings › Library › Add games.
-- [ ] Library: List and Carousel size stepping and persistence; Shelves spacing polish; the empty-library screen after a reset.
+- [x] Library: size stepping, persistence and spacing in all four views (2026-11-24).
 - [x] System picker: shows only systems with games; LB/RB and Q/E step through them; the controller's Select button opens the list; removing a system's last game updates it (2026-11-24).
 - [x] New systems: each appears in the library, with its folder (confirmed 2026-11-24).
 - [x] Zipped cartridge ROMs (N64, GB, GBC, GBA, SNES) copied straight into a system folder are unpacked by the scanner and the archive removed (on `fix/validation-round-1`), confirmed 2026-11-24.
 - [ ] New systems: adding a GB, GBC (dual-mode and colour-only), GBA and SNES ROM, loose and zipped; a PS2 `.iso` and `.chd` are not taken for PS1; a Wii U `.wua`; covers have the right shape after Update catalog.
 - [x] Game Details states: downloading/installing pill, release and launch errors, a game with several projects (Open Nectar, Super Mario 64), a game without metadata, Uninstall under ⋯ (2026-11-24). Follow-ups: the ⋯ menu and the no-metadata page (roadmap 6a).
-- [ ] Launchers: install, launch and uninstall for the catalog projects not yet exercised (confirmed so far: Banjo-Kazooie, Banjo-Tooie, Star Fox 64, Donkey Kong 64, PaperBoat, Shadow the Hedgehog (Xbox), Bomberman 64, Bomberman Hero); download cancellation and failure feedback; uninstall keeps ROM files.
-- [ ] Controller-only and keyboard-only pass over dialogs and the in-app folder browser (focus entry, actions, cancel, focus return).
+- [ ] Launchers: install, launch and uninstall for each project in the launcher test list below; download cancellation and failure feedback; uninstall keeps ROM files. Confirmed so far: Banjo-Kazooie, Banjo-Tooie, Star Fox 64, Donkey Kong 64, PaperBoat, Ship of Harkinian, Ghostship, Shadow the Hedgehog (Xbox), Bomberman 64, Bomberman Hero.
+- [ ] Controller-only and keyboard-only pass over dialogs and the in-app folder browser (focus entry, actions, cancel, focus return). Found 2026-11-24: the folder browser needs a double click to open a folder, and Home / Up are unclear; redesign in progress on `ui/folder-browser`.
 - [ ] Full regression pass across pages and backend workflows before the first public release.
+
+### Launcher test list
+Catalog projects not yet installed, launched and uninstalled in the app (32 of 42). Tick each one as it is confirmed; a project that fails gets a note here and an issue.
+
+- **N64**
+  - [ ] Conker's Bad Fur Day: Recompiled (pick the game in its own launcher)
+  - [ ] DKR-R (Diddy Kong Racing Recompiled) (pick the game in its own launcher)
+  - [ ] Pokémon Snap: Recomp (pick the game in its own launcher)
+  - [ ] Super Mario 64: Recompiled (starts straight into the game)
+  - [ ] Perfect Dark: Recompiled (starts straight into the game)
+  - [ ] Mario Kart 64: Recompiled (starts straight into the game)
+  - [ ] Mario Party: Recompiled (starts straight into the game)
+  - [ ] Mario Party 2: Recompiled (starts straight into the game)
+  - [ ] Mario Party 3: Recompiled (starts straight into the game)
+  - [ ] Super Smash Bros.: Recompiled (starts straight into the game)
+  - [ ] DinoTale (Yoshi's Story) (starts straight into the game)
+  - [ ] Mega Man 64: Recompiled (starts straight into the game)
+  - [ ] F-Zero X: Recompiled (starts straight into the game)
+  - [ ] Mario Golf: Recompiled (starts straight into the game)
+  - [ ] The Legend of Zelda: Majora's Mask (Zelda 64: Recompiled) (starts straight into the game)
+  - [ ] Harvest Moon 64: Recompiled (starts straight into the game)
+  - [ ] Snowboard Kids 2: Recompiled (starts straight into the game)
+  - [ ] Space Station Silicon Valley: Recompiled (starts straight into the game)
+  - [ ] Quest 64: Recompiled (starts straight into the game)
+  - [ ] Snowboard Kids: Recompiled (pick the game in its own launcher)
+  - [ ] Glover-R (pick the game in its own launcher)
+- **GameCube**
+  - [ ] Open Nectar (Pikmin & Pikmin 2) (pick the game in its own launcher)
+  - [ ] Super Mario Strikers (Strikers) (pick the game in its own launcher)
+  - [ ] The Legend of Zelda: Twilight Princess (Dusklight) (pick the game in its own launcher)
+  - [ ] Luigi's Mansion Recompiled (pick the game in its own launcher)
+- **PS1**
+  - [ ] MediEvil Recompiled (pick the game in its own launcher)
+  - [ ] Bloody Roar II Recompiled (pick the game in its own launcher)
+- **Xbox**
+  - [ ] Ninja Gaiden Black Recompiled (pick the game in its own launcher)
+- **Xbox 360**
+  - [ ] Lost Odyssey Recomp (pick the game in its own launcher)
+  - [ ] The Simpsons Game Recompiled (pick the game in its own launcher)
+- **SNES**
+  - [ ] Super Metroid Recompiled (pick the game in its own launcher)
+  - [ ] Mega Man X Recompiled (pick the game in its own launcher)
 
 ## Roadmap
 
@@ -128,7 +169,6 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [x] Placeholder covers drawn at each system's box shape in every view, replacing the generic portrait picture: a plain dark tile with the logo faintly in the middle. The system band and title from the mockup were dropped after review (2026-11-24): the title and system are already shown around the cover. Shelves cards have no caption, so their placeholders show the title (`placeholderTitle`). Validated 2026-11-24.
 - [x] Validated 2026-11-24: Game Details without game info (layout, chips, Find game info and Metadata settings, About and Recompilation cards, screenshot frames) and placeholder covers in Shelves (with the title), Grid, List, Carousel and Game Details.
 - [x] The ⋯ menu: Show install folder, Open launcher log, Uninstall… and its confirmation; validated 2026-11-24.
-- [ ] A launcher whose game was removed stays installed by design (uninstalling never happens behind the user's back); Settings › Application › Launchers whose game is gone lists it with Remove. Consider pointing to that from the Library once a game disappears.
 
 ### 6. Input, accessibility and regression
 - [ ] Contrast, accessible names, tab order and scaling review across all pages.
