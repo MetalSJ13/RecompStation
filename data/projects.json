@@ -39,6 +39,14 @@
       "id": "conkers-bad-fur-day-recompiled",
       "name": "Conker's Bad Fur Day: Recompiled",
       "platform": "N64",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "ConkerRecompiled",
+        "romFileName": "conker.n64.us.1.0.z64",
+        "romName": "CONKER BFD",
+        "romXxh3": "23FBBA2DBCF2FD8E",
+        "romVersion": "North America"
+      },
       "developmentStatus": "beta",
       "gameTitles": [
         "Conker's Bad Fur Day",
@@ -86,6 +94,24 @@
       "id": "pokemon-snap-recompiled",
       "name": "Pokémon Snap: Recomp",
       "platform": "N64",
+      "launch": {
+        "method": "romfolder",
+        "dataFolder": "Snap64Recomp",
+        "romFileName": "pokemonsnap.z64",
+        "romName": "POKEMON SNAP",
+        "romXxh3": "73CBBC5C7DE9425C",
+        "romVersion": "North America",
+        "environment": {
+          "SNAP_DATA_DIR": "{dataFolder}"
+        },
+        "dataFiles": [
+          "saves",
+          "mods",
+          "mod_config",
+          "mods.json"
+        ],
+        "savesSubfolder": "saves"
+      },
       "developmentStatus": "beta",
       "gameTitles": [
         "Pokémon Snap",
@@ -777,6 +803,25 @@
       "id": "luigis-mansion-recompiled",
       "name": "Luigi's Mansion Recompiled",
       "platform": "GameCube",
+      "launch": {
+        "method": "discargument",
+        "arguments": [
+          "--disc",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "iso",
+          "gcm",
+          "rvz",
+          "wia",
+          "gcz",
+          "ciso",
+          "wbfs",
+          "nfs",
+          "tgc"
+        ],
+        "firstStartNote": "The first start builds the game from your disc, which takes a few minutes."
+      },
       "developmentStatus": "beta",
       "gameTitles": [
         "Luigi's Mansion",
@@ -1138,6 +1183,17 @@
       "id": "snowboard-kids-recompiled",
       "name": "Snowboard Kids: Recompiled",
       "platform": "N64",
+      "launch": {
+        "method": "romfolder",
+        "dataFolder": "SnowboardKidsRecompiled",
+        "romFileName": "rom/snowboardkids.us.z64",
+        "romXxh3": "F384619787B78D4B",
+        "romVersion": "North America",
+        "arguments": [
+          "{romPath}"
+        ],
+        "savesSubfolder": "userdata/saves"
+      },
       "developmentStatus": "playable",
       "gameTitles": [
         "Snowboard Kids",

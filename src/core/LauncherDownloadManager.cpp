@@ -7,7 +7,9 @@
 #include <QFile>
 
 #include <QDir>
+#include <QDirIterator>
 #include <QFileInfo>
+#include <QSet>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPointer>
@@ -19,6 +21,49 @@
 #include <QUrl>
 
 namespace {
+// Files RecompStation writes into every install.
+const QStringList kInstallMarkers{QStringLiteral(".recompstation-managed"),
+                                  QStringLiteral(".recompstation-install"),
+                                  QStringLiteral(".recompstation-files")};
+
+// Every file in a folder as relative paths, without following links.
+QStringList relativeFiles(const QString &root)
+{
+    QStringList files;
+    QDirIterator it(root, QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot,
+                    QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        it.next();
+        if (it.fileInfo().isSymLink())
+            continue;
+        const QString relative = QDir(root).relativeFilePath(it.filePath());
+        if (!kInstallMarkers.contains(relative))
+            files.append(relative);
+    }
+    return files;
+}
+
+// Moves one file, replacing what is at the destination. Both sit under
+// RecompStation's data folder, so a rename is enough.
+bool moveReplacing(const QString &source, const QString &destination)
+{
+    if (!QDir().mkpath(QFileInfo(destination).absolutePath()))
+        return false;
+    if (QFileInfo::exists(destination) && !QFile::remove(destination))
+        return false;
+    return QFile::rename(source, destination);
+}
+
+void removeEmptyFolders(const QString &root)
+{
+    QDirIterator it(root, QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+    QStringList folders;
+    while (it.hasNext())
+        folders.prepend(it.next());
+    for (const QString &folder : std::as_const(folders))
+        QDir().rmdir(folder);
+    QDir().rmdir(root);
+}
 constexpr qint64 MaximumDownloadSize = 8LL * 1024LL * 1024LL * 1024LL;
 }
 
@@ -471,6 +516,19 @@ int LauncherDownloadManager::installDownloadedAsset(
         QSaveFile manifest(manifestPath);
         const QByteArray markerContent("RecompStation managed launcher installation v1\n");
         const QByteArray manifestContent = executableRelativePath.toUtf8() + "\n";
+        // What the package itself contains: anything else found here later
+        // (saves, settings, portable mode) is the player's, and uninstall
+        // sets it aside instead of deleting it.
+        {
+            QSaveFile fileList(QDir(extractionPath).filePath(QStringLiteral(".recompstation-files")));
+            const QByteArray listContent = relativeFiles(extractionPath).join(QLatin1Char('\n')).toUtf8() + "\n";
+            if (!fileList.open(QIODevice::WriteOnly) || fileList.write(listContent) != listContent.size()
+                || !fileList.commit()) {
+                QDir(extractionPath).removeRecursively();
+                emit installationFailed(requestId, QStringLiteral("Could not record the launcher's files."));
+                return;
+            }
+        }
         if (!marker.open(QIODevice::WriteOnly)
             || marker.write(markerContent) != markerContent.size()
             || !marker.commit()
@@ -501,6 +559,9 @@ int LauncherDownloadManager::installDownloadedAsset(
         }
 
         QFile::remove(archivePath);
+        const int restored = restoreKeptFiles(projectId, destination);
+        if (restored > 0)
+            qCInfo(lcLauncher) << "Put back" << restored << "kept file(s) for" << projectId;
         qCInfo(lcLauncher) << "Launcher installed:" << projectId;
         emit installationCompleted(requestId, projectId, executablePath);
     });
@@ -600,6 +661,70 @@ QVariantList LauncherDownloadManager::installedLaunchers() const
     return installed;
 }
 
+QString LauncherDownloadManager::keptFilesDirectory(const QString &projectId) const
+{
+    if (!m_platformManager || !isValidProjectId(projectId))
+        return {};
+    const QString dataRoot = QFileInfo(m_platformManager->dataDirectory()).canonicalFilePath();
+    return dataRoot.isEmpty() ? QString()
+                              : QDir(dataRoot).filePath(QStringLiteral("launcher-data/") + projectId);
+}
+
+int LauncherDownloadManager::setAsideUserFiles(const QString &projectId, const QString &installDirectory)
+{
+    const QString keepRoot = keptFilesDirectory(projectId);
+    if (keepRoot.isEmpty())
+        return -1;
+
+    // Installs made before the file list existed: keep the usual places
+    // launchers write to.
+    QSet<QString> packaged;
+    bool hasList = false;
+    QFile list(QDir(installDirectory).filePath(QStringLiteral(".recompstation-files")));
+    if (list.open(QIODevice::ReadOnly)) {
+        hasList = true;
+        for (const QByteArray &line : list.readAll().split('\n')) {
+            if (!line.isEmpty())
+                packaged.insert(QString::fromUtf8(line));
+        }
+    }
+    static const QStringList fallback{QStringLiteral("saves"), QStringLiteral("portable"),
+                                      QStringLiteral("portable.txt"), QStringLiteral("userdata"),
+                                      QStringLiteral("mods"), QStringLiteral("mod_config"),
+                                      QStringLiteral("mods.json")};
+
+    int moved = 0;
+    for (const QString &relative : relativeFiles(installDirectory)) {
+        const bool players = hasList ? !packaged.contains(relative)
+                                     : fallback.contains(relative.section(QLatin1Char('/'), 0, 0));
+        if (!players)
+            continue;
+        if (!moveReplacing(QDir(installDirectory).filePath(relative), QDir(keepRoot).filePath(relative)))
+            return -1;
+        ++moved;
+    }
+    return moved;
+}
+
+int LauncherDownloadManager::restoreKeptFiles(const QString &projectId, const QString &installDirectory)
+{
+    const QString keepRoot = keptFilesDirectory(projectId);
+    const QFileInfo keepInfo(keepRoot);
+    if (keepRoot.isEmpty() || !keepInfo.isDir() || keepInfo.isSymLink())
+        return 0;
+    int restored = 0;
+    for (const QString &relative : relativeFiles(keepRoot)) {
+        const QString destination = QDir(installDirectory).filePath(relative);
+        // A file the new version ships itself wins; the old copy stays kept.
+        if (QFileInfo::exists(destination) || QFileInfo(destination).isSymLink())
+            continue;
+        if (moveReplacing(QDir(keepRoot).filePath(relative), destination))
+            ++restored;
+    }
+    removeEmptyFolders(keepRoot);
+    return restored;
+}
+
 bool LauncherDownloadManager::uninstallLauncher(const QString &projectId)
 {
     if (!m_platformManager || !isValidProjectId(projectId)
@@ -630,5 +755,13 @@ bool LauncherDownloadManager::uninstallLauncher(const QString &projectId)
     if (!isManagedInstallation)
         return false;
 
+    const int kept = setAsideUserFiles(projectId, target);
+    if (kept < 0) {
+        qCWarning(lcLauncher) << "Uninstall stopped: could not set aside the player's files for" << projectId;
+        return false;
+    }
+    if (kept > 0)
+        qCInfo(lcLauncher) << "Set aside" << kept << "file(s) the launcher created, in"
+                           << RecompLogging::redactHome(keptFilesDirectory(projectId));
     return QDir(target).removeRecursively();
 }

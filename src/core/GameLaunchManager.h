@@ -3,6 +3,7 @@
 #include "LaunchPreparer.h"
 
 #include <QHash>
+#include <QSet>
 #include <QObject>
 #include <QString>
 #include <QVariantList>
@@ -42,6 +43,9 @@ signals:
     void launchStarted(const QString &projectId, qint64 processId);
     void launchFailed(const QString &projectId, const QString &message);
     void processFinished(const QString &projectId, int exitCode, bool crashed);
+    // A game file finished being checked in the background: ask
+    // launchReadiness() again for an up-to-date answer.
+    void launchReadinessChanged();
 
 private:
     QString installDirectory(const QString &projectId, QString *executablePath = nullptr) const;
@@ -54,4 +58,5 @@ private:
     QString m_dataHome;
     LaunchPreparer m_preparer;
     QHash<QString, QProcess *> m_processes;
+    QSet<QString> m_inspecting;  // game files being read in the background
 };

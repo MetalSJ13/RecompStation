@@ -12,6 +12,8 @@
 #include <QProcess>
 #include <QDateTime>
 #include <QElapsedTimer>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QProcessEnvironment>
 #include <memory>
 #include <QVariantMap>
@@ -99,6 +101,7 @@ GameLaunchManager::GameLaunchManager(
     : QObject(parent)
     , m_launcherDownloadManager(launcherDownloadManager)
 {
+    m_preparer.setBackgroundReads(true);
 }
 
 GameLaunchManager::~GameLaunchManager()
@@ -166,8 +169,24 @@ QVariantMap GameLaunchManager::launchReadiness(const QString &projectId, const Q
     const QVariantMap project = m_projectCatalog->project(projectId);
     if (project.isEmpty())
         return {};
-    return m_preparer.readiness(project, gamePath, installDirectory(projectId),
-                                preparationOptions(projectId));
+    const QVariantMap readiness = m_preparer.readiness(project, gamePath, installDirectory(projectId),
+                                                       preparationOptions(projectId));
+    // Read new game files off the UI thread (up to 64 MB each); the answer
+    // arrives through launchReadinessChanged().
+    for (const QString &path : m_preparer.takePendingReads()) {
+        if (m_inspecting.contains(path))
+            continue;
+        m_inspecting.insert(path);
+        auto *watcher = new QFutureWatcher<N64RomInfo>(this);
+        connect(watcher, &QFutureWatcher<N64RomInfo>::finished, this, [this, watcher, path]() {
+            m_preparer.storeInspection(path, watcher->result());
+            m_inspecting.remove(path);
+            watcher->deleteLater();
+            emit launchReadinessChanged();
+        });
+        watcher->setFuture(QtConcurrent::run([path]() { return RomInspector::inspectN64File(path); }));
+    }
+    return readiness;
 }
 
 bool GameLaunchManager::launchProject(const QString &projectId)
@@ -243,6 +262,7 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
     } else {
         process->setProgram(executableInfo.absoluteFilePath());
     }
+    process->setArguments(plan.arguments);
     process->setProcessChannelMode(QProcess::MergedChannels);
     m_processes.insert(projectId, process);
 

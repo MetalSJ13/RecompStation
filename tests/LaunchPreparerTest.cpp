@@ -62,6 +62,60 @@ QVariantMap n64Project(const QString &hash)
     };
 }
 
+// Pokémon Snap-like: ROM and saves in a data folder the launcher is pointed
+// at with an environment variable.
+QVariantMap snapProject(const QString &hash)
+{
+    return QVariantMap{
+        {QStringLiteral("id"), QStringLiteral("test-snap")},
+        {QStringLiteral("name"), QStringLiteral("Test Snap")},
+        {QStringLiteral("gameTitles"), QVariantList{QStringLiteral("Test Game")}},
+        {QStringLiteral("launch"), QVariantMap{
+            {QStringLiteral("method"), QStringLiteral("romfolder")},
+            {QStringLiteral("dataFolder"), QStringLiteral("TestSnap")},
+            {QStringLiteral("romFileName"), QStringLiteral("testsnap.z64")},
+            {QStringLiteral("romName"), QStringLiteral("TEST GAME")},
+            {QStringLiteral("romXxh3"), hash},
+            {QStringLiteral("romVersion"), QStringLiteral("North America")},
+            {QStringLiteral("environment"), QVariantMap{{QStringLiteral("TEST_DATA_DIR"), QStringLiteral("{dataFolder}")}}},
+            {QStringLiteral("dataFiles"), QStringList{QStringLiteral("saves"), QStringLiteral("mods.json")}},
+            {QStringLiteral("savesSubfolder"), QStringLiteral("saves")}}}
+    };
+}
+
+// Snowboard Kids-like: the placed ROM is passed as the first argument.
+QVariantMap romArgumentProject(const QString &hash)
+{
+    return QVariantMap{
+        {QStringLiteral("id"), QStringLiteral("test-rom-argument")},
+        {QStringLiteral("name"), QStringLiteral("Test Kids")},
+        {QStringLiteral("gameTitles"), QVariantList{QStringLiteral("Test Game")}},
+        {QStringLiteral("launch"), QVariantMap{
+            {QStringLiteral("method"), QStringLiteral("romfolder")},
+            {QStringLiteral("dataFolder"), QStringLiteral("TestKids")},
+            {QStringLiteral("romFileName"), QStringLiteral("rom/testkids.us.z64")},
+            {QStringLiteral("romXxh3"), hash},
+            {QStringLiteral("romVersion"), QStringLiteral("North America")},
+            {QStringLiteral("arguments"), QStringList{QStringLiteral("{romPath}")}},
+            {QStringLiteral("savesSubfolder"), QStringLiteral("userdata/saves")}}}
+    };
+}
+
+// Luigi's Mansion-like: the game file itself is passed with a flag.
+QVariantMap discProject()
+{
+    return QVariantMap{
+        {QStringLiteral("id"), QStringLiteral("test-disc")},
+        {QStringLiteral("name"), QStringLiteral("Test Mansion")},
+        {QStringLiteral("gameTitles"), QVariantList{QStringLiteral("Test Game")}},
+        {QStringLiteral("launch"), QVariantMap{
+            {QStringLiteral("method"), QStringLiteral("discargument")},
+            {QStringLiteral("arguments"), QStringList{QStringLiteral("--disc"), QStringLiteral("{gamePath}")}},
+            {QStringLiteral("fileExtensions"), QStringList{QStringLiteral("iso"), QStringLiteral("rvz")}},
+            {QStringLiteral("firstStartNote"), QStringLiteral("The first start takes a while.")}}}
+    };
+}
+
 QVariantMap shipProject()
 {
     return QVariantMap{
@@ -91,6 +145,10 @@ private slots:
     void doesNotCopyMismatchedRom();
     void preparesHarbourMastersPort();
     void harbourMastersSavesStayOutsideInstallWhenPreparingIsOff();
+    void romFolderPointsTheLauncherAtItsDataFolder();
+    void romFolderPassesThePlacedRomOnlyWhenItMatches();
+    void discArgumentPassesTheGameFile();
+    void backgroundReadsNeverReadOnTheCallersThread();
 
 private:
     LaunchPreparer::Options options(const QTemporaryDir &root) const
@@ -348,6 +406,137 @@ void LaunchPreparerTest::harbourMastersSavesStayOutsideInstallWhenPreparingIsOff
     QCOMPARE(plan.environment.value(QStringLiteral("SHIP_HOME")), folder);
     QVERIFY(QFileInfo::exists(QDir(folder).filePath(QStringLiteral("saves/file1.sav"))));
     QVERIFY(!QFileInfo::exists(QDir(folder).filePath(QStringLiteral("baserom.us.z64"))));
+}
+
+void LaunchPreparerTest::romFolderPointsTheLauncherAtItsDataFolder()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QByteArray rom = makeRom("TEST GAME", 'E');
+    const QVariantMap project = snapProject(RomInspector::inspectN64(rom).xxh3Hex());
+    LaunchPreparer::Options opts = options(root);
+    const QString install = QDir(root.path()).filePath(QStringLiteral("launchers/test-snap"));
+    QVERIFY(writeFile(QDir(install).filePath(QStringLiteral("saves/slot1.sav")), QByteArray("save")));
+    QVERIFY(writeFile(QDir(install).filePath(QStringLiteral("mods.json")), QByteArray("{}")));
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test (USA).v64"));
+    QVERIFY(writeFile(game, byteSwapped(rom)));
+
+    LaunchPreparer preparer;
+    const QString folder = QDir(opts.dataHome).filePath(QStringLiteral("TestSnap"));
+    QCOMPARE(LaunchPreparer::savesFolder(project.value("launch").toMap(), install, opts),
+             QDir(folder).filePath(QStringLiteral("saves")));
+    QCOMPARE(preparer.readiness(project, game, install, opts).value("state").toString(),
+             QStringLiteral("ready"));
+
+    const LaunchPreparer::Plan plan = preparer.prepare(project, game, install, opts);
+    QCOMPARE(plan.environment.value(QStringLiteral("TEST_DATA_DIR")), folder);
+    QVERIFY(plan.arguments.isEmpty());
+    // Saves made in the install folder came along; the ROM is big-endian.
+    QCOMPARE(readFile(QDir(folder).filePath(QStringLiteral("saves/slot1.sav"))), QByteArray("save"));
+    QVERIFY(QFileInfo::exists(QDir(folder).filePath(QStringLiteral("mods.json"))));
+    QCOMPARE(readFile(QDir(folder).filePath(QStringLiteral("testsnap.z64"))), rom);
+    QCOMPARE(preparer.readiness(project, game, install, opts).value("state").toString(),
+             QStringLiteral("has_copy"));
+
+    // With preparing off the launcher is still pointed outside its install.
+    QTemporaryDir other;
+    LaunchPreparer::Options off = options(other);
+    off.prepareFiles = false;
+    const LaunchPreparer::Plan offPlan = preparer.prepare(project, game, install, off);
+    const QString offFolder = QDir(off.dataHome).filePath(QStringLiteral("TestSnap"));
+    QCOMPARE(offPlan.environment.value(QStringLiteral("TEST_DATA_DIR")), offFolder);
+    QVERIFY(!QFileInfo::exists(QDir(offFolder).filePath(QStringLiteral("testsnap.z64"))));
+}
+
+void LaunchPreparerTest::romFolderPassesThePlacedRomOnlyWhenItMatches()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QByteArray rom = makeRom("TEST GAME", 'E');
+    LaunchPreparer::Options opts = options(root);
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test Kids (USA).z64"));
+    QVERIFY(writeFile(game, rom));
+    LaunchPreparer preparer;
+
+    // Another game: no argument, so the launcher asks as usual.
+    const QVariantMap wrong = romArgumentProject(QStringLiteral("0123456789ABCDEF"));
+    LaunchPreparer::Plan plan = preparer.prepare(wrong, game, QString(), opts);
+    QVERIFY(plan.arguments.isEmpty());
+    // No romName in the recipe: a mismatch reads as the wrong copy, not another game.
+    QCOMPARE(preparer.readiness(wrong, game, QString(), opts).value("state").toString(),
+             QStringLiteral("wrong_version"));
+
+    const QVariantMap project = romArgumentProject(RomInspector::inspectN64(rom).xxh3Hex());
+    plan = preparer.prepare(project, game, QString(), opts);
+    const QString folder = QDir(opts.dataHome).filePath(QStringLiteral("TestKids"));
+    const QString placed = QDir(folder).filePath(QStringLiteral("rom/testkids.us.z64"));
+    QCOMPARE(readFile(placed), rom);
+    QCOMPARE(plan.arguments, QStringList{placed});
+    QCOMPARE(LaunchPreparer::savesFolder(project.value("launch").toMap(), QString(), opts),
+             QDir(folder).filePath(QStringLiteral("userdata/saves")));
+}
+
+void LaunchPreparerTest::discArgumentPassesTheGameFile()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    LaunchPreparer::Options opts = options(root);
+    const QString disc = QDir(root.path()).filePath(QStringLiteral("library/Test Mansion (USA).rvz"));
+    QVERIFY(writeFile(disc, QByteArray("disc image")));
+    LaunchPreparer preparer;
+
+    const QVariantMap readiness = preparer.readiness(discProject(), disc, QString(), opts);
+    QCOMPARE(readiness.value("state").toString(), QStringLiteral("ready"));
+    QVERIFY(readiness.value("detail").toString().contains(QStringLiteral("first start")));
+    LaunchPreparer::Plan plan = preparer.prepare(discProject(), disc, QString(), opts);
+    QCOMPARE(plan.arguments, (QStringList{QStringLiteral("--disc"), disc}));
+    QVERIFY(plan.environment.isEmpty());
+    QCOMPARE(readFile(disc), QByteArray("disc image")); // nothing copied or changed
+
+    // A format the launcher doesn't read, or preparing off: no arguments.
+    const QString zip = QDir(root.path()).filePath(QStringLiteral("library/Test Mansion.zip"));
+    QVERIFY(writeFile(zip, QByteArray("zip")));
+    QCOMPARE(preparer.readiness(discProject(), zip, QString(), opts).value("state").toString(),
+             QStringLiteral("wrong_file"));
+    QVERIFY(preparer.prepare(discProject(), zip, QString(), opts).arguments.isEmpty());
+    opts.prepareFiles = false;
+    QVERIFY(preparer.prepare(discProject(), disc, QString(), opts).arguments.isEmpty());
+}
+
+void LaunchPreparerTest::backgroundReadsNeverReadOnTheCallersThread()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QByteArray rom = makeRom("TEST GAME", 'E');
+    const QVariantMap project = n64Project(RomInspector::inspectN64(rom).xxh3Hex());
+    LaunchPreparer::Options opts = options(root);
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test (USA).z64"));
+    QVERIFY(writeFile(game, rom));
+
+    LaunchPreparer preparer;
+    preparer.setBackgroundReads(true);
+    QCOMPARE(preparer.readiness(project, game, QString(), opts).value("state").toString(),
+             QStringLiteral("checking"));
+    // Asked twice before the answer: listed once.
+    preparer.readiness(project, game, QString(), opts);
+    const QStringList pending = preparer.takePendingReads();
+    QCOMPARE(pending, QStringList{game});
+    QVERIFY(preparer.takePendingReads().isEmpty());
+
+    // The caller reads it elsewhere and hands it back.
+    preparer.storeInspection(game, RomInspector::inspectN64File(game));
+    QCOMPARE(preparer.readiness(project, game, QString(), opts).value("state").toString(),
+             QStringLiteral("ready"));
+    QVERIFY(preparer.takePendingReads().isEmpty());
+
+    // A changed file is read again.
+    QVERIFY(writeFile(game, makeRom("OTHER GAME", 'E', 0, 'y')));
+    QFile touched(game);
+    QVERIFY(touched.open(QIODevice::ReadWrite));
+    QVERIFY(touched.setFileTime(QDateTime::currentDateTime().addSecs(5), QFileDevice::FileModificationTime));
+    touched.close();
+    QCOMPARE(preparer.readiness(project, game, QString(), opts).value("state").toString(),
+             QStringLiteral("checking"));
 }
 
 QTEST_GUILESS_MAIN(LaunchPreparerTest)

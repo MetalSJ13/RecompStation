@@ -22,6 +22,17 @@
 //                   the managed install folder, so saves survive updates and
 //                   uninstalls) and places the ROM there, where the port
 //                   looks for ROMs to extract.
+//   romfolder       Like n64recomp, but the launcher's folder is
+//                   ~/.local/share/<dataFolder>, outside the install folder:
+//                   the checked ROM goes to <dataFolder>/<romFileName>,
+//                   "environment" values point the launcher there and
+//                   "arguments" pass the placed ROM ({dataFolder} and
+//                   {romPath} are filled in). "dataFiles" in the install
+//                   folder are copied over the first time, so saves made
+//                   there are kept. Pokémon Snap, Snowboard Kids.
+//   discargument    Passes the game file itself in "arguments" ({gamePath},
+//                   e.g. --disc <file>) when its extension is one of
+//                   "fileExtensions"; nothing is copied. Luigi's Mansion.
 //   manual          The launcher asks for the file itself.
 //
 // Existing files in a launcher's folder are never replaced, and the game
@@ -44,6 +55,7 @@ public:
         bool ok = false;
         QString error;
         QHash<QString, QString> environment;
+        QStringList arguments;  // passed to the launcher
         QVariantList steps;     // {title, detail, warning} shown while the game starts
         bool defaultFullscreenApplied = false; // remember: don't set it again
     };
@@ -77,8 +89,20 @@ public:
                                             const Options &options,
                                             QString *summary = nullptr);
 
+    // With background reads on, readiness() never reads a game file it
+    // hasn't seen: it answers "checking" and lists the file in
+    // takePendingReads(), for the caller to inspect off the UI thread and hand
+    // back with storeInspection(). Off (the default, used by tests), it reads
+    // the file right away.
+    void setBackgroundReads(bool enabled) { m_backgroundReads = enabled; }
+    QStringList takePendingReads();
+    void storeInspection(const QString &path, const N64RomInfo &info);
+
 private:
     N64RomInfo inspect(const QString &path);
+    bool isInspected(const QString &path) const;
+    bool m_backgroundReads = false;
+    QStringList m_pendingReads;
 
     struct CacheEntry
     {

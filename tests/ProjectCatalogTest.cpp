@@ -473,11 +473,42 @@ void ProjectCatalogTest::parsesLaunchRecipes()
         R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A"})",
         R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "XYZ"})",
         R"({"method": "harbourmasters", "dataFolder": "ok", "romFileName": "a.z64", "romName": "A", "dataFiles": ["../saves"]})",
-        R"("n64recomp")"
+        R"("n64recomp")",
+        // New recipe kinds: nothing beyond flags, placeholders and folder settings.
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a/b/c.z64", "romXxh3": "1B67585D56E07F8C"})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64"})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "environment": {"LD_PRELOAD": "{dataFolder}"}})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "environment": {"PATH": "{dataFolder}"}})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "environment": {"GAME_DIR": "/tmp"}})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "arguments": ["; rm -rf ~"]})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "arguments": ["{gamePath}"]})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "savesSubfolder": "../x"})",
+        R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C", "arguments": ["--x"]})",
+        R"({"method": "discargument", "arguments": ["--disc"]})",
+        R"({"method": "discargument", "arguments": ["--disc", "{gamePath}", "--exec=/bin/sh"]})",
+        R"({"method": "discargument", "arguments": ["--disc", "{gamePath}"], "fileExtensions": ["is o"]})"
     };
     for (const QByteArray &launchJson : invalid)
         QVERIFY2(!ProjectCatalog::parseCatalog(catalogWithLaunch(launchJson), &projects, &error),
                  launchJson.constData());
+
+    const QByteArray romFolder = R"({"method": "romfolder", "dataFolder": "Sample",
+        "romFileName": "rom/sample.z64", "romXxh3": "1b67585d56e07f8c", "romVersion": "North America",
+        "arguments": ["{romPath}"], "environment": {"SAMPLE_DATA_DIR": "{dataFolder}"},
+        "dataFiles": ["saves"], "savesSubfolder": "userdata/saves"})";
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(romFolder), &projects, &error), qPrintable(error));
+    const QVariantMap folderRecipe = projects.first().toMap().value("launch").toMap();
+    QCOMPARE(folderRecipe.value("arguments").toStringList(), QStringList{QStringLiteral("{romPath}")});
+    QCOMPARE(folderRecipe.value("environment").toMap().value("SAMPLE_DATA_DIR").toString(),
+             QStringLiteral("{dataFolder}"));
+    QCOMPARE(folderRecipe.value("savesSubfolder").toString(), QStringLiteral("userdata/saves"));
+
+    const QByteArray disc = R"({"method": "discargument", "arguments": ["--disc", "{gamePath}"],
+        "fileExtensions": ["ISO", "rvz"], "firstStartNote": "Takes a while."})";
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(disc), &projects, &error), qPrintable(error));
+    const QVariantMap discRecipe = projects.first().toMap().value("launch").toMap();
+    QCOMPARE(discRecipe.value("fileExtensions").toStringList(),
+             (QStringList{QStringLiteral("iso"), QStringLiteral("rvz")}));
 }
 
 void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
@@ -495,7 +526,13 @@ void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
             ++prepared;
         }
     }
-    QVERIFY(prepared >= 16);
+    QVERIFY(prepared >= 17);
+    QCOMPARE(catalog.project(QStringLiteral("pokemon-snap-recompiled"))
+                 .value("launch").toMap().value("method").toString(), QStringLiteral("romfolder"));
+    QCOMPARE(catalog.project(QStringLiteral("snowboard-kids-recompiled"))
+                 .value("launch").toMap().value("method").toString(), QStringLiteral("romfolder"));
+    QCOMPARE(catalog.project(QStringLiteral("luigis-mansion-recompiled"))
+                 .value("launch").toMap().value("method").toString(), QStringLiteral("discargument"));
     QCOMPARE(catalog.project(QStringLiteral("banjo-kazooie-recompiled"))
                  .value("launch").toMap().value("romFileName").toString(),
              QStringLiteral("bk.n64.us.1.0.z64"));

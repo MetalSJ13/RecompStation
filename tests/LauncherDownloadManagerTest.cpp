@@ -23,6 +23,7 @@ private slots:
     void rejectsSymlinkedStagingRoot();
     void acceptsValidRequestAndReportsMissingNetworkDestination();
     void installsAndUninstallsManagedLauncher();
+    void keepsSavesMadeInsideTheInstallAcrossReinstall();
     void installsLauncherFromNestedArchiveDirectory();
     void installsZipLauncherWithCompanionFiles();
     void installsStandaloneAppImage();
@@ -281,6 +282,92 @@ void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
     QVERIFY(QFileInfo::exists(unrelatedFile));
 }
 
+
+namespace {
+// A tar.gz launcher package: an executable plus the given files.
+bool writeLauncherPackage(const QString &path, const QMap<QString, QByteArray> &files)
+{
+    struct archive *writer = archive_write_new();
+    if (!writer || archive_write_add_filter_gzip(writer) != ARCHIVE_OK
+        || archive_write_set_format_pax_restricted(writer) != ARCHIVE_OK
+        || archive_write_open_filename(writer, QFile::encodeName(path).constData()) != ARCHIVE_OK)
+        return false;
+    QMap<QString, QByteArray> all = files;
+    all.insert(QStringLiteral("SampleLauncher"), QByteArray("#!/bin/sh\necho test\n"));
+    for (auto it = all.cbegin(); it != all.cend(); ++it) {
+        struct archive_entry *entry = archive_entry_new();
+        const QByteArray name = it.key().toUtf8();
+        archive_entry_set_pathname(entry, name.constData());
+        archive_entry_set_filetype(entry, AE_IFREG);
+        archive_entry_set_perm(entry, it.key() == QStringLiteral("SampleLauncher") ? 0755 : 0644);
+        archive_entry_set_size(entry, it.value().size());
+        const bool ok = archive_write_header(writer, entry) == ARCHIVE_OK
+            && archive_write_data(writer, it.value().constData(), it.value().size()) == it.value().size();
+        archive_entry_free(entry);
+        if (!ok)
+            return false;
+    }
+    return archive_write_close(writer) == ARCHIVE_OK && archive_write_free(writer) == ARCHIVE_OK;
+}
+
+bool writeText(const QString &path, const QByteArray &data)
+{
+    QDir().mkpath(QFileInfo(path).absolutePath());
+    QFile file(path);
+    return file.open(QIODevice::WriteOnly) && file.write(data) == data.size();
+}
+
+QByteArray readText(const QString &path)
+{
+    QFile file(path);
+    return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+}
+
+void LauncherDownloadManagerTest::keepsSavesMadeInsideTheInstallAcrossReinstall()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("portable-sample-project");
+    const QString assetName = QStringLiteral("Portable-Linux-X64.tar.gz");
+    const QString staging = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(staging));
+    const QString archivePath = QDir(staging).filePath(assetName);
+    const QMap<QString, QByteArray> package{{QStringLiteral("config.json"), QByteArray("{\"v\":1}")}};
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completed(&manager, &LauncherDownloadManager::installationCompleted);
+    QVERIFY(writeLauncherPackage(archivePath, package));
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"), QStringLiteral("SampleLauncher"));
+    QTRY_COMPARE_WITH_TIMEOUT(completed.count(), 1, 10000);
+
+    const QString install = QDir(platformManager.dataDirectory()).filePath(QStringLiteral("launchers/") + projectId);
+    // The launcher ran in portable mode: saves and a settings change in its folder.
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("portable.txt")), QByteArray()));
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("saves/slot1.sav")), QByteArray("save one")));
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("config.json")), QByteArray("{\"v\":2}")));
+
+    QVERIFY(manager.uninstallLauncher(projectId));
+    QVERIFY(!QFileInfo::exists(install));
+    const QString kept = manager.keptFilesDirectory(projectId);
+    QCOMPARE(readText(QDir(kept).filePath(QStringLiteral("saves/slot1.sav"))), QByteArray("save one"));
+    QVERIFY(QFileInfo::exists(QDir(kept).filePath(QStringLiteral("portable.txt"))));
+    // Files from the package itself go with the install, edited or not.
+    QVERIFY(!QFileInfo::exists(QDir(kept).filePath(QStringLiteral("config.json"))));
+    QVERIFY(!QFileInfo::exists(QDir(kept).filePath(QStringLiteral("SampleLauncher"))));
+
+    // Installing again (an update) puts them back.
+    QVERIFY(writeLauncherPackage(archivePath, package));
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"), QStringLiteral("SampleLauncher"));
+    QTRY_COMPARE_WITH_TIMEOUT(completed.count(), 2, 10000);
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("saves/slot1.sav"))), QByteArray("save one"));
+    QVERIFY(QFileInfo::exists(QDir(install).filePath(QStringLiteral("portable.txt"))));
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("config.json"))), QByteArray("{\"v\":1}"));
+    QVERIFY(!QFileInfo::exists(kept));
+}
 
 void LauncherDownloadManagerTest::installsLauncherFromNestedArchiveDirectory()
 {

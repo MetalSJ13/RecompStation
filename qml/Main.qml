@@ -2292,6 +2292,10 @@ ApplicationWindow {
             window.runningLaunchers = running
             controllerManager.gameSessionActive = Object.keys(running).length > 0
         }
+        // A game file was checked in the background: refresh the line under Play.
+        function onLaunchReadinessChanged() {
+            window.launchStatusRevision++
+        }
         function onLaunchFailed(projectId, message) {
             uiSounds.play("error")
             launchOverlay.hideFor(projectId)
@@ -3357,9 +3361,8 @@ ApplicationWindow {
         Label {
             width: 340
             wrapMode: Text.Wrap
-            text: "This removes only the RecompStation-managed launcher files for "
-                  + window.pendingUninstallProjectId
-                  + ". Your ROMs, saves, and other files are not targeted."
+            text: "This removes the launcher for " + window.pendingUninstallProjectId
+                  + ". Your games aren't touched. Saves and settings the launcher kept in its own folder are set aside and put back if you install it again."
             color: theme.textPrimary
         }
         onAccepted: {

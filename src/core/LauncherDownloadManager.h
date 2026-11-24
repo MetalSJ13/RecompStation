@@ -41,7 +41,11 @@ public:
     );
 
     Q_INVOKABLE QVariantList installedLaunchers() const;
+    // Removes a managed launcher. Files the launcher or player created in its
+    // folder (saves, settings, portable mode) are first moved to
+    // keptFilesDirectory(), and put back when the launcher is installed again.
     Q_INVOKABLE bool uninstallLauncher(const QString &projectId);
+    Q_INVOKABLE QString keptFilesDirectory(const QString &projectId) const;
 
 signals:
     void downloadProgress(
@@ -64,6 +68,10 @@ signals:
     void installationFailed(int requestId, const QString &message);
 
 private:
+    // Returns how many files were moved, or -1 when one couldn't be.
+    int setAsideUserFiles(const QString &projectId, const QString &installDirectory);
+    int restoreKeptFiles(const QString &projectId, const QString &installDirectory);
+
     struct Download;
 
     PlatformManager *m_platformManager = nullptr;

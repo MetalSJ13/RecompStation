@@ -88,6 +88,27 @@ int copyWithoutReplacing(const QString &source, const QString &destination)
     return copied;
 }
 
+// Fills {dataFolder}, {romPath} and {gamePath} in recipe strings.
+QString fillIn(QString text, const QHash<QString, QString> &values)
+{
+    for (auto it = values.cbegin(); it != values.cend(); ++it)
+        text.replace(QLatin1Char('{') + it.key() + QLatin1Char('}'), it.value());
+    return text;
+}
+
+QStringList filledArguments(const QVariantMap &recipe, const QHash<QString, QString> &values)
+{
+    QStringList arguments;
+    for (const QVariant &argument : recipe.value(QStringLiteral("arguments")).toList())
+        arguments << fillIn(argument.toString(), values);
+    return arguments;
+}
+
+bool usesRomChecksum(const QString &method)
+{
+    return method == QStringLiteral("n64recomp") || method == QStringLiteral("romfolder");
+}
+
 QString gameName(const QVariantMap &project)
 {
     const QVariantList titles = project.value(QStringLiteral("gameTitles")).toList();
@@ -110,6 +131,8 @@ QString LaunchPreparer::dataFolder(const QVariantMap &recipe,
             return installDirectory;
         return QDir(homeDirectory(options)).filePath(QStringLiteral(".config/") + folder);
     }
+    if (method == QStringLiteral("romfolder"))
+        return QDir(dataHome(options)).filePath(folder);
     if (method == QStringLiteral("harbourmasters")) {
         const QString shipHome = qEnvironmentVariable("SHIP_HOME");
         if (!shipHome.isEmpty() && QDir::isAbsolutePath(shipHome))
@@ -126,9 +149,38 @@ QString LaunchPreparer::savesFolder(const QVariantMap &recipe,
     const QString folder = dataFolder(recipe, installDirectory, options);
     if (folder.isEmpty())
         return {};
-    if (recipe.value(QStringLiteral("method")).toString() == QStringLiteral("n64recomp"))
+    const QString method = recipe.value(QStringLiteral("method")).toString();
+    if (method == QStringLiteral("n64recomp"))
         return QDir(folder).filePath(QStringLiteral("saves"));
+    if (method == QStringLiteral("romfolder"))
+        return QDir(folder).filePath(recipe.value(QStringLiteral("savesSubfolder"), QStringLiteral("saves")).toString());
     return folder;
+}
+
+bool LaunchPreparer::isInspected(const QString &path) const
+{
+    const QFileInfo info(path);
+    auto it = m_cache.constFind(path);
+    return it != m_cache.constEnd() && it->size == info.size() && it->modified == info.lastModified();
+}
+
+QStringList LaunchPreparer::takePendingReads()
+{
+    QStringList pending;
+    pending.swap(m_pendingReads);
+    return pending;
+}
+
+void LaunchPreparer::storeInspection(const QString &path, const N64RomInfo &info)
+{
+    const QFileInfo file(path);
+    CacheEntry entry;
+    entry.size = file.size();
+    entry.modified = file.lastModified();
+    entry.info = info;
+    if (m_cache.size() > 64)
+        m_cache.clear();
+    m_cache.insert(path, entry);
 }
 
 N64RomInfo LaunchPreparer::inspect(const QString &path)
@@ -195,13 +247,36 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
     const QString folder = result.value(QStringLiteral("dataFolder")).toString();
     const QString romName = recipe.value(QStringLiteral("romName")).toString();
 
-    if (method == QStringLiteral("n64recomp")) {
+    if (method == QStringLiteral("discargument")) {
+        if (!hasGame)
+            return noGame();
+        const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
+        const QString suffix = QFileInfo(gamePath).suffix().toLower();
+        if (!extensions.isEmpty() && !extensions.contains(suffix)) {
+            return set(QStringLiteral("wrong_file"), QStringLiteral("warn"),
+                       QStringLiteral("%1 can't read this file").arg(name),
+                       QStringLiteral("It reads %1 disc images.").arg(extensions.join(QStringLiteral(", "))));
+        }
+        const QString note = recipe.value(QStringLiteral("firstStartNote")).toString();
+        return set(QStringLiteral("ready"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
+                   QStringLiteral("Play starts %1 with your copy.").arg(name)
+                       + (note.isEmpty() ? QString() : QLatin1Char(' ') + note));
+    }
+
+    if (usesRomChecksum(method)) {
         if (QFileInfo::exists(QDir(folder).filePath(recipe.value(QStringLiteral("romFileName")).toString()))) {
             return set(QStringLiteral("has_copy"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
                        QStringLiteral("The launcher already has a copy from an earlier start. RecompStation leaves it as it is."));
         }
         if (!hasGame)
             return noGame();
+        if (m_backgroundReads && !isInspected(gamePath)) {
+            if (!m_pendingReads.contains(gamePath))
+                m_pendingReads.append(gamePath);
+            return set(QStringLiteral("checking"), QStringLiteral("info"),
+                       QStringLiteral("Checking your copy…"),
+                       QStringLiteral("Reading the game file once to see if it's the version %1 needs.").arg(name));
+        }
         const N64RomInfo info = inspect(gamePath);
         if (!info.valid) {
             return set(QStringLiteral("wrong_file"), QStringLiteral("warn"),
@@ -212,7 +287,9 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
             return set(QStringLiteral("ready"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
                        QStringLiteral("Your copy is %1, the version this launcher needs. Play opens straight to the game.").arg(romVersion));
         }
-        if (info.internalName.compare(romName, Qt::CaseInsensitive) == 0) {
+        // No name in the recipe: the launcher reads it from the ROM, so a
+        // mismatch is most likely the same game in another version.
+        if (romName.isEmpty() || info.internalName.compare(romName, Qt::CaseInsensitive) == 0) {
             if (info.versionLabel() == romVersion || romVersion.isEmpty()) {
                 return set(QStringLiteral("wrong_version"), QStringLiteral("warn"),
                            QStringLiteral("Your copy doesn't match"),
@@ -236,6 +313,13 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
     }
     if (!hasGame)
         return noGame();
+    if (m_backgroundReads && !isInspected(gamePath)) {
+        if (!m_pendingReads.contains(gamePath))
+            m_pendingReads.append(gamePath);
+        return set(QStringLiteral("checking"), QStringLiteral("info"),
+                   QStringLiteral("Checking your copy…"),
+                   QStringLiteral("Reading the game file once."));
+    }
     const N64RomInfo info = inspect(gamePath);
     if (!info.valid) {
         return set(QStringLiteral("wrong_file"), QStringLiteral("warn"),
@@ -323,10 +407,24 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
     plan.ok = true;
     const QVariantMap recipe = project.value(QStringLiteral("launch")).toMap();
     const QString method = recipe.value(QStringLiteral("method"), QStringLiteral("manual")).toString();
-    // Pointing HarbourMasters ports at a folder outside the install folder is
-    // about keeping saves, so it happens even when preparing files is off.
-    if (method == QStringLiteral("manual")
-        || (!options.prepareFiles && method != QStringLiteral("harbourmasters")))
+    if (method == QStringLiteral("manual"))
+        return plan;
+    if (method == QStringLiteral("discargument")) {
+        const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
+        const QFileInfo game(gamePath);
+        if (!options.prepareFiles || gamePath.isEmpty() || !game.isFile()
+            || (!extensions.isEmpty() && !extensions.contains(game.suffix().toLower())))
+            return plan;
+        plan.arguments = filledArguments(recipe, {{QStringLiteral("gamePath"), game.absoluteFilePath()}});
+        plan.steps.append(step(QStringLiteral("Starting with your copy"), game.fileName()));
+        return plan;
+    }
+    // Pointing a launcher at a folder outside its install folder is about
+    // keeping saves, so it happens even when preparing files is off.
+    const bool keepsSavesOutside = method == QStringLiteral("harbourmasters")
+        || (method == QStringLiteral("romfolder")
+            && !recipe.value(QStringLiteral("environment")).toMap().isEmpty());
+    if (!options.prepareFiles && !keepsSavesOutside)
         return plan;
 
     const QString folder = dataFolder(recipe, installDirectory, options);
@@ -342,8 +440,14 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
     const QString romPath = QDir(folder).filePath(romFileName);
     const QString romName = recipe.value(QStringLiteral("romName")).toString();
 
-    if (method == QStringLiteral("harbourmasters")) {
-        plan.environment.insert(QStringLiteral("SHIP_HOME"), folder);
+    if (method == QStringLiteral("harbourmasters") || method == QStringLiteral("romfolder")) {
+        if (method == QStringLiteral("harbourmasters")) {
+            plan.environment.insert(QStringLiteral("SHIP_HOME"), folder);
+        } else {
+            const QVariantMap environment = recipe.value(QStringLiteral("environment")).toMap();
+            for (auto it = environment.cbegin(); it != environment.cend(); ++it)
+                plan.environment.insert(it.key(), fillIn(it.value().toString(), {{QStringLiteral("dataFolder"), folder}}));
+        }
         // Earlier starts kept saves and settings in the install folder. Copy
         // them over the first time, so nothing is lost when switching.
         if (newFolder && !installDirectory.isEmpty()) {
@@ -360,9 +464,14 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
                                        QStringLiteral("To %1, outside the launcher's install folder").arg(shortPath(folder, options))));
             }
         }
-        if (!options.prepareFiles || folderHasArchive(folder) || QFileInfo::exists(romPath)
-            || gamePath.isEmpty())
+        if (method == QStringLiteral("harbourmasters")
+            && (!options.prepareFiles || folderHasArchive(folder) || QFileInfo::exists(romPath)
+                || gamePath.isEmpty()))
             return plan;
+        if (!options.prepareFiles)
+            return plan;
+        if (method == QStringLiteral("romfolder") && QFileInfo::exists(romPath))
+            plan.steps.append(step(QStringLiteral("The launcher already has your copy"), shortPath(romPath, options)));
     } else if (QFileInfo::exists(romPath)) {
         plan.steps.append(step(QStringLiteral("The launcher already has your copy"), shortPath(romPath, options)));
     }
@@ -375,15 +484,16 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
             QString error;
             const QByteArray canonical = RomInspector::canonicalN64(source.readAll(), &error);
             const N64RomInfo info = RomInspector::inspectN64(canonical);
-            const bool matches = method == QStringLiteral("n64recomp")
+            const bool matches = usesRomChecksum(method)
                 ? info.valid && info.xxh3Hex() == recipe.value(QStringLiteral("romXxh3")).toString()
                 : info.valid && info.internalName.compare(romName, Qt::CaseInsensitive) == 0;
             if (matches) {
                 plan.steps.append(step(QStringLiteral("Checked your copy"),
                                        sourceInfo.fileName() + QStringLiteral(" · ")
-                                           + (method == QStringLiteral("n64recomp")
+                                           + (usesRomChecksum(method)
                                                   ? recipe.value(QStringLiteral("romVersion")).toString()
                                                   : info.versionLabel())));
+                QDir().mkpath(QFileInfo(romPath).absolutePath());
                 if (writeFileOnce(romPath, canonical, &error)) {
                     plan.steps.append(step(QStringLiteral("Gave it to the launcher"), shortPath(romPath, options)));
                     qCInfo(lcGameLaunch) << "Placed the game file for the launcher at" << romPath;
@@ -398,6 +508,12 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
             }
         }
     }
+
+    // Launchers that take the ROM on the command line get it only once it is
+    // in place; otherwise they ask for a file as usual.
+    if (method == QStringLiteral("romfolder") && QFileInfo::exists(romPath))
+        plan.arguments = filledArguments(recipe, {{QStringLiteral("romPath"), romPath},
+                                                  {QStringLiteral("dataFolder"), folder}});
 
     const QString graphicsFile = recipe.value(QStringLiteral("graphicsFile")).toString();
     if (method == QStringLiteral("n64recomp") && !graphicsFile.isEmpty()) {

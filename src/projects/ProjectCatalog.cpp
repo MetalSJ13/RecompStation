@@ -41,6 +41,60 @@ bool validFileName(const QString &value)
         && !value.contains(QStringLiteral(".."));
 }
 
+// A relative path of one or two names ("rom/game.z64"), each a valid name.
+bool validRelativePath(const QString &value, int maximumParts = 2)
+{
+    const QStringList parts = value.split(QLatin1Char('/'));
+    if (parts.isEmpty() || parts.size() > maximumParts)
+        return false;
+    for (const QString &part : parts) {
+        if (!validFileName(part))
+            return false;
+    }
+    return true;
+}
+
+// Launcher arguments: a flag ("--disc") or a placeholder RecompStation fills
+// in with a path it chose ({romPath}, {gamePath}). Nothing else, so a catalog
+// entry can't make a launcher run anything it wasn't built to.
+bool parseArguments(const QJsonValue &value, const QStringList &placeholders, QStringList *arguments)
+{
+    static const QRegularExpression flag(QStringLiteral("^--?[a-z][a-z0-9-]{0,40}$"));
+    if (!value.isUndefined() && !value.isArray())
+        return false;
+    for (const QJsonValue &entry : value.toArray()) {
+        const QString argument = entry.toString();
+        if (!placeholders.contains(argument) && !flag.match(argument).hasMatch())
+            return false;
+        arguments->append(argument);
+    }
+    return arguments->size() <= 8;
+}
+
+// Environment for the launcher: only folder settings it reads, set to the
+// folder RecompStation prepared. Variables that change how programs load or
+// where the system looks for things are refused.
+bool parseEnvironment(const QJsonValue &value, QVariantMap *environment)
+{
+    static const QRegularExpression name(QStringLiteral("^[A-Z][A-Z0-9_]{1,40}$"));
+    if (!value.isUndefined() && !value.isObject())
+        return false;
+    const QJsonObject object = value.toObject();
+    for (auto it = object.begin(); it != object.end(); ++it) {
+        const QString key = it.key();
+        if (!name.match(key).hasMatch() || key.startsWith(QStringLiteral("LD_"))
+            || key.startsWith(QStringLiteral("XDG_")) || key.startsWith(QStringLiteral("QT_"))
+            || key.startsWith(QStringLiteral("SDL_"))
+            || QStringList{QStringLiteral("PATH"), QStringLiteral("HOME"), QStringLiteral("SHELL"),
+                           QStringLiteral("USER"), QStringLiteral("DISPLAY"),
+                           QStringLiteral("WAYLAND_DISPLAY")}.contains(key)
+            || it.value().toString() != QStringLiteral("{dataFolder}"))
+            return false;
+        environment->insert(key, it.value().toString());
+    }
+    return environment->size() <= 4;
+}
+
 // The optional "launch" recipe: how RecompStation hands the player's game
 // file to this launcher. Returns false when the object is present but invalid.
 bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
@@ -50,8 +104,34 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         *recipe = QVariantMap{{QStringLiteral("method"), method}};
         return true;
     }
-    if (method != QStringLiteral("n64recomp") && method != QStringLiteral("harbourmasters"))
+    if (method == QStringLiteral("discargument")) {
+        QStringList arguments;
+        if (!parseArguments(object.value(QStringLiteral("arguments")), {QStringLiteral("{gamePath}")}, &arguments)
+            || !arguments.contains(QStringLiteral("{gamePath}")))
+            return false;
+        static const QRegularExpression extension(QStringLiteral("^[a-z0-9]{1,5}$"));
+        QStringList extensions;
+        for (const QJsonValue &entry : object.value(QStringLiteral("fileExtensions")).toArray()) {
+            const QString value = entry.toString().toLower();
+            if (!extension.match(value).hasMatch())
+                return false;
+            extensions.append(value);
+        }
+        const QString note = object.value(QStringLiteral("firstStartNote")).toString().trimmed();
+        if (note.size() > 200)
+            return false;
+        *recipe = QVariantMap{
+            {QStringLiteral("method"), method},
+            {QStringLiteral("arguments"), arguments},
+            {QStringLiteral("fileExtensions"), extensions},
+            {QStringLiteral("firstStartNote"), note}
+        };
+        return true;
+    }
+    if (method != QStringLiteral("n64recomp") && method != QStringLiteral("harbourmasters")
+        && method != QStringLiteral("romfolder"))
         return false;
+    const bool romFolder = method == QStringLiteral("romfolder");
 
     const QString dataFolder = object.value(QStringLiteral("dataFolder")).toString();
     const QString romFileName = object.value(QStringLiteral("romFileName")).toString();
@@ -60,15 +140,31 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
     const QString romVersion = object.value(QStringLiteral("romVersion")).toString().trimmed();
     const QString graphicsFile = object.value(QStringLiteral("graphicsFile")).toString();
     static const QRegularExpression hashPattern(QStringLiteral("^[0-9A-F]{16}$"));
-    if (!validFileName(dataFolder) || !validFileName(romFileName)
-        || !romFileName.endsWith(QStringLiteral(".z64")) || romName.isEmpty() || romName.size() > 20
+    // romfolder launchers may keep the ROM one folder down ("rom/game.z64"),
+    // and may read the name from the ROM themselves (no romName).
+    if (!validFileName(dataFolder)
+        || !(romFolder ? validRelativePath(romFileName) : validFileName(romFileName))
+        || !romFileName.endsWith(QStringLiteral(".z64"))
+        || (romName.isEmpty() && !romFolder) || romName.size() > 20
         || (!romXxh3.isEmpty() && !hashPattern.match(romXxh3).hasMatch())
         || (!graphicsFile.isEmpty()
             && (!validFileName(graphicsFile) || !graphicsFile.endsWith(QStringLiteral(".json"))))) {
         return false;
     }
-    if (method == QStringLiteral("n64recomp") && romXxh3.isEmpty())
+    if ((method == QStringLiteral("n64recomp") || romFolder) && romXxh3.isEmpty())
         return false;
+
+    QStringList arguments;
+    QVariantMap environment;
+    const QString savesSubfolder = object.value(QStringLiteral("savesSubfolder")).toString();
+    if (romFolder) {
+        if (!parseArguments(object.value(QStringLiteral("arguments")), {QStringLiteral("{romPath}")}, &arguments)
+            || !parseEnvironment(object.value(QStringLiteral("environment")), &environment)
+            || (!savesSubfolder.isEmpty() && !validRelativePath(savesSubfolder)))
+            return false;
+    } else if (object.contains(QStringLiteral("arguments")) || object.contains(QStringLiteral("environment"))) {
+        return false;
+    }
 
     QStringList dataFiles;
     for (const QJsonValue &value : object.value(QStringLiteral("dataFiles")).toArray()) {
@@ -89,6 +185,12 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         {QStringLiteral("graphicsFile"), graphicsFile},
         {QStringLiteral("dataFiles"), dataFiles}
     };
+    if (romFolder) {
+        recipe->insert(QStringLiteral("arguments"), arguments);
+        recipe->insert(QStringLiteral("environment"), environment);
+        if (!savesSubfolder.isEmpty())
+            recipe->insert(QStringLiteral("savesSubfolder"), savesSubfolder);
+    }
     return true;
 }
 }
