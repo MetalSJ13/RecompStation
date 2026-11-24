@@ -59,6 +59,62 @@ QString cartridgePlatform(const QByteArray &head, const QString &extension, bool
     return {};
 }
 
+QByteArray readAt(QFile &file, qint64 offset, qint64 length)
+{
+    if (file.size() < offset + length || !file.seek(offset))
+        return {};
+    return file.read(length);
+}
+
+bool hasBytes(QFile &file, qint64 offset, const QByteArray &expected)
+{
+    return readAt(file, offset, expected.size()) == expected;
+}
+
+const QByteArray GameCubeMagic = QByteArray::fromHex("c2339f3d");  // at 0x1C
+const QByteArray WiiMagic = QByteArray::fromHex("5d1c9ea3");       // at 0x18
+
+// Platform from a Nintendo disc header starting at `base`.
+QString nintendoDiscPlatform(QFile &file, qint64 base)
+{
+    if (hasBytes(file, base + 0x18, WiiMagic))
+        return QStringLiteral("Wii");
+    if (hasBytes(file, base + 0x1C, GameCubeMagic))
+        return QStringLiteral("GameCube");
+    return {};
+}
+
+// "Xbox" or "Xbox 360" for an XDVDFS disc image, or empty. The volume
+// descriptor sits 0x10000 into the game partition, which starts at 0 in
+// trimmed images (extract-xiso) and at a fixed offset in full redump images:
+// 0x18300000 on original Xbox discs (XGD1), 0xFD90000 (XGD2) or 0x2080000
+// (XGD3) on Xbox 360 discs. A trimmed image is told apart by its boot
+// executable: default.xex on Xbox 360, default.xbe on the original Xbox.
+QString xboxDiscPlatform(QFile &file)
+{
+    const QByteArray magic("MICROSOFT*XBOX*MEDIA");
+    if (hasBytes(file, 0x18300000 + 0x10000, magic))
+        return QStringLiteral("Xbox");
+    if (hasBytes(file, 0xFD90000 + 0x10000, magic) || hasBytes(file, 0x2080000 + 0x10000, magic))
+        return QStringLiteral("Xbox 360");
+    if (!hasBytes(file, 0x10000, magic))
+        return {};
+
+    // Root directory: sector (u32 LE) at +0x14 and size at +0x18 of the
+    // volume descriptor; read at most 64 KiB of it.
+    const QByteArray descriptor = readAt(file, 0x10000, 0x20);
+    const auto u32 = [&descriptor](int offset) {
+        return quint32(quint8(descriptor[offset])) | quint32(quint8(descriptor[offset + 1])) << 8
+            | quint32(quint8(descriptor[offset + 2])) << 16 | quint32(quint8(descriptor[offset + 3])) << 24;
+    };
+    const qint64 rootOffset = qint64(u32(0x14)) * 2048;
+    const qint64 rootSize = qMin<qint64>(u32(0x18), 64 * 1024);
+    const QByteArray root = readAt(file, rootOffset, rootSize).toLower();
+    if (root.contains("default.xex"))
+        return QStringLiteral("Xbox 360");
+    return QStringLiteral("Xbox");
+}
+
 // Which PlayStation a disc image belongs to: 1, 2 or 0 when it isn't one.
 // Both use ISO 9660 with "PLAYSTATION" as the system identifier, cooked
 // (2048-byte sectors) or raw (2352-byte sectors); SYSTEM.CNF in the root

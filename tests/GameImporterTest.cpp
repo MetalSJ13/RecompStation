@@ -5,6 +5,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QMap>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
