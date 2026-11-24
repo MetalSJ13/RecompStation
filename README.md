@@ -56,14 +56,14 @@ RecompStation brings them together in a single library that you can use from the
 - Games are matched automatically, and only when one result clearly fits. A wrong cover is worse than none.
 
 **One-button installs and one-button play**
-- A curated catalog of recompilation projects. RecompStation shows which projects support each game, installs the latest Linux release (AppImage, ZIP or TAR.GZ), and can check for updates and uninstall.
+- A curated catalog of recompilation projects. RecompStation shows which projects support each game, installs the latest Linux release (AppImage, ZIP or TAR.GZ), shows the installed version, and offers updates when a new release is out.
 - **Seamless play:** RecompStation checks your game file against the exact version each launcher needs, then gives it to the launcher, so most games open straight to the title screen.
   - If your copy is the wrong version or region, it tells you before you press Play.
   - Fullscreen can be switched on for every launcher, or chosen per game.
-- Saves stay in each launcher's own folder, so updating or uninstalling a launcher never deletes them.
+- Updating or uninstalling a launcher never deletes your saves. Saves kept in the launcher's own settings folder are never touched; saves and settings a launcher writes inside its install folder move to the new version when it updates, or are set aside when it is uninstalled and put back if you install it again. If an update fails, the previous version is restored.
 
 **Careful by design**
-- Downloads come only from each project's official GitHub releases. Archives are unpacked with checks against path traversal, absolute paths and links.
+- Downloads come only from each project's official GitHub releases and are checked against the SHA-256 checksum the release publishes; a download that doesn't match is refused. Archives are unpacked with checks against path traversal, absolute paths and links.
 - Your game files are only read. RecompStation never modifies, deletes or uploads them.
 
 ## Screenshots
@@ -80,18 +80,24 @@ RecompStation brings them together in a single library that you can use from the
 
 ## Supported systems and projects
 
-**Library systems:** Nintendo 64, PlayStation, GameCube, Wii, Xbox and Xbox 360. More systems are planned.
+**Library systems:** twelve systems, each with its own folder in your library.
 
 | System | Recognised files |
 | --- | --- |
+| Game Boy | `.gb` |
+| Game Boy Color | `.gbc` `.gb` |
+| Game Boy Advance | `.gba` |
+| Super Nintendo | `.sfc` `.smc` |
 | Nintendo 64 | `.z64` `.n64` `.v64` (and `.zip` when adding games) |
-| PlayStation | `.cue` + `.bin`, `.chd`, `.pbp`, `.iso`, `.img` |
 | GameCube | `.iso` `.gcm` `.rvz` `.ciso` |
 | Wii | `.iso` `.wbfs` `.rvz` |
+| Wii U | `.wua` `.wud` `.wux` |
+| PlayStation | `.cue` + `.bin`, `.chd`, `.pbp`, `.iso`, `.img` |
+| PlayStation 2 | `.iso` `.chd` `.cue` + `.bin` |
 | Xbox | `.iso` (XISO or full disc image) `.xiso` |
 | Xbox 360 | `.iso` (XISO or full disc image) |
 
-**Recompilation projects:** the catalog currently lists 32 projects for Nintendo 64, GameCube, PlayStation, Xbox and Xbox 360. They include Zelda64Recomp, Banjo: Recompiled, Ship of Harkinian, Star Fox 64 Recompiled, Mario Kart 64 Recompiled, MediEvil, Bloody Roar II, Shadow the Hedgehog, Ninja Gaiden Black, Lost Odyssey and The Simpsons Game. The full list, with the game version each project needs, is in [`data/projects.json`](data/projects.json) and on each game's page in the app.
+**Recompilation projects:** the catalog currently lists 42 projects for Nintendo 64, Super Nintendo, GameCube, PlayStation, Xbox and Xbox 360. They include Zelda64Recomp, Banjo: Recompiled, Ship of Harkinian, Star Fox 64 Recompiled, Mario Kart 64 Recompiled, DKR-R (Diddy Kong Racing), Super Metroid Recompiled, Luigi's Mansion Recompiled, MediEvil, Bloody Roar II, Shadow the Hedgehog, Ninja Gaiden Black, Lost Odyssey and The Simpsons Game. The full list, with the game version each project needs, is in [`data/projects.json`](data/projects.json) and on each game's page in the app.
 
 A system appears in your library even if no recompilation project supports it yet, so you can keep your whole collection in one place.
 
@@ -131,7 +137,7 @@ cd RecompStation
 
 #### Other distributions
 
-Install the requirements above with your package manager, then run the same `build.sh` and `run.sh` commands. Make sure your distribution ships **Qt 6.5 or newer**; some long-term-support releases have older versions. Only Arch Linux has been tested so far.
+Install the requirements above with your package manager, then run the same `build.sh` and `run.sh` commands. Make sure your distribution ships **Qt 6.5 or newer**; some long-term-support releases (Debian 12, Ubuntu 24.04) have older versions, so use a prebuilt download there. Building from source has been tested on Arch Linux; the prebuilt downloads also on Debian 13 with XFCE.
 
 #### Updating
 
@@ -161,6 +167,7 @@ With a prebuilt download, update by downloading the new release and replacing th
 | Settings, database, covers, logs, installed launchers | `~/.local/share/RecompStation/RecompStation/` |
 | Your games | The library folder you chose (never modified) |
 | Saves and settings of each launcher | The launcher's own folder, for example `~/.config/BanjoRecompiled/` or `~/.local/share/soh/` |
+| Saves a launcher kept in its install folder, set aside when it was uninstalled | `~/.local/share/RecompStation/RecompStation/launcher-data/<project>/` |
 
 Logs are in `~/.local/share/RecompStation/RecompStation/logs/` (Settings › Application › Open log folder):
 - `runtime.log`: what RecompStation did. Each session starts with a summary of your system, display, settings and library, and your home folder is written as `~`.
@@ -170,7 +177,7 @@ Please attach both when reporting a problem. For a hard-to-reproduce problem, tu
 
 ## Uninstalling
 
-Delete the AppImage, the unzipped folder or the folder you cloned, and `~/.local/share/RecompStation/`. Your library folder and the launchers' saves are left untouched. Delete those yourself if you no longer want them.
+Delete the AppImage, the unzipped folder or the folder you cloned, and `~/.local/share/RecompStation/`. That folder also holds the installed launchers and any saves set aside in `launcher-data`, so copy those first if you want to keep them. Your library folder and saves in the launchers' own settings folders (such as `~/.config/BanjoRecompiled/`) are left untouched; delete those yourself if you no longer want them.
 
 ## Contributing
 
