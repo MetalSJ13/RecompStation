@@ -18,6 +18,14 @@ private:
     }
 
 private slots:
+    void ignoresMultiRegionTagsInTitles()
+    {
+        QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle(QStringLiteral("Super Metroid (Japan, USA) (En,Ja)")),
+                 LaunchBoxCatalogMatcher::normalizedTitle(QStringLiteral("Super Metroid")));
+        QCOMPARE(LaunchBoxCatalogMatcher::normalizedTitle(QStringLiteral("Pikmin (USA, Europe)")),
+                 LaunchBoxCatalogMatcher::normalizedTitle(QStringLiteral("Pikmin")));
+    }
+
     void mapsOnlyExplicitCanonicalPlatforms()
     {
         QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("N64"),

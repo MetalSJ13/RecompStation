@@ -247,7 +247,7 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
     const QString folder = result.value(QStringLiteral("dataFolder")).toString();
     const QString romName = recipe.value(QStringLiteral("romName")).toString();
 
-    if (method == QStringLiteral("discargument")) {
+    if (method == QStringLiteral("discargument") || method == QStringLiteral("fileargument")) {
         if (!hasGame)
             return noGame();
         const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
@@ -255,7 +255,9 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
         if (!extensions.isEmpty() && !extensions.contains(suffix)) {
             return set(QStringLiteral("wrong_file"), QStringLiteral("warn"),
                        QStringLiteral("%1 can't read this file").arg(name),
-                       QStringLiteral("It reads %1 disc images.").arg(extensions.join(QStringLiteral(", "))));
+                       (method == QStringLiteral("discargument") ? QStringLiteral("It reads %1 disc images.")
+                                                                    : QStringLiteral("It reads %1 files."))
+                           .arg(extensions.join(QStringLiteral(", "))));
         }
         const QString note = recipe.value(QStringLiteral("firstStartNote")).toString();
         return set(QStringLiteral("ready"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
@@ -409,7 +411,7 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
     const QString method = recipe.value(QStringLiteral("method"), QStringLiteral("manual")).toString();
     if (method == QStringLiteral("manual"))
         return plan;
-    if (method == QStringLiteral("discargument")) {
+    if (method == QStringLiteral("discargument") || method == QStringLiteral("fileargument")) {
         const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
         const QFileInfo game(gamePath);
         if (!options.prepareFiles || gamePath.isEmpty() || !game.isFile()

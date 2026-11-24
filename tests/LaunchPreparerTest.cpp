@@ -138,6 +138,7 @@ class LaunchPreparerTest : public QObject
 
 private slots:
     void inspectsHeaderAndChecksumInAnyByteOrder();
+    void fileArgumentPassesTheRom();
     void readinessDescribesEachSituation();
     void preparesN64RecompLauncherOnce();
     void windowModeChangesOnlyThatSetting();
@@ -501,6 +502,28 @@ void LaunchPreparerTest::discArgumentPassesTheGameFile()
     QVERIFY(preparer.prepare(discProject(), zip, QString(), opts).arguments.isEmpty());
     opts.prepareFiles = false;
     QVERIFY(preparer.prepare(discProject(), disc, QString(), opts).arguments.isEmpty());
+}
+
+void LaunchPreparerTest::fileArgumentPassesTheRom()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    LaunchPreparer::Options opts = options(root);
+    QVariantMap project = discProject();
+    project.insert(QStringLiteral("launch"), QVariantMap{
+        {QStringLiteral("method"), QStringLiteral("fileargument")},
+        {QStringLiteral("arguments"), QStringList{QStringLiteral("--rom"), QStringLiteral("{gamePath}")}},
+        {QStringLiteral("fileExtensions"), QStringList{QStringLiteral("sfc"), QStringLiteral("smc")}}});
+    const QString rom = QDir(root.path()).filePath(QStringLiteral("library/Test (Japan, USA) (En,Ja).sfc"));
+    QVERIFY(writeFile(rom, QByteArray("rom")));
+    LaunchPreparer preparer;
+    QCOMPARE(preparer.readiness(project, rom, QString(), opts).value("state").toString(), QStringLiteral("ready"));
+    QCOMPARE(preparer.prepare(project, rom, QString(), opts).arguments, (QStringList{QStringLiteral("--rom"), rom}));
+    const QString other = QDir(root.path()).filePath(QStringLiteral("library/Test.zip"));
+    QVERIFY(writeFile(other, QByteArray("zip")));
+    const QVariantMap wrong = preparer.readiness(project, other, QString(), opts);
+    QCOMPARE(wrong.value("state").toString(), QStringLiteral("wrong_file"));
+    QVERIFY(wrong.value("detail").toString().contains(QStringLiteral("sfc, smc files")));
 }
 
 void LaunchPreparerTest::backgroundReadsNeverReadOnTheCallersThread()

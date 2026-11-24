@@ -168,6 +168,24 @@ private slots:
         }
     }
 
+    void ignoresMultiRegionTags()
+    {
+        const QVariantList results = {
+            QVariantMap{{"title", "Super Metroid"}}
+        };
+        for (const QString &localTitle : {
+                 QStringLiteral("Super Metroid (Japan, USA) (En,Ja)"),
+                 QStringLiteral("Super Metroid (USA, Europe)"),
+                 QStringLiteral("Super Metroid [Europe, Australia]"),
+                 QStringLiteral("Super Metroid (Japan, USA)")}) {
+            QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(localTitle, results), 0);
+        }
+        // A region word that is part of the title stays.
+        QCOMPARE(LibraryMetadataMatcher::exactMatchIndex(
+                     QStringLiteral("USA Hockey (USA)"),
+                     QVariantList{QVariantMap{{"title", "Hockey"}}}), -1);
+    }
+
     void ignoresCommonRomLanguageTags()
     {
         const QVariantList results = {

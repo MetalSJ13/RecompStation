@@ -104,7 +104,9 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         *recipe = QVariantMap{{QStringLiteral("method"), method}};
         return true;
     }
-    if (method == QStringLiteral("discargument")) {
+    // discargument (disc images) and fileargument (cartridge ROMs) work the
+    // same way: the game file itself is passed as an argument.
+    if (method == QStringLiteral("discargument") || method == QStringLiteral("fileargument")) {
         QStringList arguments;
         if (!parseArguments(object.value(QStringLiteral("arguments")), {QStringLiteral("{gamePath}")}, &arguments)
             || !arguments.contains(QStringLiteral("{gamePath}")))

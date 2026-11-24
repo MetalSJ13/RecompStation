@@ -33,6 +33,8 @@
 //   discargument    Passes the game file itself in "arguments" ({gamePath},
 //                   e.g. --disc <file>) when its extension is one of
 //                   "fileExtensions"; nothing is copied. Luigi's Mansion.
+//   fileargument    The same for cartridge ROMs (--rom <file>). Super
+//                   Metroid, Mega Man X.
 //   manual          The launcher asks for the file itself.
 //
 // Existing files in a launcher's folder are never replaced, and the game

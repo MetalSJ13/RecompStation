@@ -564,6 +564,11 @@ void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
                  .value("launch").toMap().value("method").toString(), QStringLiteral("romfolder"));
     QCOMPARE(catalog.project(QStringLiteral("luigis-mansion-recompiled"))
                  .value("launch").toMap().value("method").toString(), QStringLiteral("discargument"));
+    for (const QString &id : {QStringLiteral("super-metroid-recompiled"), QStringLiteral("mega-man-x-recompiled")}) {
+        const QVariantMap launch = catalog.project(id).value("launch").toMap();
+        QCOMPARE(launch.value("method").toString(), QStringLiteral("fileargument"));
+        QCOMPARE(launch.value("arguments").toStringList(), (QStringList{QStringLiteral("--rom"), QStringLiteral("{gamePath}")}));
+    }
     QCOMPARE(catalog.project(QStringLiteral("banjo-kazooie-recompiled"))
                  .value("launch").toMap().value("romFileName").toString(),
              QStringLiteral("bk.n64.us.1.0.z64"));
