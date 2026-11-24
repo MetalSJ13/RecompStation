@@ -100,8 +100,10 @@ private slots:
         QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 5000);
 
         QCOMPARE(startedSpy.count(), 1);
-        QCOMPARE(platformStartedSpy.count(), 6);
-        QCOMPARE(platformCompletedSpy.count(), 6);
+        // One start and one completion per system.
+        const int platformCount = m_platformManager->platforms().size();
+        QCOMPARE(platformStartedSpy.count(), platformCount);
+        QCOMPARE(platformCompletedSpy.count(), platformCount);
         QCOMPARE(completedSpy.takeFirst().at(0).toInt(), 2);
         QCOMPARE(m_scanner->lastUnsupportedCount(), 1);
         QVERIFY(!m_scanner->scanning());
