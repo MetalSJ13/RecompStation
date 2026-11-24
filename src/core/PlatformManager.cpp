@@ -1,6 +1,7 @@
 #include "PlatformManager.h"
 
 #include <QDir>
+#include <algorithm>
 #include <QRegularExpression>
 #include <QFileInfo>
 #include <QSettings>
@@ -227,12 +228,14 @@ QVariantList PlatformManager::libraryDirectories(const QString &directoryPath) c
         return result;
 
     const QDir directory(directoryInfo.absoluteFilePath());
+    // Hidden (dot) folders are settings and caches, not where games are kept.
     const QFileInfoList entries = directory.entryInfoList(
-        QDir::Dirs | QDir::NoDotAndDotDot | QDir::Readable | QDir::Hidden,
+        QDir::Dirs | QDir::NoDotAndDotDot | QDir::Readable,
         QDir::DirsFirst | QDir::Name | QDir::IgnoreCase);
 
     for (const QFileInfo &entry : entries) {
-        if (!entry.isDir() || !entry.isReadable())
+        if (!entry.isDir() || !entry.isReadable()
+                || entry.fileName().startsWith(QLatin1Char('.')))
             continue;
 
         QVariantMap item;
@@ -242,6 +245,47 @@ QVariantList PlatformManager::libraryDirectories(const QString &directoryPath) c
     }
 
     return result;
+}
+
+// Places for the folder browser: the usual user folders that exist, the
+// library folder, and mounted drives (removable media and other disks).
+QVariantList PlatformManager::browserPlaces() const
+{
+    QVariantList places;
+    QStringList seen;
+    const auto add = [&places, &seen](const QString &name, const QString &path, const QString &kind) {
+        const QFileInfo info(path);
+        const QString absolute = info.absoluteFilePath();
+        if (path.isEmpty() || !info.isDir() || !info.isReadable() || seen.contains(absolute))
+            return;
+        seen.append(absolute);
+        places.append(QVariantMap{{QStringLiteral("name"), name},
+                                  {QStringLiteral("path"), absolute},
+                                  {QStringLiteral("kind"), kind}});
+    };
+    add(QStringLiteral("Home"), QDir::homePath(), QStringLiteral("home"));
+    add(QStringLiteral("Downloads"),
+        QStandardPaths::writableLocation(QStandardPaths::DownloadLocation), QStringLiteral("downloads"));
+    add(QStringLiteral("Documents"),
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), QStringLiteral("documents"));
+    add(QStringLiteral("RecompStation library"), m_libraryDirectory, QStringLiteral("library"));
+
+    // Mounted drives: anything under the usual mount roots.
+    static const QStringList mountRoots{QStringLiteral("/run/media/"), QStringLiteral("/media/"),
+                                        QStringLiteral("/mnt/")};
+    for (const QStorageInfo &volume : QStorageInfo::mountedVolumes()) {
+        if (!volume.isValid() || !volume.isReady())
+            continue;
+        const QString root = volume.rootPath();
+        const bool underMountRoot = std::any_of(mountRoots.cbegin(), mountRoots.cend(),
+            [&root](const QString &prefix) { return root.startsWith(prefix); });
+        if (!underMountRoot)
+            continue;
+        const QString name = volume.displayName().isEmpty() || volume.displayName() == root
+            ? QFileInfo(root).fileName() : volume.displayName();
+        add(name.isEmpty() ? root : name, root, QStringLiteral("drive"));
+    }
+    return places;
 }
 
 bool PlatformManager::createLibraryFolder(

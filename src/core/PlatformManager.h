@@ -51,6 +51,7 @@ public:
     Q_INVOKABLE bool useLibraryLocation(const QString &directoryPath);
     Q_INVOKABLE QString parentDirectory(const QString &directoryPath) const;
     Q_INVOKABLE QVariantList libraryDirectories(const QString &directoryPath) const;
+    Q_INVOKABLE QVariantList browserPlaces() const;
     Q_INVOKABLE bool createLibraryFolder(const QString &parentPath, const QString &folderName);
 
     Q_INVOKABLE QString platformDirectory(

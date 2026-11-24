@@ -77,6 +77,18 @@ ApplicationWindow {
             const selectColor = window.inputGlyphColor(selectToken)
             const backColor = window.inputGlyphColor(backToken)
             const detailsColor = window.inputGlyphColor(detailsToken)
+            // Folder browser: A opens, B goes back, Y uses the folder shown.
+            if (libraryFolderDialog.visible && !newLibraryFolderDialog.visible) {
+                return [
+                    { icon: "qrc:/icons/dpad.svg", key: "", label: "Move", color: "#B8C7D9", round: false },
+                    { icon: "", key: selectButton, label: "Open", color: selectColor,
+                      round: window.isFaceButton(selectToken) },
+                    { icon: "", key: backButton, label: libraryFolderDialog.history.length > 0 ? "Back" : "Close",
+                      color: backColor, round: window.isFaceButton(backToken) },
+                    { icon: "", key: detailsButton, label: "Use this folder", color: detailsColor,
+                      round: window.isFaceButton(detailsToken) }
+                ]
+            }
             const libraryActive = currentPage === "Library" && !gameDetailsPopup.visible
             const carouselPlays = libraryActive
                 && (settingsManager.libraryView === "carousel" || settingsManager.libraryView === "list")
@@ -96,6 +108,14 @@ ApplicationWindow {
                 items.splice(2, 0, { icon: "", key: detailsButton, label: "Details", color: detailsColor,
                                      round: window.isFaceButton(detailsToken) })
             return items
+        }
+        if (libraryFolderDialog.visible && !newLibraryFolderDialog.visible && activeInputDevice !== "mouse") {
+            return [
+                { icon: "", key: "← ↑ ↓ →", label: "Move", color: "#A9B7CA", round: false },
+                { icon: "", key: "Enter", label: "Open", color: "#A9B7CA", round: false },
+                { icon: "", key: "Backspace", label: "Back", color: "#A9B7CA", round: false },
+                { icon: "", key: "Esc", label: "Close", color: "#A9B7CA", round: false }
+            ]
         }
         if (activeInputDevice === "mouse") {
             return [
@@ -739,6 +759,17 @@ ApplicationWindow {
             systemPicker.close()
             return
         }
+        // Folder browser: B closes New folder, else goes back a folder, and
+        // closes the browser from the folder it opened in.
+        if (newLibraryFolderDialog.visible) {
+            newLibraryFolderDialog.reject()
+            return
+        }
+        if (libraryFolderDialog.visible) {
+            if (!libraryFolderDialog.goBack())
+                libraryFolderDialog.reject()
+            return
+        }
         if (importGamesPopup.visible && !libraryFolderDialog.visible && !uninstallDialog.visible) {
             importGamesPopup.close()
             return
@@ -1028,7 +1059,11 @@ ApplicationWindow {
     }
     // The open full-window overlay that controller navigation stays inside.
     function activeModalRoot() {
-        if (libraryFolderDialog.visible || uninstallDialog.visible)
+        if (newLibraryFolderDialog.visible)
+            return newLibraryFolderDialog.contentItem
+        if (libraryFolderDialog.visible)
+            return libraryFolderDialog.contentItem
+        if (uninstallDialog.visible)
             return null
         if (systemPicker.visible)
             return systemPicker.contentItem
@@ -1444,6 +1479,11 @@ ApplicationWindow {
         }
         function onDetailsRequested() {
             window.activeInputDevice = "controller"
+            // Y in the folder browser: use the folder being shown.
+            if (libraryFolderDialog.visible && !newLibraryFolderDialog.visible) {
+                libraryFolderDialog.useCurrentFolder()
+                return
+            }
             if (currentPage === "Library" && !gameDetailsPopup.visible
                     && !window.systemMenuVisible)
                 window.openSelectedGameDetails()
@@ -1658,6 +1698,14 @@ ApplicationWindow {
                         "Wii": "Wii", "Wii U": "Wii U", "PS1": "PlayStation", "PS2": "PlayStation 2",
                         "Xbox": "Xbox", "Xbox 360": "Xbox 360" }
         return names[platform] || platform
+    }
+
+    // A path with the home folder written as ~.
+    function compactHomePath(path) {
+        const home = platformManager.homeDirectory()
+        if (path === home)
+            return "~"
+        return path.startsWith(home + "/") ? "~" + path.substring(home.length) : path
     }
 
     // Short label for the system picker.
@@ -2182,333 +2230,554 @@ ApplicationWindow {
         // "library": choose the library folder. "source": add a folder to
         // look for games in (Add games).
         property string purpose: "library"
-        title: purpose === "source" ? "Choose a folder that has games in it"
-                                    : "Choose your RecompStation game library"
+        title: ""
         modal: true
         anchors.centerIn: parent
-        width: Math.min(parent.width - 36, 760)
-        height: Math.min(parent.height - 36, 620)
+        width: Math.min(parent.width - 36, 1160)
+        height: Math.min(parent.height - 36, 720)
         standardButtons: Dialog.NoButton
-        padding: 18
+        padding: 24
 
+        // The folder being shown is the one Use this folder picks: one click
+        // (or A) opens a folder, Back returns to the previous one.
         property string currentFolderPath: ""
-        property string selectedFolderPath: ""
+        property var history: []
         property var directoryEntries: []
+        property var places: []
         property string browserMessage: ""
         property string newFolderParentPath: ""
+        readonly property string currentFolderName: {
+            const path = currentFolderPath
+            if (path === platformManager.homeDirectory())
+                return "Home"
+            const name = path.split("/").filter(part => part.length > 0).pop()
+            return name || "/"
+        }
+        // The path as clickable parts, from Home when inside it.
+        readonly property var crumbs: {
+            const path = currentFolderPath
+            const home = platformManager.homeDirectory()
+            const parts = []
+            let base = ""
+            let rest = path
+            if (path === home || path.startsWith(home + "/")) {
+                parts.push({ name: "Home", path: home })
+                base = home
+                rest = path.substring(home.length)
+            } else {
+                parts.push({ name: "/", path: "/" })
+            }
+            for (const name of rest.split("/").filter(part => part.length > 0)) {
+                base = base + "/" + name
+                parts.push({ name: name, path: base })
+            }
+            return parts
+        }
+
+        background: Rectangle {
+            color: theme.windowBackground
+            radius: 18
+            border.color: theme.divider
+        }
 
         function refreshDirectory() {
             directoryEntries = platformManager.libraryDirectories(currentFolderPath)
-            libraryDirectoryList.currentIndex = directoryEntries.length > 0 ? 0 : -1
-            browserMessage = directoryEntries.length === 0
-                ? "No subfolders in this location." : ""
+            browserMessage = ""
+            folderScroll.contentY = 0
         }
 
-        function navigateTo(path) {
+        function navigateTo(path, remember) {
+            if (!path || path === currentFolderPath)
+                return
+            if (remember !== false && currentFolderPath.length > 0)
+                history = history.concat([currentFolderPath])
             currentFolderPath = path
-            selectedFolderPath = path
             refreshDirectory()
         }
 
+        function goBack() {
+            if (history.length === 0)
+                return false
+            const previous = history[history.length - 1]
+            history = history.slice(0, history.length - 1)
+            navigateTo(previous, false)
+            return true
+        }
+
+        function focusFirstFolder() {
+            Qt.callLater(function() {
+                if (folderRepeater.count > 0 && folderRepeater.itemAt(0))
+                    folderRepeater.itemAt(0).forceActiveFocus()
+                else
+                    useFolderButton.forceActiveFocus()
+            })
+        }
+
+        function openNewFolderDialog() {
+            newFolderParentPath = currentFolderPath
+            newLibraryFolderName.text = ""
+            newLibraryFolderDialog.open()
+            newLibraryFolderName.forceActiveFocus()
+        }
+
+        function useCurrentFolder() {
+            if (currentFolderPath.length === 0)
+                return
+            if (purpose === "source") {
+                gameImporter.addSource(currentFolderPath)
+                accept()
+                return
+            }
+            if (platformManager.setLibraryDirectoryPath(currentFolderPath)) {
+                window.scanMessage = "Library folder saved. Scanning platform folders..."
+                accept()
+                librarySetupDialog.close()
+                libraryScanner.scanAllAsync()
+            } else {
+                browserMessage = "Could not use that folder. Check that it exists and is writable."
+            }
+        }
+
         onOpened: {
+            history = []
+            places = platformManager.browserPlaces()
+            currentFolderPath = ""
             const startPath = purpose === "library" && platformManager.libraryConfigured
                 ? platformManager.libraryDirectory : platformManager.homeDirectory()
-            navigateTo(startPath)
-            Qt.callLater(function() { libraryDirectoryList.forceActiveFocus() })
+            navigateTo(startPath, false)
+            focusFirstFolder()
         }
 
         contentItem: ColumnLayout {
-            spacing: 12
+            id: folderBrowserContent
+            spacing: 14
 
-            Label {
-                Layout.fillWidth: true
-                text: libraryFolderDialog.purpose === "source"
-                    ? "Pick a folder; its subfolders are searched too. Nothing is moved until you choose Add."
-                    : "Choose where RecompStation should store and scan your games. You can create a folder here without leaving setup."
-                color: theme.textSecondary
-                wrapMode: Text.Wrap
+            // Keyboard: arrows move between controls, Enter picks, Backspace
+            // or Alt+Left goes back a folder. Buttons take Space themselves.
+            Keys.onPressed: function(event) {
+                const direction = event.key === Qt.Key_Left ? "left"
+                    : event.key === Qt.Key_Right ? "right"
+                    : event.key === Qt.Key_Up ? "up"
+                    : event.key === Qt.Key_Down ? "down" : ""
+                if ((event.key === Qt.Key_Backspace)
+                        || (event.key === Qt.Key_Left && (event.modifiers & Qt.AltModifier))) {
+                    libraryFolderDialog.goBack()
+                    event.accepted = true
+                } else if (direction.length > 0) {
+                    window.activeInputDevice = "keyboard"
+                    window.moveDirectionalFocus(folderBrowserContent, direction)
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    const focused = window.focusedActionItem(window.activeFocusItem)
+                    if (focused && typeof focused.click === "function")
+                        focused.click()
+                    event.accepted = true
+                }
             }
 
-            RowLayout {
+            ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 8
-
-                Button {
-                    text: "Home"
-                    activeFocusOnTab: true
-                    focusPolicy: Qt.StrongFocus
-                    onClicked: {
-                        libraryFolderDialog.navigateTo(platformManager.homeDirectory())
-                        libraryDirectoryList.forceActiveFocus()
-                    }
-                }
-                Button {
-                    text: "Up"
-                    activeFocusOnTab: true
-                    focusPolicy: Qt.StrongFocus
-                    enabled: platformManager.parentDirectory(libraryFolderDialog.currentFolderPath)
-                        !== libraryFolderDialog.currentFolderPath
-                    onClicked: {
-                        libraryFolderDialog.navigateTo(
-                            platformManager.parentDirectory(libraryFolderDialog.currentFolderPath))
-                        libraryDirectoryList.forceActiveFocus()
-                    }
+                spacing: 4
+                Label {
+                    Layout.fillWidth: true
+                    text: libraryFolderDialog.purpose === "source"
+                        ? "Choose a folder that has games in it" : "Choose your RecompStation game library"
+                    color: theme.textPrimary
+                    font.pixelSize: 22 * theme.fontScale
+                    font.bold: true
                 }
                 Label {
                     Layout.fillWidth: true
-                    text: libraryFolderDialog.currentFolderPath
-                    color: theme.textMuted
-                    elide: Text.ElideMiddle
-                }
-                Button {
-                    text: "New Folder"
-                    highlighted: true
-                    activeFocusOnTab: true
-                    focusPolicy: Qt.StrongFocus
-                    onClicked: {
-                        libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
-                        newLibraryFolderName.text = ""
-                        newLibraryFolderDialog.open()
-                        newLibraryFolderName.forceActiveFocus()
-                    }
+                    text: libraryFolderDialog.purpose === "source"
+                        ? "Open a folder with one click, then choose Use this folder. Its subfolders are searched too; nothing is moved until you choose Add."
+                        : "Open a folder with one click, then choose Use this folder. RecompStation keeps one folder per system inside it."
+                    color: theme.textSecondary
+                    wrapMode: Text.Wrap
                 }
             }
 
-            Rectangle {
+            // Back, the clickable path, New folder.
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                color: theme.sidebarBackground
-                border.color: theme.divider
-                radius: 10
-                clip: true
+                spacing: 12
 
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.RightButton
-                    onClicked: {
-                        libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
-                        emptyFolderContextMenu.popup()
+                Button {
+                    id: folderBackButton
+                    text: "‹  Back"
+                    enabled: libraryFolderDialog.history.length > 0
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
+                    implicitHeight: 40
+                    leftPadding: 16
+                    rightPadding: 18
+                    Accessible.name: "Back to the previous folder"
+                    contentItem: Label {
+                        text: folderBackButton.text
+                        color: theme.textPrimary
+                        opacity: folderBackButton.enabled ? 1 : 0.4
+                        font.bold: true
+                        verticalAlignment: Text.AlignVCenter
                     }
+                    background: Rectangle {
+                        radius: height / 2
+                        color: folderBackButton.hovered && folderBackButton.enabled ? theme.controlHover : "transparent"
+                        border.width: folderBackButton.activeFocus ? 2 : 1
+                        border.color: folderBackButton.activeFocus ? theme.accent : theme.divider
+                    }
+                    onClicked: libraryFolderDialog.goBack()
                 }
 
-                ListView {
-                    id: libraryDirectoryList
-                    anchors.fill: parent
-                    anchors.margins: 6
-                    model: libraryFolderDialog.directoryEntries
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 40
+                    radius: 10
+                    color: theme.surface
                     clip: true
-                    spacing: 3
-                    focus: true
-                    activeFocusOnTab: true
-                    keyNavigationEnabled: true
-                    highlightFollowsCurrentItem: false
-
-                    function ensureCurrentFolderVisible() {
-                        if (currentIndex < 0 || currentIndex >= count)
-                            return
-                        // Defer until ListView has laid out the newly selected
-                        // delegate; otherwise positionViewAtIndex can run before
-                        // its geometry is updated and leave the viewport in place.
-                        const targetIndex = currentIndex
-                        Qt.callLater(function() {
-                            if (targetIndex !== libraryDirectoryList.currentIndex)
-                                return
-                            libraryDirectoryList.positionViewAtIndex(
-                                targetIndex, ListView.Contain)
-                            const item = libraryDirectoryList.itemAtIndex(targetIndex)
-                            if (item) {
-                                const top = item.y
-                                const bottom = top + item.height
-                                if (top < libraryDirectoryList.contentY)
-                                    libraryDirectoryList.contentY = top
-                                else if (bottom > libraryDirectoryList.contentY
-                                         + libraryDirectoryList.height)
-                                    libraryDirectoryList.contentY =
-                                        bottom - libraryDirectoryList.height
-                            }
-                        })
-                    }
-
-                    onCurrentIndexChanged: ensureCurrentFolderVisible()
-
-                    function focusFolderAt(index) {
-                        if (count <= 0) {
-                            currentIndex = -1
-                            return
-                        }
-                        currentIndex = Math.max(0, Math.min(count - 1, index))
-                        ensureCurrentFolderVisible()
-                        const entry = currentItem
-                        if (entry)
-                            libraryFolderDialog.selectedFolderPath = entry.folderPath
-                    }
-
-                    Keys.onUpPressed: {
-                        focusFolderAt(currentIndex < 0 ? 0 : currentIndex - 1)
-                    }
-                    Keys.onDownPressed: {
-                        focusFolderAt(currentIndex < 0 ? 0 : currentIndex + 1)
-                    }
-                    Keys.onPressed: function(event) {
-                        const step = Math.max(1, Math.floor(height / 47))
-                        const current = currentIndex < 0 ? 0 : currentIndex
-                        if (event.key === Qt.Key_Up) {
-                            focusFolderAt(current - 1)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_Down) {
-                            focusFolderAt(current + 1)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_PageUp) {
-                            focusFolderAt(current - step)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_PageDown) {
-                            focusFolderAt(current + step)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_Home) {
-                            focusFolderAt(0)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_End) {
-                            focusFolderAt(count - 1)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_Return
-                                   || event.key === Qt.Key_Enter) {
-                            if (currentItem)
-                                libraryFolderDialog.navigateTo(currentItem.folderPath)
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_Space) {
-                            if (currentItem)
-                                libraryFolderDialog.selectedFolderPath = currentItem.folderPath
-                            event.accepted = true
-                        }
-                    }
-
-                    delegate: Rectangle {
-                        required property var modelData
-                        property string folderPath: modelData.path
-                        width: ListView.view.width
-                        height: 44
-                        radius: 7
-                        color: folderMouseArea.containsMouse || ListView.isCurrentItem && libraryDirectoryList.activeFocus
-                            ? Qt.rgba(0.45, 0.45, 0.45, 0.16)
-                            : (libraryFolderDialog.selectedFolderPath === modelData.path
-                                ? Qt.rgba(0.35, 0.55, 0.85, 0.18) : "transparent")
-                        border.color: ListView.isCurrentItem && libraryDirectoryList.activeFocus
-                            ? theme.accent
-                            : libraryFolderDialog.selectedFolderPath === modelData.path
-                                ? theme.accent : "transparent"
-                        border.width: ListView.isCurrentItem && libraryDirectoryList.activeFocus ? 2 : 1
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 10
-                            spacing: 10
-                            Label {
-                                text: "📁"
-                                color: theme.textSecondary
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: modelData.name
-                                color: theme.textPrimary
-                                elide: Text.ElideRight
-                            }
-                            Label {
-                                text: "›"
-                                color: theme.textMuted
-                                font.pixelSize: 20
-                            }
-                        }
-
-                        MouseArea {
-                            id: folderMouseArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            onClicked: function(mouse) {
-                                libraryDirectoryList.currentIndex = index
-                                libraryDirectoryList.forceActiveFocus()
-                                if (mouse.button === Qt.RightButton) {
-                                    libraryFolderDialog.selectedFolderPath = modelData.path
-                                    folderContextMenu.popup()
-                                } else {
-                                    libraryFolderDialog.selectedFolderPath = modelData.path
+                    Flickable {
+                        id: crumbFlick
+                        anchors.fill: parent
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: 6
+                        contentWidth: crumbRow.implicitWidth
+                        contentHeight: height
+                        flickableDirection: Flickable.HorizontalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+                        // Keep the end of a long path, the current folder, in view.
+                        onContentWidthChanged: contentX = Math.max(0, contentWidth - width)
+                        Row {
+                            id: crumbRow
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+                            Repeater {
+                                model: libraryFolderDialog.crumbs
+                                delegate: Row {
+                                    required property var modelData
+                                    required property int index
+                                    spacing: 2
+                                    Label {
+                                        visible: index > 0
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "›"
+                                        color: theme.textMuted
+                                    }
+                                    Button {
+                                        id: crumbButton
+                                        readonly property bool last: index === libraryFolderDialog.crumbs.length - 1
+                                        text: modelData.name
+                                        activeFocusOnTab: true
+                                        focusPolicy: Qt.StrongFocus
+                                        implicitHeight: 30
+                                        leftPadding: 9
+                                        rightPadding: 9
+                                        Accessible.name: "Go to " + modelData.name
+                                        contentItem: Label {
+                                            text: crumbButton.text
+                                            color: crumbButton.last ? theme.textPrimary : theme.textSecondary
+                                            font.bold: crumbButton.last
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        background: Rectangle {
+                                            radius: 7
+                                            color: crumbButton.last
+                                                ? Qt.rgba(theme.textPrimary.r, theme.textPrimary.g, theme.textPrimary.b, 0.1)
+                                                : crumbButton.hovered ? theme.controlHover : "transparent"
+                                            border.width: crumbButton.activeFocus ? 2 : 0
+                                            border.color: theme.accent
+                                        }
+                                        onClicked: libraryFolderDialog.navigateTo(modelData.path)
+                                    }
                                 }
                             }
-                            onDoubleClicked: function(mouse) {
-                                if (mouse.button === Qt.LeftButton)
-                                    libraryFolderDialog.navigateTo(modelData.path)
-                            }
                         }
                     }
-
-                    Label {
-                        anchors.centerIn: parent
-                        visible: libraryFolderDialog.directoryEntries.length === 0
-                        text: "No folders here yet. Use New Folder or right-click a folder to create one."
-                        color: theme.textMuted
-                        wrapMode: Text.Wrap
-                        width: parent.width - 40
-                        horizontalAlignment: Text.AlignHCenter
-                    }
                 }
-            }
 
-            Label {
-                Layout.fillWidth: true
-                text: libraryFolderDialog.browserMessage
-                color: theme.textMuted
-                font.pixelSize: 11 * theme.fontScale
-                visible: text.length > 0
+                Button {
+                    id: newFolderButton
+                    text: "+  New folder"
+                    activeFocusOnTab: true
+                    focusPolicy: Qt.StrongFocus
+                    implicitHeight: 40
+                    leftPadding: 18
+                    rightPadding: 18
+                    contentItem: Label {
+                        text: newFolderButton.text
+                        color: theme.textPrimary
+                        font.bold: true
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: height / 2
+                        color: newFolderButton.hovered ? theme.controlHover : theme.controlBackground
+                        border.width: newFolderButton.activeFocus ? 2 : 0
+                        border.color: theme.accent
+                    }
+                    onClicked: libraryFolderDialog.openNewFolderDialog()
+                }
             }
 
             RowLayout {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 14
+
+                // Places: usual folders, the library, mounted drives.
+                Rectangle {
+                    Layout.preferredWidth: 230
+                    Layout.fillHeight: true
+                    radius: 12
+                    color: theme.sidebarBackground
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 2
+                        Label {
+                            Layout.leftMargin: 8
+                            Layout.topMargin: 4
+                            Layout.bottomMargin: 4
+                            text: "PLACES"
+                            color: theme.textMuted
+                            font.pixelSize: 10.5 * theme.fontScale
+                            font.bold: true
+                            font.letterSpacing: 1.3
+                        }
+                        Repeater {
+                            model: libraryFolderDialog.places
+                            delegate: Button {
+                                id: placeButton
+                                required property var modelData
+                                readonly property bool here: libraryFolderDialog.currentFolderPath === modelData.path
+                                Layout.fillWidth: true
+                                text: modelData.name
+                                activeFocusOnTab: true
+                                focusPolicy: Qt.StrongFocus
+                                implicitHeight: 38
+                                leftPadding: 12
+                                rightPadding: 10
+                                Accessible.name: "Go to " + modelData.name
+                                contentItem: RowLayout {
+                                    spacing: 10
+                                    Label {
+                                        Layout.preferredWidth: 16
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: ({ home: "⌂", downloads: "↓", documents: "▤", library: "◆", drive: "⛁" })[placeButton.modelData.kind] || "▸"
+                                        color: theme.textSecondary
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: placeButton.text
+                                        color: placeButton.here ? theme.textPrimary : theme.textSecondary
+                                        font.bold: placeButton.here
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                                background: Rectangle {
+                                    radius: 9
+                                    color: placeButton.here
+                                        ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.2)
+                                        : placeButton.hovered ? theme.controlHover : "transparent"
+                                    border.width: placeButton.activeFocus ? 2 : 0
+                                    border.color: theme.accent
+                                }
+                                onClicked: libraryFolderDialog.navigateTo(modelData.path)
+                            }
+                        }
+                        Item { Layout.fillHeight: true }
+                    }
+                }
+
+                // The folders inside the one being shown. One click opens.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    radius: 12
+                    color: theme.sidebarBackground
+                    clip: true
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.RightButton
+                        onClicked: {
+                            libraryFolderDialog.newFolderParentPath = libraryFolderDialog.currentFolderPath
+                            emptyFolderContextMenu.popup()
+                        }
+                    }
+
+                    Flickable {
+                        id: folderScroll
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        contentHeight: folderColumn.implicitHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+                        Column {
+                            id: folderColumn
+                            width: folderScroll.width
+                            spacing: 3
+                            Repeater {
+                                id: folderRepeater
+                                model: libraryFolderDialog.directoryEntries
+                                delegate: Button {
+                                    id: folderButton
+                                    required property var modelData
+                                    width: folderColumn.width
+                                    height: 44
+                                    text: modelData.name
+                                    activeFocusOnTab: true
+                                    focusPolicy: Qt.StrongFocus
+                                    leftPadding: 14
+                                    rightPadding: 14
+                                    Accessible.name: "Open folder " + modelData.name
+                                    // Keep the focused folder in view while moving with the D-pad.
+                                    onActiveFocusChanged: {
+                                        if (!activeFocus)
+                                            return
+                                        if (y < folderScroll.contentY)
+                                            folderScroll.contentY = y
+                                        else if (y + height > folderScroll.contentY + folderScroll.height)
+                                            folderScroll.contentY = y + height - folderScroll.height
+                                    }
+                                    contentItem: RowLayout {
+                                        spacing: 12
+                                        Image {
+                                            source: "qrc:/icons/folder.svg"
+                                            sourceSize: Qt.size(18, 18)
+                                            Layout.preferredWidth: 18
+                                            Layout.preferredHeight: 18
+                                            opacity: 0.85
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: folderButton.text
+                                            color: theme.textPrimary
+                                            elide: Text.ElideRight
+                                        }
+                                        Label {
+                                            text: "›"
+                                            color: theme.textMuted
+                                            font.pixelSize: 18
+                                        }
+                                    }
+                                    background: Rectangle {
+                                        radius: 9
+                                        color: folderButton.activeFocus
+                                            ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.2)
+                                            : folderButton.hovered ? theme.controlHover : "transparent"
+                                        border.width: folderButton.activeFocus ? 2 : 0
+                                        border.color: theme.accent
+                                    }
+                                    onClicked: {
+                                        libraryFolderDialog.navigateTo(modelData.path)
+                                        libraryFolderDialog.focusFirstFolder()
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        acceptedButtons: Qt.RightButton
+                                        onClicked: {
+                                            libraryFolderDialog.newFolderParentPath = folderButton.modelData.path
+                                            folderContextMenu.folderPath = folderButton.modelData.path
+                                            folderContextMenu.popup()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Column {
+                        anchors.centerIn: parent
+                        width: parent.width - 60
+                        spacing: 4
+                        visible: libraryFolderDialog.directoryEntries.length === 0
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            text: "No folders inside “" + libraryFolderDialog.currentFolderName + "”"
+                            color: theme.textSecondary
+                            font.bold: true
+                            wrapMode: Text.Wrap
+                        }
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            text: "Use this folder, or make one with New folder."
+                            color: theme.textMuted
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
                 Label {
                     Layout.fillWidth: true
-                    text: "Selected: " + libraryFolderDialog.selectedFolderPath
-                    color: theme.textMuted
+                    text: libraryFolderDialog.browserMessage.length > 0
+                        ? libraryFolderDialog.browserMessage
+                        : "Looking in " + window.compactHomePath(libraryFolderDialog.currentFolderPath)
+                    color: libraryFolderDialog.browserMessage.length > 0 ? theme.warningText : theme.textMuted
+                    font.pixelSize: 13 * theme.fontScale
                     elide: Text.ElideMiddle
                 }
                 Button {
+                    id: folderCancelButton
                     text: "Cancel"
                     activeFocusOnTab: true
                     focusPolicy: Qt.StrongFocus
+                    implicitHeight: 42
+                    leftPadding: 20
+                    rightPadding: 20
+                    contentItem: Label {
+                        text: folderCancelButton.text
+                        color: theme.textPrimary
+                        font.bold: true
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: height / 2
+                        color: folderCancelButton.hovered ? theme.controlHover : "transparent"
+                        border.width: folderCancelButton.activeFocus ? 2 : 1
+                        border.color: folderCancelButton.activeFocus ? theme.accent : theme.divider
+                    }
                     onClicked: libraryFolderDialog.reject()
                 }
                 Button {
-                    text: "Choose This Folder"
-                    highlighted: true
+                    id: useFolderButton
+                    text: "Use “" + libraryFolderDialog.currentFolderName + "”"
                     activeFocusOnTab: true
                     focusPolicy: Qt.StrongFocus
-                    enabled: libraryFolderDialog.selectedFolderPath.length > 0
-                    onClicked: {
-                        if (libraryFolderDialog.purpose === "source") {
-                            gameImporter.addSource(libraryFolderDialog.selectedFolderPath)
-                            libraryFolderDialog.accept()
-                            return
-                        }
-                        if (platformManager.setLibraryDirectoryPath(
-                                libraryFolderDialog.selectedFolderPath)) {
-                            window.scanMessage = "Library folder saved. Scanning platform folders..."
-                            libraryFolderDialog.accept()
-                            librarySetupDialog.close()
-                            libraryScanner.scanAllAsync()
-                        } else {
-                            libraryFolderDialog.browserMessage =
-                                "Could not use that folder. Check that it exists and is writable."
-                        }
+                    enabled: libraryFolderDialog.currentFolderPath.length > 0
+                    implicitHeight: 42
+                    leftPadding: 22
+                    rightPadding: 22
+                    Layout.maximumWidth: 360
+                    contentItem: Label {
+                        text: useFolderButton.text
+                        color: theme.windowBackground
+                        font.bold: true
+                        elide: Text.ElideMiddle
+                        verticalAlignment: Text.AlignVCenter
                     }
+                    background: Rectangle {
+                        radius: height / 2
+                        color: theme.textPrimary
+                        border.width: useFolderButton.activeFocus ? 3 : 0
+                        border.color: theme.accent
+                    }
+                    onClicked: libraryFolderDialog.useCurrentFolder()
                 }
             }
         }
 
         Menu {
             id: folderContextMenu
+            property string folderPath: ""
             MenuItem {
                 text: "Open"
-                onTriggered: libraryFolderDialog.navigateTo(
-                    libraryFolderDialog.selectedFolderPath)
+                onTriggered: libraryFolderDialog.navigateTo(folderContextMenu.folderPath)
             }
             MenuItem {
                 text: "Create New Folder"
@@ -2547,11 +2816,10 @@ ApplicationWindow {
             if (platformManager.createLibraryFolder(
                     libraryFolderDialog.newFolderParentPath,
                     newLibraryFolderName.text)) {
-                if (libraryFolderDialog.newFolderParentPath === libraryFolderDialog.currentFolderPath)
-                    libraryFolderDialog.refreshDirectory()
-                libraryFolderDialog.selectedFolderPath =
-                    libraryFolderDialog.newFolderParentPath + "/" + newLibraryFolderName.text.trim()
-                libraryFolderDialog.browserMessage = "Folder created."
+                // Open the new folder, so Use this folder picks it.
+                libraryFolderDialog.navigateTo(
+                    libraryFolderDialog.newFolderParentPath + "/" + newLibraryFolderName.text.trim())
+                libraryFolderDialog.focusFirstFolder()
             } else {
                 libraryFolderDialog.browserMessage =
                     "Could not create that folder. Check the name, permissions, and whether it already exists."

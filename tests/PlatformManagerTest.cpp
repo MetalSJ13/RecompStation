@@ -25,6 +25,7 @@ private slots:
     void missingConfigRequiresFirstRunSetup();
     void rejectsInvalidLibraryLocations();
     void listsLibraryDirectoriesAndCreatesFoldersSafely();
+    void listsBrowserPlaces();
 };
 
 
@@ -231,6 +232,8 @@ void PlatformManagerTest::listsLibraryDirectoriesAndCreatesFoldersSafely()
                              .filePath(QStringLiteral("Game Library"));
     const QString existing = QDir(root).filePath(QStringLiteral("Existing Games"));
     QVERIFY(QDir().mkpath(existing));
+    // Hidden folders are left out of the browser.
+    QVERIFY(QDir().mkpath(QDir(root).filePath(QStringLiteral(".cache"))));
 
     const QString appData = QDir(temporaryDirectory.path())
                                 .filePath(QStringLiteral("app-data"));
@@ -254,6 +257,33 @@ void PlatformManagerTest::listsLibraryDirectoriesAndCreatesFoldersSafely()
     QVERIFY(!manager.createLibraryFolder(root, QStringLiteral("nested/name")));
     QVERIFY(!manager.createLibraryFolder(root, QStringLiteral("")));
     QVERIFY(!QFileInfo::exists(QDir(temporaryDirectory.path()).filePath("outside")));
+}
+
+void PlatformManagerTest::listsBrowserPlaces()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager manager(QDir(temporaryDirectory.path()).filePath(QStringLiteral("app-data")));
+    QVERIFY(manager.initialize());
+    const QString library = QDir(temporaryDirectory.path()).filePath(QStringLiteral("Games"));
+    QVERIFY(QDir().mkpath(library));
+    QVERIFY(manager.setLibraryDirectoryPath(library));
+
+    const QVariantList places = manager.browserPlaces();
+    QVERIFY(!places.isEmpty());
+    QCOMPARE(places.first().toMap().value(QStringLiteral("kind")).toString(), QStringLiteral("home"));
+    QCOMPARE(places.first().toMap().value(QStringLiteral("path")).toString(),
+             QFileInfo(QDir::homePath()).absoluteFilePath());
+    bool hasLibrary = false;
+    QStringList paths;
+    for (const QVariant &place : places) {
+        const QVariantMap item = place.toMap();
+        QVERIFY(!paths.contains(item.value(QStringLiteral("path")).toString()));
+        paths.append(item.value(QStringLiteral("path")).toString());
+        if (item.value(QStringLiteral("kind")).toString() == QStringLiteral("library"))
+            hasLibrary = item.value(QStringLiteral("path")).toString() == QFileInfo(library).absoluteFilePath();
+    }
+    QVERIFY(hasLibrary);
 }
 
 QTEST_GUILESS_MAIN(PlatformManagerTest)
