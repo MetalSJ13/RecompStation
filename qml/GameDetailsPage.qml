@@ -418,6 +418,7 @@ Popup {
 
         Button {
             id: detailsBackButton
+            Accessible.name: "Back to Library"
             z: 10
             anchors.left: parent.left
             anchors.top: parent.top

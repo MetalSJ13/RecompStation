@@ -28,6 +28,12 @@ class ControllerManager final : public QObject
     Q_PROPERTY(bool mappingCaptureActive READ mappingCaptureActive NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(QString mappingCaptureAction READ mappingCaptureAction NOTIFY mappingCaptureStateChanged)
     Q_PROPERTY(bool mappingCaptureReplaceExisting READ mappingCaptureReplaceExisting NOTIFY mappingCaptureStateChanged)
+    // True right after a capture starts, until the button used to start it
+    // (mappingCaptureHeldInput, a token like "a") is let go.
+    Q_PROPERTY(bool mappingCaptureWaitingForRelease READ mappingCaptureWaitingForRelease NOTIFY mappingCaptureStateChanged)
+    Q_PROPERTY(QString mappingCaptureHeldInput READ mappingCaptureHeldInput NOTIFY mappingCaptureStateChanged)
+    // How long a capture waits for an input before it gives up.
+    Q_PROPERTY(int mappingCaptureTimeoutMs READ mappingCaptureTimeoutMs CONSTANT)
     Q_PROPERTY(int profileRevision READ profileRevision NOTIFY controllerProfileChanged)
     // Inputs held right now (button tokens, stick directions, triggers), for
     // the button test in Settings. Display only; not used for navigation.
@@ -49,6 +55,10 @@ public:
     bool mappingCaptureActive() const;
     QString mappingCaptureAction() const;
     bool mappingCaptureReplaceExisting() const;
+    bool mappingCaptureWaitingForRelease() const { return m_mappingCaptureActive && m_captureAwaitingRelease; }
+    QString mappingCaptureHeldInput() const { return m_captureHeldInput; }
+    static constexpr int MappingCaptureTimeoutMs = 15000;
+    int mappingCaptureTimeoutMs() const { return MappingCaptureTimeoutMs; }
     int profileRevision() const;
 
 public slots:
@@ -77,6 +87,8 @@ signals:
     void mappingCaptureStateChanged();
     void controllerProfileChanged();
     void mappingCaptured(const QString &action, const QString &input);
+    // The capture ended because nothing was pressed in time.
+    void mappingCaptureTimedOut(const QString &action);
     void activeInputsChanged();
 
 private slots:
@@ -109,6 +121,7 @@ private:
     bool m_mappingCaptureActive = false;
     bool m_mappingCaptureReplaceExisting = false;
     bool m_captureAwaitingRelease = false;
+    QString m_captureHeldInput;
     int m_profileRevision = 0;
     QString m_controllerName;
     QString m_controllerType = QStringLiteral("generic");

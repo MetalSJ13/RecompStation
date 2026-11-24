@@ -1279,6 +1279,110 @@ ApplicationWindow {
         return token
     }
     // Face buttons use each layout's customary colors; everything else is neutral.
+    // An input's symbol as rich text, colored like the controller's own
+    // face buttons, for sentences such as "Let go of ✕ first".
+    // What a screen reader hears in the Library: the selected game and its
+    // system, updated as the selection moves.
+    readonly property string focusedGameAnnouncement: {
+        const games = gameGrid.model || []
+        const game = games[gameGrid.currentIndex]
+        if (!game)
+            return "Library, no games"
+        return (game.metadataTitle || game.title) + ", " + window.platformDisplayName(game.platform)
+    }
+
+    function inputGlyphMarkup(token) {
+        const glyph = window.inputGlyph(token).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        return window.isFaceButton(token)
+            ? "<font color=\"" + window.inputGlyphColor(token) + "\"><b>" + glyph + "</b></font>"
+            : "<b>" + glyph + "</b>"
+    }
+
+    // Button mapping actions, in the order Settings › Controller lists them.
+    readonly property var mappingActions: [
+        { key: "navigateUp", label: "Navigate up" },
+        { key: "navigateDown", label: "Navigate down" },
+        { key: "navigateLeft", label: "Navigate left" },
+        { key: "navigateRight", label: "Navigate right" },
+        { key: "select", label: "Select / confirm" },
+        { key: "back", label: "Back" },
+        { key: "menu", label: "Open menu" },
+        { key: "previousSection", label: "Previous section" },
+        { key: "nextSection", label: "Next section" },
+        { key: "details", label: "Game details" }
+    ]
+    // The note under a row after a capture: { action, input, kind } where
+    // kind is "added" or "timeout"; cleared after a few seconds.
+    property var mappingFlash: ({ action: "", input: "", kind: "" })
+    property real mappingCaptureRemainingMs: 0
+    property real mappingCaptureStartedAt: 0
+    property string mappingLastCaptureAction: ""
+
+    // The label of another action that already uses this input, or "".
+    function mappingConflict(action, input) {
+        if (!input)
+            return ""
+        const revision = controllerManager.profileRevision
+        const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
+        for (const entry of window.mappingActions) {
+            if (entry.key !== action && (profile[entry.key] || []).indexOf(input) >= 0)
+                return entry.label
+        }
+        return ""
+    }
+    function showMappingFlash(action, input, kind) {
+        window.mappingFlash = { action: action, input: input, kind: kind }
+        mappingFlashTimer.restart()
+    }
+    function focusMappingRow(action) {
+        for (let i = 0; i < window.mappingActions.length; ++i) {
+            if (window.mappingActions[i].key === action) {
+                const row = mappingRows.itemAt(i)
+                if (row && row.focusAdd)
+                    Qt.callLater(row.focusAdd)
+                return
+            }
+        }
+    }
+    Timer {
+        id: mappingFlashTimer
+        interval: 4500
+        onTriggered: window.mappingFlash = { action: "", input: "", kind: "" }
+    }
+    Timer {
+        id: mappingCountdownTimer
+        interval: 100
+        repeat: true
+        running: controllerManager.mappingCaptureActive
+        onTriggered: window.mappingCaptureRemainingMs = Math.max(0,
+            controllerManager.mappingCaptureTimeoutMs - (Date.now() - window.mappingCaptureStartedAt))
+    }
+    Connections {
+        target: controllerManager
+        function onMappingCaptureStateChanged() {
+            if (controllerManager.mappingCaptureActive
+                    && window.mappingLastCaptureAction !== controllerManager.mappingCaptureAction) {
+                // A capture just started.
+                window.mappingLastCaptureAction = controllerManager.mappingCaptureAction
+                window.mappingCaptureStartedAt = Date.now()
+                window.mappingCaptureRemainingMs = controllerManager.mappingCaptureTimeoutMs
+                window.mappingFlash = { action: "", input: "", kind: "" }
+            } else if (!controllerManager.mappingCaptureActive && window.mappingLastCaptureAction.length > 0) {
+                // It ended (saved, cancelled or timed out): focus goes back to its row.
+                const action = window.mappingLastCaptureAction
+                window.mappingLastCaptureAction = ""
+                if (currentPage === "Settings")
+                    window.focusMappingRow(action)
+            }
+        }
+        function onMappingCaptured(action, input) {
+            window.showMappingFlash(action, input, "added")
+        }
+        function onMappingCaptureTimedOut(action) {
+            window.showMappingFlash(action, "", "timeout")
+        }
+    }
+
     function inputGlyphColor(token) {
         const colors = {
             xbox: { a: "#48C78E", b: "#E58B78", x: "#55A9F4", y: "#E8C27F" },
@@ -3568,6 +3672,9 @@ ApplicationWindow {
 
                             GridView {
                             id: gameGrid
+                            // Screen readers: say which game is selected as it changes.
+                            Accessible.role: Accessible.List
+                            Accessible.name: window.focusedGameAnnouncement
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             // End the grid above the floating input-hint bar so it
@@ -3964,6 +4071,9 @@ ApplicationWindow {
                         // LibraryGridLayout.js. Selection is gameGrid.currentIndex.
                         Flickable {
                             id: sectionedGrid
+                            // Screen readers: say which game is selected as it changes.
+                            Accessible.role: Accessible.List
+                            Accessible.name: window.focusedGameAnnouncement
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: gameGrid.hintBarClearance
@@ -4514,6 +4624,9 @@ ApplicationWindow {
 
                             Flickable {
                                 id: shelvesFlick
+                                // Screen readers: say which game is selected as it changes.
+                                Accessible.role: Accessible.List
+                                Accessible.name: window.focusedGameAnnouncement
                                 anchors.top: shelvesSpotlight.bottom
                                 anchors.topMargin: 14
                                 anchors.left: parent.left
@@ -4674,6 +4787,9 @@ ApplicationWindow {
 
                         ListView {
                             id: gameList
+                            // Screen readers: say which game is selected as it changes.
+                            Accessible.role: Accessible.List
+                            Accessible.name: window.focusedGameAnnouncement
                             anchors.left: parent.left
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
@@ -5180,6 +5296,9 @@ ApplicationWindow {
                         // Selection mirrors gameGrid.currentIndex.
                         Item {
                             id: consoleView
+                            // Screen readers: say which game is selected as it changes.
+                            Accessible.role: Accessible.List
+                            Accessible.name: window.focusedGameAnnouncement
                             anchors.fill: parent
                             // Run edge to edge across the window.
                             anchors.leftMargin: -30
@@ -7339,188 +7458,316 @@ ApplicationWindow {
                                     Label {
                                         Layout.fillWidth: true
                                         Layout.bottomMargin: 2
-                                        text: controllerManager.mappingCaptureActive
-                                            ? "Press a button, trigger or D-pad direction, move the left stick, or click a stick. Release the button you used to start first; this cancels after 15 seconds."
-                                            : controllerManager.connected
-                                                ? "Saved separately for this controller. Add another input to any action, or replace its inputs."
-                                                : "Connect a controller to change its mappings."
-                                        color: controllerManager.mappingCaptureActive ? theme.accent : theme.textSecondary
+                                        text: controllerManager.connected
+                                            ? "Saved separately for this controller. Add another input to any action, or replace its inputs."
+                                            : "Connect a controller to change its mappings."
+                                        color: theme.textSecondary
                                         font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
                                     Repeater {
-                                        model: [
-                                            { key: "navigateUp", label: "Navigate up" },
-                                            { key: "navigateDown", label: "Navigate down" },
-                                            { key: "navigateLeft", label: "Navigate left" },
-                                            { key: "navigateRight", label: "Navigate right" },
-                                            { key: "select", label: "Select / confirm" },
-                                            { key: "back", label: "Back" },
-                                            { key: "menu", label: "Open menu" },
-                                            { key: "previousSection", label: "Previous section" },
-                                            { key: "nextSection", label: "Next section" },
-                                            { key: "details", label: "Game details" }
-                                        ]
+                                        id: mappingRows
+                                        model: window.mappingActions
                                         delegate: Rectangle {
+                                            id: mappingRow
+                                            required property var modelData
+                                            readonly property string actionKey: modelData.key
+                                            readonly property bool capturing: controllerManager.mappingCaptureActive
+                                                && controllerManager.mappingCaptureAction === actionKey
+                                            readonly property bool replacing: capturing
+                                                && controllerManager.mappingCaptureReplaceExisting
+                                            readonly property bool waitingForRelease: capturing
+                                                && controllerManager.mappingCaptureWaitingForRelease
+                                                && controllerManager.mappingCaptureHeldInput.length > 0
+                                            readonly property bool flashing: window.mappingFlash.action === actionKey
+                                            readonly property string conflictLabel: flashing
+                                                && window.mappingFlash.kind === "added"
+                                                ? window.mappingConflict(actionKey, window.mappingFlash.input) : ""
+                                            readonly property var bindings: {
+                                                const revision = controllerManager.profileRevision
+                                                const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
+                                                return profile[actionKey] || []
+                                            }
                                             Layout.fillWidth: true
-                                            implicitHeight: actionRow.implicitHeight + 20
-                                            radius: theme.radiusSmall
-                                            color: theme.sidebarBackground
-                                            border.color: actionBindingButton.activeFocus
-                                                || (controllerManager.mappingCaptureActive
-                                                    && controllerManager.mappingCaptureAction === modelData.key)
-                                                ? theme.accent : theme.divider
-                                            border.width: actionBindingButton.activeFocus
-                                                || (controllerManager.mappingCaptureActive
-                                                    && controllerManager.mappingCaptureAction === modelData.key)
-                                                ? 2 : 1
-                                            RowLayout {
-                                                id: actionRow
+                                            implicitHeight: mappingColumn.implicitHeight + 24
+                                            radius: 12
+                                            clip: true
+                                            // Rows other than the one listening step back.
+                                            opacity: controllerManager.mappingCaptureActive && !capturing ? 0.42 : 1
+                                            color: capturing ? theme.surface : theme.sidebarBackground
+                                            border.width: capturing || (flashing && window.mappingFlash.kind === "added") ? 2 : 1
+                                            border.color: capturing ? theme.accent
+                                                : flashing && window.mappingFlash.kind === "added"
+                                                    ? (conflictLabel.length > 0 ? theme.warning : theme.success)
+                                                : theme.divider
+                                            Accessible.role: Accessible.Grouping
+                                            Accessible.name: modelData.label
+                                            function focusAdd() { addMappingButton.forceActiveFocus() }
+
+                                            ColumnLayout {
+                                                id: mappingColumn
                                                 anchors.left: parent.left
                                                 anchors.right: parent.right
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                anchors.leftMargin: 12
-                                                anchors.rightMargin: 12
-                                                spacing: 12
-                                                ColumnLayout {
-                                                    id: actionDetailsColumn
+                                                anchors.top: parent.top
+                                                anchors.margins: 12
+                                                anchors.leftMargin: 16
+                                                spacing: 10
+                                                RowLayout {
                                                     Layout.fillWidth: true
-                                                    spacing: 3
-                                                    Label {
-                                                        text: modelData.label
-                                                        color: theme.textPrimary
-                                                        font.pixelSize: 12 * theme.fontScale
-                                                        font.bold: true
-                                                    }
-                                                    property string actionKey: modelData.key
-                                                    Flow {
+                                                    spacing: 10
+                                                    ColumnLayout {
                                                         Layout.fillWidth: true
-                                                        spacing: 6
-                                                        Repeater {
-                                                            id: bindingRepeater
-                                                            model: {
-                                                                const revision = controllerManager.profileRevision
-                                                                const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
-                                                                return profile[actionDetailsColumn.actionKey] || []
-                                                            }
-                                                            delegate: Rectangle {
-                                                                required property var modelData
-                                                                required property int index
-                                                                implicitWidth: bindingChipRow.implicitWidth + 12
-                                                                implicitHeight: 30
-                                                                radius: theme.radiusSmall
-                                                                color: theme.surface
-                                                                border.color: theme.divider
-                                                                RowLayout {
-                                                                    id: bindingChipRow
-                                                                    anchors.fill: parent
-                                                                    anchors.leftMargin: 6
-                                                                    anchors.rightMargin: 4
-                                                                    spacing: 5
-                                                                    Label {
-                                                                        text: window.inputGlyph(modelData)
-                                                                        color: window.isFaceButton(modelData)
-                                                                            ? window.inputGlyphColor(modelData) : theme.textPrimary
-                                                                        font.pixelSize: (window.isFaceButton(modelData) ? 14 : 12) * theme.fontScale
-                                                                        font.bold: true
-                                                                    }
-                                                                    Button {
-                                                                        id: removeBindingButton
-                                                                        text: "×"
-                                                                        enabled: bindingRepeater.count > 1 && controllerManager.connected
-                                                                        activeFocusOnTab: true
-                                                                        focusPolicy: Qt.StrongFocus
-                                                                        implicitWidth: 24
-                                                                        implicitHeight: 24
-                                                                        padding: 0
-                                                                        font.pixelSize: 14
-                                                                        background: Rectangle {
-                                                                            radius: 5
-                                                                            color: removeBindingButton.activeFocus
-                                                                                ? theme.elevatedSurface : "transparent"
-                                                                            border.color: removeBindingButton.activeFocus
-                                                                                ? theme.accent : "transparent"
-                                                                            border.width: removeBindingButton.activeFocus ? 2 : 0
+                                                        spacing: 7
+                                                        Label {
+                                                            text: mappingRow.modelData.label
+                                                            color: theme.textPrimary
+                                                            font.pixelSize: 13.5 * theme.fontScale
+                                                            font.bold: true
+                                                        }
+                                                        Flow {
+                                                            Layout.fillWidth: true
+                                                            spacing: 6
+                                                            Repeater {
+                                                                id: bindingRepeater
+                                                                model: mappingRow.bindings
+                                                                delegate: Rectangle {
+                                                                    id: bindingChip
+                                                                    required property var modelData
+                                                                    required property int index
+                                                                    readonly property bool isNew: mappingRow.flashing
+                                                                        && window.mappingFlash.kind === "added"
+                                                                        && window.mappingFlash.input === modelData
+                                                                    implicitWidth: bindingChipRow.implicitWidth + 14
+                                                                    implicitHeight: Math.round(30 * theme.fontScale)
+                                                                    radius: 8
+                                                                    // Replace mode strikes out what the new input replaces.
+                                                                    opacity: mappingRow.replacing ? 0.45 : 1
+                                                                    color: isNew ? Qt.rgba(theme.success.r, theme.success.g, theme.success.b, 0.16)
+                                                                        : theme.surface
+                                                                    border.width: isNew ? 2 : 1
+                                                                    border.color: isNew
+                                                                        ? (mappingRow.conflictLabel.length > 0 ? theme.warning : theme.success)
+                                                                        : theme.divider
+                                                                    RowLayout {
+                                                                        id: bindingChipRow
+                                                                        anchors.fill: parent
+                                                                        anchors.leftMargin: 9
+                                                                        anchors.rightMargin: 4
+                                                                        spacing: 4
+                                                                        Label {
+                                                                            text: window.inputGlyph(bindingChip.modelData)
+                                                                            color: window.isFaceButton(bindingChip.modelData)
+                                                                                ? window.inputGlyphColor(bindingChip.modelData) : theme.textPrimary
+                                                                            font.pixelSize: (window.isFaceButton(bindingChip.modelData) ? 14 : 12.5) * theme.fontScale
+                                                                            font.bold: true
+                                                                            font.strikeout: mappingRow.replacing
                                                                         }
-                                                                        onClicked: {
-                                                                            const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
-                                                                            const bindings = profile[actionDetailsColumn.actionKey] || []
-                                                                            if (bindings.length <= 1)
-                                                                                return
-                                                                            const updated = bindings.slice()
-                                                                            updated.splice(index, 1)
-                                                                            profile[actionDetailsColumn.actionKey] = updated
-                                                                            if (settingsManager.saveControllerProfile(controllerManager.controllerGuid, profile))
-                                                                                controllerManager.reloadControllerProfile()
+                                                                        Button {
+                                                                            id: removeBindingButton
+                                                                            // The last input of an action can't be removed.
+                                                                            visible: bindingRepeater.count > 1 && !mappingRow.capturing
+                                                                            enabled: controllerManager.connected && !controllerManager.mappingCaptureActive
+                                                                            activeFocusOnTab: true
+                                                                            focusPolicy: Qt.StrongFocus
+                                                                            implicitWidth: 22
+                                                                            implicitHeight: 22
+                                                                            padding: 0
+                                                                            Accessible.name: "Remove " + window.inputGlyph(bindingChip.modelData)
+                                                                                + " from " + mappingRow.modelData.label
+                                                                            background: Rectangle {
+                                                                                radius: 6
+                                                                                color: removeBindingButton.activeFocus || removeBindingButton.hovered
+                                                                                    ? theme.elevatedSurface : "transparent"
+                                                                                border.color: theme.accent
+                                                                                border.width: removeBindingButton.activeFocus ? 2 : 0
+                                                                            }
+                                                                            contentItem: Label {
+                                                                                text: "×"
+                                                                                color: theme.textMuted
+                                                                                font.pixelSize: 14 * theme.fontScale
+                                                                                horizontalAlignment: Text.AlignHCenter
+                                                                                verticalAlignment: Text.AlignVCenter
+                                                                            }
+                                                                            onClicked: {
+                                                                                const profile = settingsManager.controllerProfile(controllerManager.controllerGuid)
+                                                                                const current = profile[mappingRow.actionKey] || []
+                                                                                if (current.length <= 1)
+                                                                                    return
+                                                                                const updated = current.slice()
+                                                                                updated.splice(bindingChip.index, 1)
+                                                                                profile[mappingRow.actionKey] = updated
+                                                                                if (settingsManager.saveControllerProfile(controllerManager.controllerGuid, profile))
+                                                                                    controllerManager.reloadControllerProfile()
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
                                                             }
                                                         }
+                                                        Label {
+                                                            visible: bindingRepeater.count === 0
+                                                            text: "No inputs yet"
+                                                            color: theme.textSecondary
+                                                            font.pixelSize: 12 * theme.fontScale
+                                                        }
+                                                    }
+                                                    SettingsButton {
+                                                        id: addMappingButton
+                                                        visible: !mappingRow.capturing
+                                                        text: "Add"
+                                                        glyph: "+"
+                                                        enabled: controllerManager.connected && !controllerManager.mappingCaptureActive
+                                                        Accessible.name: "Add an input to " + mappingRow.modelData.label
+                                                        onClicked: controllerManager.startMappingCapture(mappingRow.actionKey, false)
+                                                    }
+                                                    SettingsButton {
+                                                        visible: !mappingRow.capturing
+                                                        text: "Replace"
+                                                        enabled: controllerManager.connected && !controllerManager.mappingCaptureActive
+                                                        Accessible.name: "Replace the inputs of " + mappingRow.modelData.label
+                                                        onClicked: controllerManager.startMappingCapture(mappingRow.actionKey, true)
+                                                    }
+                                                    SettingsButton {
+                                                        id: cancelMappingCaptureButton
+                                                        visible: mappingRow.capturing
+                                                        text: "Cancel"
+                                                        onClicked: controllerManager.cancelMappingCapture()
+                                                        // Keep focus on the row while it listens, so keyboard
+                                                        // users can cancel straight away.
+                                                        onVisibleChanged: if (visible) forceActiveFocus()
+                                                    }
+                                                }
+
+                                                // Listening panel: what to do now, and how long is left.
+                                                Rectangle {
+                                                    visible: mappingRow.capturing
+                                                    Layout.fillWidth: true
+                                                    implicitHeight: listenRow.implicitHeight + 24
+                                                    radius: 10
+                                                    color: theme.windowBackground
+                                                    border.color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.35)
+                                                    RowLayout {
+                                                        id: listenRow
+                                                        anchors.left: parent.left
+                                                        anchors.right: parent.right
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                        anchors.leftMargin: 14
+                                                        anchors.rightMargin: 14
+                                                        spacing: 14
+                                                        Rectangle {
+                                                            id: listenRing
+                                                            Layout.preferredWidth: 34
+                                                            Layout.preferredHeight: 34
+                                                            radius: 17
+                                                            color: "transparent"
+                                                            border.width: 2
+                                                            border.color: mappingRow.waitingForRelease ? theme.textMuted : theme.accent
+                                                            Rectangle {
+                                                                anchors.centerIn: parent
+                                                                width: 12
+                                                                height: 12
+                                                                radius: 6
+                                                                color: mappingRow.waitingForRelease ? "transparent" : theme.accent
+                                                                border.width: mappingRow.waitingForRelease ? 2 : 0
+                                                                border.color: theme.textMuted
+                                                            }
+                                                            // A slow pulse while listening (off under Reduced motion).
+                                                            SequentialAnimation on opacity {
+                                                                running: mappingRow.capturing && !mappingRow.waitingForRelease
+                                                                    && !settingsManager.reducedMotion
+                                                                loops: Animation.Infinite
+                                                                NumberAnimation { to: 0.45; duration: 700; easing.type: Easing.InOutSine }
+                                                                NumberAnimation { to: 1.0; duration: 700; easing.type: Easing.InOutSine }
+                                                                onRunningChanged: if (!running) listenRing.opacity = 1
+                                                            }
+                                                        }
+                                                        ColumnLayout {
+                                                            Layout.fillWidth: true
+                                                            spacing: 3
+                                                            Label {
+                                                                Layout.fillWidth: true
+                                                                textFormat: Text.StyledText
+                                                                text: mappingRow.waitingForRelease
+                                                                    ? "Let go of " + window.inputGlyphMarkup(controllerManager.mappingCaptureHeldInput) + " first"
+                                                                    : mappingRow.replacing
+                                                                        ? "Press the new input for " + mappingRow.modelData.label
+                                                                        : "Press an input for " + mappingRow.modelData.label
+                                                                color: theme.textPrimary
+                                                                font.pixelSize: 14.5 * theme.fontScale
+                                                                font.bold: true
+                                                                wrapMode: Text.Wrap
+                                                            }
+                                                            Label {
+                                                                Layout.fillWidth: true
+                                                                textFormat: Text.StyledText
+                                                                text: mappingRow.waitingForRelease
+                                                                    ? "The button you used to start isn't recorded."
+                                                                    : mappingRow.replacing && mappingRow.bindings.length > 0
+                                                                        ? "It replaces " + mappingRow.bindings.map(b => window.inputGlyphMarkup(b)).join(" and ")
+                                                                        : "A button, trigger, D-pad direction, the left stick or a stick click"
+                                                                color: theme.textMuted
+                                                                font.pixelSize: 12.5 * theme.fontScale
+                                                                wrapMode: Text.Wrap
+                                                            }
+                                                        }
+                                                        Label {
+                                                            text: Math.ceil(window.mappingCaptureRemainingMs / 1000) + " s"
+                                                            color: theme.textMuted
+                                                            font.pixelSize: 13 * theme.fontScale
+                                                            font.bold: true
+                                                            Accessible.ignored: true
+                                                        }
+                                                    }
+                                                }
+
+                                                // After a capture: added (with a clash warning) or nothing pressed.
+                                                RowLayout {
+                                                    visible: mappingRow.flashing
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Rectangle {
+                                                        visible: window.mappingFlash.kind === "added" && mappingRow.conflictLabel.length === 0
+                                                        implicitWidth: addedPillLabel.implicitWidth + 16
+                                                        implicitHeight: addedPillLabel.implicitHeight + 6
+                                                        radius: height / 2
+                                                        color: Qt.rgba(theme.success.r, theme.success.g, theme.success.b, 0.16)
+                                                        Label {
+                                                            id: addedPillLabel
+                                                            anchors.centerIn: parent
+                                                            text: "ADDED"
+                                                            color: theme.success
+                                                            font.pixelSize: 10.5 * theme.fontScale
+                                                            font.bold: true
+                                                        }
                                                     }
                                                     Label {
-                                                        visible: bindingRepeater.count === 0
-                                                        text: "No bindings"
-                                                        color: theme.textSecondary
-                                                        font.pixelSize: 10 * theme.fontScale
+                                                        Layout.fillWidth: true
+                                                        textFormat: Text.StyledText
+                                                        wrapMode: Text.Wrap
+                                                        font.pixelSize: 12.5 * theme.fontScale
+                                                        color: window.mappingFlash.kind === "timeout" ? theme.textMuted
+                                                            : mappingRow.conflictLabel.length > 0 ? theme.warningText : theme.success
+                                                        text: window.mappingFlash.kind === "timeout"
+                                                            ? "◷  Nothing was pressed, so nothing changed."
+                                                            : mappingRow.conflictLabel.length > 0
+                                                                ? "⚠  " + window.inputGlyphMarkup(window.mappingFlash.input) + " is also "
+                                                                    + mappingRow.conflictLabel + ", so it will do both. Remove it from one of them if that's not what you want."
+                                                                : window.inputGlyphMarkup(window.mappingFlash.input) + " now also works for "
+                                                                    + mappingRow.modelData.label + "."
                                                     }
                                                 }
-                                                Button {
-                                                    id: actionBindingButton
-                                                    text: controllerManager.mappingCaptureActive
-                                                        && controllerManager.mappingCaptureAction === modelData.key
-                                                        ? "Listening…"
-                                                        : controllerManager.mappingCaptureReplaceExisting
-                                                            && controllerManager.mappingCaptureAction === modelData.key
-                                                            ? "Replacing…"
-                                                            : "Add binding"
-                                                    enabled: controllerManager.connected
-                                                        && (!controllerManager.mappingCaptureActive
-                                                            || controllerManager.mappingCaptureAction === modelData.key)
-                                                    activeFocusOnTab: true
-                                                    focusPolicy: Qt.StrongFocus
-                                                    background: Rectangle {
-                                                        radius: theme.radiusSmall
-                                                        color: actionBindingButton.activeFocus
-                                                            ? theme.elevatedSurface : theme.surface
-                                                        border.color: actionBindingButton.activeFocus
-                                                            ? theme.accent : theme.divider
-                                                        border.width: actionBindingButton.activeFocus ? 2 : 1
-                                                    }
-                                                    onClicked: controllerManager.startMappingCapture(modelData.key, false)
-                                                }
-                                                Button {
-                                                    text: "Replace"
-                                                    enabled: controllerManager.connected
-                                                        && (!controllerManager.mappingCaptureActive
-                                                            || controllerManager.mappingCaptureAction === modelData.key)
-                                                    activeFocusOnTab: true
-                                                    focusPolicy: Qt.StrongFocus
-                                                    background: Rectangle {
-                                                        radius: theme.radiusSmall
-                                                        color: activeFocus ? theme.elevatedSurface : theme.surface
-                                                        border.color: activeFocus ? theme.accent : theme.divider
-                                                        border.width: activeFocus ? 2 : 1
-                                                    }
-                                                    onClicked: controllerManager.startMappingCapture(modelData.key, true)
-                                                }
-                                                Button {
-                                                    id: cancelMappingCaptureButton
-                                                    text: "Cancel"
-                                                    visible: controllerManager.mappingCaptureActive
-                                                        && controllerManager.mappingCaptureAction === modelData.key
-                                                    activeFocusOnTab: true
-                                                    focusPolicy: Qt.StrongFocus
-                                                    background: Rectangle {
-                                                        radius: theme.radiusSmall
-                                                        color: cancelMappingCaptureButton.activeFocus
-                                                            ? theme.elevatedSurface : theme.surface
-                                                        border.color: cancelMappingCaptureButton.activeFocus
-                                                            ? theme.accent : theme.divider
-                                                        border.width: cancelMappingCaptureButton.activeFocus ? 2 : 1
-                                                    }
-                                                    onClicked: controllerManager.cancelMappingCapture()
-                                                }
+                                            }
+
+                                            // Countdown along the bottom edge of the listening row.
+                                            Rectangle {
+                                                visible: mappingRow.capturing
+                                                anchors.left: parent.left
+                                                anchors.bottom: parent.bottom
+                                                height: 3
+                                                radius: 1.5
+                                                color: theme.accent
+                                                width: parent.width * Math.max(0, window.mappingCaptureRemainingMs)
+                                                    / controllerManager.mappingCaptureTimeoutMs
                                             }
                                         }
                                     }
@@ -8515,6 +8762,7 @@ ApplicationWindow {
 
                     Button {
                         id: headerLibraryNavigationButton
+                        Accessible.name: "Library"
                         Layout.preferredHeight: 42
                         Layout.preferredWidth: libraryNavigationContent.implicitWidth + 18
                         padding: 4
@@ -8562,6 +8810,7 @@ ApplicationWindow {
 
                     Button {
                         id: settingsNavigationButton
+                        Accessible.name: "Settings"
                         Layout.preferredHeight: 42
                         Layout.preferredWidth: settingsNavigationContent.implicitWidth + 18
                         padding: 4

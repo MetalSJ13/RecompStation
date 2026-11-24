@@ -171,6 +171,7 @@ qt_add_qml_module(RecompStationApp
         qml/ScreenshotBackdrop.qml
         qml/ScreenshotViewer.qml
         qml/ValueCycler.qml
+        qml/SettingsButton.qml
         qml/SettingRow.qml
         qml/SettingsGroupLabel.qml
         qml/SettingsNavItem.qml

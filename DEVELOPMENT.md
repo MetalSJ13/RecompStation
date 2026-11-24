@@ -57,6 +57,9 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 - [ ] Metadata: with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
 - [x] Metadata request savings (validated 2026-11-24): after one start with the key, the next start shows **Ready** without a request (the count on your TheGamesDB API key page does not go up); **Test** shows **Connected** and the requests left; screenshots for several games arrive after one lookup; the allowance line shows the pause note when 50 or fewer requests are left.
 - [x] Interface sounds (validated 2026-11-24): Move when focus moves (library, Settings, dialogs, Game Details); Open a game, Back once (B, Esc and the close button), the swoosh for LB/RB or Q/E in the library and Settings, the switch sound for picking a system in the picker (opening it is silent), ⋯ and system menus, switches, Play, a failed launch; the volume row plays a sample per step; off means silent; no sounds while a game runs.
+- [ ] Game Details plays Open from every view, including Grid and List (fix/details-open-sound).
+- [ ] Accessibility: muted text is easier to read on panels in every theme; Midnight Violet's accent is a little lighter; with a screen reader (Orca), moving in each Library view reads the game and system.
+- [ ] Capture states: Add with ✕/A shows "Let go of ✕ first", then the listening panel and countdown; Replace strikes out the old inputs; adding an input another action uses shows the warning; waiting 15 s shows "Nothing was pressed"; Cancel works and focus returns to the row's Add; other rows dim while one listens.
 - [x] Controller: a second connected controller takes over navigation when it is used (fixed on `fix/validation-round-1`; only the first controller used to be read), confirmed 2026-11-24.
 - [ ] Controller: a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
 - [x] First-time setup: the simplified first step (folder choice only), confirmed 2026-11-24.
@@ -133,8 +136,9 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [x] The ⋯ menu: Show install folder, Open launcher log, Uninstall… and its confirmation; validated 2026-11-24.
 
 ### 6. Input, accessibility and regression
-- [ ] Contrast, accessible names, tab order and scaling review across all pages.
-- [ ] Theme polish of the button-mapping capture states.
+- [x] Contrast and accessible names (branch `feature/accessibility`, needs validation): textMuted lifted per theme and Midnight Violet's accent lifted to meet WCAG AA 4.5:1 where they are used; the Library views tell screen readers the selected game and system; the header Library and Settings buttons, Game Details' back button and the × on mapping chips are named; the screenshot viewer hint follows Text size. Tab order: every control is reachable (audit 2026-11-24).
+- [ ] Scaling review: screenshots of every page at Large text and a high interface scale, to find clipping or overlap.
+- [x] Button-mapping capture states (branch `feature/accessibility`, needs validation): the row shows let go first, listening with a 15-second countdown, replacing (old inputs struck out), added (with a warning when the input is already used by another action) and nothing pressed; other rows dim; Settings-style buttons (`SettingsButton.qml`). Fixes Replace showing "Listening…".
 - [ ] Multi-display placement.
 - [x] Interface sounds (validated 2026-11-24): the "Glass, refined" set, synthesized by `tools/sounds/generate.py` and played through SDL2 audio with a small mixer (Qt Multimedia 6.12 reported playback but stayed silent on PipeWire, 2026-11-24). Move on every directional input that moves something, Open a game, Back, a swoosh for cycling with the shoulder buttons, the switch sound for picking a system, menus, switches, Play and launch errors. Settings › Appearance › Sounds: on/off and volume (default on, 60%). Silent while a game is running.
 

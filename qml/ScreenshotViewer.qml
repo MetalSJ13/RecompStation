@@ -151,7 +151,7 @@ Popup {
                         ? (root.index + 1) + " of " + root.sources.length + "     ◀ ▶  Browse     " : "")
                     + "B / Esc  Close"
                 color: root.themeTokens ? root.themeTokens.textSecondary : "#b5bbcd"
-                font.pixelSize: 12
+                font.pixelSize: 12 * (root.themeTokens ? root.themeTokens.fontScale : 1)
             }
         }
     }

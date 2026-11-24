@@ -61,8 +61,12 @@ ControllerManager::ControllerManager(QObject *parent)
         emit navigationActiveChanged();
     });
     m_mappingCaptureTimer.setSingleShot(true);
-    connect(&m_mappingCaptureTimer, &QTimer::timeout,
-            this, &ControllerManager::cancelMappingCapture);
+    connect(&m_mappingCaptureTimer, &QTimer::timeout, this, [this]() {
+        const QString action = m_mappingCaptureAction;
+        cancelMappingCapture();
+        if (!action.isEmpty())
+            emit mappingCaptureTimedOut(action);
+    });
 
 #ifdef RECOMPSTATION_HAS_SDL2
     if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
@@ -161,8 +165,11 @@ bool ControllerManager::startMappingCapture(const QString &action, bool replaceE
     m_mappingCaptureReplaceExisting = replaceExisting;
     m_mappingCaptureActive = true;
     m_captureAwaitingRelease = true;
+    // The button that started the capture (A on "Add", say) is ignored
+    // until it is let go; the row names it.
+    m_captureHeldInput = m_displayedInputs.isEmpty() ? QString() : m_displayedInputs.first();
     m_previousActiveInputs.clear();
-    m_mappingCaptureTimer.start(15000);
+    m_mappingCaptureTimer.start(MappingCaptureTimeoutMs);
     emit mappingCaptureStateChanged();
     qCInfo(lcApplication) << "Started controller mapping capture for action:" << action;
     return true;
@@ -178,6 +185,7 @@ void ControllerManager::cancelMappingCapture()
     m_mappingCaptureTimer.stop();
     m_mappingCaptureActive = false;
     m_captureAwaitingRelease = false;
+    m_captureHeldInput.clear();
     m_mappingCaptureAction.clear();
     m_mappingCaptureReplaceExisting = false;
     m_previousActiveInputs.clear();
@@ -446,8 +454,11 @@ void ControllerManager::pollController()
 
     if (m_mappingCaptureActive) {
         if (m_captureAwaitingRelease) {
-            if (activeInputs.isEmpty())
+            if (activeInputs.isEmpty()) {
                 m_captureAwaitingRelease = false;
+                m_captureHeldInput.clear();
+                emit mappingCaptureStateChanged();
+            }
         } else {
             const QString input = ControllerInputRouter::firstNewInput(
                 activeInputs, m_previousActiveInputs);
@@ -463,6 +474,7 @@ void ControllerManager::pollController()
                         m_mappingCaptureTimer.stop();
                         m_mappingCaptureActive = false;
                         m_captureAwaitingRelease = false;
+                        m_captureHeldInput.clear();
                         m_mappingCaptureAction.clear();
                         m_mappingCaptureReplaceExisting = false;
                         m_previousActiveInputs.clear();
