@@ -65,7 +65,16 @@ jobs:
 
       - name: Keep only Qt's SQLite driver
         # The others need database client libraries that aren't bundled.
-        run: find "$QT_ROOT_DIR/plugins/sqldrivers" -name 'libqsql*.so' ! -name 'libqsqlite.so' -print -delete
+        # Each driver's CMake entry goes with it, or Qt's CMake files refer
+        # to a missing file.
+        run: |
+          for driver in "$QT_ROOT_DIR"/plugins/sqldrivers/libqsql*.so; do
+            name="$(basename "$driver" .so)"; name="${name#libqsql}"
+            [[ "$name" == "ite" ]] && continue   # libqsqlite: SQLite, kept
+            upper="${name^^}"
+            rm -v "$driver" "$QT_ROOT_DIR"/lib/cmake/Qt6Sql/Qt6Q${upper}DriverPlugin*.cmake
+          done
+          ls "$QT_ROOT_DIR/plugins/sqldrivers" "$QT_ROOT_DIR/lib/cmake/Qt6Sql"
 
       - name: Build, test and package
         env:
