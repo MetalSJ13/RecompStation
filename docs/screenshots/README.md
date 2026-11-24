@@ -6,7 +6,7 @@ committing; the files hold image data only.
 
 | File | What it shows |
 | --- | --- |
-| `game-details.png` | Game Details of an installed game (Diddy Kong Racing) with its recompilation project, version and launch settings |
+| `game-details.png` | Game Details of a game with a recompilation project available, not installed yet (The Legend of Zelda: Majora's Mask) |
 | `library-shelves.png` | Library, Shelves view, All systems, spotlight on the selected game, wave background |
 | `library-grid.png` | Library, Grid view, sections per system, custom wallpaper |
 | `library-list.png` | Library, List view with the preview pane, wave background |
