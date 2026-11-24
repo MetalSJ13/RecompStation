@@ -6,11 +6,11 @@ committing; the files hold image data only.
 
 | File | What it shows |
 | --- | --- |
-| `game-details.png` | Game Details of a game with a recompilation project available |
-| `library-shelves.png` | Library, Shelves view, All Platforms, spotlight on the selected game |
-| `library-grid.png` | Library, Grid view, sections per system |
-| `library-list.png` | Library, List view with the preview pane, custom wallpaper |
-| `library-carousel.png` | Library, Carousel view |
+| `game-details.png` | Game Details of an installed game (Diddy Kong Racing) with its recompilation project, version and launch settings |
+| `library-shelves.png` | Library, Shelves view, All systems, spotlight on the selected game, wave background |
+| `library-grid.png` | Library, Grid view, sections per system, custom wallpaper |
+| `library-list.png` | Library, List view with the preview pane, wave background |
+| `library-carousel.png` | Library, Carousel view, Aurora theme |
 
 To add or replace one, strip metadata first, for example:
 `convert input.png -strip -resize 1920x output.png` (ImageMagick).

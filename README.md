@@ -68,7 +68,7 @@ RecompStation brings them together in a single library that you can use from the
 
 ## Screenshots
 
-**Game Details:** cover, description, screenshots, and the recompilation project for the game, ready to install and play.
+**Game Details:** cover, description, screenshots, and the game's recompilation project: installed version, the game file it needs, and how it launches.
 
 ![Game Details](docs/screenshots/game-details.png)
 
