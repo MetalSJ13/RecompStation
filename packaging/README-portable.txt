@@ -19,6 +19,9 @@ share/applications/io.github.MetalSJ13.RecompStation.desktop to
 ~/.local/share/applications/ and change its Exec= line to the full path of the
 RecompStation file in this folder.
 
+RecompStation's license is in LICENSE; the libraries included with it (Qt
+and others) and their licenses are listed in THIRD_PARTY_NOTICES.md.
+
 RecompStation does not include, download or distribute any game files. You
 need your own legally obtained copies of the games.
 

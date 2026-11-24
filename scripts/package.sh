@@ -144,6 +144,29 @@ if [[ ! -f "$APPDIR/usr/plugins/sqldrivers/libqsqlite.so" ]]; then
     exit 1
 fi
 
+# License notices: RecompStation's license, the notices for the bundled
+# libraries (with the Qt version and the list of bundled libraries, written
+# now) and the LGPL text. System libraries' copyright files were added by
+# linuxdeploy under usr/share/doc.
+NOTICES="$BUILD_DIR/notices"
+rm -rf "$NOTICES"
+mkdir -p "$NOTICES/licenses"
+cp "$PROJECT_ROOT/LICENSE" "$NOTICES/LICENSE"
+cp "$PROJECT_ROOT/packaging/licenses/"*.txt "$NOTICES/licenses/"
+{
+    cat "$PROJECT_ROOT/packaging/THIRD_PARTY_NOTICES.md"
+    echo
+    echo "## Bundled in this build"
+    echo
+    echo "Qt $QT_VERSION. Libraries in \`usr/lib\`:"
+    echo
+    (cd "$APPDIR/usr/lib" && find . -maxdepth 1 -name '*.so*' ! -type l -printf '%f\n' | sort | sed 's/^/- /')
+} > "$NOTICES/THIRD_PARTY_NOTICES.md"
+echo "Copyright files from system packages: $(find "$APPDIR/usr/share/doc" -name copyright 2>/dev/null | wc -l)"
+# Inside the program folder too, so both packages carry them in usr/.
+mkdir -p "$APPDIR/usr/share/licenses/RecompStation"
+cp -a "$NOTICES/." "$APPDIR/usr/share/licenses/RecompStation/"
+
 mkdir -p "$DIST_DIR"
 APPIMAGE_FILE="RecompStation-$VERSION-x86_64.AppImage"
 ZIP_NAME="RecompStation-$VERSION-linux-x86_64"
@@ -158,11 +181,11 @@ mkdir -p "$PORTABLE/share/applications"
 cp "$PROJECT_ROOT/packaging/$APP_ID.desktop" "$PORTABLE/share/applications/"
 cp "$PROJECT_ROOT/packaging/RecompStation" "$PORTABLE/RecompStation"
 cp "$PROJECT_ROOT/packaging/README-portable.txt" "$PORTABLE/README.txt"
-cp "$PROJECT_ROOT/LICENSE" "$PORTABLE/LICENSE"
+cp -a "$NOTICES/." "$PORTABLE/"
 (cd "$BUILD_DIR" && zip -qry "$DIST_DIR/$ZIP_NAME.zip" "$ZIP_NAME")
 
 # 5. AppImage.
-cp "$PROJECT_ROOT/LICENSE" "$APPDIR/LICENSE"
+cp -a "$NOTICES/." "$APPDIR/"
 (cd "$BUILD_DIR" && rm -f ./*.AppImage && \
     LDAI_OUTPUT="$APPIMAGE_FILE" OUTPUT="$APPIMAGE_FILE" "$LINUXDEPLOY" --appdir "$APPDIR" --output appimage)
 mv "$BUILD_DIR/$APPIMAGE_FILE" "$DIST_DIR/$APPIMAGE_FILE"

@@ -188,7 +188,7 @@ RecompStation is free software, released under the [GNU General Public License v
 
 Third-party components:
 - [xxHash](https://github.com/Cyan4973/xxHash), BSD 2-Clause License. See [`third_party/xxhash/LICENSE`](third_party/xxhash/LICENSE).
-- Built with [Qt](https://www.qt.io/) (LGPL v3), [libarchive](https://www.libarchive.org/) (BSD) and [SDL2](https://www.libsdl.org/) (zlib).
+- Built with [Qt](https://www.qt.io/) (LGPL v3), [libarchive](https://www.libarchive.org/) (BSD) and [SDL2](https://www.libsdl.org/) (zlib). The release files include these libraries unmodified; their notices are in [`packaging/THIRD_PARTY_NOTICES.md`](packaging/THIRD_PARTY_NOTICES.md) and, in each download, in `THIRD_PARTY_NOTICES.md` with the LGPL text.
 
 Each recompilation project installed through RecompStation is a separate program under its own license.
 
