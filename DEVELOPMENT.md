@@ -115,7 +115,8 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
   - The allowance each response reports is saved (`metadata/thegamesdb-allowance.ini`). At 50 or fewer requests left, library-wide matching and screenshot lookups pause; a search you type and **Find info** on one game still work.
   - A 403 pauses automatic lookups for 6 hours, including across restarts.
 - [ ] Bounded retry and backoff for HTTP 429/5xx on metadata and artwork requests.
-- [ ] Key policy (email sent to TheGamesDB support 2026-11-24; awaiting reply): keep the user-supplied key (Settings or `RECOMPSTATION_TGDB_API_KEY`). A key built into release builds is only considered if TheGamesDB confirms an app key's allowance is counted per user IP and allows it in an open-source app; never commit a key to the repository.
+- [x] Key policy, decided 2026-11-24 after TheGamesDB support replied: each user supplies their own key (Settings or `RECOMPSTATION_TGDB_API_KEY`). Allowances are counted per key, not per IP, so a key shipped with the app would be shared by every user; TheGamesDB recommends not including one in builds. Never commit or bundle a key.
+- [ ] When TheGamesDB launches device linking (a short code entered on their site instead of pasting a key; announced on their Discord), replace key entry in Settings and first-time setup with it.
 - [ ] Regression tests for match-confidence rules, monitoring duplicate events and cache behaviour.
 - [ ] Decide whether a shared TheGamesDB key could ever be shipped (licensing, rate limits, attribution) or whether user keys remain the only option.
 
@@ -167,6 +168,7 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 
 - Controller-first, library-first, and fullscreen by default; RecompStation keeps its own visual identity (RecompLauncher, GPL-3, was used only as a reference).
 - Artwork comes from LaunchBox and TheGamesDB box art; no other artwork provider is planned.
+- TheGamesDB keys are supplied by each user; the app never ships one (TheGamesDB counts allowances per key and advised against bundling, 2026-11-24).
 - Metadata is matched only when one result clearly fits; ambiguous games stay unmatched rather than getting the wrong cover.
 - RecompStation never supplies game files and never overwrites or deletes the user's games; uninstalling a launcher keeps ROMs and saves. One exception, at the user's request: a .zip/.7z in a cartridge system's folder whose only file is a ROM is removed after that ROM has been unpacked next to it and its size checked; archives with other files are kept.
 - RecompStation never creates a launcher's settings files; it changes single documented keys in files the launcher wrote itself.
