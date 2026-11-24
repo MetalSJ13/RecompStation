@@ -1,6 +1,8 @@
 #include "ScreenshotManager.h"
 #include "Logging.h"
 #include "../database/DatabaseManager.h"
+#include "../metadata/TheGamesDbAllowance.h"
+#include "../metadata/TheGamesDbClient.h"
 
 #include <QDir>
 #include <QFile>
@@ -61,7 +63,62 @@ void ScreenshotManager::setProviderEnabled(bool enabled)
     m_providerEnabled = enabled;
 }
 
-void ScreenshotManager::refreshLibraryScreenshots()
+void ScreenshotManager::setAllowance(TheGamesDbAllowance *allowance)
+{
+    m_allowance = allowance;
+}
+
+bool ScreenshotManager::parseImagesResponse(const QByteArray &response,
+                                            QHash<int, QStringList> *screenshots,
+                                            int *nextPage,
+                                            QString *errorMessage)
+{
+    if (nextPage)
+        *nextPage = 0;
+    QJsonParseError parseError;
+    const QJsonDocument document = QJsonDocument::fromJson(response, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("Invalid TheGamesDB images response.");
+        return false;
+    }
+    const QJsonObject root = document.object();
+    const QJsonObject data = root.value("data").toObject();
+    const QString base = data.value("base_url").toObject().value("original").toString();
+    const QJsonObject images = data.value("images").toObject();
+    for (auto it = images.begin(); it != images.end(); ++it) {
+        bool idOk = false;
+        const int providerGameId = it.key().toInt(&idOk);
+        if (!idOk || providerGameId <= 0 || !it.value().isArray())
+            continue;
+        QStringList urls;
+        for (const QJsonValue &entry : it.value().toArray()) {
+            if (!entry.isObject()) continue;
+            const QJsonObject image = entry.toObject();
+            if (image.value("type").toString() != "screenshot") continue;
+            const QString filename = image.value("filename").toString().trimmed();
+            if (filename.isEmpty() || base.isEmpty()) continue;
+            QString rootUrl = base;
+            if (!rootUrl.endsWith('/')) rootUrl += '/';
+            const QUrl resolved = QUrl(rootUrl).resolved(QUrl(filename));
+            if (resolved.scheme() == "https" && !resolved.host().isEmpty())
+                urls.append(resolved.toString());
+        }
+        if (screenshots && !urls.isEmpty())
+            (*screenshots)[providerGameId].append(urls);
+    }
+    const QString next = root.value("pages").toObject().value("next").toString();
+    if (nextPage && !next.isEmpty()) {
+        const int page = QUrlQuery(QUrl(next).query()).queryItemValue("page").toInt();
+        if (page > 0)
+            *nextPage = page;
+    }
+    if (errorMessage)
+        errorMessage->clear();
+    return true;
+}
+
+void ScreenshotManager::refreshLibraryScreenshots(bool recheckAll)
 {
     if (m_busy || !m_database) return;
     if (!m_providerEnabled) {
@@ -76,6 +133,9 @@ void ScreenshotManager::refreshLibraryScreenshots()
     }
 
     m_queue.clear();
+    m_batch.clear();
+    m_batchScreenshots.clear();
+    m_downloadQueue.clear();
     m_downloaded = 0;
     m_skipped = 0;
     m_withoutScreenshots = 0;
@@ -83,7 +143,12 @@ void ScreenshotManager::refreshLibraryScreenshots()
     const QVariantList games = m_database->gamesWithMetadata();
     for (const QVariant &entry : games) {
         const QVariantMap game = entry.toMap();
-        if (!game.value(QStringLiteral("screenshots")).toList().isEmpty()) {
+        if (game.value(QStringLiteral("metadataProvider")).toString() != "thegamesdb"
+                || game.value(QStringLiteral("id")).toInt() <= 0
+                || game.value(QStringLiteral("metadataGameId")).toInt() <= 0)
+            continue;
+        if (!game.value(QStringLiteral("screenshots")).toList().isEmpty()
+                || (!recheckAll && game.value(QStringLiteral("screenshotsCheckedRecently")).toBool())) {
             ++m_skipped;
             continue;
         }
@@ -91,91 +156,148 @@ void ScreenshotManager::refreshLibraryScreenshots()
     }
 
     if (m_queue.isEmpty()) {
-        setStatus(QString("Screenshot refresh complete: 0 downloaded, %1 already had screenshots, no missing screenshots to retrieve.")
+        setStatus(QString("Screenshot refresh complete: nothing new to look up (%1 game(s) already have screenshots or were checked recently).")
                       .arg(m_skipped));
         emit refreshFinished(0, m_skipped, 0, 0);
         return;
     }
     setBusy(true);
-    setStatus(QString("Checking screenshots for %1 metadata-matched game(s)...").arg(m_queue.size()));
-    processNextGame();
+    setStatus(QString("Checking screenshots for %1 game(s)...").arg(m_queue.size()));
+    requestNextBatch();
 }
 
-void ScreenshotManager::processNextGame()
+void ScreenshotManager::finishRefresh(const QString &note)
+{
+    setBusy(false);
+    QString message = QString("Screenshot refresh complete: %1 downloaded, %2 skipped, %3 had none, %4 failed.")
+                          .arg(m_downloaded).arg(m_skipped).arg(m_withoutScreenshots).arg(m_failed);
+    if (!note.isEmpty())
+        message += QStringLiteral(" ") + note;
+    setStatus(message);
+    m_queue.clear();
+    m_batch.clear();
+    m_downloadQueue.clear();
+    emit refreshFinished(m_downloaded, m_skipped, m_withoutScreenshots, m_failed);
+}
+
+void ScreenshotManager::requestNextBatch()
 {
     if (m_queue.isEmpty()) {
-        setBusy(false);
-        setStatus(QString("Screenshot refresh complete: %1 downloaded, %2 skipped (already available), %3 had none, %4 failed.")
-                      .arg(m_downloaded).arg(m_skipped).arg(m_withoutScreenshots).arg(m_failed));
-        emit refreshFinished(m_downloaded, m_skipped, m_withoutScreenshots, m_failed);
+        finishRefresh();
         return;
     }
-
-    const QVariantMap game = m_queue.dequeue();
-    m_currentGameId = game.value("id").toInt();
-    m_currentProviderGameId = game.value("metadataGameId").toInt();
-    const QString provider = game.value("metadataProvider").toString();
-    if (provider != "thegamesdb" || m_currentGameId <= 0 || m_currentProviderGameId <= 0) {
-        processNextGame();
+    if (m_allowance && !m_allowance->automaticLookupsAllowed()) {
+        const int left = m_queue.size();
+        finishRefresh(QString("%1 game(s) left for later: %2")
+                          .arg(left).arg(m_allowance->pauseReason()));
         return;
+    }
+    m_batch.clear();
+    m_batchScreenshots.clear();
+    while (!m_queue.isEmpty() && m_batch.size() < GamesPerRequest)
+        m_batch.append(m_queue.dequeue());
+    requestImagesPage(1);
+}
+
+void ScreenshotManager::requestImagesPage(int page)
+{
+    QStringList ids;
+    for (const QVariantMap &game : std::as_const(m_batch)) {
+        const QString id = QString::number(game.value("metadataGameId").toInt());
+        if (!ids.contains(id))
+            ids.append(id);
     }
 
     QUrl url("https://api.thegamesdb.net/v1/Games/Images");
     QUrlQuery query;
     query.addQueryItem("apikey", m_apiKey);
-    query.addQueryItem("games_id", QString::number(m_currentProviderGameId));
+    query.addQueryItem("games_id", ids.join(','));
     query.addQueryItem("filter[type]", "screenshot");
+    if (page > 1)
+        query.addQueryItem("page", QString::number(page));
     url.setQuery(query);
 
     QNetworkRequest request(url);
     request.setRawHeader("Accept", "application/json");
     request.setTransferTimeout(15000);
     QNetworkReply *reply = m_network.get(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, page]() {
         const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (reply->error() != QNetworkReply::NoError) {
-            qCWarning(lcArtwork) << "Screenshot list request failed for game" << m_currentGameId
-                                 << "HTTP" << status << reply->errorString();
-            reply->deleteLater();
-            ++m_failed;
-            processNextGame();
-            return;
-        }
-
-        QJsonParseError parseError;
-        const QJsonDocument document = QJsonDocument::fromJson(reply->readAll(), &parseError);
+        const QByteArray body = reply->readAll();
+        const QNetworkReply::NetworkError error = reply->error();
+        const QString errorString = reply->errorString();
         reply->deleteLater();
-        if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
-            ++m_failed;
-            processNextGame();
+
+        if (error != QNetworkReply::NoError) {
+            qCWarning(lcArtwork) << "Screenshot list request failed for" << m_batch.size()
+                                 << "game(s): HTTP" << status << errorString;
+            m_failed += m_batch.size();
+            if (status == 403) {
+                // No requests left: stop instead of failing every batch.
+                if (m_allowance)
+                    m_allowance->reportRejected();
+                finishRefresh(QString("TheGamesDB has no requests left right now; "
+                                      "%1 game(s) left for later.").arg(m_queue.size()));
+                return;
+            }
+            m_batch.clear();
+            requestNextBatch();
             return;
         }
 
-        const QJsonObject data = document.object().value("data").toObject();
-        const QString base = data.value("base_url").toObject().value("original").toString();
-        const QJsonArray images = data.value("images").toObject()
-                                      .value(QString::number(m_currentProviderGameId)).toArray();
-        m_pendingUrls.clear();
-        for (const QJsonValue &entry : images) {
-            if (!entry.isObject()) continue;
-            const QJsonObject image = entry.toObject();
-            if (image.value("type").toString() != "screenshot") continue;
-            const QString filename = image.value("filename").toString().trimmed();
-            if (filename.isEmpty() || base.isEmpty()) continue;
-            QString root = base;
-            if (!root.endsWith('/')) root += '/';
-            const QUrl resolved = QUrl(root).resolved(QUrl(filename));
-            if (resolved.scheme() == "https" && !resolved.host().isEmpty())
-                m_pendingUrls.append(resolved.toString());
-        }
+        const int allowance = TheGamesDbClient::remainingAllowance(body);
+        if (allowance >= 0 && m_allowance)
+            m_allowance->report(allowance);
 
-        if (m_pendingUrls.isEmpty()) {
-            ++m_withoutScreenshots;
-            processNextGame();
+        int nextPage = 0;
+        if (!parseImagesResponse(body, &m_batchScreenshots, &nextPage)) {
+            m_failed += m_batch.size();
+            m_batch.clear();
+            requestNextBatch();
             return;
         }
-        downloadNextImage();
+        // Follow extra result pages, with a cap against a misbehaving reply.
+        if (nextPage > page && nextPage <= 10) {
+            requestImagesPage(nextPage);
+            return;
+        }
+        finishBatch();
     });
+}
+
+void ScreenshotManager::finishBatch()
+{
+    for (const QVariantMap &game : std::as_const(m_batch)) {
+        const int gameId = game.value("id").toInt();
+        const int providerGameId = game.value("metadataGameId").toInt();
+        const QStringList urls = m_batchScreenshots.value(providerGameId);
+        if (urls.isEmpty()) {
+            ++m_withoutScreenshots;
+            // Remember the answer so the next refresh does not ask again.
+            m_database->markScreenshotsChecked(gameId, providerGameId);
+            continue;
+        }
+        QVariantMap pending = game;
+        pending.insert(QStringLiteral("urls"), urls);
+        m_downloadQueue.enqueue(pending);
+    }
+    m_batch.clear();
+    m_batchScreenshots.clear();
+    processNextGame();
+}
+
+void ScreenshotManager::processNextGame()
+{
+    if (m_downloadQueue.isEmpty()) {
+        requestNextBatch();
+        return;
+    }
+    const QVariantMap game = m_downloadQueue.dequeue();
+    m_currentGameId = game.value("id").toInt();
+    m_currentProviderGameId = game.value("metadataGameId").toInt();
+    m_currentGameImageCount = 0;
+    m_pendingUrls = game.value("urls").toStringList();
+    downloadNextImage();
 }
 
 void ScreenshotManager::downloadNextImage()
@@ -184,7 +306,6 @@ void ScreenshotManager::downloadNextImage()
         processNextGame();
         return;
     }
-
     const QString imageUrl = m_pendingUrls.takeFirst();
     QNetworkRequest request{QUrl(imageUrl)};
     request.setRawHeader("Accept", "image/*");
@@ -214,7 +335,7 @@ void ScreenshotManager::downloadNextImage()
         }
 
         const QString path = QDir(directory).filePath(
-            QString("%1.%2").arg(m_downloaded + 1).arg(extension));
+            QString("%1.%2").arg(m_currentGameImageCount + 1).arg(extension));
         QSaveFile file(path);
         if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size() || !file.commit()) {
             ++m_failed;
@@ -228,6 +349,7 @@ void ScreenshotManager::downloadNextImage()
             return;
         }
         ++m_downloaded;
+        ++m_currentGameImageCount;
         downloadNextImage();
     });
 }

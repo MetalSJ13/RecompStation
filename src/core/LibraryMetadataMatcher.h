@@ -78,6 +78,7 @@ private:
     bool m_busy = false;
     bool m_forceArtworkDownload = false;
     bool m_theGamesDbUnavailable = false;
+    bool m_singleGameRun = false;
     QString m_theGamesDbFailure;
     bool m_rescanPending = false;
     bool m_rescanIncludesChecked = false;

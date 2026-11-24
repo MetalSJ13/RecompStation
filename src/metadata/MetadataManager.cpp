@@ -2,6 +2,7 @@
 #include "../core/Logging.h"
 
 #include "MetadataProvider.h"
+#include "TheGamesDbAllowance.h"
 
 #include <QPair>
 #include <QVariantMap>
@@ -52,7 +53,9 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent,
                 {QStringLiteral("id"), id}});
         }
         m_platformsLoading = false;
-        setConnectionState(QStringLiteral("connected"));
+        setConnectionState(m_loadingFromCache ? QStringLiteral("ready")
+                                              : QStringLiteral("connected"));
+        m_loadingFromCache = false;
         emit platformOptionsChanged();
         emit platformsLoadingChanged();
     });
@@ -74,10 +77,13 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent,
         m_remainingAllowance = remaining;
         emit remainingAllowanceChanged();
     });
-    startPlatformFetch();
+    startPlatformFetch(true);
 
     connect(m_provider, &MetadataProvider::searchCompleted,
             this, [this](int, const QList<GameMetadata> &games) {
+        // A search that worked proves the key, also after a cached start.
+        if (m_connectionState == QStringLiteral("ready"))
+            setConnectionState(QStringLiteral("connected"));
         QVariantList results;
         results.reserve(games.size());
 
@@ -128,17 +134,19 @@ void MetadataManager::setProviderEnabled(bool enabled)
     if (m_providerEnabled == enabled)
         return;
     m_providerEnabled = enabled;
-    startPlatformFetch();
+    startPlatformFetch(true);
     emit configurationChanged();
 }
 
 void MetadataManager::refreshProvider()
 {
-    startPlatformFetch();
+    // Called by the Test button and after a key change: always ask
+    // TheGamesDB, since the point is to check the key.
+    startPlatformFetch(false);
     emit configurationChanged();
 }
 
-void MetadataManager::startPlatformFetch()
+void MetadataManager::startPlatformFetch(bool allowCached)
 {
     if (!m_provider)
         return;
@@ -153,13 +161,47 @@ void MetadataManager::startPlatformFetch()
     }
     m_platformsLoading = true;
     emit platformsLoadingChanged();
+    if (allowCached) {
+        m_loadingFromCache = true;
+        if (m_provider->loadCachedPlatforms())
+            return;
+        m_loadingFromCache = false;
+    }
     setConnectionState(QStringLiteral("checking"));
     m_provider->fetchPlatforms();
 }
 
 QString MetadataManager::connectionState() const { return m_connectionState; }
 QString MetadataManager::connectionError() const { return m_connectionError; }
-int MetadataManager::remainingAllowance() const { return m_remainingAllowance; }
+int MetadataManager::remainingAllowance() const
+{
+    return m_allowance ? m_allowance->remaining() : m_remainingAllowance;
+}
+
+void MetadataManager::setAllowance(TheGamesDbAllowance *allowance)
+{
+    if (m_allowance)
+        disconnect(m_allowance, nullptr, this, nullptr);
+    m_allowance = allowance;
+    if (m_allowance) {
+        connect(m_allowance, &TheGamesDbAllowance::changed,
+                this, &MetadataManager::remainingAllowanceChanged);
+        connect(m_allowance, &QObject::destroyed, this, [this]() {
+            m_allowance = nullptr;
+        });
+    }
+    emit remainingAllowanceChanged();
+}
+
+bool MetadataManager::automaticLookupsAllowed() const
+{
+    return !m_allowance || m_allowance->automaticLookupsAllowed();
+}
+
+QString MetadataManager::automaticPauseReason() const
+{
+    return m_allowance ? m_allowance->pauseReason() : QString();
+}
 
 void MetadataManager::setConnectionState(const QString &state, const QString &error)
 {

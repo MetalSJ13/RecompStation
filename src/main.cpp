@@ -30,6 +30,7 @@
 #include "core/GameImporter.h"
 #include "core/LibraryMetadataMatcher.h"
 #include "database/DatabaseManager.h"
+#include "metadata/TheGamesDbAllowance.h"
 #include "metadata/TheGamesDbClient.h"
 #include "metadata/MetadataManager.h"
 #include "metadata/LaunchBoxCatalogManager.h"
@@ -289,8 +290,16 @@ int main(int argc, char *argv[])
 
     LibraryScanner libraryScanner(&platformManager, &databaseManager);
     TheGamesDbClient metadataProvider(settingsManager.theGamesDbApiKey());
+    // Saving requests: the platform list is reused from disk for 30 days,
+    // and the reported allowance pauses automatic lookups when it is low.
+    TheGamesDbAllowance theGamesDbAllowance(
+        platformManager.dataDirectory() + "/metadata/thegamesdb-allowance.ini");
+    metadataProvider.setPlatformCachePath(
+        platformManager.dataDirectory() + "/metadata/thegamesdb-platforms.json");
+    metadataProvider.setAllowance(&theGamesDbAllowance);
     MetadataManager metadataManager(&metadataProvider, nullptr,
                                     settingsManager.theGamesDbEnabled());
+    metadataManager.setAllowance(&theGamesDbAllowance);
     LaunchBoxCatalogManager launchBoxCatalogManager(platformManager.dataDirectory());
     launchBoxCatalogManager.setIndexedPlatforms(platformManager.platforms());
     QObject::connect(&launchBoxCatalogManager, &LaunchBoxCatalogManager::updateCompleted,
@@ -321,6 +330,7 @@ int main(int argc, char *argv[])
                                         platformManager.dataDirectory() + "/artwork",
                                         settingsManager.theGamesDbApiKey());
     screenshotManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
+    screenshotManager.setAllowance(&theGamesDbAllowance);
     QObject::connect(&settingsManager, &SettingsManager::theGamesDbEnabledChanged,
                      &screenshotManager, [&settingsManager, &screenshotManager]() {
         screenshotManager.setProviderEnabled(settingsManager.theGamesDbEnabled());
@@ -331,8 +341,10 @@ int main(int argc, char *argv[])
     // A key entered or removed in Settings takes effect immediately.
     QObject::connect(&settingsManager, &SettingsManager::theGamesDbApiKeyChanged,
                      &app, [&settingsManager, &metadataProvider, &screenshotManager,
-                            &metadataManager]() {
+                            &metadataManager, &theGamesDbAllowance]() {
         const QString key = settingsManager.theGamesDbApiKey();
+        // A different key has its own allowance.
+        theGamesDbAllowance.reset();
         metadataProvider.setApiKey(key);
         screenshotManager.setApiKey(key);
         metadataManager.refreshProvider();

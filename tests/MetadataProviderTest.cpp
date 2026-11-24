@@ -1,10 +1,14 @@
 #include <QtTest>
 
+#include "core/ScreenshotManager.h"
 #include "metadata/TheGamesDbClient.h"
 #include "metadata/MetadataManager.h"
 #include "metadata/MetadataPlatformMapping.h"
 
+#include <QDateTime>
+#include <QFile>
 #include <QSignalSpy>
+#include <QTemporaryDir>
 
 class MetadataProviderTest : public QObject
 {
@@ -258,6 +262,103 @@ private slots:
         QVERIFY(manager.errorString().contains(
             QStringLiteral("Settings > Metadata")));
         QVERIFY(manager.results().isEmpty());
+    }
+
+    void usesARecentSavedPlatformListWithoutARequest()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString path = directory.path() + QStringLiteral("/platforms.json");
+        TheGamesDbClient client(QStringLiteral("key"));
+        client.setPlatformCachePath(path);
+        QVERIFY(!client.loadCachedPlatforms());  // Nothing saved yet.
+
+        QFile cache(path);
+        QVERIFY(cache.open(QIODevice::WriteOnly));
+        cache.write(R"json({"data": {"platforms": {
+            "3": {"id": 3, "name": "Nintendo 64", "alias": "nintendo-64"}}}})json");
+        cache.close();
+
+        int loadedCount = 0;
+        qsizetype platformCount = 0;
+        connect(&client, &MetadataProvider::platformsLoaded, this,
+                [&](const QList<TheGamesDbPlatform> &platforms) {
+            ++loadedCount;
+            platformCount = platforms.size();
+        });
+        QVERIFY(client.loadCachedPlatforms());
+        QCOMPARE(loadedCount, 1);
+        QCOMPARE(platformCount, qsizetype(1));
+
+        // An old copy is fetched again instead.
+        QVERIFY(cache.open(QIODevice::ReadWrite));
+        QVERIFY(cache.setFileTime(
+            QDateTime::currentDateTime().addDays(-TheGamesDbClient::PlatformCacheDays - 1),
+            QFileDevice::FileModificationTime));
+        cache.close();
+        QVERIFY(!client.loadCachedPlatforms());
+    }
+
+    void managerStartsReadyFromTheSavedPlatformList()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString path = directory.path() + QStringLiteral("/platforms.json");
+        QFile cache(path);
+        QVERIFY(cache.open(QIODevice::WriteOnly));
+        cache.write(R"json({"data": {"platforms": {
+            "3": {"id": 3, "name": "Nintendo 64", "alias": "nintendo-64"}}}})json");
+        cache.close();
+
+        TheGamesDbClient client(QStringLiteral("key"));
+        client.setPlatformCachePath(path);
+        MetadataManager manager(&client, nullptr, true);
+        QCOMPARE(manager.connectionState(), QStringLiteral("ready"));
+        QVERIFY(!manager.platformsLoading());
+        QCOMPARE(manager.metadataPlatformId(QStringLiteral("N64")), 3);
+    }
+
+    void readsScreenshotsForSeveralGamesAndTheNextPage()
+    {
+        const QByteArray json = R"json({
+            "code": 200,
+            "data": {
+                "count": 3,
+                "base_url": {"original": "https://cdn.thegamesdb.net/images/original/"},
+                "images": {
+                    "101": [
+                        {"id": 1, "type": "screenshot", "filename": "screenshots/101-1.jpg"},
+                        {"id": 2, "type": "fanart", "filename": "fanart/101-1.jpg"}
+                    ],
+                    "202": [
+                        {"id": 3, "type": "screenshot", "filename": "screenshots/202-1.jpg"},
+                        {"id": 4, "type": "screenshot", "filename": "screenshots/202-2.jpg"}
+                    ]
+                }
+            },
+            "pages": {
+                "previous": null,
+                "current": "https://api.thegamesdb.net/v1/Games/Images?games_id=101,202&page=1",
+                "next": "https://api.thegamesdb.net/v1/Games/Images?games_id=101,202&page=2"
+            },
+            "remaining_monthly_allowance": 900
+        })json";
+
+        QHash<int, QStringList> screenshots;
+        int nextPage = -1;
+        QString error;
+        QVERIFY2(ScreenshotManager::parseImagesResponse(json, &screenshots, &nextPage, &error),
+                 qPrintable(error));
+        QCOMPARE(nextPage, 2);
+        QCOMPARE(screenshots.value(101),
+                 QStringList{QStringLiteral("https://cdn.thegamesdb.net/images/original/screenshots/101-1.jpg")});
+        QCOMPARE(screenshots.value(202).size(), 2);
+        QVERIFY(!screenshots.contains(303));
+
+        const QByteArray lastPage = R"json({"data": {"images": {}}, "pages": {"next": null}})json";
+        QVERIFY(ScreenshotManager::parseImagesResponse(lastPage, &screenshots, &nextPage));
+        QCOMPARE(nextPage, 0);
+        QVERIFY(!ScreenshotManager::parseImagesResponse("not json", &screenshots, &nextPage));
     }
 };
 

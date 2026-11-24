@@ -5,6 +5,7 @@
 #include "database/DatabaseManager.h"
 #include "metadata/MetadataManager.h"
 #include "metadata/MetadataProvider.h"
+#include "metadata/TheGamesDbAllowance.h"
 #include "metadata/LaunchBoxCatalogManager.h"
 #include "metadata/LaunchBoxCatalogDatabase.h"
 
@@ -21,6 +22,7 @@ public:
     QList<GameMetadata> results;
     bool failRequest = false;
     bool configured = true;
+    int searchCount = 0;
 
     QString providerId() const override { return QStringLiteral("fake"); }
     bool isConfigured() const override { return configured; }
@@ -31,6 +33,7 @@ public:
     }
     void searchGames(const QString &, int) override
     {
+        ++searchCount;
         if (failRequest) {
             emit requestFailed(1, QStringLiteral("simulated provider failure"));
             return;
@@ -560,6 +563,36 @@ private slots:
         QVERIFY(database.games().first().toMap().value("metadataTitle").toString().isEmpty());
     }
 
+
+    void lowAllowancePausesLibraryLookupsButNotFindInfo()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        DatabaseManager database;
+        QVERIFY(prepareLibraryGame(directory.path(), &database));
+        SettingsManager settings(directory.path() + "/settings.ini");
+        settings.setLaunchBoxEnabled(false);
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        FakeMetadataProvider provider;
+        MetadataManager metadata(&provider, nullptr, true);
+        TheGamesDbAllowance allowance;
+        allowance.report(TheGamesDbAllowance::AutomaticReserve - 1);
+        metadata.setAllowance(&allowance);
+        QVERIFY(!metadata.automaticPauseReason().isEmpty());
+        LibraryMetadataMatcher matcher(&database, &metadata, nullptr,
+                                       &catalogManager, &settings);
+        QSignalSpy finished(&matcher, &LibraryMetadataMatcher::scrapeFinished);
+
+        matcher.scrapeLibrary();
+        QCOMPARE(finished.size(), 1);
+        QCOMPARE(provider.searchCount, 0);
+        QCOMPARE(finished.first().at(1).toInt(), 1);
+
+        // "Find info" on one game is the user's own request.
+        const int gameId = database.games().first().toMap().value("id").toInt();
+        matcher.scrapeGame(gameId);
+        QCOMPARE(provider.searchCount, 1);
+    }
 };
 
 QTEST_GUILESS_MAIN(LibraryMetadataMatcherTest)

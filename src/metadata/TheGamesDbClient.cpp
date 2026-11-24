@@ -1,5 +1,12 @@
 #include "TheGamesDbClient.h"
+#include "TheGamesDbAllowance.h"
 #include "../core/Logging.h"
+
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QSaveFile>
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -146,6 +153,53 @@ int TheGamesDbClient::remainingAllowance(const QByteArray &response)
         + root.value(QStringLiteral("extra_allowance")).toInt();
 }
 
+void TheGamesDbClient::setPlatformCachePath(const QString &path)
+{
+    m_platformCachePath = path;
+}
+
+void TheGamesDbClient::setAllowance(TheGamesDbAllowance *allowance)
+{
+    m_allowance = allowance;
+}
+
+void TheGamesDbClient::recordAllowance(const QByteArray &body)
+{
+    const int allowance = remainingAllowance(body);
+    if (allowance < 0)
+        return;
+    if (m_allowance)
+        m_allowance->report(allowance);
+    emit allowanceReported(allowance);
+}
+
+void TheGamesDbClient::recordRejection()
+{
+    if (m_allowance)
+        m_allowance->reportRejected();
+    emit allowanceReported(0);
+}
+
+bool TheGamesDbClient::loadCachedPlatforms()
+{
+    if (m_platformCachePath.isEmpty())
+        return false;
+    const QFileInfo info(m_platformCachePath);
+    if (!info.exists()
+            || info.lastModified().daysTo(QDateTime::currentDateTime()) >= PlatformCacheDays)
+        return false;
+    QFile cache(m_platformCachePath);
+    if (!cache.open(QIODevice::ReadOnly))
+        return false;
+    QList<TheGamesDbPlatform> platforms;
+    if (!parsePlatformResponse(cache.readAll(), &platforms) || platforms.isEmpty())
+        return false;
+    qCInfo(lcMetadata) << "Using the saved TheGamesDB platform list ("
+                       << platforms.size() << "platforms).";
+    emit platformsLoaded(platforms);
+    return true;
+}
+
 void TheGamesDbClient::fetchPlatforms()
 {
     if (!isConfigured()) {
@@ -166,8 +220,12 @@ void TheGamesDbClient::fetchPlatforms()
         const int statusCode =
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (reply->error() != QNetworkReply::NoError) {
-            const QString message = QStringLiteral("TheGamesDB platform request failed (HTTP %1): %2")
-                                        .arg(statusCode).arg(reply->errorString());
+            if (statusCode == 403)
+                recordRejection();
+            const QString message = statusCode == 403
+                ? QStringLiteral("TheGamesDB refused the key or it has no requests left (HTTP 403).")
+                : QStringLiteral("TheGamesDB platform request failed (HTTP %1): %2")
+                      .arg(statusCode).arg(reply->errorString());
             reply->deleteLater();
             emit platformsFailed(message);
             return;
@@ -176,14 +234,21 @@ void TheGamesDbClient::fetchPlatforms()
         QList<TheGamesDbPlatform> platforms;
         QString error;
         const QByteArray body = reply->readAll();
-        const int allowance = remainingAllowance(body);
-        if (allowance >= 0)
-            emit allowanceReported(allowance);
+        recordAllowance(body);
         const bool ok = parsePlatformResponse(body, &platforms, &error);
         reply->deleteLater();
         if (!ok) {
             emit platformsFailed(error);
             return;
+        }
+        if (!m_platformCachePath.isEmpty()) {
+            QDir().mkpath(QFileInfo(m_platformCachePath).absolutePath());
+            QSaveFile cache(m_platformCachePath);
+            if (!cache.open(QIODevice::WriteOnly) || cache.write(body) != body.size()
+                    || !cache.commit()) {
+                qCWarning(lcMetadata) << "Could not save the TheGamesDB platform list to"
+                                      << m_platformCachePath;
+            }
         }
         emit platformsLoaded(platforms);
     });
@@ -242,9 +307,11 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
         if (reply->error() != QNetworkReply::NoError) {
+            if (statusCode == 403)
+                recordRejection();
             const QString message = statusCode == 403
-                ? QStringLiteral("TheGamesDB rejected the API key or the request "
-                                 "has reached its rate limit (HTTP 403).")
+                ? QStringLiteral("TheGamesDB refused the key or it has no "
+                                 "requests left (HTTP 403).")
                 : QStringLiteral("TheGamesDB request failed (HTTP %1): %2")
                       .arg(statusCode)
                       .arg(reply->errorString());
@@ -257,9 +324,7 @@ void TheGamesDbClient::searchGames(const QString &searchTerm, int platformId)
         QList<GameMetadata> results;
         QString parseError;
         const QByteArray body = reply->readAll();
-        const int allowance = remainingAllowance(body);
-        if (allowance >= 0)
-            emit allowanceReported(allowance);
+        recordAllowance(body);
         if (!parseSearchResponse(body, &results, &parseError)) {
             reply->deleteLater();
             qCWarning(lcMetadata) << "TheGamesDB response could not be parsed:" << parseError;

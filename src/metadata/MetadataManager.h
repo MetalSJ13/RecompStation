@@ -7,6 +7,7 @@
 #include <QVariantList>
 
 class MetadataProvider;
+class TheGamesDbAllowance;
 
 class MetadataManager : public QObject
 {
@@ -18,11 +19,15 @@ class MetadataManager : public QObject
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
     Q_PROPERTY(QVariantList platformOptions READ platformOptions NOTIFY platformOptionsChanged)
     Q_PROPERTY(bool platformsLoading READ platformsLoading NOTIFY platformsLoadingChanged)
-    // "disabled", "unconfigured" (no key), "checking", "connected" or "error".
+    // "disabled", "unconfigured" (no key), "checking", "connected", "ready"
+    // (platform list loaded from the saved copy; the key has not been used
+    // yet this session) or "error".
     Q_PROPERTY(QString connectionState READ connectionState NOTIFY connectionStateChanged)
     Q_PROPERTY(QString connectionError READ connectionError NOTIFY connectionStateChanged)
-    // Requests left this month as last reported by TheGamesDB; -1 if unknown.
+    // Requests left as last reported by TheGamesDB; -1 if unknown.
     Q_PROPERTY(int remainingAllowance READ remainingAllowance NOTIFY remainingAllowanceChanged)
+    // Non-empty while automatic TheGamesDB lookups are paused to save requests.
+    Q_PROPERTY(QString automaticPauseReason READ automaticPauseReason NOTIFY remainingAllowanceChanged)
 
 public:
     explicit MetadataManager(MetadataProvider *provider, QObject *parent = nullptr,
@@ -40,6 +45,11 @@ public:
     QString connectionState() const;
     QString connectionError() const;
     int remainingAllowance() const;
+    // Shares the request allowance tracker with this manager. Without one,
+    // automatic lookups are always allowed.
+    void setAllowance(TheGamesDbAllowance *allowance);
+    bool automaticLookupsAllowed() const;
+    QString automaticPauseReason() const;
     // Re-reads the provider's configuration (for example after the API key
     // changed) and checks the connection by loading its platform list.
     Q_INVOKABLE void refreshProvider();
@@ -61,7 +71,8 @@ signals:
 private:
     void setSearching(bool searching);
     void setErrorString(const QString &message);
-    void startPlatformFetch();
+    // allowCached: use the provider's saved platform list when it has one.
+    void startPlatformFetch(bool allowCached);
     void setConnectionState(const QString &state, const QString &error = {});
 
     MetadataProvider *m_provider = nullptr;
@@ -75,4 +86,6 @@ private:
     QString m_connectionState = QStringLiteral("checking");
     QString m_connectionError;
     int m_remainingAllowance = -1;
+    TheGamesDbAllowance *m_allowance = nullptr;
+    bool m_loadingFromCache = false;
 };

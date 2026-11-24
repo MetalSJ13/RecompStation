@@ -346,6 +346,7 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
 
     m_theGamesDbUnavailable = false;
     m_theGamesDbFailure.clear();
+    m_singleGameRun = false;
     const bool primaryAvailable = m_metadata->isConfigured();
     if (!primaryAvailable && !launchBoxAvailable()) {
         qCWarning(lcMetadata) << "Library metadata scan skipped: no metadata provider is available.";
@@ -392,6 +393,9 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
     }
     m_theGamesDbUnavailable = false;
     m_theGamesDbFailure.clear();
+    // "Find info" on one game is the user's own request: it may use the
+    // requests kept in reserve, and shows whether TheGamesDB works again.
+    m_singleGameRun = true;
     const bool primaryAvailable = m_metadata->isConfigured();
     if (!primaryAvailable && !launchBoxAvailable()) {
         setStatus(QStringLiteral("No metadata provider is available. Configure TheGamesDB or enable LaunchBox and install its catalog."));
@@ -619,6 +623,15 @@ void LibraryMetadataMatcher::processNext()
 
     const QString platform =
         m_currentGame.value(QStringLiteral("platform")).toString();
+    // Library-wide passes stop asking TheGamesDB when its allowance is low
+    // or used up. Those games are recorded as "provider_error" and retried
+    // by a later automatic pass.
+    if (!m_singleGameRun && !m_theGamesDbUnavailable && m_metadata->isConfigured()
+            && !m_metadata->automaticLookupsAllowed()) {
+        m_theGamesDbUnavailable = true;
+        m_theGamesDbFailure = m_metadata->automaticPauseReason();
+        qCInfo(lcMetadata) << "Automatic TheGamesDB lookups paused:" << m_theGamesDbFailure;
+    }
     const bool theGamesDbReady = m_metadata->isConfigured() && !m_theGamesDbUnavailable;
     const bool launchBoxFirst = !m_settings
         || m_settings->metadataProviderOrder() == QStringLiteral("launchbox");

@@ -100,6 +100,14 @@ bool DatabaseManager::createTables()
             game_id INTEGER NOT NULL,
             local_path TEXT NOT NULL UNIQUE,
             FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE
+        ))",
+        // When TheGamesDB was last asked for a game's screenshots, so games
+        // it has none for are not asked again on every refresh.
+        R"(CREATE TABLE IF NOT EXISTS screenshot_checks (
+            game_id INTEGER PRIMARY KEY,
+            provider_game_id INTEGER NOT NULL,
+            checked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE
         ))"
     };
 
@@ -613,10 +621,16 @@ QVariantList DatabaseManager::gamesWithMetadata() const
     if (!m_database.isOpen())
         return result;
     QSqlQuery query(m_database);
+    // screenshotsCheckedRecently: TheGamesDB was asked about this same
+    // provider game in the last 30 days (a changed match asks again).
     query.prepare(R"(
-        SELECT games.id, game_metadata.provider, game_metadata.provider_game_id
+        SELECT games.id, game_metadata.provider, game_metadata.provider_game_id,
+               (screenshot_checks.game_id IS NOT NULL
+                AND screenshot_checks.provider_game_id = game_metadata.provider_game_id
+                AND screenshot_checks.checked_at > datetime('now', '-30 days'))
         FROM games
         JOIN game_metadata ON game_metadata.game_id = games.id
+        LEFT JOIN screenshot_checks ON screenshot_checks.game_id = games.id
         WHERE games.is_available = 1
         ORDER BY games.id
     )");
@@ -628,10 +642,38 @@ QVariantList DatabaseManager::gamesWithMetadata() const
             {QStringLiteral("id"), gameId},
             {QStringLiteral("metadataProvider"), query.value(1).toString()},
             {QStringLiteral("metadataGameId"), query.value(2).toInt()},
+            {QStringLiteral("screenshotsCheckedRecently"), query.value(3).toInt() != 0},
             {QStringLiteral("screenshots"), gameScreenshots(gameId)}
         });
     }
     return result;
+}
+
+bool DatabaseManager::markScreenshotsChecked(int gameId, int providerGameId)
+{
+    if (!m_database.isOpen() || gameId <= 0 || providerGameId <= 0) {
+        m_lastError = QStringLiteral("A valid game and provider game are required.");
+        emit errorChanged();
+        return false;
+    }
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        INSERT INTO screenshot_checks (game_id, provider_game_id, checked_at)
+        VALUES (:game_id, :provider_game_id, CURRENT_TIMESTAMP)
+        ON CONFLICT(game_id) DO UPDATE SET
+            provider_game_id = excluded.provider_game_id,
+            checked_at = excluded.checked_at
+    )");
+    query.bindValue(":game_id", gameId);
+    query.bindValue(":provider_game_id", providerGameId);
+    if (!query.exec()) {
+        m_lastError = query.lastError().text();
+        emit errorChanged();
+        return false;
+    }
+    m_lastError.clear();
+    emit errorChanged();
+    return true;
 }
 
 bool DatabaseManager::addGameScreenshot(int gameId, const QString &localPath)

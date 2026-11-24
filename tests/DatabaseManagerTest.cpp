@@ -344,6 +344,34 @@ private slots:
         QVERIFY(database.lastError().contains(
             QStringLiteral("no longer exists")));
     }
+
+    void remembersScreenshotChecksPerProviderGame()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+        DatabaseManager database;
+        QVERIFY2(database.initialize(temporaryDirectory.path() + "/library.sqlite"),
+                 qPrintable(database.lastError()));
+        QVERIFY(database.registerGame(QStringLiteral("Banjo-Kazooie"), QStringLiteral("N64"),
+                                      temporaryDirectory.path() + "/games/Banjo-Kazooie.z64"));
+        const int gameId = database.games().first().toMap().value("id").toInt();
+        QVERIFY(database.associateMetadata(gameId, QStringLiteral("thegamesdb"), 1234,
+                                           QStringLiteral("Banjo-Kazooie"), {}, {}, 3, {}, {}));
+
+        auto checkedRecently = [&database]() {
+            return database.gamesWithMetadata().first().toMap()
+                .value("screenshotsCheckedRecently").toBool();
+        };
+        QVERIFY(!checkedRecently());
+        QVERIFY2(database.markScreenshotsChecked(gameId, 1234), qPrintable(database.lastError()));
+        QVERIFY(checkedRecently());
+
+        // A different match is a different game on TheGamesDB: ask again.
+        QVERIFY(database.associateMetadata(gameId, QStringLiteral("thegamesdb"), 5678,
+                                           QStringLiteral("Banjo-Kazooie"), {}, {}, 3, {}, {}));
+        QVERIFY(!checkedRecently());
+        QVERIFY(!database.markScreenshotsChecked(gameId, 0));
+    }
 };
 
 QTEST_GUILESS_MAIN(DatabaseManagerTest)

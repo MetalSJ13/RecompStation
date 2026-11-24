@@ -3,6 +3,9 @@
 #include "MetadataProvider.h"
 
 #include <QNetworkAccessManager>
+#include <QPointer>
+
+class TheGamesDbAllowance;
 
 class TheGamesDbClient : public MetadataProvider
 {
@@ -22,6 +25,15 @@ public:
     void searchGames(const QString &searchTerm,
                      int platformId = 0) override;
     void fetchPlatforms() override;
+    bool loadCachedPlatforms() override;
+
+    // Where the platform list is saved after a successful fetch. The list
+    // rarely changes, so a copy younger than PlatformCacheDays is used at
+    // startup instead of a request.
+    static constexpr int PlatformCacheDays = 30;
+    void setPlatformCachePath(const QString &path);
+    // Receives the allowance every response reports, and 403 rejections.
+    void setAllowance(TheGamesDbAllowance *allowance);
 
     static bool parsePlatformResponse(const QByteArray &response,
                                       QList<TheGamesDbPlatform> *platforms,
@@ -32,7 +44,12 @@ public:
                                     QString *errorMessage = nullptr);
 
 private:
+    void recordAllowance(const QByteArray &body);
+    void recordRejection();
+
     QString m_apiKey;
+    QString m_platformCachePath;
+    QPointer<TheGamesDbAllowance> m_allowance;
     QNetworkAccessManager m_network;
     int m_nextRequestId = 1;
 };

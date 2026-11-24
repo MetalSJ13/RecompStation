@@ -2215,13 +2215,14 @@ ApplicationWindow {
                 + " matched, " + unresolved + " left unresolved."
             // TheGamesDB screenshots are a separate provider-specific pass.
             // LaunchBox artwork is refreshed independently by LaunchBoxArtworkManager.
+            const recheckAll = window.universalRefreshPending
             const shouldRefreshScreenshots = metadataManager.configured
-                && (window.universalRefreshPending
+                && (recheckAll
                     || (settingsManager.automaticArtworkDownloadsEnabled && matched > 0))
             if (window.universalRefreshPending)
                 window.universalRefreshPending = false
             if (shouldRefreshScreenshots)
-                screenshotManager.refreshLibraryScreenshots()
+                screenshotManager.refreshLibraryScreenshots(recheckAll)
         }
     }
 
@@ -6648,11 +6649,13 @@ ApplicationWindow {
                                                 StatusPill {
                                                     text: !settingsManager.theGamesDbEnabled ? "Off"
                                                         : theGamesDbCard.connection === "connected" ? "● Connected"
+                                                        : theGamesDbCard.connection === "ready" ? "● Ready"
                                                         : theGamesDbCard.connection === "checking" ? "Checking…"
                                                         : theGamesDbCard.connection === "unconfigured" ? "No key"
                                                         : "● Can't connect"
                                                     tone: !settingsManager.theGamesDbEnabled ? "neutral"
-                                                        : theGamesDbCard.connection === "connected" ? "good"
+                                                        : (theGamesDbCard.connection === "connected"
+                                                            || theGamesDbCard.connection === "ready") ? "good"
                                                         : theGamesDbCard.connection === "error" ? "bad" : "warning"
                                                 }
                                                 ToggleSwitch {
@@ -6876,6 +6879,7 @@ ApplicationWindow {
                                                 visible: settingsManager.theGamesDbEnabled && text.length > 0
                                                 text: {
                                                     if (window.theGamesDbKeyMessage.length > 0 && theGamesDbCard.connection !== "connected"
+                                                            && theGamesDbCard.connection !== "ready"
                                                             && theGamesDbCard.connection !== "error")
                                                         return window.theGamesDbKeyMessage
                                                     const parts = []
@@ -6883,9 +6887,13 @@ ApplicationWindow {
                                                         parts.push("Using the key from RECOMPSTATION_TGDB_API_KEY")
                                                     else if (theGamesDbCard.keySource === "saved")
                                                         parts.push("Key saved for your user only")
-                                                    if (theGamesDbCard.connection === "connected" && metadataManager.remainingAllowance >= 0)
+                                                    // A public key's allowance is a rolling 30 days.
+                                                    if ((theGamesDbCard.connection === "connected" || theGamesDbCard.connection === "ready")
+                                                            && metadataManager.remainingAllowance >= 0)
                                                         parts.push(metadataManager.remainingAllowance.toLocaleString(Qt.locale(), "f", 0)
-                                                            + " requests left this month")
+                                                            + " requests left")
+                                                    if (metadataManager.automaticPauseReason.length > 0)
+                                                        parts.push(metadataManager.automaticPauseReason)
                                                     if (theGamesDbCard.connection === "error")
                                                         parts.push(metadataManager.connectionError)
                                                     return parts.join(" · ")

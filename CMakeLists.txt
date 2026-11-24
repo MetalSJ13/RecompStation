@@ -111,6 +111,8 @@ qt_add_library(recompstation_core STATIC
     src/metadata/MetadataProvider.h
     src/metadata/TheGamesDbClient.h
     src/metadata/TheGamesDbClient.cpp
+    src/metadata/TheGamesDbAllowance.h
+    src/metadata/TheGamesDbAllowance.cpp
     src/metadata/MetadataManager.h
     src/metadata/MetadataManager.cpp
     src/metadata/N64RomHash.h
@@ -270,6 +272,7 @@ if(BUILD_TESTING)
     recompstation_add_test(ArtworkManagerTests tests/ArtworkManagerTest.cpp)
     recompstation_add_test(LaunchBoxArtworkManagerTests tests/LaunchBoxArtworkManagerTest.cpp)
     recompstation_add_test(MetadataProviderTests tests/MetadataProviderTest.cpp)
+    recompstation_add_test(TheGamesDbAllowanceTests tests/TheGamesDbAllowanceTest.cpp)
     recompstation_add_test(LaunchBoxXmlParserTests tests/LaunchBoxXmlParserTest.cpp)
     recompstation_add_test(LaunchBoxCatalogMatcherTests tests/LaunchBoxCatalogMatcherTest.cpp)
     recompstation_add_test(LaunchBoxCatalogDatabaseTests tests/LaunchBoxCatalogDatabaseTest.cpp)

@@ -47,6 +47,8 @@ public:
     Q_INVOKABLE bool setArtworkPath(int gameId, const QString &artworkPath);
     Q_INVOKABLE QVariantList gamesWithMetadata() const;
     Q_INVOKABLE bool addGameScreenshot(int gameId, const QString &localPath);
+    // Records that TheGamesDB was asked for this game's screenshots.
+    bool markScreenshotsChecked(int gameId, int providerGameId);
     Q_INVOKABLE bool clearGameScreenshots(int gameId);
     Q_INVOKABLE QVariantList gameScreenshots(int gameId) const;
     Q_INVOKABLE QVariantList gamesNeedingMetadata(bool includePreviouslyChecked = false) const;

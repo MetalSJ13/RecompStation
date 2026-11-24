@@ -23,6 +23,9 @@ public:
     virtual void searchGames(const QString &searchTerm,
                              int platformId = 0) = 0;
     virtual void fetchPlatforms() = 0;
+    // Emits platformsLoaded from a saved copy of the platform list and
+    // returns true, or returns false when there is no recent copy.
+    virtual bool loadCachedPlatforms() { return false; }
 
 signals:
     void searchCompleted(int requestId, const QList<GameMetadata> &results);
