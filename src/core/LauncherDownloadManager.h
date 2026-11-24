@@ -46,6 +46,12 @@ public:
     // keptFilesDirectory(), and put back when the launcher is installed again.
     Q_INVOKABLE bool uninstallLauncher(const QString &projectId);
     Q_INVOKABLE QString keptFilesDirectory(const QString &projectId) const;
+    // At startup, before any download: removes what interrupted downloads
+    // and installs left in the staging area (partial files, extraction
+    // folders, archives that were never installed). Nothing there is reused
+    // after a restart. Returns how many entries were removed, or -1 when the
+    // staging area isn't where it should be (then nothing is touched).
+    int cleanUpStaging();
 
 signals:
     void downloadProgress(

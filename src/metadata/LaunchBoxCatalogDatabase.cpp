@@ -558,6 +558,17 @@ int LaunchBoxCatalogDatabase::gameCount() const
 }
 
 
+QStringList LaunchBoxCatalogDatabase::platformsWithGames() const
+{
+    QStringList platforms;
+    QSqlQuery query(m_database);
+    if (!query.exec(QStringLiteral("SELECT DISTINCT platform FROM launchbox_games")))
+        return platforms;
+    while (query.next())
+        platforms.append(query.value(0).toString());
+    return platforms;
+}
+
 int LaunchBoxCatalogDatabase::gameImageCount() const
 {
     QSqlQuery query(m_database);

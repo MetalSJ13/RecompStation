@@ -24,6 +24,7 @@ private slots:
     void acceptsValidRequestAndReportsMissingNetworkDestination();
     void installsAndUninstallsManagedLauncher();
     void keepsSavesMadeInsideTheInstallAcrossReinstall();
+    void cleansUpLeftoverDownloadsAtStartup();
     void installsLauncherFromNestedArchiveDirectory();
     void installsZipLauncherWithCompanionFiles();
     void installsStandaloneAppImage();
@@ -367,6 +368,39 @@ void LauncherDownloadManagerTest::keepsSavesMadeInsideTheInstallAcrossReinstall(
     QVERIFY(QFileInfo::exists(QDir(install).filePath(QStringLiteral("portable.txt"))));
     QCOMPARE(readText(QDir(install).filePath(QStringLiteral("config.json"))), QByteArray("{\"v\":1}"));
     QVERIFY(!QFileInfo::exists(kept));
+}
+
+void LauncherDownloadManagerTest::cleansUpLeftoverDownloadsAtStartup()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+    const QString staging = platformManager.stagingDirectory();
+    const QString project = QDir(staging).filePath(QStringLiteral("sample-project"));
+
+    // What an interrupted session leaves: an archive never installed, a
+    // half-written download and a half-extracted folder.
+    QVERIFY(writeText(QDir(project).filePath(QStringLiteral("Sample-Linux.tar.gz")), QByteArray(4096, 'a')));
+    QVERIFY(writeText(QDir(project).filePath(QStringLiteral("Other.zip.Ab12Cd")), QByteArray("partial")));
+    const QString extracting = QDir(project).filePath(QStringLiteral("Sample-Linux.tar.gz.extracting-1234"));
+    QVERIFY(writeText(QDir(extracting).filePath(QStringLiteral("bin/Sample")), QByteArray("exe")));
+    // A link inside points outside: the link goes, what it points at stays.
+    const QString outside = QDir(temporaryDirectory.path()).filePath(QStringLiteral("keep-me.txt"));
+    QVERIFY(writeText(outside, QByteArray("keep")));
+    QVERIFY(QFile::link(outside, QDir(extracting).filePath(QStringLiteral("link-out"))));
+    QVERIFY(QFile::link(outside, QDir(project).filePath(QStringLiteral("link-out"))));
+    // Not ours to guess at: a stray file and a folder whose name isn't a project id.
+    QVERIFY(writeText(QDir(staging).filePath(QStringLiteral("stray.txt")), QByteArray("stray")));
+    QVERIFY(writeText(QDir(staging).filePath(QStringLiteral("Not A Project/file")), QByteArray("x")));
+
+    LauncherDownloadManager manager(&platformManager);
+    QCOMPARE(manager.cleanUpStaging(), 4);
+    QVERIFY(!QFileInfo::exists(project));
+    QCOMPARE(readText(outside), QByteArray("keep"));
+    QVERIFY(QFileInfo::exists(QDir(staging).filePath(QStringLiteral("stray.txt"))));
+    QVERIFY(QFileInfo::exists(QDir(staging).filePath(QStringLiteral("Not A Project/file"))));
+    QCOMPARE(manager.cleanUpStaging(), 0);
 }
 
 void LauncherDownloadManagerTest::installsLauncherFromNestedArchiveDirectory()

@@ -10,6 +10,8 @@
 #include <QFileInfo>
 #include <QTemporaryDir>
 
+#include <sys/stat.h>
+
 class ArchiveExtractorTest : public QObject
 {
     Q_OBJECT
@@ -31,6 +33,13 @@ private slots:
     void rejectsMissingExpectedExecutable();
     void matchesExecutableNameWithoutCase();
     void refusesExistingDestination();
+    void rejectsHardLinks();
+    void rejectsSpecialFiles();
+    void rejectsDuplicatePaths();
+    void rejectsWindowsStylePaths();
+    void dropsSetuidAndWorldWritableModes();
+    void unwrapsOnlyOneNestingLevel();
+    void refusesZipWithSeveralNestedPackages();
 };
 
 bool ArchiveExtractorTest::createArchive(
@@ -70,6 +79,16 @@ bool ArchiveExtractorTest::createArchive(
         if (type == QStringLiteral("directory")) {
             archive_entry_set_filetype(entry, AE_IFDIR);
             archive_entry_set_perm(entry, 0755);
+            archive_entry_set_size(entry, 0);
+        } else if (type == QStringLiteral("hardlink")) {
+            archive_entry_set_filetype(entry, AE_IFREG);
+            archive_entry_set_perm(entry, 0644);
+            const QByteArray target = item.value(QStringLiteral("target")).toString().toUtf8();
+            archive_entry_set_hardlink(entry, target.constData());
+            archive_entry_set_size(entry, 0);
+        } else if (type == QStringLiteral("fifo")) {
+            archive_entry_set_filetype(entry, AE_IFIFO);
+            archive_entry_set_perm(entry, 0644);
             archive_entry_set_size(entry, 0);
         } else if (type == QStringLiteral("symlink")) {
             archive_entry_set_filetype(entry, AE_IFLNK);
@@ -390,6 +409,148 @@ void ArchiveExtractorTest::refusesExistingDestination()
         archivePath, destination, QStringLiteral("launcher"));
     QVERIFY(!result.success);
     QVERIFY(QFileInfo::exists(marker.fileName()));
+}
+
+namespace {
+QVariantMap fileEntry(const QString &name, const QByteArray &data = QByteArray("x"), int mode = 0755)
+{
+    return {{QStringLiteral("name"), name}, {QStringLiteral("data"), data}, {QStringLiteral("mode"), mode}};
+}
+
+QByteArray fileBytes(const QString &path)
+{
+    QFile file(path);
+    return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+
+// Nothing is left behind next to the destination after a refusal.
+bool onlyTheArchiveRemains(const QString &folder, const QString &archiveName)
+{
+    const QStringList entries = QDir(folder).entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
+    return entries.size() == 1 && entries.first() == archiveName;
+}
+}
+
+void ArchiveExtractorTest::rejectsHardLinks()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString archivePath = QDir(temp.path()).filePath("hardlink.tar.gz");
+    QVERIFY(createArchive(archivePath, {
+        fileEntry(QStringLiteral("launcher")),
+        {{QStringLiteral("name"), QStringLiteral("copy")}, {QStringLiteral("type"), QStringLiteral("hardlink")},
+         {QStringLiteral("target"), QStringLiteral("launcher")}}
+    }));
+    const auto result = ArchiveExtractor::extractArchive(
+        archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("launcher"));
+    QVERIFY(!result.success);
+    QVERIFY(result.error.contains(QStringLiteral("link")));
+    QVERIFY(onlyTheArchiveRemains(temp.path(), QStringLiteral("hardlink.tar.gz")));
+}
+
+void ArchiveExtractorTest::rejectsSpecialFiles()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString archivePath = QDir(temp.path()).filePath("fifo.tar.gz");
+    QVERIFY(createArchive(archivePath, {
+        fileEntry(QStringLiteral("launcher")),
+        {{QStringLiteral("name"), QStringLiteral("pipe")}, {QStringLiteral("type"), QStringLiteral("fifo")}}
+    }));
+    const auto result = ArchiveExtractor::extractArchive(
+        archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("launcher"));
+    QVERIFY(!result.success);
+    QVERIFY(onlyTheArchiveRemains(temp.path(), QStringLiteral("fifo.tar.gz")));
+}
+
+void ArchiveExtractorTest::rejectsDuplicatePaths()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    // A second entry for the same file could replace the checked one.
+    const QString archivePath = QDir(temp.path()).filePath("duplicate.tar.gz");
+    QVERIFY(createArchive(archivePath, {
+        fileEntry(QStringLiteral("launcher"), QByteArray("first")),
+        fileEntry(QStringLiteral("./launcher"), QByteArray("second"))
+    }));
+    const auto result = ArchiveExtractor::extractArchive(
+        archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("launcher"));
+    QVERIFY(!result.success);
+    QVERIFY(result.error.contains(QStringLiteral("duplicate")));
+    QVERIFY(onlyTheArchiveRemains(temp.path(), QStringLiteral("duplicate.tar.gz")));
+}
+
+void ArchiveExtractorTest::rejectsWindowsStylePaths()
+{
+    // ("..\\evil" stays refused even if the reader turns \\ into /.)
+    for (const QString &name : {QStringLiteral("..\\evil"), QStringLiteral("C:/evil")}) {
+        QTemporaryDir temp;
+        QVERIFY(temp.isValid());
+        const QString archivePath = QDir(temp.path()).filePath("windows.zip");
+        QVERIFY(createArchive(archivePath, {fileEntry(QStringLiteral("launcher")), fileEntry(name)}, true, true));
+        const auto result = ArchiveExtractor::extractArchive(
+            archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("launcher"));
+        QVERIFY2(!result.success, qPrintable(name));
+        QVERIFY2(onlyTheArchiveRemains(temp.path(), QStringLiteral("windows.zip")), qPrintable(name));
+    }
+}
+
+void ArchiveExtractorTest::dropsSetuidAndWorldWritableModes()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString archivePath = QDir(temp.path()).filePath("modes.tar.gz");
+    QVERIFY(createArchive(archivePath, {
+        fileEntry(QStringLiteral("launcher"), QByteArray("exe"), 06777),
+        fileEntry(QStringLiteral("data.bin"), QByteArray("data"), 0666)
+    }));
+    const auto result = ArchiveExtractor::extractArchive(
+        archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("launcher"));
+    QVERIFY2(result.success, qPrintable(result.error));
+    for (const QString &name : {QStringLiteral("launcher"), QStringLiteral("data.bin")}) {
+        struct stat info {};
+        QCOMPARE(::stat(QFile::encodeName(QDir(result.extractedDirectory).filePath(name)).constData(), &info), 0);
+        QCOMPARE(int(info.st_mode & (S_ISUID | S_ISGID | S_ISVTX)), 0);
+        QCOMPARE(int(info.st_mode & (S_IWGRP | S_IWOTH)), 0);
+    }
+    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+}
+
+void ArchiveExtractorTest::unwrapsOnlyOneNestingLevel()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    // launcher.zip > inner.tar.gz > deeper.zip > launcher: the second level
+    // stays packed, so the launcher isn't found.
+    const QString deeper = QDir(temp.path()).filePath("deeper.zip");
+    QVERIFY(createArchive(deeper, {fileEntry(QStringLiteral("launcher"))}, true, true));
+    const QString inner = QDir(temp.path()).filePath("inner.tar.gz");
+    QVERIFY(createArchive(inner, {fileEntry(QStringLiteral("deeper.zip"), fileBytes(deeper), 0644)}));
+    const QString work = QDir(temp.path()).filePath("work");
+    QVERIFY(QDir().mkpath(work));
+    const QString outer = QDir(work).filePath("launcher.zip");
+    QVERIFY(createArchive(outer, {fileEntry(QStringLiteral("inner.tar.gz"), fileBytes(inner), 0644)}, true, true));
+
+    const auto result = ArchiveExtractor::extractArchive(outer, QDir(work).filePath("out"), QStringLiteral("launcher"));
+    QVERIFY(!result.success);
+    QVERIFY(onlyTheArchiveRemains(work, QStringLiteral("launcher.zip")));
+}
+
+void ArchiveExtractorTest::refusesZipWithSeveralNestedPackages()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString package = QDir(temp.path()).filePath("package.tar.gz");
+    QVERIFY(createArchive(package, {fileEntry(QStringLiteral("launcher"))}));
+    const QString work = QDir(temp.path()).filePath("work");
+    QVERIFY(QDir().mkpath(work));
+    const QString outer = QDir(work).filePath("launcher.zip");
+    QVERIFY(createArchive(outer, {fileEntry(QStringLiteral("a.tar.gz"), fileBytes(package), 0644),
+                                  fileEntry(QStringLiteral("b.tar.gz"), fileBytes(package), 0644)}, true, true));
+    const auto result = ArchiveExtractor::extractArchive(outer, QDir(work).filePath("out"), QStringLiteral("launcher"));
+    QVERIFY(!result.success);
+    QVERIFY(result.error.contains(QStringLiteral("multiple")));
+    QVERIFY(onlyTheArchiveRemains(work, QStringLiteral("launcher.zip")));
 }
 
 QTEST_GUILESS_MAIN(ArchiveExtractorTest)

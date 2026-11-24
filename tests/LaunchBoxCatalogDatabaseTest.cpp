@@ -200,6 +200,8 @@ private slots:
         LaunchBoxGameRecord game;
         QVERIFY(catalog.gameByDatabaseId(162, &game));
         QVERIFY(!catalog.gameByDatabaseId(900, &game));
+        // The platform list keeps both; only Nintendo 64 has games.
+        QCOMPARE(catalog.platformsWithGames(), QStringList{QStringLiteral("Nintendo 64")});
     }
 
     void failedRebuildPreservesPreviouslyIndexedCatalog()

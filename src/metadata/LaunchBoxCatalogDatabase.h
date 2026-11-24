@@ -48,6 +48,8 @@ public:
     int platformCount() const;
     int fileAssociationCount() const;
     int gameCount() const;
+    // LaunchBox platform names that have at least one game in the catalog.
+    QStringList platformsWithGames() const;
     int gameImageCount() const;
     QString indexedAt() const;
 

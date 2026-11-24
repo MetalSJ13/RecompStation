@@ -564,6 +564,25 @@ private slots:
     }
 
 
+    void namesSystemsAnOlderCatalogHasNoGamesFor()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        LaunchBoxCatalogManager catalogManager(directory.path());
+        QSignalSpy changed(&catalogManager, &LaunchBoxCatalogManager::missingSystemsChanged);
+        // No catalog yet: nothing to report.
+        catalogManager.setIndexedPlatforms({QStringLiteral("N64"), QStringLiteral("PS2")});
+        QVERIFY(catalogManager.missingSystems().isEmpty());
+
+        // A catalog with Nintendo 64 games only, as one from before PS2 was supported.
+        QVERIFY(prepareLaunchBoxCatalog(directory.path(), &catalogManager));
+        catalogManager.refreshMissingSystems();
+        QCOMPARE(catalogManager.missingSystems(), QStringList{QStringLiteral("PS2")});
+        QCOMPARE(changed.size(), 1);
+        catalogManager.setIndexedPlatforms({QStringLiteral("N64")});
+        QVERIFY(catalogManager.missingSystems().isEmpty());
+    }
+
     void lowAllowancePausesLibraryLookupsButNotFindInfo()
     {
         QTemporaryDir directory;

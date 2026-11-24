@@ -661,6 +661,57 @@ QVariantList LauncherDownloadManager::installedLaunchers() const
     return installed;
 }
 
+int LauncherDownloadManager::cleanUpStaging()
+{
+    if (!m_platformManager || !m_activeTargets.isEmpty() || !m_activeInstallProjects.isEmpty())
+        return 0;
+    const QString dataRoot = QFileInfo(m_platformManager->dataDirectory()).canonicalFilePath();
+    const QString stagingRoot = QFileInfo(m_platformManager->stagingDirectory()).canonicalFilePath();
+    if (dataRoot.isEmpty() || stagingRoot.isEmpty()
+        || stagingRoot != QDir(dataRoot).filePath(QStringLiteral("downloads/staging")))
+        return -1;
+
+    int removed = 0;
+    qint64 bytes = 0;
+    const QFileInfoList projects = QDir(stagingRoot).entryInfoList(
+        QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
+    for (const QFileInfo &project : projects) {
+        // Only the folders downloads create; anything else (a link, a stray
+        // file) is left alone rather than guessed at.
+        if (project.isSymLink() || !project.isDir() || !isValidProjectId(project.fileName()))
+            continue;
+        const QFileInfoList entries = QDir(project.filePath()).entryInfoList(
+            QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
+        for (const QFileInfo &entry : entries) {
+            bool ok = false;
+            if (entry.isSymLink() || !entry.isDir()) {
+                bytes += entry.isSymLink() ? 0 : entry.size();
+                ok = QFile::remove(entry.filePath());
+            } else {
+                QDirIterator it(entry.filePath(), QDir::Files | QDir::Hidden | QDir::System,
+                                QDirIterator::Subdirectories);
+                while (it.hasNext()) {
+                    it.next();
+                    if (!it.fileInfo().isSymLink())
+                        bytes += it.fileInfo().size();
+                }
+                // Links inside are removed as links; their targets are kept.
+                ok = QDir(entry.filePath()).removeRecursively();
+            }
+            if (ok)
+                ++removed;
+            else
+                qCWarning(lcLauncher) << "Could not remove a leftover download:"
+                                      << RecompLogging::redactHome(entry.filePath());
+        }
+        QDir().rmdir(project.filePath());
+    }
+    if (removed > 0)
+        qCInfo(lcLauncher) << "Removed" << removed << "leftover download(s) from earlier sessions,"
+                           << QString::number(bytes / (1024.0 * 1024.0), 'f', 1) << "MB";
+    return removed;
+}
+
 QString LauncherDownloadManager::keptFilesDirectory(const QString &projectId) const
 {
     if (!m_platformManager || !isValidProjectId(projectId))

@@ -57,14 +57,45 @@ qint64 LaunchBoxCatalogManager::catalogSizeBytes() const
     return info.isFile() ? info.size() : 0;
 }
 
+QStringList LaunchBoxCatalogManager::missingSystems() const
+{
+    return m_missingSystems;
+}
+
+void LaunchBoxCatalogManager::refreshMissingSystems()
+{
+    QStringList missing;
+    if (catalogAvailable() && !m_busy) {
+        LaunchBoxCatalogDatabase catalog;
+        if (catalog.open(m_catalogPath)) {
+            const QStringList covered = catalog.platformsWithGames();
+            // An empty catalog says nothing about any one system.
+            if (!covered.isEmpty()) {
+                for (const QString &platform : std::as_const(m_internalPlatforms)) {
+                    const QString name = LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(platform);
+                    if (!name.isEmpty() && !covered.contains(name, Qt::CaseInsensitive))
+                        missing.append(platform);
+                }
+            }
+            catalog.close();
+        }
+    }
+    if (missing == m_missingSystems)
+        return;
+    m_missingSystems = missing;
+    emit missingSystemsChanged();
+}
+
 void LaunchBoxCatalogManager::setIndexedPlatforms(const QStringList &internalPlatforms)
 {
+    m_internalPlatforms = internalPlatforms;
     m_launchBoxPlatformFilter.clear();
     for (const QString &platform : internalPlatforms) {
         const QString name = LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(platform);
         if (!name.isEmpty() && !m_launchBoxPlatformFilter.contains(name))
             m_launchBoxPlatformFilter.append(name);
     }
+    refreshMissingSystems();
 }
 
 void LaunchBoxCatalogManager::setBusy(bool value)
@@ -276,6 +307,7 @@ void LaunchBoxCatalogManager::finishBackgroundBuild()
     setBusy(false);
     emit updateProgress(QStringLiteral("LaunchBox catalog ready"), 100);
     emit catalogAvailableChanged();
+    refreshMissingSystems();
     emit updateCompleted(result.platformCount, result.fileCount, result.gameCount);
 }
 

@@ -7252,6 +7252,21 @@ ApplicationWindow {
                                                     implicitHeight: 38
                                                 }
                                             }
+                                            // A catalog downloaded before a system was supported has
+                                            // none of its games: say which, and that Update fixes it.
+                                            Label {
+                                                Layout.fillWidth: true
+                                                visible: settingsManager.launchBoxEnabled && !launchBoxCatalogManager.busy
+                                                    && launchBoxCatalogManager.missingSystems.length > 0
+                                                text: "Your catalog has no games for "
+                                                    + launchBoxCatalogManager.missingSystems.map(p => window.platformDisplayName(p)).join(", ")
+                                                    + ". It was downloaded before RecompStation supported "
+                                                    + (launchBoxCatalogManager.missingSystems.length === 1 ? "it" : "them")
+                                                    + ". Update catalog adds them."
+                                                color: theme.warningText
+                                                font.pixelSize: 12 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
                                             LaunchBoxProgress {
                                                 Layout.fillWidth: true
                                             }

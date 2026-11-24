@@ -376,6 +376,8 @@ int main(int argc, char *argv[])
     });
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
+    // Nothing is downloading yet: clear what an interrupted session left.
+    launcherDownloadManager.cleanUpStaging();
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
     gameLaunchManager.setProjectCatalog(&projectCatalog);
     gameLaunchManager.setSettingsManager(&settingsManager);
