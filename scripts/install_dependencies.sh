@@ -42,8 +42,6 @@ PACKAGES=(
     qt6-declarative
     qt6-tools
     qt6-wayland
-    qt6-multimedia
-    qt6-multimedia-ffmpeg
     clang
     ccache
     mold

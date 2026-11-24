@@ -18,11 +18,9 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS
 )
 find_package(LibArchive REQUIRED)
 
-# SDL2 is optional: builds without it retain keyboard/mouse support.
+# SDL2 is optional: it reads controllers and plays the interface sounds.
+# Builds without it keep keyboard/mouse support and stay silent.
 find_package(SDL2 2.0.14 QUIET)
-# Qt Multimedia is optional: it plays the interface sounds. Builds without
-# it work the same, silently.
-find_package(Qt6 6.5 QUIET COMPONENTS Multimedia)
 qt_standard_project_setup(REQUIRES 6.5)
 qt_policy(SET QTP0004 NEW)
 
@@ -225,14 +223,6 @@ target_link_libraries(RecompStationApp PRIVATE
     recompstation_core
     Qt6::Quick Qt6::QuickControls2 Qt6::Svg
 )
-
-if(TARGET Qt6::Multimedia)
-    target_link_libraries(RecompStationApp PRIVATE Qt6::Multimedia)
-    target_compile_definitions(RecompStationApp PRIVATE RECOMPSTATION_HAS_MULTIMEDIA)
-    message(STATUS "Interface sounds enabled (Qt Multimedia)")
-else()
-    message(STATUS "Qt Multimedia not found; interface sounds disabled")
-endif()
 
 if(TARGET SDL2::SDL2)
     target_link_libraries(RecompStationApp PRIVATE SDL2::SDL2)

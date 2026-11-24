@@ -5728,7 +5728,7 @@ ApplicationWindow {
                                         title: "Interface sounds"
                                         description: uiSounds.available
                                             ? "Soft sounds when you move, open, go back and play. Silent while a game is running."
-                                            : "Not available: this build of RecompStation was made without Qt Multimedia."
+                                            : "Not available: no audio output could be opened, or this build has no SDL2. See the log for details."
                                         ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus

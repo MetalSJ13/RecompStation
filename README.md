@@ -106,8 +106,7 @@ A system appears in your library even if no recompilation project supports it ye
 - Qt 6.5 or newer: Base (with the SQLite driver), Declarative, Svg and ShaderTools, plus Qt Wayland on Wayland sessions
 - CMake 3.21+, Ninja and a C++20 compiler (GCC or Clang)
 - libarchive
-- SDL2 2.0.14+ (optional, for controller support; keyboard and mouse work without it)
-- Qt Multimedia (optional, for interface sounds; on Arch, `qt6-multimedia` with `qt6-multimedia-ffmpeg`)
+- SDL2 2.0.14+ (optional, for controller support and interface sounds; keyboard and mouse work without it)
 
 ### Arch Linux and derivatives
 
