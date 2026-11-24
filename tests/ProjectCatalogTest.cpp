@@ -118,7 +118,7 @@ void ProjectCatalogTest::derivesSupportedPlatformsFromProjects()
     QVERIFY(catalog.isLoaded());
     QCOMPARE(catalog.supportedPlatforms(), (QStringList{QStringLiteral("N64"), QStringLiteral("GameCube"),
                                                         QStringLiteral("PS1"), QStringLiteral("Xbox"),
-                                                        QStringLiteral("Xbox 360")}));
+                                                        QStringLiteral("Xbox 360"), QStringLiteral("SNES")}));
 }
 
 void ProjectCatalogTest::rejectsUnknownDevelopmentStatus()

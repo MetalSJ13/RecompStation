@@ -913,6 +913,266 @@
       },
       "includePrereleases": true,
       "developmentStatus": "beta"
+    },
+    {
+      "id": "super-metroid-recompiled",
+      "name": "Super Metroid Recompiled",
+      "platform": "SNES",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Super Metroid"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "SuperMetroidRecomp",
+      "romRequirements": "Requires your own unmodified Super Metroid (Japan, USA) ROM (.sfc or .smc, 3,145,728 bytes). The launcher asks for it on first start.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^supermetroid-[0-9.]+-linux-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Launch.sh"
+        }
+      }
+    },
+    {
+      "id": "mega-man-x-recompiled",
+      "name": "Mega Man X Recompiled",
+      "platform": "SNES",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mega Man X",
+        "Mega Man X (Rev 1)",
+        "Rockman X"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "MegaManXSNESRecomp",
+      "romRequirements": "Requires your own Mega Man X (USA) (Rev 1) ROM (.sfc or .smc, with or without a copier header). The launcher asks for it on first start. Optional mods use your own Mega Man X2 or X3 USA ROMs.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^MegaMan.*[Ll]inux.*x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "MegaManXSNESRecomp.AppImage"
+        }
+      }
+    },
+    {
+      "id": "bomberman-64-recompiled",
+      "name": "Bomberman 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Bomberman 64",
+        "Bomberman 64: Recompiled"
+      ],
+      "repositoryOwner": "RevoSucks",
+      "repositoryName": "BM64Recomp",
+      "romRequirements": "Requires your own US Bomberman 64 ROM; the project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^BM64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BM64Recompiled"
+        },
+        "aarch64": {
+          "assetNameRegex": "^BM64Recompiled.*linux.*arm64.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BM64Recompiled"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "BM64Recompiled",
+        "romFileName": "bm64_us.z64",
+        "romName": "BOMBERMAN64",
+        "romXxh3": "C4C0B74BBB696426",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "bomberman-hero-recompiled",
+      "name": "Bomberman Hero: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Bomberman Hero",
+        "Bomberman Hero: Recompiled"
+      ],
+      "repositoryOwner": "RevoSucks",
+      "repositoryName": "BMHeroRecomp",
+      "romRequirements": "Requires your own US Bomberman Hero ROM; the project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^BMHeroRecompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BMHeroRecompiled"
+        }
+      },
+      "includePrereleases": true,
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "BMHeroRecompiled",
+        "romFileName": "bmhero.z64",
+        "romName": "BOMBERMAN HERO",
+        "romXxh3": "89134C0E1F16E0F8",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "harvest-moon-64-recompiled",
+      "name": "Harvest Moon 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Harvest Moon 64",
+        "Harvest Moon 64: Recompiled"
+      ],
+      "repositoryOwner": "HarvestMoon64Recomp",
+      "repositoryName": "HarvestMoon64Recomp",
+      "romRequirements": "Requires your own North American Harvest Moon 64 ROM; the project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^HarvestMoon64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "HarvestMoon64Recompiled"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "HarvestMoon64Recompiled",
+        "romFileName": "harvest_moon_64.z64",
+        "romName": "HARVESTMOON64",
+        "romXxh3": "68B2C3755C527305",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "snowboard-kids-2-recompiled",
+      "name": "Snowboard Kids 2: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Snowboard Kids 2",
+        "Snowboard Kids 2: Recompiled"
+      ],
+      "repositoryOwner": "cdlewis",
+      "repositoryName": "snowboardkids2-recomp",
+      "romRequirements": "Requires your own US Snowboard Kids 2 ROM; the project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^SnowboardKids2Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SnowboardKids2Recompiled"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "SnowboardKids2Recompiled",
+        "romFileName": "snowboardkids2.n64.us.z64",
+        "romName": "SNOWBOARD KIDS2",
+        "romXxh3": "81F434FF431162EB",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "space-station-silicon-valley-recompiled",
+      "name": "Space Station Silicon Valley: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Space Station Silicon Valley",
+        "Space Station Silicon Valley: Recompiled"
+      ],
+      "repositoryOwner": "Cellenseres",
+      "repositoryName": "SSSV_Recomp",
+      "romRequirements": "Requires your own US 1.0 Space Station Silicon Valley ROM; the project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^SSSVRecompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "SSSVRecompiled"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "SSSVRecompiled",
+        "romFileName": "sssv.n64.us.1.0.z64",
+        "romName": "SILICON VALLEY",
+        "romXxh3": "912A068AADB0D0C5",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "quest-64-recompiled",
+      "name": "Quest 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Quest 64",
+        "Quest 64: Recompiled"
+      ],
+      "repositoryOwner": "Rainchus",
+      "repositoryName": "Quest64-Recomp",
+      "romRequirements": "Requires your own US Quest 64 ROM; the project does not include game assets.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Quest64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Quest64Recompiled"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "Quest64Recompiled",
+        "romFileName": "quest64_us.z64",
+        "romName": "QUEST 64",
+        "romXxh3": "35335BF69FC6515C",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "snowboard-kids-recompiled",
+      "name": "Snowboard Kids: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Snowboard Kids",
+        "Snowboard Kids: Recompiled"
+      ],
+      "repositoryOwner": "boricuapab",
+      "repositoryName": "snowboardkids-recompiled",
+      "romRequirements": "Requires your own unmodified US Snowboard Kids ROM. Choose it in the launcher on first start. The Linux build targets Ubuntu 24.04-era system libraries (SDL2, GTK 3, Vulkan).",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^snowboard.?kids(?!.?2)(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SnowboardKidsRecompiled"
+        }
+      }
+    },
+    {
+      "id": "glover-recompiled",
+      "name": "Glover-R",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Glover",
+        "Glover-R"
+      ],
+      "repositoryOwner": "ThatGuyMcd",
+      "repositoryName": "Glover-R",
+      "romRequirements": "Requires your own unmodified USA Glover ROM (revision 0, game code NGVE, 8 MiB). Choose it in the launcher on first start.",
+      "architectures": {
+        "x86_64": {
+          "assetNameRegex": "^Glover-R-[0-9.]+-Linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Glover-R.AppImage"
+        }
+      }
     }
   ]
 }
