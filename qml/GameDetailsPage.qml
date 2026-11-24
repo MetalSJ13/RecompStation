@@ -1482,8 +1482,9 @@ Popup {
                         Label {
                             visible: detailsScreenshotStrip.shots.length === 0
                             width: Math.min(300, detailsScreenshotStrip.width)
-                            height: detailsScreenshotStrip.shots.length === 0
-                                ? Math.round(Math.min(250, detailsScreenshotStrip.thumbWidth) * 9 / 16) : implicitHeight
+                            // Shown only beside the empty frames, so it always takes their
+                            // height (its own text height fed back into the row's width).
+                            height: Math.round(Math.min(250, detailsScreenshotStrip.thumbWidth) * 9 / 16)
                             verticalAlignment: Text.AlignVCenter
                             text: detailsHero.noGameInfo
                                 ? "Screenshots appear here once the game's info is found."
