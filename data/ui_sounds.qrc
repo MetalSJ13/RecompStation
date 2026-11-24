@@ -1,0 +1,16 @@
+<RCC>
+  <qresource prefix="/sounds">
+    <file alias="back.wav">../assets/sounds/back.wav</file>
+    <file alias="edge.wav">../assets/sounds/edge.wav</file>
+    <file alias="error.wav">../assets/sounds/error.wav</file>
+    <file alias="launch.wav">../assets/sounds/launch.wav</file>
+    <file alias="menu.wav">../assets/sounds/menu.wav</file>
+    <file alias="move-1.wav">../assets/sounds/move-1.wav</file>
+    <file alias="move-2.wav">../assets/sounds/move-2.wav</file>
+    <file alias="move-3.wav">../assets/sounds/move-3.wav</file>
+    <file alias="select.wav">../assets/sounds/select.wav</file>
+    <file alias="switch.wav">../assets/sounds/switch.wav</file>
+    <file alias="toggle-off.wav">../assets/sounds/toggle-off.wav</file>
+    <file alias="toggle-on.wav">../assets/sounds/toggle-on.wav</file>
+  </qresource>
+</RCC>

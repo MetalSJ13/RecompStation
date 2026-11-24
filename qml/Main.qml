@@ -352,7 +352,42 @@ ApplicationWindow {
         return true
     }
 
+    // What directional input can change: focus, the selected game, a list's
+    // highlighted entry, a value being stepped, the screenshot shown or the
+    // Game Details scroll position. Compared before and after a move.
+    function navigationState() {
+        const focusItem = window.activeFocusItem
+        const combo = window.activeControllerComboBox()
+        const stepper = window.focusedValueStepper(focusItem)
+        return [
+            focusItem,
+            gameGrid.currentIndex,
+            consoleView.currentIndex,
+            combo ? combo.highlightedIndex : -2,
+            focusItem && focusItem.currentIndex !== undefined ? focusItem.currentIndex : -2,
+            stepper ? stepper.value : null,
+            screenshotViewer.visible ? screenshotViewer.index : -1,
+            gameDetailsPopup.visible ? gameDetailsPopup.infoScroll.ScrollBar.vertical.position : -1
+        ]
+    }
+
+    // Directional input from the controller or keyboard, with its sound:
+    // Move when something changed, the end-of-row sound when nothing could.
     function controllerNavigate(direction) {
+        const before = window.navigationState()
+        window.navigateFocus(direction)
+        const after = window.navigationState()
+        let changed = false
+        for (let i = 0; i < before.length; ++i) {
+            if (before[i] !== after[i]) {
+                changed = true
+                break
+            }
+        }
+        uiSounds.play(changed ? "move" : "edge")
+    }
+
+    function navigateFocus(direction) {
         const openCombo = window.activeControllerComboBox()
         if (openCombo) {
             // Qt's ComboBox methods automatically target highlightedIndex while
@@ -746,6 +781,14 @@ ApplicationWindow {
 
     function controllerBack(inputDevice) {
         activeInputDevice = inputDevice || "controller"
+        // Back has somewhere to go unless the Library is already showing
+        // with nothing open over it.
+        if (quitConfirmationVisible || window.activeControllerComboBox() || systemPicker.visible
+                || newLibraryFolderDialog.visible || libraryFolderDialog.visible
+                || importGamesPopup.visible || firstRunSetup.visible || systemMenuVisible
+                || screenshotViewer.visible || gameDetailsPopup.visible || currentPage !== "Library"
+                || window.isDescendantOf(window.activeFocusItem, listPreviewShots))
+            uiSounds.play("back")
         if (quitConfirmationVisible) {
             quitConfirmationVisible = false
             return
@@ -803,6 +846,8 @@ ApplicationWindow {
             GradientStop { position: 1.0; color: theme.backgroundBottom }
         }
     }
+
+    onSystemMenuVisibleChanged: uiSounds.play(systemMenuVisible ? "menu" : "back")
 
     onCurrentPageChanged: {
         if (controllerManager.mappingCaptureActive && currentPage !== "Settings")
@@ -1113,6 +1158,7 @@ ApplicationWindow {
         const sections = window.settingsSections
         const index = Math.max(0, sections.indexOf(settingsPage.section))
         settingsPage.section = sections[(index + step + sections.length) % sections.length]
+        uiSounds.play("switch")
         Qt.callLater(function() {
             window.settingsNavigationButtonForSection(settingsPage.section).forceActiveFocus()
         })
@@ -1754,6 +1800,7 @@ ApplicationWindow {
     function selectLibraryPlatform(platform) {
         if (window.selectedPlatform === platform)
             return
+        uiSounds.play("switch")
         window.selectedPlatform = platform
         gameGrid.currentIndex = 0
         Qt.callLater(function() {
@@ -1867,6 +1914,7 @@ ApplicationWindow {
             metadataReleaseDate: game.metadataReleaseDate,
             metadataRating: game.metadataRating
         }
+        uiSounds.play("select")
         gameDetailsPopup.open()
     }
 
@@ -1897,6 +1945,7 @@ ApplicationWindow {
         launchErrors = errors
         launchOverlay.artworkPath = game && game.artworkPath ? game.artworkPath : ""
         launchOverlay.platform = game && game.platform ? game.platform : ""
+        uiSounds.play("launch")
         gameLaunchManager.launchGame(projectId, game && game.path ? game.path : "")
     }
 
@@ -2136,6 +2185,7 @@ ApplicationWindow {
             controllerManager.gameSessionActive = Object.keys(running).length > 0
         }
         function onLaunchFailed(projectId, message) {
+            uiSounds.play("error")
             launchOverlay.hideFor(projectId)
             let running = Object.assign({}, window.runningLaunchers)
             delete running[projectId]
@@ -3226,6 +3276,7 @@ ApplicationWindow {
 
     GameDetailsPage {
         id: gameDetailsPopup
+        onClosed: uiSounds.play("back")
     }
 
     LaunchOverlay {
@@ -5671,6 +5722,38 @@ ApplicationWindow {
                                             Accessible.name: "Reduced motion"
                                         }
                                     }
+
+                                    SettingsGroupLabel { text: "SOUNDS" }
+                                    SettingRow {
+                                        title: "Interface sounds"
+                                        description: uiSounds.available
+                                            ? "Soft sounds when you move, open, go back and play. Silent while a game is running."
+                                            : "Not available: this build of RecompStation was made without Qt Multimedia."
+                                        ToggleSwitch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            enabled: uiSounds.available
+                                            checked: settingsManager.soundsEnabled && uiSounds.available
+                                            onToggled: settingsManager.soundsEnabled = checked
+                                            Accessible.name: "Interface sounds"
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Volume"
+                                        description: "Of the interface sounds only. Each change plays a sample."
+                                        dimmed: !settingsManager.soundsEnabled || !uiSounds.available
+                                        ValueCycler {
+                                            id: soundVolumeSelector
+                                            enabled: uiSounds.available && settingsManager.soundsEnabled
+                                            options: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(
+                                                v => ({ label: v + "%", value: v }))
+                                            value: settingsManager.soundVolume
+                                            onPicked: (value) => {
+                                                settingsManager.soundVolume = value
+                                                uiSounds.play("select")
+                                            }
+                                        }
+                                    }
                                     Item { Layout.preferredHeight: 24 }
                                 }
                             }
@@ -8051,6 +8134,7 @@ ApplicationWindow {
                                 focus: true
                                 closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
                                 onOpened: Qt.callLater(function() {
+                                    uiSounds.play("menu")
                                     const items = []
                                     window.collectFocusableItems(systemPickerContent, items, [])
                                     const current = items.find(function(item) {

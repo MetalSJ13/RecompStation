@@ -103,6 +103,10 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("appearance/reducedMotion"),
         false
     ).toBool();
+    m_soundsEnabled = settings.value(
+        QStringLiteral("appearance/soundsEnabled"), true).toBool();
+    m_soundVolume = qBound(0, settings.value(
+        QStringLiteral("appearance/soundVolume"), 60).toInt(), 100);
 
     // Console View is the first-run experience. Existing saved selections
     // remain untouched and continue to take precedence.
@@ -819,6 +823,47 @@ void SettingsManager::setReducedMotion(bool enabled)
     m_reducedMotion = enabled;
     emit reducedMotionChanged();
     qCInfo(lcSettings) << "Saved reduced motion:" << m_reducedMotion;
+}
+
+bool SettingsManager::soundsEnabled() const
+{
+    return m_soundsEnabled;
+}
+
+void SettingsManager::setSoundsEnabled(bool enabled)
+{
+    if (m_soundsEnabled == enabled)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("appearance/soundsEnabled"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist the interface sounds preference.";
+        return;
+    }
+    m_soundsEnabled = enabled;
+    emit soundsEnabledChanged();
+}
+
+int SettingsManager::soundVolume() const
+{
+    return m_soundVolume;
+}
+
+void SettingsManager::setSoundVolume(int percent)
+{
+    percent = qBound(0, percent, 100);
+    if (m_soundVolume == percent)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("appearance/soundVolume"), percent);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist the interface sound volume.";
+        return;
+    }
+    m_soundVolume = percent;
+    emit soundVolumeChanged();
 }
 
 QString SettingsManager::libraryView() const

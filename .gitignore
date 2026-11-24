@@ -85,3 +85,6 @@ config.local.*
 *~
 .DS_Store
 Thumbs.db
+
+# Python bytecode (tools/sounds)
+__pycache__/

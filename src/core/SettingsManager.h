@@ -27,6 +27,9 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString fontSize READ fontSize WRITE setFontSize NOTIFY fontSizeChanged)
     Q_PROPERTY(QString interfaceScale READ interfaceScale WRITE setInterfaceScale NOTIFY interfaceScaleChanged)
     Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
+    // Interface sounds (Settings > Appearance > Sounds): on by default, 0-100.
+    Q_PROPERTY(bool soundsEnabled READ soundsEnabled WRITE setSoundsEnabled NOTIFY soundsEnabledChanged)
+    Q_PROPERTY(int soundVolume READ soundVolume WRITE setSoundVolume NOTIFY soundVolumeChanged)
     Q_PROPERTY(QString libraryView READ libraryView WRITE setLibraryView NOTIFY libraryViewChanged)
     Q_PROPERTY(QString libraryDensity READ libraryDensity WRITE setLibraryDensity NOTIFY libraryDensityChanged)
     Q_PROPERTY(QString libraryListDensity READ libraryListDensity WRITE setLibraryListDensity NOTIFY libraryListDensityChanged)
@@ -122,6 +125,11 @@ public:
     bool reducedMotion() const;
     Q_INVOKABLE void setReducedMotion(bool enabled);
 
+    bool soundsEnabled() const;
+    Q_INVOKABLE void setSoundsEnabled(bool enabled);
+    int soundVolume() const;
+    Q_INVOKABLE void setSoundVolume(int percent);
+
     QString libraryView() const;
     Q_INVOKABLE void setLibraryView(const QString &view);
     QString libraryDensity() const;
@@ -173,6 +181,8 @@ signals:
     void interfaceScaleChanged();
     void applicationRestartRequested(const QString &settingsSection);
     void reducedMotionChanged();
+    void soundsEnabledChanged();
+    void soundVolumeChanged();
     void libraryViewChanged();
     void libraryDensityChanged();
     void libraryListDensityChanged();
@@ -190,6 +200,8 @@ private:
     QString m_interfaceScale = QStringLiteral("auto");
     QString m_metadataProviderOrder = QStringLiteral("launchbox");
     bool m_reducedMotion = false;
+    bool m_soundsEnabled = true;
+    int m_soundVolume = 60;
     QString m_libraryView = QStringLiteral("carousel");
     QString m_libraryDensity = QStringLiteral("comfortable");
     QString m_libraryListDensity = QStringLiteral("comfortable");

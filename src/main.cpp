@@ -18,6 +18,7 @@
 
 #include "core/Logging.h"
 #include "core/ControllerManager.h"
+#include "core/UiSoundPlayer.h"
 #include "core/PlatformManager.h"
 #include "core/SettingsManager.h"
 #include "core/LauncherDownloadManager.h"
@@ -379,6 +380,12 @@ int main(int argc, char *argv[])
     gameLaunchManager.setProjectCatalog(&projectCatalog);
     gameLaunchManager.setSettingsManager(&settingsManager);
     ControllerManager controllerManager;
+    UiSoundPlayer uiSounds(&settingsManager);
+    // No interface sounds while a game is running.
+    QObject::connect(&controllerManager, &ControllerManager::gameSessionActiveChanged,
+                     &uiSounds, [&controllerManager, &uiSounds]() {
+        uiSounds.setSuppressed(controllerManager.gameSessionActive());
+    });
     controllerManager.setSettingsManager(&settingsManager);
 
     RecompLogging::writeBlock(sessionHeader(platformManager, settingsManager, databaseManager,
@@ -400,6 +407,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("launcherDownloadManager", &launcherDownloadManager);
     engine.rootContext()->setContextProperty("gameLaunchManager", &gameLaunchManager);
     engine.rootContext()->setContextProperty("controllerManager", &controllerManager);
+    engine.rootContext()->setContextProperty("uiSounds", &uiSounds);
     engine.rootContext()->setContextProperty("projectCatalog", &projectCatalog);
     engine.rootContext()->setContextProperty("interfaceScaleInfo", interfaceScaleInfo);
     engine.rootContext()->setContextProperty("storageUsage", &storageUsage);

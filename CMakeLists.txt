@@ -20,6 +20,9 @@ find_package(LibArchive REQUIRED)
 
 # SDL2 is optional: builds without it retain keyboard/mouse support.
 find_package(SDL2 2.0.14 QUIET)
+# Qt Multimedia is optional: it plays the interface sounds. Builds without
+# it work the same, silently.
+find_package(Qt6 6.5 QUIET COMPONENTS Multimedia)
 qt_standard_project_setup(REQUIRES 6.5)
 qt_policy(SET QTP0004 NEW)
 
@@ -57,6 +60,8 @@ endif()
 qt_add_library(recompstation_core STATIC
     src/core/Logging.h
     src/core/Logging.cpp
+    src/core/UiSoundGate.h
+    src/core/UiSoundGate.cpp
     src/core/ControllerInputRouter.h
     src/core/ControllerInputRouter.cpp
     data/projects.qrc
@@ -148,7 +153,10 @@ qt_add_executable(RecompStationApp
     src/main.cpp
     src/core/ControllerManager.h
     src/core/ControllerManager.cpp
+    src/core/UiSoundPlayer.h
+    src/core/UiSoundPlayer.cpp
     data/ui_icons.qrc
+    data/ui_sounds.qrc
 )
 
 qt_add_qml_module(RecompStationApp
@@ -218,6 +226,14 @@ target_link_libraries(RecompStationApp PRIVATE
     Qt6::Quick Qt6::QuickControls2 Qt6::Svg
 )
 
+if(TARGET Qt6::Multimedia)
+    target_link_libraries(RecompStationApp PRIVATE Qt6::Multimedia)
+    target_compile_definitions(RecompStationApp PRIVATE RECOMPSTATION_HAS_MULTIMEDIA)
+    message(STATUS "Interface sounds enabled (Qt Multimedia)")
+else()
+    message(STATUS "Qt Multimedia not found; interface sounds disabled")
+endif()
+
 if(TARGET SDL2::SDL2)
     target_link_libraries(RecompStationApp PRIVATE SDL2::SDL2)
     target_compile_definitions(RecompStationApp PRIVATE RECOMPSTATION_HAS_SDL2)
@@ -273,6 +289,7 @@ if(BUILD_TESTING)
     recompstation_add_test(LaunchBoxArtworkManagerTests tests/LaunchBoxArtworkManagerTest.cpp)
     recompstation_add_test(MetadataProviderTests tests/MetadataProviderTest.cpp)
     recompstation_add_test(TheGamesDbAllowanceTests tests/TheGamesDbAllowanceTest.cpp)
+    recompstation_add_test(UiSoundGateTests tests/UiSoundGateTest.cpp)
     recompstation_add_test(LaunchBoxXmlParserTests tests/LaunchBoxXmlParserTest.cpp)
     recompstation_add_test(LaunchBoxCatalogMatcherTests tests/LaunchBoxCatalogMatcherTest.cpp)
     recompstation_add_test(LaunchBoxCatalogDatabaseTests tests/LaunchBoxCatalogDatabaseTest.cpp)

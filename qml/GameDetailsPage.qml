@@ -1017,7 +1017,10 @@ Popup {
                             readonly property string logPath: gameDetailsPopup.selectedProject
                                 ? platformManager.dataDirectory + "/logs/launchers/"
                                     + gameDetailsPopup.selectedProject.id + ".log" : ""
-                            onOpened: Qt.callLater(function() { detailsShowFolderItem.forceActiveFocus() })
+                            onOpened: {
+                                uiSounds.play("menu")
+                                Qt.callLater(function() { detailsShowFolderItem.forceActiveFocus() })
+                            }
                             onClosed: {
                                 if (gameDetailsPopup.visible && detailsMoreButton.visible)
                                     detailsMoreButton.forceActiveFocus()

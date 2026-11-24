@@ -107,6 +107,7 @@ A system appears in your library even if no recompilation project supports it ye
 - CMake 3.21+, Ninja and a C++20 compiler (GCC or Clang)
 - libarchive
 - SDL2 2.0.14+ (optional, for controller support; keyboard and mouse work without it)
+- Qt Multimedia (optional, for interface sounds; on Arch, `qt6-multimedia` with `qt6-multimedia-ffmpeg`)
 
 ### Arch Linux and derivatives
 
@@ -169,7 +170,7 @@ Please do not share or link to game files, ROMs or disc images in issues or pull
 
 ## License
 
-RecompStation is free software, released under the [GNU General Public License v3.0 or later](LICENSE).
+RecompStation is free software, released under the [GNU General Public License v3.0 or later](LICENSE). That includes the logo and the interface sounds, which were made for RecompStation; the sounds are synthesized by [`tools/sounds/generate.py`](tools/sounds/generate.py).
 
 Third-party components:
 - [xxHash](https://github.com/Cyan4973/xxHash), BSD 2-Clause License. See [`third_party/xxhash/LICENSE`](third_party/xxhash/LICENSE).

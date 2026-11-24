@@ -18,6 +18,7 @@ private slots:
     void init();
     void defaultsToScanningOnStartup();
     void defaultsToSystemPresentationSize();
+    void interfaceSoundsDefaultOnAndPersist();
     void defaultsToFullscreenDisplayMode();
     void persistsDisplayMode();
     void rejectsUnsupportedDisplayMode();
@@ -87,6 +88,26 @@ void SettingsManagerTest::defaultsToSystemPresentationSize()
 
     SettingsManager manager(settingsPath);
     QCOMPARE(manager.preferredPresentationSize(), QStringLiteral("system"));
+}
+
+void SettingsManagerTest::interfaceSoundsDefaultOnAndPersist()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    {
+        SettingsManager manager(settingsPath);
+        QVERIFY(manager.soundsEnabled());
+        QCOMPARE(manager.soundVolume(), 60);
+        QSignalSpy volumeSpy(&manager, &SettingsManager::soundVolumeChanged);
+        manager.setSoundsEnabled(false);
+        manager.setSoundVolume(140);  // Clamped.
+        QCOMPARE(manager.soundVolume(), 100);
+        QCOMPARE(volumeSpy.size(), 1);
+    }
+    SettingsManager reloaded(settingsPath);
+    QVERIFY(!reloaded.soundsEnabled());
+    QCOMPARE(reloaded.soundVolume(), 100);
 }
 
 void SettingsManagerTest::defaultsToFullscreenDisplayMode()

@@ -13,6 +13,9 @@ Switch {
     implicitWidth: 60
     implicitHeight: 36
     text: ""
+    // Every switch in the app sounds the same. An owner's own onToggled
+    // handler still runs as well.
+    onToggled: uiSounds.play(checked ? "toggle-on" : "toggle-off")
 
     indicator: Rectangle {
         id: track
