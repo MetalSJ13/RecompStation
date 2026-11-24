@@ -14,6 +14,9 @@
 
 #include <memory>
 
+#include <archive.h>
+#include <archive_entry.h>
+
 class LibraryScannerTest : public QObject
 {
     Q_OBJECT
@@ -187,6 +190,35 @@ private slots:
 
         QCOMPARE(m_scanner->scanPlatform("N64"), 2);
         QCOMPARE(m_databaseManager->games("N64").size(), 2);
+    }
+
+    void unpacksZippedRomsDroppedIntoASystemFolder()
+    {
+        // A zipped N64 ROM placed straight into the N64 folder is unpacked,
+        // its archive removed, and the ROM listed.
+        const QString archivePath = m_platformManager->platformDirectory("N64") + "/Banjo.zip";
+        archive *writer = archive_write_new();
+        archive_write_set_format_zip(writer);
+        QCOMPARE(archive_write_open_filename(writer, QFile::encodeName(archivePath).constData()),
+                 ARCHIVE_OK);
+        const QByteArray rom(4096, 'b');
+        archive_entry *entry = archive_entry_new();
+        archive_entry_set_pathname(entry, "Banjo-Kazooie (USA).z64");
+        archive_entry_set_size(entry, rom.size());
+        archive_entry_set_filetype(entry, AE_IFREG);
+        archive_entry_set_perm(entry, 0644);
+        archive_write_header(writer, entry);
+        archive_write_data(writer, rom.constData(), rom.size());
+        archive_entry_free(entry);
+        archive_write_close(writer);
+        archive_write_free(writer);
+
+        QCOMPARE(m_scanner->scanPlatform("N64"), 1);
+        QVERIFY(!QFileInfo::exists(archivePath));
+        const QString romPath =
+            m_platformManager->platformDirectory("N64") + "/Banjo-Kazooie (USA).z64";
+        QVERIFY(QFileInfo::exists(romPath));
+        QCOMPARE(m_databaseManager->games("N64").size(), 1);
     }
 
     void repeatedScansDoNotDuplicateGames()

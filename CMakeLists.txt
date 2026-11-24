@@ -76,6 +76,8 @@ qt_add_library(recompstation_core STATIC
     src/core/LaunchPreparer.cpp
     src/core/RomInspector.h
     src/core/RomInspector.cpp
+    src/core/RomArchiveUnpacker.h
+    src/core/RomArchiveUnpacker.cpp
     src/core/ArchiveExtractor.h
     src/core/ArchiveExtractor.cpp
     src/core/LibraryScanner.h
@@ -263,6 +265,7 @@ if(BUILD_TESTING)
     recompstation_add_test(GameLaunchManagerTests tests/GameLaunchManagerTest.cpp)
     recompstation_add_test(LaunchPreparerTests tests/LaunchPreparerTest.cpp)
     recompstation_add_test(LibraryScannerTests tests/LibraryScannerTest.cpp)
+    recompstation_add_test(RomArchiveUnpackerTests tests/RomArchiveUnpackerTest.cpp)
     recompstation_add_test(DatabaseManagerTests tests/DatabaseManagerTest.cpp)
     recompstation_add_test(ArtworkManagerTests tests/ArtworkManagerTest.cpp)
     recompstation_add_test(LaunchBoxArtworkManagerTests tests/LaunchBoxArtworkManagerTest.cpp)

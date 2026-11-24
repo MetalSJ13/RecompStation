@@ -91,7 +91,10 @@ private:
     QTimer m_pollTimer;
     QTimer m_mappingCaptureTimer;
     QElapsedTimer m_elapsedTimer;
+    // The controller that drives the interface, and every attached one.
     _SDL_GameController *m_controller = nullptr;
+    QList<_SDL_GameController *> m_openControllers;
+    void selectController(_SDL_GameController *controller);
     ControllerInputRouter m_inputRouter;
     SettingsManager *m_settingsManager = nullptr;
     QVariantMap m_controllerProfile;

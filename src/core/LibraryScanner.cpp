@@ -1,6 +1,7 @@
 #include "LibraryScanner.h"
 
 #include "PlatformManager.h"
+#include "RomArchiveUnpacker.h"
 #include "../database/DatabaseManager.h"
 #include "Logging.h"
 
@@ -283,6 +284,8 @@ int LibraryScanner::scanPlatform(const QString &platform)
     for (const QString &extension : extensions)
         acceptedExtensions.insert(extension);
 
+    unpackArchivedRoms(platform, directoryPath, extensions);
+
     QStringList discoveredPaths;
 
     QDirIterator iterator(
@@ -333,6 +336,55 @@ int LibraryScanner::scanPlatform(const QString &platform)
         emit scanCompleted(m_lastScanCount);
 
     return m_lastScanCount;
+}
+
+// Cartridge ROMs dropped into a system's folder inside a .zip or .7z are
+// unpacked next to the archive, because launchers read the ROM itself. The
+// archive is removed once its only file is safely on disk.
+void LibraryScanner::unpackArchivedRoms(const QString &platform, const QString &directoryPath,
+                                        const QStringList &extensions)
+{
+    static const QStringList cartridgePlatforms{
+        QStringLiteral("GB"), QStringLiteral("GBC"), QStringLiteral("GBA"),
+        QStringLiteral("SNES"), QStringLiteral("N64")};
+    if (!cartridgePlatforms.contains(platform))
+        return;
+
+    QStringList archives;
+    QDirIterator iterator(directoryPath, QDir::Files | QDir::Readable | QDir::NoSymLinks,
+                          QDirIterator::Subdirectories);
+    while (iterator.hasNext()) {
+        const QString path = iterator.next();
+        if (RomArchiveUnpacker::isArchive(path))
+            archives.append(path);
+    }
+
+    for (const QString &archivePath : std::as_const(archives)) {
+        QString unpacked;
+        QString error;
+        switch (RomArchiveUnpacker::unpack(archivePath, extensions, &unpacked, &error)) {
+        case RomArchiveUnpacker::Outcome::Unpacked:
+            qCInfo(lcLibrary) << "Unpacked" << QFileInfo(unpacked).fileName()
+                              << "and removed its archive" << QFileInfo(archivePath).fileName();
+            break;
+        case RomArchiveUnpacker::Outcome::UnpackedKept:
+            qCInfo(lcLibrary) << "Unpacked" << QFileInfo(unpacked).fileName() << "from"
+                              << QFileInfo(archivePath).fileName()
+                              << (error.isEmpty() ? QStringLiteral("(archive kept: it holds other files)")
+                                                  : QStringLiteral("(") + error + QStringLiteral(")"));
+            break;
+        case RomArchiveUnpacker::Outcome::SeveralRoms:
+            qCInfo(lcLibrary) << "Archive holds several ROMs, left as is (use Add games):"
+                              << QFileInfo(archivePath).fileName();
+            break;
+        case RomArchiveUnpacker::Outcome::Failed:
+            qCWarning(lcLibrary) << "Could not unpack" << QFileInfo(archivePath).fileName() << error;
+            break;
+        case RomArchiveUnpacker::Outcome::AlreadyUnpacked:
+        case RomArchiveUnpacker::Outcome::NoRom:
+            break;
+        }
+    }
 }
 
 bool LibraryScanner::scanAllAsync()

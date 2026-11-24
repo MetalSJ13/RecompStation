@@ -53,16 +53,18 @@ This document is the current development status and implementation order for Rec
 Runtime checks for implemented features that have not been fully confirmed yet. Tick them as they are exercised.
 
 - [ ] Settings: LB/RB and Q/E switch sections; ◀ value ▶ rows with D-pad and keyboard; interface scale change and restart (a manual value, then back to Auto).
-- [ ] Metadata: press Update catalog and compare the catalog size with the previous 498 MB; add a TheGamesDB key in the app and Test it; with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
-- [ ] Controller: a second controller type changes the drawing and every symbol; a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
+- [x] Metadata: Update catalog refreshes the catalog and its size; a TheGamesDB key added in the app tests successfully and shows the remaining request quota (2026-11-24).
+- [ ] Metadata: with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
+- [ ] Controller: a second connected controller takes over navigation, the drawing and every symbol when it is used (was broken: only the first controller was ever read; fixed on `fix/validation-round-1`, to retest); a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
 - [ ] Application: Remove for a launcher whose game is gone; Reset settings.
 - [x] First-time setup: the simplified first step (folder choice only), confirmed 2026-11-24.
 - [ ] First-time setup: from scratch; adding from Downloads and another folder; a zipped N64 ROM; a `.cue`/`.bin` game; an unsure `.iso` with the system picker; Move; drag-and-drop onto the Library; Settings › Library › Add games.
 - [ ] Library: List and Carousel size stepping and persistence; Shelves spacing polish; the empty-library screen after a reset.
-- [ ] System picker: shows only systems with games; LB/RB and Q/E step through them; click, Enter or A opens the list, D-pad moves inside it, A picks, B or Esc closes and focus returns to the chip; removing a system's last game falls back to All systems.
+- [x] System picker: shows only systems with games; LB/RB and Q/E step through them; the controller's Select button opens the list; removing a system's last game updates it (2026-11-24).
 - [x] New systems: each appears in the library, with its folder (confirmed 2026-11-24).
+- [ ] Zipped cartridge ROMs (N64, GB, GBC, GBA, SNES) copied straight into a system folder were ignored; the scanner now unpacks them (on `fix/validation-round-1`, to retest).
 - [ ] New systems: adding a GB, GBC (dual-mode and colour-only), GBA and SNES ROM, loose and zipped; a PS2 `.iso` and `.chd` are not taken for PS1; a Wii U `.wua`; covers have the right shape after Update catalog.
-- [ ] Game Details states: downloading/installing pill, release and launch errors, a game with several projects (Open Nectar), a game without metadata.
+- [x] Game Details states: downloading/installing pill, release and launch errors, a game with several projects (Open Nectar, Super Mario 64), a game without metadata, Uninstall under ⋯ (2026-11-24). Follow-ups: the ⋯ menu and the no-metadata page (roadmap 6a).
 - [ ] Launchers: install, launch and uninstall for the catalog projects not yet exercised (confirmed so far: Banjo-Kazooie, Banjo-Tooie, Star Fox 64, Donkey Kong 64, PaperBoat, Shadow the Hedgehog (Xbox), Bomberman 64, Bomberman Hero); download cancellation and failure feedback; uninstall keeps ROM files.
 - [ ] Controller-only and keyboard-only pass over dialogs and the in-app folder browser (focus entry, actions, cancel, focus return).
 - [ ] Full regression pass across pages and backend workflows before the first public release.
@@ -119,6 +121,11 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 ### 5b. Runtime log — done
 `runtime.log` is written for whoever reads a bug report: a session header (version and commit, system, desktop and session type, display, settings, library counts, installed launchers, data and log paths) and footer, one line per event (`2026-11-23 15:14:02.239 INFO  launch    …`), the home folder written as `~`, and the renderer (graphics API and OpenGL driver) once the window is up. Per-frame and per-request chatter (geometry, screenshot rotation, every metadata query) is debug-only; debug is off unless Settings › Application › Detailed logging is on or `RECOMPSTATION_DEBUG=1` (`QT_LOGGING_RULES` still overrides). Launcher output is captured to `logs/launchers/<project>.log` and, when a launcher crashes or exits with an error, its last 40 lines are copied into `runtime.log`.
 
+### 6a. Validation follow-ups (2026-11-24)
+- [ ] Game Details ⋯: open a small drop-down menu (Uninstall, and later other launcher actions) under the button, instead of placing an Uninstall button beside it. Mock up first.
+- [ ] The "Metadata not available" page and the placeholder cover frame do not match the rest of the app; redesign both (mock up first; the user's screenshot shows the current state).
+- [ ] A launcher whose game was removed stays installed by design (uninstalling never happens behind the user's back); Settings › Application › Launchers whose game is gone lists it with Remove. Consider pointing to that from the Library once a game disappears.
+
 ### 6. Input, accessibility and regression
 - [ ] Contrast, accessible names, tab order and scaling review across all pages.
 - [ ] Theme polish of the button-mapping capture states.
@@ -151,7 +158,7 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 - Controller-first, library-first, and fullscreen by default; RecompStation keeps its own visual identity (RecompLauncher, GPL-3, was used only as a reference).
 - Artwork comes from LaunchBox and TheGamesDB box art; no other artwork provider is planned.
 - Metadata is matched only when one result clearly fits; ambiguous games stay unmatched rather than getting the wrong cover.
-- RecompStation never supplies game files and never overwrites or deletes the user's games; uninstalling a launcher keeps ROMs and saves.
+- RecompStation never supplies game files and never overwrites or deletes the user's games; uninstalling a launcher keeps ROMs and saves. One exception, at the user's request: a .zip/.7z in a cartridge system's folder whose only file is a ROM is removed after that ROM has been unpacked next to it and its size checked; archives with other files are kept.
 - RecompStation never creates a launcher's settings files; it changes single documented keys in files the launcher wrote itself.
 - Launchers come only from native Linux release assets of curated projects; Flatpak is out of scope.
 - No settings without real behaviour: placeholder controls are removed until their feature exists.

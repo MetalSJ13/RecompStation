@@ -5,6 +5,36 @@
 
 #ifdef RECOMPSTATION_HAS_SDL2
 #include <SDL.h>
+
+#include <algorithm>
+
+namespace {
+
+// True while any button is held or any stick or trigger is well past its
+// rest position. Used to hand control to the controller the player picks up.
+bool controllerHasInput(SDL_GameController *controller)
+{
+    for (int button = 0; button < SDL_CONTROLLER_BUTTON_MAX; ++button) {
+        if (SDL_GameControllerGetButton(controller,
+                                        static_cast<SDL_GameControllerButton>(button)))
+            return true;
+    }
+    constexpr int activityThreshold = 16000;
+    for (int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; ++axis) {
+        const int value = SDL_GameControllerGetAxis(controller,
+                                                    static_cast<SDL_GameControllerAxis>(axis));
+        if (qAbs(value) > activityThreshold)
+            return true;
+    }
+    return false;
+}
+
+SDL_JoystickID instanceId(SDL_GameController *controller)
+{
+    return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+}
+
+} // namespace
 #endif
 
 ControllerManager::ControllerManager(QObject *parent)
@@ -58,8 +88,9 @@ ControllerManager::~ControllerManager()
 {
 #ifdef RECOMPSTATION_HAS_SDL2
     m_pollTimer.stop();
-    if (m_controller)
-        SDL_GameControllerClose(m_controller);
+    for (SDL_GameController *controller : std::as_const(m_openControllers))
+        SDL_GameControllerClose(controller);
+    m_controller = nullptr;
     if (m_sdlInitialized)
         SDL_Quit();
 #endif
@@ -241,6 +272,43 @@ void ControllerManager::setDisplayedInputs(const QStringList &inputs)
     emit activeInputsChanged();
 }
 
+#ifdef RECOMPSTATION_HAS_SDL2
+// Make `controller` the one that drives the interface, and publish its
+// name, layout and hardware GUID (which selects its mapping profile).
+void ControllerManager::selectController(_SDL_GameController *controller)
+{
+    m_controller = controller;
+    const char *rawName = SDL_GameControllerName(controller);
+    const QString name = QString::fromUtf8(rawName ? rawName : "Game controller");
+
+    QString type = QStringLiteral("generic");
+    switch (SDL_GameControllerGetType(controller)) {
+    case SDL_CONTROLLER_TYPE_XBOX360:
+    case SDL_CONTROLLER_TYPE_XBOXONE:
+        type = QStringLiteral("xbox");
+        break;
+    case SDL_CONTROLLER_TYPE_PS3:
+    case SDL_CONTROLLER_TYPE_PS4:
+    case SDL_CONTROLLER_TYPE_PS5:
+        type = QStringLiteral("playstation");
+        break;
+    case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
+        type = QStringLiteral("nintendo");
+        break;
+    default:
+        break;
+    }
+
+    char guidBuffer[64] = {};
+    const SDL_JoystickGUID hardwareGuid =
+        SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(controller));
+    SDL_JoystickGetGUIDString(hardwareGuid, guidBuffer, sizeof(guidBuffer));
+    // Inputs held on the previous controller must not carry over.
+    m_previousActiveInputs.clear();
+    setConnected(true, name, type, QString::fromLatin1(guidBuffer));
+}
+#endif
+
 void ControllerManager::pollController()
 {
 #ifdef RECOMPSTATION_HAS_SDL2
@@ -250,51 +318,44 @@ void ControllerManager::pollController()
     SDL_PumpEvents();
     SDL_GameControllerUpdate();
 
-    if (m_controller && !SDL_GameControllerGetAttached(m_controller)) {
-        SDL_GameControllerClose(m_controller);
-        m_controller = nullptr;
-        setConnected(false);
+    // Keep every attached controller open. The one used most recently drives
+    // navigation, the button symbols and the mapping profile; a second
+    // controller takes over as soon as it is used while the current one is idle.
+    for (auto it = m_openControllers.begin(); it != m_openControllers.end();) {
+        if (SDL_GameControllerGetAttached(*it)) {
+            ++it;
+            continue;
+        }
+        if (*it == m_controller)
+            m_controller = nullptr;
+        SDL_GameControllerClose(*it);
+        it = m_openControllers.erase(it);
+    }
+    for (int index = 0; index < SDL_NumJoysticks(); ++index) {
+        if (!SDL_IsGameController(index))
+            continue;
+        const SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(index);
+        const bool alreadyOpen = std::any_of(
+            m_openControllers.cbegin(), m_openControllers.cend(),
+            [id](SDL_GameController *controller) { return instanceId(controller) == id; });
+        if (alreadyOpen)
+            continue;
+        if (SDL_GameController *controller = SDL_GameControllerOpen(index))
+            m_openControllers.append(controller);
     }
 
-    if (!m_controller) {
-        for (int index = 0; index < SDL_NumJoysticks(); ++index) {
-            if (!SDL_IsGameController(index))
-                continue;
-
-            m_controller = SDL_GameControllerOpen(index);
-            if (!m_controller)
-                continue;
-
-            const char *rawName = SDL_GameControllerName(m_controller);
-            const QString name = QString::fromUtf8(
-                rawName ? rawName : "Game controller");
-
-            QString type = QStringLiteral("generic");
-            switch (SDL_GameControllerGetType(m_controller)) {
-            case SDL_CONTROLLER_TYPE_XBOX360:
-            case SDL_CONTROLLER_TYPE_XBOXONE:
-                type = QStringLiteral("xbox");
-                break;
-            case SDL_CONTROLLER_TYPE_PS3:
-            case SDL_CONTROLLER_TYPE_PS4:
-            case SDL_CONTROLLER_TYPE_PS5:
-                type = QStringLiteral("playstation");
-                break;
-            case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
-                type = QStringLiteral("nintendo");
-                break;
-            default:
+    if (!m_controller || !controllerHasInput(m_controller)) {
+        for (SDL_GameController *controller : std::as_const(m_openControllers)) {
+            if (controller != m_controller && controllerHasInput(controller)) {
+                selectController(controller);
                 break;
             }
-
-            char guidBuffer[64] = {};
-            const SDL_JoystickGUID hardwareGuid = SDL_JoystickGetGUID(
-                SDL_GameControllerGetJoystick(m_controller));
-            SDL_JoystickGetGUIDString(hardwareGuid, guidBuffer, sizeof(guidBuffer));
-            setConnected(true, name, type, QString::fromLatin1(guidBuffer));
-            break;
         }
     }
+    if (!m_controller && !m_openControllers.isEmpty())
+        selectController(m_openControllers.first());
+    if (!m_controller && m_connected)
+        setConnected(false);
 
     if (!m_controller) {
         setDisplayedInputs({});

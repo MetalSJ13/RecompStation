@@ -49,6 +49,8 @@ signals:
     void monitoringActiveChanged();
 
 private:
+    void unpackArchivedRoms(const QString &platform, const QString &directoryPath,
+                            const QStringList &extensions);
     static constexpr int WatchDebounceMs = 750;
 
     PlatformManager *m_platformManager;
