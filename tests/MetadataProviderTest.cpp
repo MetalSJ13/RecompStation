@@ -157,7 +157,7 @@ private slots:
 
     void parsesTheGamesDbPlatformCatalog()
     {
-        const QByteArray json = R"({
+        const QByteArray json = R"json({
             "code": 200,
             "status": "Success",
             "data": {
@@ -177,7 +177,7 @@ private slots:
                     "38": {"id": 38, "name": "Nintendo Wii U", "alias": "nintendo-wii-u"}
                 }
             }
-        })";
+        })json";
 
         QList<TheGamesDbPlatform> platforms;
         QString error;
