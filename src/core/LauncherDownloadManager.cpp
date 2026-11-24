@@ -6,8 +6,12 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include <QFile>
 
+#include <QCryptographicHash>
+#include <QDateTime>
 #include <QDir>
 #include <QDirIterator>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QFileInfo>
 #include <QSet>
 #include <QNetworkReply>
@@ -24,7 +28,10 @@ namespace {
 // Files RecompStation writes into every install.
 const QStringList kInstallMarkers{QStringLiteral(".recompstation-managed"),
                                   QStringLiteral(".recompstation-install"),
-                                  QStringLiteral(".recompstation-files")};
+                                  QStringLiteral(".recompstation-files"),
+                                  QStringLiteral(".recompstation-release")};
+// Where an update keeps the old version while the two are swapped.
+const QString kPreviousPrefix = QStringLiteral(".previous-");
 
 // Every file in a folder as relative paths, without following links.
 QStringList relativeFiles(const QString &root)
@@ -75,6 +82,8 @@ struct LauncherDownloadManager::Download
     QString targetPath;
     qint64 expectedSize = -1;
     qint64 bytesReceived = 0;
+    QString expectedSha256;
+    QCryptographicHash hash{QCryptographicHash::Sha256};
     QSaveFile file;
     QPointer<QNetworkReply> reply;
 };
@@ -104,7 +113,8 @@ int LauncherDownloadManager::downloadAsset(
     const QString &projectId,
     const QString &assetName,
     const QString &downloadUrl,
-    qint64 expectedSize
+    qint64 expectedSize,
+    const QString &expectedSha256
 )
 {
     const int requestId = m_nextRequestId++;
@@ -193,6 +203,10 @@ int LauncherDownloadManager::downloadAsset(
     download->assetName = assetName;
     download->targetPath = targetPath;
     download->expectedSize = expectedSize;
+    // Only a well-formed digest counts; anything else means "not published".
+    static const QRegularExpression sha256Pattern(QStringLiteral("^[0-9a-f]{64}$"));
+    const QString digest = expectedSha256.trimmed().toLower();
+    download->expectedSha256 = sha256Pattern.match(digest).hasMatch() ? digest : QString();
     download->file.setFileName(targetPath);
 
     if (!download->file.open(QIODevice::WriteOnly)) {
@@ -276,6 +290,7 @@ void LauncherDownloadManager::receiveDownloadData(int requestId)
         return;
     }
 
+    download->hash.addData(data);
     download->bytesReceived += written;
 }
 
@@ -327,6 +342,18 @@ void LauncherDownloadManager::finishDownload(int requestId)
         return;
     }
 
+    const QString actualSha256 = QString::fromLatin1(download->hash.result().toHex());
+    if (!download->expectedSha256.isEmpty() && actualSha256 != download->expectedSha256) {
+        qCWarning(lcLauncher) << "Checksum mismatch for" << download->projectId << download->assetName
+                              << "expected" << download->expectedSha256 << "got" << actualSha256;
+        reply->deleteLater();
+        download->reply = nullptr;
+        failDownload(requestId, QStringLiteral(
+            "The download doesn't match the checksum the project published, so it wasn't kept. "
+            "It may have been damaged on the way; try again."));
+        return;
+    }
+
     if (!download->file.commit()) {
         const QString message = QStringLiteral("Could not finalize the downloaded asset: %1")
                                     .arg(download->file.errorString());
@@ -340,13 +367,15 @@ void LauncherDownloadManager::finishDownload(int requestId)
     const QString assetName = download->assetName;
     const QString filePath = download->targetPath;
     const qint64 bytesReceived = download->bytesReceived;
+    m_checksums.insert(filePath, Checksum{actualSha256, !download->expectedSha256.isEmpty()});
     m_activeTargets.remove(download->targetPath);
     m_downloads.remove(requestId);
     reply->deleteLater();
     delete download;
 
     qCInfo(lcLauncher) << "Download completed:" << projectId << assetName
-                       << "bytes:" << bytesReceived;
+                       << "bytes:" << bytesReceived
+                       << (m_checksums.value(filePath).verified ? "checksum verified" : "no published checksum");
     emit downloadCompleted(requestId, projectId, assetName, filePath);
 }
 
@@ -404,7 +433,9 @@ int LauncherDownloadManager::installDownloadedAsset(
     const QString &projectId,
     const QString &assetName,
     const QString &packageFormat,
-    const QString &expectedExecutable
+    const QString &expectedExecutable,
+    const QString &releaseTag,
+    bool replaceExisting
 )
 {
     const int requestId = m_nextRequestId++;
@@ -472,10 +503,26 @@ int LauncherDownloadManager::installDownloadedAsset(
 
     const QString destination = QDir(canonicalLauncherRoot).filePath(projectId);
     const QFileInfo destinationInfo(destination);
-    if (destinationInfo.exists() || destinationInfo.isSymLink()) {
-        reject(QStringLiteral("A launcher is already installed for this project. Existing installations will not be overwritten."));
+    if (destinationInfo.isSymLink()) {
+        reject(QStringLiteral("The launcher's folder is a link; refusing to touch it."));
         return requestId;
     }
+    if (destinationInfo.exists()) {
+        bool managed = false;
+        for (const QVariant &entry : installedLaunchers()) {
+            if (entry.toMap().value(QStringLiteral("projectId")).toString() == projectId)
+                managed = true;
+        }
+        if (!replaceExisting || !managed) {
+            reject(QStringLiteral("A launcher is already installed for this project. Existing installations will not be overwritten."));
+            return requestId;
+        }
+    }
+    if (releaseTag.size() > 100 || releaseTag.contains(QLatin1Char('\n'))) {
+        reject(QStringLiteral("The release name is invalid."));
+        return requestId;
+    }
+    const Checksum checksum = m_checksums.value(archivePath);
 
     const QString extractionPath = QDir(canonicalProjectStaging)
         .filePath(assetName + ".extracting-" + QUuid::createUuid().toString(QUuid::WithoutBraces));
@@ -489,8 +536,8 @@ int LauncherDownloadManager::installDownloadedAsset(
     auto *watcher = new QFutureWatcher<ArchiveExtractor::Result>(this);
     m_installations.insert(requestId, watcher);
     connect(watcher, &QFutureWatcher<ArchiveExtractor::Result>::finished,
-            this, [this, watcher, requestId, projectId, archivePath,
-                   extractionPath, destination]() {
+            this, [this, watcher, requestId, projectId, archivePath, assetName,
+                   extractionPath, destination, releaseTag, checksum, replaceExisting]() {
         const ArchiveExtractor::Result result = watcher->result();
         m_installations.remove(requestId);
         m_activeInstallProjects.remove(projectId);
@@ -516,6 +563,23 @@ int LauncherDownloadManager::installDownloadedAsset(
         QSaveFile manifest(manifestPath);
         const QByteArray markerContent("RecompStation managed launcher installation v1\n");
         const QByteArray manifestContent = executableRelativePath.toUtf8() + "\n";
+        // Which release this is, for Game Details and update checks.
+        {
+            const QJsonObject release{
+                {QStringLiteral("tag"), releaseTag},
+                {QStringLiteral("asset"), assetName},
+                {QStringLiteral("sha256"), checksum.sha256},
+                {QStringLiteral("checksumVerified"), checksum.verified},
+                {QStringLiteral("installedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODate)}};
+            QSaveFile releaseFile(QDir(extractionPath).filePath(QStringLiteral(".recompstation-release")));
+            const QByteArray content = QJsonDocument(release).toJson(QJsonDocument::Indented);
+            if (!releaseFile.open(QIODevice::WriteOnly) || releaseFile.write(content) != content.size()
+                || !releaseFile.commit()) {
+                QDir(extractionPath).removeRecursively();
+                emit installationFailed(requestId, QStringLiteral("Could not record the launcher's release."));
+                return;
+            }
+        }
         // What the package itself contains: anything else found here later
         // (saves, settings, portable mode) is the player's, and uninstall
         // sets it aside instead of deleting it.
@@ -540,6 +604,21 @@ int LauncherDownloadManager::installDownloadedAsset(
             return;
         }
 
+        if (replaceExisting && QFileInfo::exists(destination)) {
+            QString error;
+            if (!replaceInstallation(projectId, extractionPath, destination, executableRelativePath, &error)) {
+                QDir(extractionPath).removeRecursively();
+                qCWarning(lcLauncher) << "Update of" << projectId << "failed; the previous version stays:" << error;
+                emit installationFailed(requestId, error);
+                return;
+            }
+            QFile::remove(archivePath);
+            m_checksums.remove(archivePath);
+            qCInfo(lcLauncher) << "Launcher updated:" << projectId << (releaseTag.isEmpty() ? QString() : releaseTag);
+            emit installationCompleted(requestId, projectId, QDir(destination).filePath(executableRelativePath));
+            return;
+        }
+
         const QFileInfo finalDestinationInfo(destination);
         if (finalDestinationInfo.exists() || finalDestinationInfo.isSymLink()
             || !QDir().rename(extractionPath, destination)) {
@@ -559,6 +638,7 @@ int LauncherDownloadManager::installDownloadedAsset(
         }
 
         QFile::remove(archivePath);
+        m_checksums.remove(archivePath);
         const int restored = restoreKeptFiles(projectId, destination);
         if (restored > 0)
             qCInfo(lcLauncher) << "Put back" << restored << "kept file(s) for" << projectId;
@@ -651,11 +731,24 @@ QVariantList LauncherDownloadManager::installedLaunchers() const
             || !canonicalExecutable.startsWith(directory + QDir::separator()))
             continue;
 
-        installed.append(QVariantMap{
+        QVariantMap entry{
             {QStringLiteral("projectId"), projectId},
             {QStringLiteral("directory"), directory},
-            {QStringLiteral("executablePath"), executablePath}
-        });
+            {QStringLiteral("executablePath"), executablePath},
+            {QStringLiteral("version"), QString()},
+            {QStringLiteral("checksumVerified"), false}
+        };
+        // Installs from before release tracking have no record: version "".
+        QFile releaseFile(QDir(directory).filePath(QStringLiteral(".recompstation-release")));
+        if (!QFileInfo(releaseFile.fileName()).isSymLink() && releaseFile.size() < 4096
+            && releaseFile.open(QIODevice::ReadOnly)) {
+            const QJsonObject release = QJsonDocument::fromJson(releaseFile.readAll()).object();
+            entry.insert(QStringLiteral("version"), release.value(QStringLiteral("tag")).toString().left(100));
+            entry.insert(QStringLiteral("assetName"), release.value(QStringLiteral("asset")).toString().left(200));
+            entry.insert(QStringLiteral("checksumVerified"), release.value(QStringLiteral("checksumVerified")).toBool());
+            entry.insert(QStringLiteral("installedAt"), release.value(QStringLiteral("installedAt")).toString().left(40));
+        }
+        installed.append(entry);
     }
 
     return installed;
@@ -712,6 +805,145 @@ int LauncherDownloadManager::cleanUpStaging()
     return removed;
 }
 
+QString LauncherDownloadManager::sha256OfFile(const QString &path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+        return {};
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    if (!hash.addData(&file))
+        return {};
+    return QString::fromLatin1(hash.result().toHex());
+}
+
+QString LauncherDownloadManager::launcherRoot() const
+{
+    if (!m_platformManager)
+        return {};
+    const QString dataRoot = QFileInfo(m_platformManager->dataDirectory()).canonicalFilePath();
+    if (dataRoot.isEmpty())
+        return {};
+    const QString root = QDir(dataRoot).filePath(QStringLiteral("launchers"));
+    return QFileInfo(root).canonicalFilePath() == root ? root : QString();
+}
+
+QStringList LauncherDownloadManager::playerFiles(const QString &installDirectory)
+{
+    QSet<QString> packaged;
+    bool hasList = false;
+    QFile list(QDir(installDirectory).filePath(QStringLiteral(".recompstation-files")));
+    if (list.open(QIODevice::ReadOnly)) {
+        hasList = true;
+        for (const QByteArray &line : list.readAll().split('\n')) {
+            if (!line.isEmpty())
+                packaged.insert(QString::fromUtf8(line));
+        }
+    }
+    // Installs made before the file list existed: the usual places
+    // launchers write to.
+    static const QStringList fallback{QStringLiteral("saves"), QStringLiteral("portable"),
+                                      QStringLiteral("portable.txt"), QStringLiteral("userdata"),
+                                      QStringLiteral("mods"), QStringLiteral("mod_config"),
+                                      QStringLiteral("mods.json")};
+    QStringList files;
+    for (const QString &relative : relativeFiles(installDirectory)) {
+        if (hasList ? !packaged.contains(relative)
+                    : fallback.contains(relative.section(QLatin1Char('/'), 0, 0)))
+            files.append(relative);
+    }
+    return files;
+}
+
+bool LauncherDownloadManager::replaceInstallation(const QString &projectId, const QString &newDirectory,
+                                                  const QString &destination,
+                                                  const QString &executableRelative, QString *error)
+{
+    const QString root = launcherRoot();
+    if (root.isEmpty() || QFileInfo(destination).absolutePath() != root) {
+        *error = QStringLiteral("The launcher folder isn't where it should be.");
+        return false;
+    }
+    const QString previous = QDir(root).filePath(QLatin1Char('.') + projectId + kPreviousPrefix
+                                                 + QUuid::createUuid().toString(QUuid::WithoutBraces));
+    // 1. The installed version steps aside (one rename, so it stays whole).
+    if (!QDir().rename(destination, previous)) {
+        *error = QStringLiteral("Couldn't move the installed version aside, so nothing was changed.");
+        return false;
+    }
+    auto rollBack = [&]() {
+        QDir(destination).removeRecursively();
+        QDir().rename(previous, destination);
+    };
+    // 2. The new version takes its place.
+    if (!QDir().rename(newDirectory, destination)) {
+        rollBack();
+        *error = QStringLiteral("Couldn't put the new version in place; the previous version was kept.");
+        return false;
+    }
+    const QFileInfo executable(QDir(destination).filePath(executableRelative));
+    if (!executable.isFile() || executable.isSymLink()
+        || !executable.canonicalFilePath().startsWith(destination + QDir::separator())) {
+        rollBack();
+        *error = QStringLiteral("The new version's launcher failed its final check; the previous version was kept.");
+        return false;
+    }
+    // 3. The player's files move across. If the new package ships a file of
+    // the same name, the new one wins and the old one is kept aside.
+    for (const QString &relative : playerFiles(previous)) {
+        const QString source = QDir(previous).filePath(relative);
+        const QString target = QDir(destination).filePath(relative);
+        const QString moveTo = QFileInfo::exists(target)
+            ? QDir(keptFilesDirectory(projectId)).filePath(relative) : target;
+        if (!moveReplacing(source, moveTo)) {
+            rollBack();
+            *error = QStringLiteral("Couldn't carry your saves over to the new version; the previous version was kept.");
+            return false;
+        }
+    }
+    // 4. Only now is the old version removed.
+    if (!QDir(previous).removeRecursively())
+        qCWarning(lcLauncher) << "Could not remove the previous version of" << projectId
+                              << "; it is removed at the next start.";
+    return true;
+}
+
+int LauncherDownloadManager::recoverInterruptedUpdates()
+{
+    const QString root = launcherRoot();
+    if (root.isEmpty() || !m_activeInstallProjects.isEmpty())
+        return 0;
+    int recovered = 0;
+    const QFileInfoList entries = QDir(root).entryInfoList(QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot);
+    for (const QFileInfo &entry : entries) {
+        const QString name = entry.fileName();
+        const int at = name.indexOf(kPreviousPrefix);
+        if (!name.startsWith(QLatin1Char('.')) || at <= 1 || entry.isSymLink())
+            continue;
+        const QString projectId = name.mid(1, at - 1);
+        if (!isValidProjectId(projectId))
+            continue;
+        const QString destination = QDir(root).filePath(projectId);
+        if (!QFileInfo::exists(destination)) {
+            // Interrupted before the new version was in place: put the old back.
+            if (QDir().rename(entry.filePath(), destination)) {
+                qCInfo(lcLauncher) << "Restored" << projectId << "after an interrupted update.";
+                ++recovered;
+            }
+            continue;
+        }
+        // The new version is in place: finish moving the player's files.
+        for (const QString &relative : playerFiles(entry.filePath())) {
+            const QString target = QDir(destination).filePath(relative);
+            moveReplacing(QDir(entry.filePath()).filePath(relative),
+                          QFileInfo::exists(target) ? QDir(keptFilesDirectory(projectId)).filePath(relative) : target);
+        }
+        QDir(entry.filePath()).removeRecursively();
+        qCInfo(lcLauncher) << "Finished an interrupted update of" << projectId;
+        ++recovered;
+    }
+    return recovered;
+}
+
 QString LauncherDownloadManager::keptFilesDirectory(const QString &projectId) const
 {
     if (!m_platformManager || !isValidProjectId(projectId))
@@ -726,30 +958,8 @@ int LauncherDownloadManager::setAsideUserFiles(const QString &projectId, const Q
     const QString keepRoot = keptFilesDirectory(projectId);
     if (keepRoot.isEmpty())
         return -1;
-
-    // Installs made before the file list existed: keep the usual places
-    // launchers write to.
-    QSet<QString> packaged;
-    bool hasList = false;
-    QFile list(QDir(installDirectory).filePath(QStringLiteral(".recompstation-files")));
-    if (list.open(QIODevice::ReadOnly)) {
-        hasList = true;
-        for (const QByteArray &line : list.readAll().split('\n')) {
-            if (!line.isEmpty())
-                packaged.insert(QString::fromUtf8(line));
-        }
-    }
-    static const QStringList fallback{QStringLiteral("saves"), QStringLiteral("portable"),
-                                      QStringLiteral("portable.txt"), QStringLiteral("userdata"),
-                                      QStringLiteral("mods"), QStringLiteral("mod_config"),
-                                      QStringLiteral("mods.json")};
-
     int moved = 0;
-    for (const QString &relative : relativeFiles(installDirectory)) {
-        const bool players = hasList ? !packaged.contains(relative)
-                                     : fallback.contains(relative.section(QLatin1Char('/'), 0, 0));
-        if (!players)
-            continue;
+    for (const QString &relative : playerFiles(installDirectory)) {
         if (!moveReplacing(QDir(installDirectory).filePath(relative), QDir(keepRoot).filePath(relative)))
             return -1;
         ++moved;

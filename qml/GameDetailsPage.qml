@@ -174,6 +174,11 @@ Popup {
         ? releaseState.assets : []
     property var selectedAsset: compatibleAssets.length > 0
         ? compatibleAssets[0] : null
+    // The installed version ("" for installs from before versions were
+    // recorded) and whether the checked release is newer.
+    readonly property string installedVersion: installedProject !== null ? (installedProject.version || "") : ""
+    readonly property bool updateAvailable: installedProject !== null && !!releaseInfo
+        && compatibleAssets.length > 0 && String(releaseInfo.tagName || "") !== installedVersion
     property string selectedAssetName: selectedAsset && selectedAsset.name
         ? String(selectedAsset.name) : "Not available"
     property var downloadState: selectedProject && selectedAsset
@@ -830,7 +835,7 @@ Popup {
                     Button {
                         id: detailsPlayButton
                         visible: detailsActions.installed
-                        enabled: !detailsActions.running
+                        enabled: !detailsActions.running && !detailsActions.busy
                         text: detailsActions.running ? "Running…" : "Play"
                         icon.source: "qrc:/icons/play.svg"
                         icon.width: 18
@@ -892,7 +897,8 @@ Popup {
                             gameDetailsPopup.installPromptVisible = false
                             const asset = gameDetailsPopup.selectedAsset
                             if (asset)
-                                window.startAssetDownload(gameDetailsPopup.selectedProject, asset)
+                                window.startAssetDownload(gameDetailsPopup.selectedProject, asset,
+                                    { releaseTag: String(gameDetailsPopup.releaseInfo.tagName || "") })
                         }
                     }
                     Button {
@@ -974,17 +980,27 @@ Popup {
                         Layout.minimumWidth: 110
                         onClicked: window.checkProjectRelease(gameDetailsPopup.selectedProject)
                     }
-                    // Installed: secondary actions.
+                    // Installed: check for a newer release, or update to it. An
+                    // update swaps versions safely and keeps saves; not while running.
                     Button {
-                        visible: detailsActions.installed
-                        enabled: !gameDetailsPopup.releaseState.loading
+                        visible: detailsActions.installed && !detailsActions.busy
+                        enabled: !gameDetailsPopup.releaseState.loading && !detailsActions.running
                             && !(gameDetailsPopup.selectedProject
                                  && window.pendingReleaseRequestsForProject(gameDetailsPopup.selectedProject.id))
-                        text: gameDetailsPopup.releaseState.loading ? "Checking…" : "Check for updates"
+                        text: gameDetailsPopup.releaseState.loading ? "Checking…"
+                            : gameDetailsPopup.updateAvailable ? "Update to " + gameDetailsPopup.releaseTag
+                            : "Check for updates"
+                        highlighted: gameDetailsPopup.updateAvailable
                         implicitHeight: 46
                         leftPadding: 18
                         rightPadding: 18
-                        onClicked: window.checkProjectRelease(gameDetailsPopup.selectedProject)
+                        onClicked: {
+                            if (gameDetailsPopup.updateAvailable && gameDetailsPopup.selectedAsset)
+                                window.startAssetDownload(gameDetailsPopup.selectedProject, gameDetailsPopup.selectedAsset,
+                                    { releaseTag: String(gameDetailsPopup.releaseInfo.tagName || ""), replace: true })
+                            else
+                                window.checkProjectRelease(gameDetailsPopup.selectedProject)
+                        }
                     }
                     Button {
                         id: detailsMoreButton
@@ -1285,11 +1301,20 @@ Popup {
                     text: errorText.length > 0 ? errorText
                         : !gameDetailsPopup.selectedProject ? ""
                         : gameDetailsPopup.installedProject !== null
-                            ? (gameDetailsPopup.releaseInfo && !detailsLaunchStatus.visible
-                                ? "Latest release " + gameDetailsPopup.releaseTag + "  ·  Linux / " + projectCatalog.currentArchitecture
+                            ? (gameDetailsPopup.updateAvailable
+                                ? "Update available: " + gameDetailsPopup.releaseTag
+                                    + (gameDetailsPopup.installedVersion.length > 0
+                                        ? " (you have " + gameDetailsPopup.installedVersion + ")" : "")
+                                    + ". Your saves are kept."
+                                : gameDetailsPopup.releaseInfo && !detailsLaunchStatus.visible
+                                    ? (gameDetailsPopup.compatibleAssets.length === 0
+                                        ? projectCatalog.explainNoCompatibleAsset(gameDetailsPopup.selectedProject.id,
+                                                                                  gameDetailsPopup.releaseInfo.assets || [])
+                                        : "Up to date: " + gameDetailsPopup.releaseTag)
                                 : "")
                         : gameDetailsPopup.releaseInfo && gameDetailsPopup.compatibleAssets.length === 0
-                            ? "No compatible Linux launcher package is available for " + projectCatalog.currentArchitecture + "."
+                            ? projectCatalog.explainNoCompatibleAsset(gameDetailsPopup.selectedProject.id,
+                                                                      gameDetailsPopup.releaseInfo.assets || [])
                         : gameDetailsPopup.releaseInfo
                             ? "Version " + gameDetailsPopup.releaseTag + "  ·  Linux / " + projectCatalog.currentArchitecture
                         : ""
@@ -1649,6 +1674,26 @@ Popup {
                                 visible: !!(gameDetailsPopup.selectedProject && gameDetailsPopup.selectedProject.romRequirements)
                                 text: gameDetailsPopup.selectedProject ? (gameDetailsPopup.selectedProject.romRequirements || "") : ""
                                 color: theme.warning
+                                font.pixelSize: 13 * theme.fontScale
+                                wrapMode: Text.Wrap
+                            }
+                            Label {
+                                visible: gameDetailsPopup.installedProject !== null
+                                text: "Installed"
+                                color: theme.textMuted
+                                font.pixelSize: 13 * theme.fontScale
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: gameDetailsPopup.installedProject !== null
+                                text: gameDetailsPopup.installedProject === null ? ""
+                                    : (gameDetailsPopup.installedVersion.length > 0
+                                        ? gameDetailsPopup.installedVersion : "Version not recorded (installed before versions were tracked)")
+                                      + (gameDetailsPopup.installedVersion.length === 0 ? ""
+                                        : gameDetailsPopup.installedProject.checksumVerified
+                                            ? "  ·  matched the project's published checksum"
+                                            : "  ·  the project published no checksum")
+                                color: theme.textSecondary
                                 font.pixelSize: 13 * theme.fontScale
                                 wrapMode: Text.Wrap
                             }

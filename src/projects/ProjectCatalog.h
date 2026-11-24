@@ -24,6 +24,11 @@ public:
     Q_INVOKABLE QVariantMap project(const QString &projectId) const;
     Q_INVOKABLE QVariantList projectsForGame(const QString &metadataTitle,
                                               const QString &platform) const;
+    // Why a release has nothing to install here, in a sentence for Game
+    // Details: what the release offers instead (Windows, macOS, ARM, a
+    // Flatpak, source only) and for which system it was checked.
+    Q_INVOKABLE QString explainNoCompatibleAsset(const QString &projectId,
+                                                 const QVariantList &assets) const;
     Q_INVOKABLE QVariantList compatibleAssets(const QString &projectId,
                                                const QVariantList &assets) const;
     Q_INVOKABLE bool isAssetCompatible(const QString &projectId,

@@ -111,12 +111,12 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [ ] Projects whose only Linux release is a Flatpak, such as Unleashed Recompiled (Sonic Unleashed, Xbox 360). Players shouldn't have to install Flatpak themselves for one or two games. To work out: what a `.flatpak` bundle needs to run (the Flatpak runtime it names, OSTree contents), whether its program can be unpacked and run against the system's libraries, or whether RecompStation should use Flatpak where it's installed (`flatpak install --user` of the bundle) and explain the one-time setup where it isn't. Which projects are Flatpak-only today.
 
 ### 3. Launcher lifecycle and integrity
-- [ ] Track installed launcher versions and show them in Game Details.
-- [ ] Update flow with rollback-safe replacement.
+- [x] Track installed launcher versions and show them in Game Details: each install records its release tag, asset, checksum result and install time in `.recompstation-release`; Game Details shows "Installed: v1.2.0 · matched the project's published checksum". Installs from before this show "Version not recorded" (branch `feature/launcher-lifecycle`, needs validation).
+- [x] Update flow with rollback-safe replacement: when the latest release differs from the installed one, Game Details offers "Update to <tag>" (not while the game runs). The new version is unpacked beside the old, the old steps aside into a hidden `.<id>.previous-*` folder, the new one moves in and is checked, then the player's files (saves, settings, portable mode) move across; if a package file has the same name, the new one wins and the player's copy goes to `launcher-data/<id>`. Any failure puts the old version back. At startup, an update cut short is finished or undone (branch `feature/launcher-lifecycle`, needs validation).
 - [x] Leftover downloads (partial files, extraction folders, archives never installed) are cleared from the staging area at startup; links are removed as links and unknown entries left alone (branch `feature/quick-tasks`, needs validation).
-- [ ] Clearer release and architecture explanations when no compatible asset exists.
-- [ ] Verify published SHA-256 checksums or signatures when a project provides them; treat invalid data as a failure, missing data as unverified.
-- [ ] Tests for update failure, recovery and version state.
+- [x] Clearer release and architecture explanations when no compatible asset exists: Game Details says what the release offers instead (Windows/macOS/Android only, Linux for ARM only, Linux only as a Flatpak, no downloads, or files RecompStation doesn't recognise) (branch `feature/launcher-lifecycle`, needs validation).
+- [x] Verify published SHA-256 checksums: GitHub publishes a `digest` for each release asset; downloads are hashed as they arrive and a mismatch is refused and not kept. Releases without a digest install as "unverified", shown in Game Details. Signatures (GPG/minisign) are not checked: no catalog project publishes them today (branch `feature/launcher-lifecycle`, needs validation).
+- [x] Tests for update failure, recovery and version state: update keeping saves, broken and incomplete packages leaving the old version intact, refusing folders RecompStation didn't make, recovery in both interrupted states, digest parsing, hashing and the no-package explanations.
 
 ### 4. Metadata follow-ups
 - [x] Use fewer TheGamesDB requests: the platform list is reused for 30 days, screenshots are looked up 20 games per request and games without any are not asked again for 30 days, automatic lookups pause at 50 or fewer requests left, and a 403 pauses them for 6 hours (validated 2026-11-24).
@@ -158,12 +158,12 @@ Developed and tested on KDE Plasma (Wayland). Before a public release, check the
 - [ ] High-DPI and fractional scaling, including the interface scale's Auto mode under X11.
 - [ ] Controller hot-plug and input focus while a launcher runs; drag-and-drop from each file manager (Thunar, Nemo, Caja, Nautilus); opening folders with `xdg-open`.
 
-### 8. Windows support — open question
-Not decided. Points to discuss before any work starts:
-- Most recompilation projects publish Windows builds, so the catalog would need Windows asset matching (`.zip`/`.exe`) alongside Linux.
-- Qt, QML and SDL2 are portable; Linux-specific parts are paths (XDG folders), launching (AppImage, `./run.sh`), file permissions (the owner-only key file), `xdg-open`, and the build scripts.
-- Packaging (installer or portable ZIP), code signing and SmartScreen warnings, and a CI build matrix.
-- Testing cost: every feature would need checking on both systems.
+### 8. Windows support — decided, after Linux packaging
+Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once the AppImage and portable zip work well. Work to plan when it starts:
+- Builds: a GitHub Actions `windows-latest` runner with MSVC and Qt from aqtinstall, packaged with `windeployqt`. No Windows PC is needed to build; a Windows VM is useful for testing. Cross-compiling from Linux (MinGW/MXE) is possible but harder to keep working with Qt 6 and SDL2.
+- Code: the catalog needs Windows asset matching (`.zip`/`.exe`) alongside Linux; Linux-specific parts need Windows versions: paths (XDG folders → `%LOCALAPPDATA%`), launching (AppImage, `./run.sh`), file permissions (the owner-only key file), `xdg-open`, and the build scripts.
+- Release: a portable zip first, an installer later; unsigned builds trigger SmartScreen warnings until code signing is set up.
+- Testing cost: every feature needs checking on both systems.
 
 ### 9. Application updates — deferred
 RecompStation does not publish GitHub releases yet. When it does: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.

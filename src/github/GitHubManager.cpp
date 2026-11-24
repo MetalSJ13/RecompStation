@@ -268,7 +268,8 @@ QVariantMap GitHubManager::releaseToVariantMap(const GitHubRelease &release)
             {QStringLiteral("name"), asset.name},
             {QStringLiteral("downloadUrl"), asset.downloadUrl},
             {QStringLiteral("contentType"), asset.contentType},
-            {QStringLiteral("size"), asset.size}
+            {QStringLiteral("size"), asset.size},
+            {QStringLiteral("sha256"), asset.sha256}
         });
     }
 
@@ -366,6 +367,11 @@ bool GitHubManager::parseLatestReleaseResponse(
             assetObject.value(QStringLiteral("content_type")).toString().trimmed();
         asset.size = static_cast<qint64>(
             assetObject.value(QStringLiteral("size")).toDouble());
+        const QString digest = assetObject.value(QStringLiteral("digest")).toString().trimmed().toLower();
+        static const QRegularExpression sha256Digest(QStringLiteral("^sha256:([0-9a-f]{64})$"));
+        const QRegularExpressionMatch match = sha256Digest.match(digest);
+        if (match.hasMatch())
+            asset.sha256 = match.captured(1);
 
         if (asset.name.isEmpty() || !isHttpsUrl(asset.downloadUrl))
             continue;

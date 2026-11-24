@@ -297,6 +297,60 @@ QVariantList ProjectCatalog::projectsForGame(const QString &metadataTitle,
     return matches;
 }
 
+QString ProjectCatalog::explainNoCompatibleAsset(const QString &projectId,
+                                                const QVariantList &assets) const
+{
+    const QString architecture = currentArchitecture();
+    const QString system = architecture == QStringLiteral("x86_64")
+        ? QStringLiteral("64-bit Linux (x86_64)")
+        : QStringLiteral("Linux on %1").arg(architecture);
+    const QVariantMap rules = project(projectId).value(QStringLiteral("architectures")).toMap()
+                                  .value(normalizeArchitecture(architecture)).toMap();
+    if (rules.isEmpty())
+        return QStringLiteral("This project has no package for %1 in RecompStation's catalog.").arg(system);
+    if (assets.isEmpty())
+        return QStringLiteral("The latest release has no downloads attached; the project may only publish its source code.");
+
+    // What the release offers instead, from the file names.
+    bool windows = false, mac = false, linuxArm = false, linuxOther = false, flatpak = false, android = false;
+    static const QRegularExpression windowsName(QStringLiteral("(win(dows)?(32|64)?[^a-z]|\\.exe$|\\.msi$|msvc)"),
+                                                QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression macName(QStringLiteral("(mac|darwin|osx|\\.dmg$|apple)"),
+                                            QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression armName(QStringLiteral("(arm64|aarch64|armhf)"),
+                                            QRegularExpression::CaseInsensitiveOption);
+    for (const QVariant &entry : assets) {
+        const QString name = entry.toMap().value(QStringLiteral("name")).toString();
+        const QString lower = name.toLower();
+        if (lower.endsWith(QStringLiteral(".flatpak")) || lower.contains(QStringLiteral("flatpak")))
+            flatpak = true;
+        else if (lower.endsWith(QStringLiteral(".apk")) || lower.contains(QStringLiteral("android")))
+            android = true;
+        // macOS first: "darwin" contains "win".
+        else if (macName.match(name).hasMatch())
+            mac = true;
+        else if (windowsName.match(name + QLatin1Char(' ')).hasMatch())
+            windows = true;
+        else if (lower.contains(QStringLiteral("linux")) || lower.endsWith(QStringLiteral(".appimage")))
+            (armName.match(name).hasMatch() ? linuxArm : linuxOther) = true;
+    }
+    if (flatpak)
+        return QStringLiteral("The latest release offers Linux only as a Flatpak, which RecompStation can't install yet.");
+    if (linuxArm && !linuxOther)
+        return QStringLiteral("The latest release has a Linux package only for ARM computers, not for %1.").arg(system);
+    if (linuxOther)
+        return QStringLiteral("The latest release's Linux package isn't in a form RecompStation recognises; "
+                              "the project may have renamed its files.");
+    QStringList offered;
+    if (windows) offered << QStringLiteral("Windows");
+    if (mac) offered << QStringLiteral("macOS");
+    if (android) offered << QStringLiteral("Android");
+    if (!offered.isEmpty())
+        return QStringLiteral("The latest release has no Linux package; it offers %1 only.")
+            .arg(offered.join(QStringLiteral(" and ")));
+    return QStringLiteral("The latest release has no package for %1.").arg(system);
+}
+
 QVariantList ProjectCatalog::compatibleAssets(const QString &projectId,
                                                const QVariantList &assets) const
 {

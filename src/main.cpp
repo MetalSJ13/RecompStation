@@ -376,7 +376,9 @@ int main(int argc, char *argv[])
     });
     GitHubManager githubManager;
     LauncherDownloadManager launcherDownloadManager(&platformManager);
-    // Nothing is downloading yet: clear what an interrupted session left.
+    // Nothing is downloading yet: finish or undo an update that was cut
+    // short, then clear what an interrupted session left.
+    launcherDownloadManager.recoverInterruptedUpdates();
     launcherDownloadManager.cleanUpStaging();
     GameLaunchManager gameLaunchManager(&launcherDownloadManager);
     gameLaunchManager.setProjectCatalog(&projectCatalog);

@@ -41,13 +41,15 @@ void GitHubManagerTest::parsesLatestReleaseAndAssets()
                 "name": "n64-recomp-linux-x64.tar.gz",
                 "browser_download_url": "https://github.com/ExampleOrg/n64-recomp/releases/download/v1.2.0/n64-recomp-linux-x64.tar.gz",
                 "content_type": "application/gzip",
-                "size": 123456
+                "size": 123456,
+                "digest": "sha256:9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"
             },
             {
                 "name": "checksums.txt",
                 "browser_download_url": "https://github.com/ExampleOrg/n64-recomp/releases/download/v1.2.0/checksums.txt",
                 "content_type": "text/plain",
-                "size": 128
+                "size": 128,
+                "digest": "md5:abc"
             }
         ]
     })";
@@ -65,6 +67,14 @@ void GitHubManagerTest::parsesLatestReleaseAndAssets()
     QCOMPARE(release.assets.first().contentType,
              QStringLiteral("application/gzip"));
     QCOMPARE(release.assets.first().size, qint64(123456));
+    // GitHub's digest becomes lowercase hex; other or malformed digests are
+    // treated as "no checksum published".
+    QCOMPARE(release.assets.first().sha256,
+             QStringLiteral("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"));
+    QVERIFY(release.assets.at(1).sha256.isEmpty());
+    QCOMPARE(GitHubManager::releaseToVariantMap(release).value(QStringLiteral("assets")).toList()
+                 .first().toMap().value(QStringLiteral("sha256")).toString(),
+             release.assets.first().sha256);
     QVERIFY(release.assets.first().downloadUrl.startsWith(
         QStringLiteral("https://")));
 }

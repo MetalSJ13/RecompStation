@@ -20,6 +20,7 @@ private slots:
     void selectsOnlyPublishedLinuxPackagesForNewProjects();
     void selectsOnlyCompatibleLinuxAssets();
     void normalizesArchitectures();
+    void explainsMissingCompatibleAssets();
     void filtersReleaseAssetsForCurrentArchitecture();
     void parsesLaunchRecipes();
     void bundledLaunchRecipesAreComplete();
@@ -421,6 +422,32 @@ void ProjectCatalogTest::filtersReleaseAssetsForCurrentArchitecture()
     } else {
         QVERIFY(compatible.isEmpty());
     }
+}
+
+void ProjectCatalogTest::explainsMissingCompatibleAssets()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.isLoaded());
+    if (catalog.currentArchitecture() != QStringLiteral("x86_64"))
+        QSKIP("The bundled catalog's packages are described for x86_64.");
+    const QString project = QStringLiteral("banjo-kazooie-recompiled");
+    auto names = [](const QStringList &list) {
+        QVariantList assets;
+        for (const QString &name : list)
+            assets.append(QVariantMap{{"name", name}, {"downloadUrl", "https://example.test/" + name}});
+        return assets;
+    };
+    auto explain = [&](const QStringList &list) { return catalog.explainNoCompatibleAsset(project, names(list)); };
+
+    QVERIFY(explain({}).contains(QStringLiteral("no downloads")));
+    QVERIFY(explain({"Game-Windows-x64.zip", "Game-macOS.dmg"}).contains(QStringLiteral("Windows and macOS only")));
+    QVERIFY(explain({"Game-darwin-universal.zip"}).contains(QStringLiteral("macOS only")));
+    QVERIFY(!explain({"Game-darwin-universal.zip"}).contains(QStringLiteral("Windows")));
+    QVERIFY(explain({"Game-Linux-aarch64.tar.gz"}).contains(QStringLiteral("only for ARM")));
+    QVERIFY(explain({"Game.flatpak", "Game-Windows.zip"}).contains(QStringLiteral("Flatpak")));
+    QVERIFY(explain({"checksums.txt"}).contains(QStringLiteral("x86_64")));
+    QVERIFY(catalog.explainNoCompatibleAsset(QStringLiteral("not-a-project"), names({"a.zip"}))
+                .contains(QStringLiteral("catalog")));
 }
 
 void ProjectCatalogTest::normalizesArchitectures()

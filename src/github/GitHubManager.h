@@ -25,6 +25,9 @@ struct GitHubReleaseAsset
     QString downloadUrl;
     QString contentType;
     qint64 size = 0;
+    // Lowercase hex SHA-256 from the asset's "digest" ("sha256:…"), which
+    // GitHub publishes for release assets; empty when absent.
+    QString sha256;
 };
 
 struct GitHubRelease

@@ -2057,14 +2057,17 @@ ApplicationWindow {
         gameLaunchManager.launchGame(projectId, game && game.path ? game.path : "")
     }
 
-    function startAssetDownload(project, asset) {
+    // options: { releaseTag, replace } — replace updates an installed launcher.
+    function startAssetDownload(project, asset, options) {
         const key = project.id + "|" + asset.name
+        const opts = options || {}
         let states = Object.assign({}, downloadStates)
-        states[key] = { loading: true, completed: false, error: "", bytesReceived: 0, bytesTotal: asset.size, filePath: "" }
+        states[key] = { loading: true, completed: false, error: "", bytesReceived: 0, bytesTotal: asset.size, filePath: "",
+                        releaseTag: opts.releaseTag || "", replace: opts.replace === true }
         downloadStates = states
 
         const requestId = launcherDownloadManager.downloadAsset(
-            project.id, asset.name, asset.downloadUrl, asset.size)
+            project.id, asset.name, asset.downloadUrl, asset.size, asset.sha256 || "")
         let pending = Object.assign({}, pendingDownloadRequests)
         pending[requestId] = key
         pendingDownloadRequests = pending
@@ -2094,7 +2097,8 @@ ApplicationWindow {
         downloadStates = states
 
         const requestId = launcherDownloadManager.installDownloadedAsset(
-            projectId, assetName, rules.packageFormat, rules.executablePath)
+            projectId, assetName, rules.packageFormat, rules.executablePath,
+            states[key].releaseTag || "", states[key].replace === true)
         let pending = Object.assign({}, pendingInstallRequests)
         pending[requestId] = key
         pendingInstallRequests = pending

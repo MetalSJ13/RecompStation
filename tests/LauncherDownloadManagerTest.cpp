@@ -4,6 +4,7 @@
 #include "core/PlatformManager.h"
 
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QSignalSpy>
@@ -25,6 +26,11 @@ private slots:
     void installsAndUninstallsManagedLauncher();
     void keepsSavesMadeInsideTheInstallAcrossReinstall();
     void cleansUpLeftoverDownloadsAtStartup();
+    void recordsReleaseAndUpdatesKeepingSaves();
+    void failedUpdateKeepsThePreviousVersion();
+    void refusesToReplaceFoldersItDidNotMake();
+    void recoversInterruptedUpdates();
+    void hashesFiles();
     void installsLauncherFromNestedArchiveDirectory();
     void installsZipLauncherWithCompanionFiles();
     void installsStandaloneAppImage();
@@ -368,6 +374,217 @@ void LauncherDownloadManagerTest::keepsSavesMadeInsideTheInstallAcrossReinstall(
     QVERIFY(QFileInfo::exists(QDir(install).filePath(QStringLiteral("portable.txt"))));
     QCOMPARE(readText(QDir(install).filePath(QStringLiteral("config.json"))), QByteArray("{\"v\":1}"));
     QVERIFY(!QFileInfo::exists(kept));
+}
+
+namespace {
+QStringList previousFolders(const QString &launchers)
+{
+    return QDir(launchers).entryList(QStringList{QStringLiteral(".*.previous-*")},
+                                     QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot);
+}
+}
+
+void LauncherDownloadManagerTest::recordsReleaseAndUpdatesKeepingSaves()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("update-sample-project");
+    const QString assetName = QStringLiteral("Update-Linux-X64.tar.gz");
+    const QString staging = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(staging));
+    const QString archivePath = QDir(staging).filePath(assetName);
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completed(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failed(&manager, &LauncherDownloadManager::installationFailed);
+    QVERIFY(writeLauncherPackage(archivePath, {{QStringLiteral("config.json"), QByteArray("{\"v\":1}")},
+                                               {QStringLiteral("old-only.dat"), QByteArray("old")}}));
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"),
+                                   QStringLiteral("SampleLauncher"), QStringLiteral("v1.0.0"));
+    QTRY_COMPARE_WITH_TIMEOUT(completed.count(), 1, 10000);
+
+    auto entry = [&]() {
+        for (const QVariant &value : manager.installedLaunchers()) {
+            if (value.toMap().value(QStringLiteral("projectId")).toString() == projectId)
+                return value.toMap();
+        }
+        return QVariantMap();
+    };
+    QCOMPARE(entry().value(QStringLiteral("version")).toString(), QStringLiteral("v1.0.0"));
+    QCOMPARE(entry().value(QStringLiteral("assetName")).toString(), assetName);
+    // Installed from a file the manager didn't download: nothing to verify.
+    QCOMPARE(entry().value(QStringLiteral("checksumVerified")).toBool(), false);
+
+    const QString install = QDir(platformManager.dataDirectory()).filePath(QStringLiteral("launchers/") + projectId);
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("saves/slot1.sav")), QByteArray("save one")));
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("portable.txt")), QByteArray()));
+    // The player made a file the new version now ships: the new one wins and
+    // the player's copy is kept aside.
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("shaders.cache")), QByteArray("player cache")));
+
+    // The update: unpacked beside the install, swapped in, saves carried over.
+    QVERIFY(writeLauncherPackage(archivePath, {{QStringLiteral("config.json"), QByteArray("{\"v\":2}")},
+                                               {QStringLiteral("shaders.cache"), QByteArray("shipped")}}));
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"),
+                                   QStringLiteral("SampleLauncher"), QStringLiteral("v2.0.0"), true);
+    QTRY_COMPARE_WITH_TIMEOUT(completed.count(), 2, 10000);
+    QCOMPARE(failed.count(), 0);
+
+    QCOMPARE(entry().value(QStringLiteral("version")).toString(), QStringLiteral("v2.0.0"));
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("config.json"))), QByteArray("{\"v\":2}"));
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("saves/slot1.sav"))), QByteArray("save one"));
+    QVERIFY(QFileInfo::exists(QDir(install).filePath(QStringLiteral("portable.txt"))));
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("shaders.cache"))), QByteArray("shipped"));
+    QCOMPARE(readText(QDir(manager.keptFilesDirectory(projectId)).filePath(QStringLiteral("shaders.cache"))),
+             QByteArray("player cache"));
+    // Files only the old package had are gone with it.
+    QVERIFY(!QFileInfo::exists(QDir(install).filePath(QStringLiteral("old-only.dat"))));
+    QVERIFY(previousFolders(QFileInfo(install).absolutePath()).isEmpty());
+    QVERIFY(!QFileInfo::exists(archivePath));
+
+    // The saves still count as the player's: uninstall sets them aside.
+    QVERIFY(manager.uninstallLauncher(projectId));
+    QCOMPARE(readText(QDir(manager.keptFilesDirectory(projectId)).filePath(QStringLiteral("saves/slot1.sav"))),
+             QByteArray("save one"));
+}
+
+void LauncherDownloadManagerTest::failedUpdateKeepsThePreviousVersion()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("failed-update-project");
+    const QString assetName = QStringLiteral("Failed-Linux-X64.tar.gz");
+    const QString staging = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(staging));
+    const QString archivePath = QDir(staging).filePath(assetName);
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completed(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failed(&manager, &LauncherDownloadManager::installationFailed);
+    QVERIFY(writeLauncherPackage(archivePath, {{QStringLiteral("config.json"), QByteArray("v1")}}));
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"),
+                                   QStringLiteral("SampleLauncher"), QStringLiteral("v1"));
+    QTRY_COMPARE_WITH_TIMEOUT(completed.count(), 1, 10000);
+    const QString install = QDir(platformManager.dataDirectory()).filePath(QStringLiteral("launchers/") + projectId);
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("saves/slot1.sav")), QByteArray("save one")));
+
+    // A broken download: not an archive at all.
+    QVERIFY(writeText(archivePath, QByteArray("this is not a tar.gz")));
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"),
+                                   QStringLiteral("SampleLauncher"), QStringLiteral("v2"), true);
+    QTRY_COMPARE_WITH_TIMEOUT(failed.count(), 1, 10000);
+
+    // A package that lacks the launcher the catalog names.
+    struct archive *writer = archive_write_new();
+    QVERIFY(archive_write_add_filter_gzip(writer) == ARCHIVE_OK);
+    QVERIFY(archive_write_set_format_pax_restricted(writer) == ARCHIVE_OK);
+    QVERIFY(archive_write_open_filename(writer, QFile::encodeName(archivePath).constData()) == ARCHIVE_OK);
+    struct archive_entry *item = archive_entry_new();
+    archive_entry_set_pathname(item, "readme.txt");
+    archive_entry_set_filetype(item, AE_IFREG);
+    archive_entry_set_perm(item, 0644);
+    archive_entry_set_size(item, 2);
+    QVERIFY(archive_write_header(writer, item) == ARCHIVE_OK);
+    QCOMPARE(archive_write_data(writer, "hi", 2), la_ssize_t(2));
+    archive_entry_free(item);
+    QVERIFY(archive_write_close(writer) == ARCHIVE_OK);
+    archive_write_free(writer);
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"),
+                                   QStringLiteral("SampleLauncher"), QStringLiteral("v2"), true);
+    QTRY_COMPARE_WITH_TIMEOUT(failed.count(), 2, 10000);
+
+    QCOMPARE(completed.count(), 1);
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("config.json"))), QByteArray("v1"));
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("saves/slot1.sav"))), QByteArray("save one"));
+    QVERIFY(QFileInfo(QDir(install).filePath(QStringLiteral("SampleLauncher"))).isFile());
+    QVERIFY(previousFolders(QFileInfo(install).absolutePath()).isEmpty());
+    for (const QVariant &value : manager.installedLaunchers()) {
+        if (value.toMap().value(QStringLiteral("projectId")).toString() == projectId)
+            QCOMPARE(value.toMap().value(QStringLiteral("version")).toString(), QStringLiteral("v1"));
+    }
+}
+
+void LauncherDownloadManagerTest::refusesToReplaceFoldersItDidNotMake()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("unmanaged-project");
+    const QString assetName = QStringLiteral("Sample-Linux-X64.tar.gz");
+    const QString staging = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(staging));
+    const QString archivePath = QDir(staging).filePath(assetName);
+    // A folder RecompStation didn't make: never replaced, even when asked.
+    const QString install = QDir(platformManager.dataDirectory()).filePath(QStringLiteral("launchers/") + projectId);
+    QVERIFY(writeText(QDir(install).filePath(QStringLiteral("mine.txt")), QByteArray("mine")));
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy failed(&manager, &LauncherDownloadManager::installationFailed);
+    QVERIFY(writeLauncherPackage(archivePath, {}));
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("tar.gz"),
+                                   QStringLiteral("SampleLauncher"), QStringLiteral("v1"), true);
+    QTRY_COMPARE_WITH_TIMEOUT(failed.count(), 1, 10000);
+    QCOMPARE(readText(QDir(install).filePath(QStringLiteral("mine.txt"))), QByteArray("mine"));
+    QVERIFY(!QFileInfo::exists(QDir(install).filePath(QStringLiteral("SampleLauncher"))));
+}
+
+void LauncherDownloadManagerTest::recoversInterruptedUpdates()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+    const QString launchers = QDir(platformManager.dataDirectory()).filePath(QStringLiteral("launchers"));
+    QVERIFY(QDir().mkpath(launchers));
+
+    // Cut short after the old version stepped aside: it comes back.
+    const QString asideOnly = QDir(launchers).filePath(QStringLiteral(".alpha-project.previous-1111"));
+    QVERIFY(writeText(QDir(asideOnly).filePath(QStringLiteral("SampleLauncher")), QByteArray("old")));
+    QVERIFY(writeText(QDir(asideOnly).filePath(QStringLiteral(".recompstation-files")), QByteArray("SampleLauncher\n")));
+    QVERIFY(writeText(QDir(asideOnly).filePath(QStringLiteral("saves/a.sav")), QByteArray("alpha save")));
+
+    // Cut short after the new version was in place: saves finish moving.
+    const QString betaNew = QDir(launchers).filePath(QStringLiteral("beta-project"));
+    QVERIFY(writeText(QDir(betaNew).filePath(QStringLiteral("SampleLauncher")), QByteArray("new")));
+    const QString betaOld = QDir(launchers).filePath(QStringLiteral(".beta-project.previous-2222"));
+    QVERIFY(writeText(QDir(betaOld).filePath(QStringLiteral("SampleLauncher")), QByteArray("old")));
+    QVERIFY(writeText(QDir(betaOld).filePath(QStringLiteral(".recompstation-files")), QByteArray("SampleLauncher\n")));
+    QVERIFY(writeText(QDir(betaOld).filePath(QStringLiteral("saves/b.sav")), QByteArray("beta save")));
+
+    // Not ours: a hidden folder whose name isn't a project id.
+    const QString stray = QDir(launchers).filePath(QStringLiteral(".Not A Project.previous-3"));
+    QVERIFY(writeText(QDir(stray).filePath(QStringLiteral("x")), QByteArray("x")));
+
+    LauncherDownloadManager manager(&platformManager);
+    QCOMPARE(manager.recoverInterruptedUpdates(), 2);
+    const QString alpha = QDir(launchers).filePath(QStringLiteral("alpha-project"));
+    QCOMPARE(readText(QDir(alpha).filePath(QStringLiteral("SampleLauncher"))), QByteArray("old"));
+    QCOMPARE(readText(QDir(alpha).filePath(QStringLiteral("saves/a.sav"))), QByteArray("alpha save"));
+    QCOMPARE(readText(QDir(betaNew).filePath(QStringLiteral("SampleLauncher"))), QByteArray("new"));
+    QCOMPARE(readText(QDir(betaNew).filePath(QStringLiteral("saves/b.sav"))), QByteArray("beta save"));
+    QVERIFY(!QFileInfo::exists(asideOnly));
+    QVERIFY(!QFileInfo::exists(betaOld));
+    QVERIFY(QFileInfo::exists(stray));
+    QCOMPARE(manager.recoverInterruptedUpdates(), 0);
+}
+
+void LauncherDownloadManagerTest::hashesFiles()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString path = QDir(temporaryDirectory.path()).filePath(QStringLiteral("file"));
+    QVERIFY(writeText(path, QByteArray("test")));
+    QCOMPARE(LauncherDownloadManager::sha256OfFile(path),
+             QStringLiteral("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"));
+    QVERIFY(LauncherDownloadManager::sha256OfFile(path + QStringLiteral(".missing")).isEmpty());
 }
 
 void LauncherDownloadManagerTest::cleansUpLeftoverDownloadsAtStartup()
