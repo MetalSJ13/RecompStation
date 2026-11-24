@@ -107,18 +107,12 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [ ] Tests for update failure, recovery and version state.
 
 ### 4. Metadata follow-ups
+- [x] Use fewer TheGamesDB requests: the platform list is reused for 30 days, screenshots are looked up 20 games per request and games without any are not asked again for 30 days, automatic lookups pause at 50 or fewer requests left, and a 403 pauses them for 6 hours (validated 2026-11-24).
+- [x] Key policy: each user supplies their own TheGamesDB key; the app never ships one (TheGamesDB support, 2026-11-24).
+- [x] Tests for the platform list cache, request allowance and screenshot checks (2026-11-24).
 - [ ] Fix match: a Game Details action to search either provider and pick the right game.
-- [ ] TheGamesDB `Games/ByGameHash` (MD5, then CRC) for N64. On hold: a miss costs a request, and LaunchBox already matches standard ROM file names offline. Test its coverage on a few known-good ROMs first.
-- [x] Use fewer TheGamesDB requests (validated 2026-11-24):
-  - The platform list is saved to `metadata/thegamesdb-platforms.json` and reused for 30 days; the Settings **Test** button and a key change still ask TheGamesDB. Settings shows **Ready** until the key is used in a session.
-  - Screenshot lookups ask for 20 games per request, and games TheGamesDB has no screenshots for are not asked again for 30 days (Refresh all metadata asks again).
-  - The allowance each response reports is saved (`metadata/thegamesdb-allowance.ini`). At 50 or fewer requests left, library-wide matching and screenshot lookups pause; a search you type and **Find info** on one game still work.
-  - A 403 pauses automatic lookups for 6 hours, including across restarts.
 - [ ] Bounded retry and backoff for HTTP 429/5xx on metadata and artwork requests.
-- [x] Key policy, decided 2026-11-24 after TheGamesDB support replied: each user supplies their own key (Settings or `RECOMPSTATION_TGDB_API_KEY`). Allowances are counted per key, not per IP, so a key shipped with the app would be shared by every user; TheGamesDB recommends not including one in builds. Never commit or bundle a key.
-- [ ] When TheGamesDB launches device linking (a short code entered on their site instead of pasting a key; announced on their Discord), replace key entry in Settings and first-time setup with it.
-- [ ] Regression tests for match-confidence rules, monitoring duplicate events and cache behaviour.
-- [ ] Decide whether a shared TheGamesDB key could ever be shipped (licensing, rate limits, attribution) or whether user keys remain the only option.
+- [ ] Regression tests for match-confidence rules and monitoring duplicate events.
 
 ### 5. Build and test performance
 - [x] Shared `recompstation_core` static library: the app and every test link it, instead of each test recompiling the sources it uses (was 98 compilations of 29 files, now 29).
