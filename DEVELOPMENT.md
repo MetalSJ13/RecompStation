@@ -55,7 +55,7 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 - [x] Settings: LB/RB and Q/E switch sections; ◀ value ▶ rows with D-pad and keyboard; interface scale change and restart (2026-11-24).
 - [x] Metadata: Update catalog refreshes the catalog and its size; a TheGamesDB key added in the app tests successfully and shows the remaining request quota (2026-11-24).
 - [ ] Metadata: with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
-- [ ] Metadata request savings: after one start with the key, the next start shows **Ready** without a request (the count on your TheGamesDB API key page does not go up); **Test** shows **Connected** and the requests left; screenshots for several games arrive after one lookup; the allowance line shows the pause note when 50 or fewer requests are left.
+- [x] Metadata request savings (validated 2026-11-24): after one start with the key, the next start shows **Ready** without a request (the count on your TheGamesDB API key page does not go up); **Test** shows **Connected** and the requests left; screenshots for several games arrive after one lookup; the allowance line shows the pause note when 50 or fewer requests are left.
 - [x] Controller: a second connected controller takes over navigation when it is used (fixed on `fix/validation-round-1`; only the first controller used to be read), confirmed 2026-11-24.
 - [ ] Controller: a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
 - [x] First-time setup: the simplified first step (folder choice only), confirmed 2026-11-24.
@@ -109,13 +109,13 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 ### 4. Metadata follow-ups
 - [ ] Fix match: a Game Details action to search either provider and pick the right game.
 - [ ] TheGamesDB `Games/ByGameHash` (MD5, then CRC) for N64. On hold: a miss costs a request, and LaunchBox already matches standard ROM file names offline. Test its coverage on a few known-good ROMs first.
-- [x] Use fewer TheGamesDB requests (branch `metadata/request-savings`, needs validation):
+- [x] Use fewer TheGamesDB requests (validated 2026-11-24):
   - The platform list is saved to `metadata/thegamesdb-platforms.json` and reused for 30 days; the Settings **Test** button and a key change still ask TheGamesDB. Settings shows **Ready** until the key is used in a session.
   - Screenshot lookups ask for 20 games per request, and games TheGamesDB has no screenshots for are not asked again for 30 days (Refresh all metadata asks again).
   - The allowance each response reports is saved (`metadata/thegamesdb-allowance.ini`). At 50 or fewer requests left, library-wide matching and screenshot lookups pause; a search you type and **Find info** on one game still work.
   - A 403 pauses automatic lookups for 6 hours, including across restarts.
 - [ ] Bounded retry and backoff for HTTP 429/5xx on metadata and artwork requests.
-- [ ] Key policy: keep the user-supplied key (Settings or `RECOMPSTATION_TGDB_API_KEY`). A key built into release builds is only considered if TheGamesDB confirms an app key's allowance is counted per user IP and allows it in an open-source app; never commit a key to the repository.
+- [ ] Key policy (email sent to TheGamesDB support 2026-11-24; awaiting reply): keep the user-supplied key (Settings or `RECOMPSTATION_TGDB_API_KEY`). A key built into release builds is only considered if TheGamesDB confirms an app key's allowance is counted per user IP and allows it in an open-source app; never commit a key to the repository.
 - [ ] Regression tests for match-confidence rules, monitoring duplicate events and cache behaviour.
 - [ ] Decide whether a shared TheGamesDB key could ever be shipped (licensing, rate limits, attribution) or whether user keys remain the only option.
 
