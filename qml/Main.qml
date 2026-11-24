@@ -4309,6 +4309,7 @@ ApplicationWindow {
                                                         height: shelvesView.cardHeight
                                                         source: shelfCard.game ? shelfCard.game.artworkPath : ""
                                                         platform: shelfCard.game ? shelfCard.game.platform : ""
+                                                        placeholderTitle: shelfCard.game ? (shelfCard.game.metadataTitle || shelfCard.game.title) : ""
                                                         highlighted: shelfCard.isCurrent || shelfCardMouse.containsMouse
                                                         focused: shelfCard.isCurrent
                                                         hovered: shelfCardMouse.containsMouse

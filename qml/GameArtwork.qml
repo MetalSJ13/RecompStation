@@ -25,6 +25,10 @@ Item {
     // Inputs
     property string source: ""
     property string platform: ""
+    // Title printed on the placeholder cover. Leave empty where the title is
+    // already shown next to the cover; Shelves cards have no caption, so
+    // they set it.
+    property string placeholderTitle: ""
     property bool highlighted: false
     property bool reducedMotion: false
     property QtObject themeTokens: null
@@ -136,8 +140,8 @@ Item {
             visible: status === Image.Ready
         }
         // Placeholder cover at the frame's (the system's box) shape: the
-        // theme's dark surface with the RecompStation mark, faintly. The
-        // title and system are already shown around the cover.
+        // theme's dark surface with the RecompStation mark, faintly, and the
+        // title only where no caption shows it (placeholderTitle).
         Item {
             id: placeholder
             anchors.fill: parent
@@ -161,6 +165,21 @@ Item {
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 opacity: 0.22
+            }
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: Math.round(Math.min(placeholder.width, placeholder.height) * 0.08)
+                visible: root.placeholderTitle.length > 0 && placeholder.width >= 64
+                text: root.placeholderTitle
+                color: Qt.rgba(0.957, 0.961, 0.984, 0.9)
+                font.pixelSize: Math.max(10, Math.round(Math.min(placeholder.width, placeholder.height) * 0.085))
+                font.bold: true
+                wrapMode: Text.Wrap
+                maximumLineCount: 3
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignHCenter
             }
         }
     }
