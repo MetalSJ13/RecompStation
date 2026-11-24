@@ -93,11 +93,10 @@ The core is done (see What is done). Remaining:
 - [x] Recipes come from the source, not release notes: for an N64Recomp launcher, the program id (`set_program_id` / `project_name`), the game id (`GameEntry.game_id`, stored as `<game_id>.z64`) and `rom_hash` (XXH3 of the big-endian ROM); for others, the command-line parser and how the data folder is chosen (environment variables, portable mode). Shallow, blob-filtered clones keep this quick: `git clone --depth 1 --filter=blob:limit=200k --no-checkout`, then `git grep` on `HEAD`.
 
 ### 2. Catalog, platforms and file formats
-Source list: playported.com (about 1,200 entries; it names repositories but not owners, so each owner is found separately). A project is added only when its GitHub releases carry a native Linux build (AppImage, tar.gz or zip) that the installer can use; Flatpak-only projects are skipped (for example Unleashed Recompiled, whose Linux release is a Flatpak).
+Source list: playported.com (about 1,200 entries; it names repositories but not owners, so each owner is found separately). A project is added only when its GitHub releases carry a native Linux build (AppImage, tar.gz or zip) that the installer can use; Flatpak-only projects are skipped until RecompStation can run them (see the Flatpak item below).
 - [x] Batch 1 (merged; Shadow the Hedgehog confirmed, the rest pending testing): Xbox 360 as a library platform (XDVDFS detection, metadata mappings); PS1: MediEvil, Bloody Roar II; Xbox: Shadow the Hedgehog, Ninja Gaiden Black; Xbox 360: Lost Odyssey, The Simpsons Game. Projects that publish only pre-releases are supported (`includePrereleases`, and an automatic fallback when a project has no full release).
 - [ ] Next batches from playported.com: more PS1 (Castlevania: SotN, Dino Crisis 1/2, Ape Escape), Xbox (Black, Jet Set Radio Future, SoulCalibur II), Xbox 360 (Spider-Man: Edge of Time, Ninja Gaiden II).
 - [ ] Skipped for now: Blue Dragon (re:Blue's setup copies the program to a folder of the user's choice, outside the managed install), Gran Turismo 2 (Windows only), SSX 3 (Linux build from source only).
-- [ ] The launchers of batch 1 pick the game file themselves; research launch recipes (command-line arguments or data folders) so Play can hand them the file.
 - [ ] LaunchBox: catalogs downloaded before a system was added (Xbox 360, and now GB, GBC, GBA, SNES, PS2, Wii U) don't contain its games; Update catalog fixes that. Detect a missing platform and offer the update.
 - [x] Six more systems (merged; in the UI, confirmed): Game Boy, Game Boy Color, Game Boy Advance, SNES, PlayStation 2 and Wii U, each with library folder, file types, detection when adding games, TheGamesDB and LaunchBox mappings and a cover shape (GB/GBC/GBA 0.92, SNES 7:5, PS2 and Wii U 5:7). Detection: the Game Boy header's CGB flag tells GB from GBC (also inside .zip/.7z); `SYSTEM.CNF` (`BOOT2`) tells PS2 discs from PS1, in `.iso`, `.bin` and `.cue`; a CHD's metadata tells DVD (PS2) from CD (PS1); `.wua`/`.wud`/`.wux` are Wii U (no longer listed under Wii).
 - [x] Batch 2 (merged; Bomberman 64 and Bomberman Hero confirmed, the rest pending testing): SNES: Super Metroid (precompiled zip, `Launch.sh`) and Mega Man X (AppImage); N64: Bomberman 64, Bomberman Hero (pre-releases), Harvest Moon 64, Snowboard Kids 2, Space Station Silicon Valley and Quest 64 with `n64recomp` launch recipes read from each project's source, plus Snowboard Kids and Glover-R (own launchers, manual). Where a release file name couldn't be confirmed, the pattern matches any Linux x86-64 zip of that project and excludes ARM64, debug, Flatpak, AppImage, Windows and macOS builds.
@@ -107,7 +106,7 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [ ] Decide on projects that compile the game on the player's machine at first start (a downloaded or bundled compiler): The Wind Waker HD (the only Wii U option), God of War (PS2, experimental), Boktai (GBA, also needs a BIOS dump), Aladdin and Gundam Wing (SNES). Either list them with a "builds on first start" note or keep skipping them.
 - [ ] Many projects publish a `recomplauncher.json` (RecompLauncher's manifest: start program, arguments such as `--rom {game}`, config and save folders). Reading it could give launch recipes for projects that take the game file as an argument (Aladdin, Super Metroid).
 - [ ] Review archive extraction safety (path traversal, absolute paths and symlinks, special files, nested archive depth, size and file-count limits) and add regression tests for each case.
-- [ ] Flatpak packages stay out of scope.
+- [ ] Projects whose only Linux release is a Flatpak, such as Unleashed Recompiled (Sonic Unleashed, Xbox 360). Players shouldn't have to install Flatpak themselves for one or two games. To work out: what a `.flatpak` bundle needs to run (the Flatpak runtime it names, OSTree contents), whether its program can be unpacked and run against the system's libraries, or whether RecompStation should use Flatpak where it's installed (`flatpak install --user` of the bundle) and explain the one-time setup where it isn't. Which projects are Flatpak-only today.
 
 ### 3. Launcher lifecycle and integrity
 - [ ] Track installed launcher versions and show them in Game Details.
@@ -155,7 +154,6 @@ Developed and tested on KDE Plasma (Wayland). Before a public release, check the
 - [ ] The shader wave background under each compositor or none (XFCE and MATE may run without compositing), and the software-renderer fallback.
 - [ ] High-DPI and fractional scaling, including the interface scale's Auto mode under X11.
 - [ ] Controller hot-plug and input focus while a launcher runs; drag-and-drop from each file manager (Thunar, Nemo, Caja, Nautilus); opening folders with `xdg-open`.
-- [ ] Record any environment-specific workarounds here.
 
 ### 8. Windows support — open question
 Not decided. Points to discuss before any work starts:
@@ -178,7 +176,7 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 - Metadata is matched only when one result clearly fits; ambiguous games stay unmatched rather than getting the wrong cover.
 - RecompStation never supplies game files and never overwrites or deletes the user's games; uninstalling a launcher keeps ROMs and saves. One exception, at the user's request: a .zip/.7z in a cartridge system's folder whose only file is a ROM is removed after that ROM has been unpacked next to it and its size checked; archives with other files are kept.
 - RecompStation never creates a launcher's settings files; it changes single documented keys in files the launcher wrote itself.
-- Launchers come only from native Linux release assets of curated projects; Flatpak is out of scope.
+- Launchers come from native Linux release assets of curated projects. Flatpak-only projects are an open question (Catalog, platforms and file formats), not ruled out: players shouldn't need to install Flatpak themselves.
 - No settings without real behaviour: placeholder controls are removed until their feature exists.
 
 ## Build and development workflow

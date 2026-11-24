@@ -28,7 +28,7 @@ RecompStation is a native Linux desktop app for browsing the user's own game col
 
 **Metadata.** LaunchBox's offline catalog (first by default) and TheGamesDB (user's own key). Matching is automatic after scans and only accepts a clear match; covers and screenshots come from either provider.
 
-**Launchers.** A curated catalog (`data/projects.json`) of 42 projects: 30 N64, 4 GameCube, and 2 each for PS1, Xbox, Xbox 360 and SNES. Only native Linux release assets are used (AppImage, zip, tar.gz; Flatpak is out of scope), found through the GitHub API and filtered by CPU architecture.
+**Launchers.** A curated catalog (`data/projects.json`) of 42 projects: 30 N64, 4 GameCube, and 2 each for PS1, Xbox, Xbox 360 and SNES. Only native Linux release assets are used (AppImage, zip, tar.gz; Flatpak-only projects are an open question), found through the GitHub API and filtered by CPU architecture.
 
 **Seamless play.** Catalog `launch` recipes let Play hand the library's game to the launcher:
 - `n64recomp` (22 projects): the ROM is checked against the launcher's own XXH3 checksum and copied to `~/.config/<program_id>/<game_id>.z64`.
