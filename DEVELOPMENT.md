@@ -4,7 +4,8 @@ This document is the current development status and implementation order for Rec
 
 ## Status
 
-- **Branches:** `main` holds the interface redesign and everything since; it was brought up to date with `ui/interface-redesign` on 2026-11-24 with the user's approval, and the old feature branches were removed. `ui/interface-redesign` remains the development branch: feature work happens on short-lived branches from it, is fast-forward merged after the user validates it, and reaches `main` when the user approves.
+- **Branches:** `main` was brought up to date with `ui/interface-redesign` on 2026-11-24 (launcher lifecycle, packaging, the simpler Recompilation pane and license notices) with the user's approval, and tagged `v0.1.0`, the first release. `ui/interface-redesign` remains the development branch: feature work happens on short-lived branches from it, is fast-forward merged after the user validates it, and reaches `main` when the user approves.
+- **Releases:** pushing a tag `v<version>` matching `CMakeLists.txt` drafts a GitHub release with the AppImage, the zip and `SHA256SUMS`; the user reviews and publishes it. Before the next release, raise the version in `CMakeLists.txt` (for example 0.1.1 or 0.2.0).
 - **Build:** C++20 / Qt 6.5+ / QML, 22 CTest suites (`./scripts/build.sh --test`), all passing on 2026-11-24.
 - **Last validated:** launch recipes for Luigi's Mansion and Pokémon Snap, saves kept across reinstall, the background ROM check, accessibility (contrast, names, Grid inset), button-mapping capture states, the Open sound in every view, interface sounds, TheGamesDB request savings, the redesigned folder browser, Settings navigation and interface scale, Library sizing in all views, the Game Details ⋯ menu, the second controller taking over, zipped ROMs unpacked from system folders, Game Details without game info, placeholder covers; twelve library systems, the system picker, the simplified first-time setup, Update catalog, TheGamesDB key test, Game Details states; Bomberman 64 and Bomberman Hero (2026-11-24). Earlier: README, license, logo; seamless play (Banjo-Kazooie, Shipwright, Ghostship); the Settings redesign; the LaunchBox progress fix (2026-11-23).
 
@@ -184,7 +185,7 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
 - Testing cost: every feature needs checking on both systems.
 
 ### 9. Application updates — deferred
-RecompStation does not publish GitHub releases yet (packaging is in progress, 7b). When it does: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.
+The first release, v0.1.0, was drafted on 2026-11-24. When it does: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.
 
 ### 10. Documentation and licensing — done
 GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, features, screenshots (metadata stripped, see `docs/screenshots/README.md`), building from source and file locations; the original logo (pixel d-pad) in `assets/logo/`, used in the header, first-time setup, the README and as the window icon. Follow-up when packaging: a `.desktop` file and hicolor icons so Wayland taskbars show the icon.

@@ -98,7 +98,7 @@ A system appears in your library even if no recompilation project supports it ye
 ## Download and installation
 
 > [!NOTE]
-> RecompStation is in active development. Prebuilt downloads for 64-bit Linux (x86_64) will be listed on the [Releases page](https://github.com/MetalSJ13/RecompStation/releases) once the first release is published; until then, build it from source (it takes a few minutes).
+> RecompStation is in active development. Prebuilt downloads for 64-bit Linux (x86_64) are on the [Releases page](https://github.com/MetalSJ13/RecompStation/releases); you can also build it from source (it takes a few minutes).
 
 ### Prebuilt downloads (64-bit Linux)
 
