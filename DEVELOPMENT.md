@@ -152,11 +152,22 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [x] Interface sounds (validated 2026-11-24): the "Glass, refined" set, synthesized by `tools/sounds/generate.py` and played through SDL2 audio with a small mixer (Qt Multimedia 6.12 reported playback but stayed silent on PipeWire, 2026-11-24). Move on every directional input that moves something, Open a game, Back, a swoosh for cycling with the shoulder buttons, the switch sound for picking a system, menus, switches, Play and launch errors. Settings › Appearance › Sounds: on/off and volume (default on, 60%). Silent while a game is running.
 
 ### 7. Desktop environment compatibility
-Developed and tested on KDE Plasma (Wayland). Before a public release, check the app on XFCE, Cinnamon and MATE (all X11-based), and GNOME:
+Developed and tested on KDE Plasma (Wayland). Before a public release, check the release files (AppImage and zip) on a Debian-based system first, then on VMs of mainstream distributions with XFCE, Cinnamon and MATE (all X11-based), and GNOME:
+- [ ] The AppImage and the portable zip start, show the right icon and name in the taskbar, and restart correctly after an interface scale change.
 - [ ] Fullscreen on launch and F11 toggling, maximized and windowed sizes, window placement.
 - [ ] The shader wave background under each compositor or none (XFCE and MATE may run without compositing), and the software-renderer fallback.
 - [ ] High-DPI and fractional scaling, including the interface scale's Auto mode under X11.
 - [ ] Controller hot-plug and input focus while a launcher runs; drag-and-drop from each file manager (Thunar, Nemo, Caja, Nautilus); opening folders with `xdg-open`.
+
+### 7b. Packaging — Linux x86_64 (started 2026-11-24)
+Two release files, both with Qt included, built by GitHub Actions on Ubuntu 22.04 (glibc 2.35, so they run on Debian 12, Ubuntu 22.04, Fedora 36 and newer) with Qt 6.8 LTS from the Qt installer. x86_64 only; ARM later.
+- [x] `scripts/package.sh`: Release build (tests with `--test`), installed into an AppDir, Qt and libraries bundled with linuxdeploy and its Qt plugin (X11 and Wayland, SQLite driver only), then packed twice: `RecompStation-<version>-x86_64.AppImage` and `RecompStation-<version>-linux-x86_64.zip` (the same files with a `RecompStation` start script, a README and the desktop entry), plus `SHA256SUMS`. Libraries are found through RPATH and `qt.conf`, so no `LD_LIBRARY_PATH` reaches the games RecompStation starts; the AppImage's own variables (`APPDIR`, `APPIMAGE`, …) are removed from launchers' environment too (branch `feature/packaging`, needs a first CI run).
+- [x] `.github/workflows/release.yml`: run by hand from the Actions tab for test files (workflow artifact), or by pushing a tag `v<version>` matching `CMakeLists.txt`, which drafts a GitHub release with both files to review and publish by hand.
+- [x] Desktop entry and icons installed by CMake (`io.github.MetalSJ13.RecompStation`); the app sets the same desktop file name so Wayland shows its icon; the version shown comes from `CMakeLists.txt`; restarting from inside an AppImage restarts the AppImage file.
+- [ ] First CI run, then test both files on the Debian-based device: start, library, install and play a game, interface scale restart, controller and sounds.
+- [ ] AppImage FUSE: check whether the AppImage starts on Ubuntu 24.04 without `libfuse2t64`; if not, document it (already in the release notes) or switch to the static AppImage runtime.
+- [ ] AppStream metadata (`.metainfo.xml`) for software centres and AppImage catalogues.
+- [ ] Application updates (section 9) once releases exist.
 
 ### 8. Windows support — decided, after Linux packaging
 Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once the AppImage and portable zip work well. Work to plan when it starts:
@@ -166,7 +177,7 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
 - Testing cost: every feature needs checking on both systems.
 
 ### 9. Application updates — deferred
-RecompStation does not publish GitHub releases yet. When it does: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.
+RecompStation does not publish GitHub releases yet (packaging is in progress, 7b). When it does: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.
 
 ### 10. Documentation and licensing — done
 GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, features, screenshots (metadata stripped, see `docs/screenshots/README.md`), building from source and file locations; the original logo (pixel d-pad) in `assets/logo/`, used in the header, first-time setup, the README and as the window icon. Follow-up when packaging: a `.desktop` file and hicolor icons so Wayland taskbars show the icon.
@@ -181,6 +192,8 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 - RecompStation never creates a launcher's settings files; it changes single documented keys in files the launcher wrote itself.
 - Launchers come from native Linux release assets of curated projects. Flatpak-only projects are an open question (Catalog, platforms and file formats), not ruled out: players shouldn't need to install Flatpak themselves.
 - No settings without real behaviour: placeholder controls are removed until their feature exists.
+- Releases: an AppImage and a portable zip for 64-bit Linux (x86_64), Qt included, built by GitHub Actions; ARM later. Windows `.exe` builds follow once the Linux files work well (2026-11-24).
+- Launcher updates replace the installed version only after the new one is unpacked and checked, keep the player's files, and roll back on failure; downloads are checked against the SHA-256 the project publishes on GitHub (2026-11-24).
 
 ## Build and development workflow
 

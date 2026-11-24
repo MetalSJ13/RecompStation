@@ -5,6 +5,7 @@
 #include <QDateTime>
 #include <algorithm>
 #include <QDir>
+#include <QFileInfo>
 #include <QProcess>
 #include <QScreen>
 #include <QSettings>
@@ -41,6 +42,9 @@
 namespace {
 #ifndef RECOMPSTATION_BUILD_ID
 #define RECOMPSTATION_BUILD_ID "unknown"
+#endif
+#ifndef RECOMPSTATION_VERSION
+#define RECOMPSTATION_VERSION "0.0.0"
 #endif
 
 QString onOff(bool value)
@@ -165,8 +169,12 @@ void relaunchApplication(const QString &settingsSection, bool automaticScaleRela
         arguments.append(QStringLiteral("--settings-section=") + settingsSection);
     if (automaticScaleRelaunch)
         qputenv("RECOMPSTATION_SCALE_RELAUNCHED", "1");
-    const bool started = QProcess::startDetached(
-        QCoreApplication::applicationFilePath(), arguments);
+    // Inside an AppImage the program runs from a temporary mount that goes
+    // away when this process exits, so restart the AppImage file itself.
+    const QString appImage = qEnvironmentVariable("APPIMAGE");
+    const QString program = !appImage.isEmpty() && QFileInfo(appImage).isExecutable()
+        ? appImage : QCoreApplication::applicationFilePath();
+    const bool started = QProcess::startDetached(program, arguments);
     qunsetenv("RECOMPSTATION_SCALE_RELAUNCHED");
     if (!started)
         qWarning() << "Could not restart RecompStation.";
@@ -188,7 +196,10 @@ int main(int argc, char *argv[])
                      &app, &QCoreApplication::quit);
     QGuiApplication::setOrganizationName("RecompStation");
     QGuiApplication::setApplicationName("RecompStation");
-    QGuiApplication::setApplicationVersion("0.1.0");
+    QGuiApplication::setApplicationVersion(QStringLiteral(RECOMPSTATION_VERSION));
+    // Matches the installed desktop entry, so Wayland desktops show the
+    // right icon and name in the taskbar.
+    QGuiApplication::setDesktopFileName(QStringLiteral("io.github.MetalSJ13.RecompStation"));
 
     // Window and taskbar icon (the app icon: pixel d-pad on a dark tile).
     QIcon applicationIcon;

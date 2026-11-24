@@ -98,9 +98,20 @@ A system appears in your library even if no recompilation project supports it ye
 ## Download and installation
 
 > [!NOTE]
-> RecompStation is in active development and has no packaged releases yet. For now, build it from source; it takes a few minutes. Prebuilt downloads will be listed on the [Releases page](https://github.com/MetalSJ13/RecompStation/releases) when they are available.
+> RecompStation is in active development. Prebuilt downloads for 64-bit Linux (x86_64) will be listed on the [Releases page](https://github.com/MetalSJ13/RecompStation/releases) once the first release is published; until then, build it from source (it takes a few minutes).
 
-### Requirements
+### Prebuilt downloads (64-bit Linux)
+
+Each release has two files with the same contents; both include Qt, so nothing else needs installing:
+
+- **AppImage** (`RecompStation-<version>-x86_64.AppImage`): one file. Make it executable (`chmod +x RecompStation-*.AppImage`, or Properties › Permissions in your file manager) and run it. If it doesn't start, your system may be missing FUSE 2: install `libfuse2` (`libfuse2t64` on Ubuntu 24.04), or use the zip.
+- **Portable zip** (`RecompStation-<version>-linux-x86_64.zip`): unzip it anywhere and run `./RecompStation` inside the folder.
+
+They run on Debian 12, Ubuntu 22.04, Fedora 36 and newer distributions (glibc 2.35 or newer). Each file's SHA-256 is listed in `SHA256SUMS` on the release page. ARM computers need to build from source for now.
+
+### Building from source
+
+#### Requirements
 
 - Linux on x86_64 or ARM64 (developed on Arch Linux with KDE Plasma)
 - Qt 6.5 or newer: Base (with the SQLite driver), Declarative, Svg and ShaderTools, plus Qt Wayland on Wayland sessions
@@ -108,7 +119,7 @@ A system appears in your library even if no recompilation project supports it ye
 - libarchive
 - SDL2 2.0.14+ (optional, for controller support and interface sounds; keyboard and mouse work without it)
 
-### Arch Linux and derivatives
+#### Arch Linux and derivatives
 
 ```bash
 git clone https://github.com/MetalSJ13/RecompStation.git
@@ -118,11 +129,11 @@ cd RecompStation
 ./scripts/run.sh                    # starts RecompStation
 ```
 
-### Other distributions
+#### Other distributions
 
 Install the requirements above with your package manager, then run the same `build.sh` and `run.sh` commands. Make sure your distribution ships **Qt 6.5 or newer**; some long-term-support releases have older versions. Only Arch Linux has been tested so far.
 
-### Updating
+#### Updating
 
 ```bash
 cd RecompStation
@@ -131,6 +142,10 @@ git pull
 ```
 
 To run the regression tests while building, add `--test`: `./scripts/build.sh Release --test`.
+
+To build the two release files yourself (x86_64): `./scripts/package.sh` (they only run on systems as new as yours; the published ones are built on Ubuntu 22.04).
+
+With a prebuilt download, update by downloading the new release and replacing the AppImage or the unzipped folder; your settings, library and installed launchers are kept.
 
 ## First start
 
@@ -155,7 +170,7 @@ Please attach both when reporting a problem. For a hard-to-reproduce problem, tu
 
 ## Uninstalling
 
-Delete the folder you cloned and `~/.local/share/RecompStation/`. Your library folder and the launchers' saves are left untouched. Delete those yourself if you no longer want them.
+Delete the AppImage, the unzipped folder or the folder you cloned, and `~/.local/share/RecompStation/`. Your library folder and the launchers' saves are left untouched. Delete those yourself if you no longer want them.
 
 ## Contributing
 

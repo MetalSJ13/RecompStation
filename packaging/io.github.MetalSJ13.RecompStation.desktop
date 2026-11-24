@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=RecompStation
+GenericName=Game Launcher
+Comment=Library and launcher for native recompilation ports
+Exec=RecompStationApp
+Icon=io.github.MetalSJ13.RecompStation
+Terminal=false
+Categories=Game;
+Keywords=recompilation;recomp;games;launcher;emulation;
+StartupWMClass=RecompStationApp

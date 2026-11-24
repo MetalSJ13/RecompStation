@@ -1,0 +1,6 @@
+#!/bin/sh
+# Starts RecompStation inside the AppImage. Libraries, Qt plugins and QML are
+# found through RPATH and qt.conf, so no environment variables are set here
+# that would leak into the games RecompStation starts.
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/usr/bin/RecompStationApp" "$@"

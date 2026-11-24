@@ -218,6 +218,7 @@ endif()
 
 target_compile_definitions(RecompStationApp PRIVATE
     RECOMPSTATION_BUILD_ID="${RECOMPSTATION_BUILD_ID} ${CMAKE_BUILD_TYPE}"
+    RECOMPSTATION_VERSION="${PROJECT_VERSION}"
 )
 
 target_link_libraries(RecompStationApp PRIVATE
@@ -307,4 +308,18 @@ if(BUILD_TESTING)
     )
 endif()
 
-install(TARGETS RecompStationApp RUNTIME DESTINATION bin)
+# Installed layout, also used to build the AppImage and the portable zip
+# (scripts/package.sh): the program, its desktop entry and its icons.
+include(GNUInstallDirs)
+set(RECOMPSTATION_APP_ID "io.github.MetalSJ13.RecompStation")
+install(TARGETS RecompStationApp RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES packaging/${RECOMPSTATION_APP_ID}.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+foreach(size 16 24 32 48 64 128 256)
+    install(FILES assets/logo/png/recompstation-icon-${size}.png
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/${size}x${size}/apps
+            RENAME ${RECOMPSTATION_APP_ID}.png)
+endforeach()
+install(FILES assets/logo/recompstation-mark.svg
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+        RENAME ${RECOMPSTATION_APP_ID}.svg)

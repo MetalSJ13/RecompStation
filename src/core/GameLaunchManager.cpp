@@ -237,8 +237,13 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
 
     auto *process = new QProcess(this);
     process->setWorkingDirectory(workingDirectory);
-    if (!plan.environment.isEmpty()) {
+    {
         QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+        // Set by the AppImage runtime for RecompStation itself; a launcher
+        // that is (or checks for) an AppImage would otherwise think it is
+        // running from RecompStation's.
+        for (const char *name : {"APPDIR", "APPIMAGE", "ARGV0", "OWD", "APPIMAGE_UUID"})
+            environment.remove(QString::fromLatin1(name));
         for (auto it = plan.environment.cbegin(); it != plan.environment.cend(); ++it)
             environment.insert(it.key(), it.value());
         process->setProcessEnvironment(environment);

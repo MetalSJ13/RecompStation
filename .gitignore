@@ -88,3 +88,8 @@ Thumbs.db
 
 # Python bytecode (tools/sounds)
 __pycache__/
+
+# Release packaging (scripts/package.sh)
+build-release/
+build-tools/
+dist/
