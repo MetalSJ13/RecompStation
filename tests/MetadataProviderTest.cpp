@@ -168,7 +168,13 @@ private slots:
                     "10": {"id": 10, "name": "Nintendo GameCube", "alias": "nintendo-gamecube"},
                     "11": {"id": 11, "name": "Nintendo Wii", "alias": "nintendo-wii"},
                     "14": {"id": 14, "name": "Microsoft Xbox", "alias": "microsoft-xbox"},
-                    "15": {"id": 15, "name": "Microsoft Xbox 360", "alias": "microsoft-xbox-360"}
+                    "15": {"id": 15, "name": "Microsoft Xbox 360", "alias": "microsoft-xbox-360"},
+                    "4": {"id": 4, "name": "Nintendo Game Boy", "alias": "nintendo-gameboy"},
+                    "41": {"id": 41, "name": "Nintendo Game Boy Color", "alias": "nintendo-gameboy-color"},
+                    "5": {"id": 5, "name": "Nintendo Game Boy Advance", "alias": "nintendo-gameboy-advance"},
+                    "6": {"id": 6, "name": "Super Nintendo (SNES)", "alias": "super-nintendo-snes"},
+                    "8": {"id": 8, "name": "Sony Playstation 2", "alias": "sony-playstation-2"},
+                    "38": {"id": 38, "name": "Nintendo Wii U", "alias": "nintendo-wii-u"}
                 }
             }
         })";
@@ -177,7 +183,7 @@ private slots:
         QString error;
         QVERIFY2(MetadataPlatformMapping::parsePlatformCatalog(json, &platforms, &error),
                  qPrintable(error));
-        QCOMPARE(platforms.size(), 6);
+        QCOMPARE(platforms.size(), 12);
         QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
                      QStringLiteral("N64"), platforms), 3);
         QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
@@ -190,6 +196,19 @@ private slots:
                      QStringLiteral("Xbox"), platforms), 14);
         QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
                      QStringLiteral("Xbox 360"), platforms), 15);
+        // Similar names must not match each other (PS1/PS2, GB/GBC/GBA, Wii/Wii U).
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("GB"), platforms), 4);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("GBC"), platforms), 41);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("GBA"), platforms), 5);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("SNES"), platforms), 6);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("PS2"), platforms), 8);
+        QCOMPARE(MetadataPlatformMapping::platformIdForInternalName(
+                     QStringLiteral("Wii U"), platforms), 38);
     }
 
     void rejectsInvalidPlatformCatalog()

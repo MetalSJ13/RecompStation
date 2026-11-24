@@ -18,13 +18,12 @@ PlatformManager::PlatformManager(QObject *parent)
 PlatformManager::PlatformManager(const QString &dataDirectory, QObject *parent)
     : QObject(parent)
 {
+    // Nintendo, Sony, Microsoft; oldest first. The UI lists systems in
+    // this order.
     m_platforms = {
-        "N64",
-        "PS1",
-        "GameCube",
-        "Wii",
-        "Xbox",
-        "Xbox 360"
+        "GB", "GBC", "GBA", "SNES", "N64", "GameCube", "Wii", "Wii U",
+        "PS1", "PS2",
+        "Xbox", "Xbox 360"
     };
 
     m_dataDirectory = dataDirectory.isEmpty()

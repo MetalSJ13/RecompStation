@@ -81,7 +81,16 @@ public:
     {
         QStringList accepted;
         const QString key = internalName.trimmed().toLower();
-        if (key == QStringLiteral("n64"))
+        if (key == QStringLiteral("gb"))
+            accepted = {QStringLiteral("nintendogameboy"), QStringLiteral("gameboy")};
+        else if (key == QStringLiteral("gbc"))
+            accepted = {QStringLiteral("nintendogameboycolor"), QStringLiteral("gameboycolor")};
+        else if (key == QStringLiteral("gba"))
+            accepted = {QStringLiteral("nintendogameboyadvance"), QStringLiteral("gameboyadvance")};
+        else if (key == QStringLiteral("snes"))
+            accepted = {QStringLiteral("supernintendosnes"), QStringLiteral("supernintendo"),
+                        QStringLiteral("supernintendoentertainmentsystem"), QStringLiteral("snes")};
+        else if (key == QStringLiteral("n64"))
             accepted = {QStringLiteral("nintendo64"), QStringLiteral("n64")};
         else if (key == QStringLiteral("ps1"))
             accepted = {QStringLiteral("playstation"), QStringLiteral("sonyplaystation"),
@@ -90,6 +99,11 @@ public:
             accepted = {QStringLiteral("gamecube"), QStringLiteral("nintendogamecube")};
         else if (key == QStringLiteral("wii"))
             accepted = {QStringLiteral("wii"), QStringLiteral("nintendowii")};
+        else if (key == QStringLiteral("wii u"))
+            accepted = {QStringLiteral("wiiu"), QStringLiteral("nintendowiiu")};
+        else if (key == QStringLiteral("ps2"))
+            accepted = {QStringLiteral("sonyplaystation2"), QStringLiteral("playstation2"),
+                        QStringLiteral("ps2")};
         else if (key == QStringLiteral("xbox"))
             accepted = {QStringLiteral("xbox"), QStringLiteral("microsoftxbox"),
                         QStringLiteral("originalxbox")};

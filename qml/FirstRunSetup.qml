@@ -156,12 +156,25 @@ Popup {
             width: Math.min(parent.width - 80, 1100)
 
             // ---- 1. Library folder ----
+            // Just the folder choice, centred; the system folders are created
+            // inside it without being listed here.
             ColumnLayout {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: -30
+                width: Math.min(parent.width, 860)
                 visible: setup.step === 0
                 spacing: 12
+                Image {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: 72
+                    Layout.preferredHeight: 72
+                    Layout.bottomMargin: 10
+                    source: "qrc:/qt/qml/RecompStation/assets/logo/recompstation-mark.svg"
+                    sourceSize: Qt.size(256, 256)
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    Accessible.ignored: true
+                }
                 Label {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
@@ -211,36 +224,13 @@ Popup {
                     color: theme.error
                     font.pixelSize: 13 * theme.fontScale
                 }
-                SettingsGroupLabel { text: "WHAT IT LOOKS LIKE" }
-                RowLayout {
+                Label {
                     Layout.fillWidth: true
-                    spacing: 10
-                    Repeater {
-                        model: [
-                            { name: "N64", files: "z64 · n64 · v64 · zip" },
-                            { name: "PS1", files: "cue · chd · pbp" },
-                            { name: "GameCube", files: "iso · rvz · gcm" },
-                            { name: "Wii", files: "iso · rvz · wbfs" },
-                            { name: "Xbox", files: "iso · xiso" },
-                            { name: "Xbox 360", files: "iso" }
-                        ]
-                        delegate: Rectangle {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
-                            implicitHeight: 74
-                            radius: 10
-                            color: theme.sidebarBackground
-                            Column {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 14
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 4
-                                Label { text: modelData.name; color: theme.textPrimary; font.pixelSize: 14 * theme.fontScale; font.bold: true }
-                                Label { text: modelData.files; color: theme.textMuted; font.pixelSize: 11.5 * theme.fontScale }
-                            }
-                        }
-                    }
+                    Layout.topMargin: 10
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "You can change this later in Settings › Library."
+                    color: theme.textMuted
+                    font.pixelSize: 12.5 * theme.fontScale
                 }
             }
 

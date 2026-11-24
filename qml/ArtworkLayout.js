@@ -12,10 +12,16 @@ var platformRatioTolerance = 0.12
 // platforms without a defined shape so callers fall back to the image.
 function platformAspectRatio(platformName) {
     switch (platformName) {
+    case "GB":
+    case "GBC":
+    case "GBA": return 0.92
+    case "SNES":
     case "N64": return 7 / 5
     case "PS1": return 1
     case "GameCube":
     case "Wii":
+    case "Wii U":
+    case "PS2":
     case "Xbox":
     case "Xbox 360": return 5 / 7
     default: return 0

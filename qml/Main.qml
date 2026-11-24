@@ -731,6 +731,10 @@ ApplicationWindow {
             window.finishControllerComboBoxSelection(openCombo, false)
             return
         }
+        if (systemPicker.visible) {
+            systemPicker.close()
+            return
+        }
         if (importGamesPopup.visible && !libraryFolderDialog.visible && !uninstallDialog.visible) {
             importGamesPopup.close()
             return
@@ -1020,6 +1024,8 @@ ApplicationWindow {
     function activeModalRoot() {
         if (libraryFolderDialog.visible || uninstallDialog.visible)
             return null
+        if (systemPicker.visible)
+            return systemPicker.contentItem
         if (importGamesPopup.visible)
             return importGamesPopup.contentItem
         if (firstRunSetup.visible)
@@ -1641,9 +1647,47 @@ ApplicationWindow {
 
     // Display names for the internal platform identifiers.
     function platformDisplayName(platform) {
-        const names = { "N64": "Nintendo 64", "PS1": "PlayStation", "GameCube": "GameCube",
-                        "Wii": "Wii", "Xbox": "Xbox", "Xbox 360": "Xbox 360" }
+        const names = { "GB": "Game Boy", "GBC": "Game Boy Color", "GBA": "Game Boy Advance",
+                        "SNES": "Super Nintendo", "N64": "Nintendo 64", "GameCube": "GameCube",
+                        "Wii": "Wii", "Wii U": "Wii U", "PS1": "PlayStation", "PS2": "PlayStation 2",
+                        "Xbox": "Xbox", "Xbox 360": "Xbox 360" }
         return names[platform] || platform
+    }
+
+    // Short label for the system picker.
+    function systemLabel(platform) {
+        return platform === "All Platforms" ? "All systems" : platform
+    }
+
+    // Systems that have games, in PlatformManager order (Nintendo, Sony,
+    // Microsoft; oldest first). These are what LB/RB step through.
+    readonly property var librarySystems: platformManager.platforms().filter(function(platform) {
+        return (window.libraryPlatformCounts[platform] || 0) > 0
+    })
+
+    // The same systems grouped by maker for the system picker.
+    readonly property var librarySystemGroups: {
+        const makers = { "GB": "Nintendo", "GBC": "Nintendo", "GBA": "Nintendo", "SNES": "Nintendo",
+                         "N64": "Nintendo", "GameCube": "Nintendo", "Wii": "Nintendo", "Wii U": "Nintendo",
+                         "PS1": "Sony", "PS2": "Sony", "Xbox": "Microsoft", "Xbox 360": "Microsoft" }
+        const groups = []
+        for (const platform of window.librarySystems) {
+            const maker = makers[platform] || "Other"
+            let group = groups.find(function(entry) { return entry.maker === maker })
+            if (!group) {
+                group = { maker: maker, systems: [] }
+                groups.push(group)
+            }
+            group.systems.push(platform)
+        }
+        return groups
+    }
+
+    // A filtered system whose last game was removed falls back to All.
+    onLibrarySystemsChanged: {
+        if (window.selectedPlatform !== "All Platforms"
+                && window.librarySystems.indexOf(window.selectedPlatform) < 0)
+            window.selectLibraryPlatform("All Platforms")
     }
 
     // Shoulder-button names for the controller in use, as [previous, next].
@@ -1665,9 +1709,10 @@ ApplicationWindow {
         })
     }
 
-    // Step through All Platforms and each platform, wrapping at either end.
+    // Step through All Platforms and each system with games, wrapping at
+    // either end.
     function cycleLibraryPlatform(step) {
-        const platforms = ["All Platforms"].concat(platformManager.platforms())
+        const platforms = ["All Platforms"].concat(window.librarySystems)
         const index = Math.max(0, platforms.indexOf(window.selectedPlatform))
         const next = (index + step + platforms.length) % platforms.length
         window.selectLibraryPlatform(platforms[next])
@@ -7627,8 +7672,8 @@ ApplicationWindow {
                     }
                 }
 
-                // Compact Library toolbar: platform pills (LB/RB cycle them on
-                // a controller), an expanding search control, a segmented view
+                // Compact Library toolbar: the system picker (LB/RB step
+                // through systems on a controller), an expanding search control, a segmented view
                 // switcher, and a card-size button. Keeps the libraryFilterPanel
                 // id because directional focus and Select route through it.
                 Item {
@@ -7661,70 +7706,182 @@ ApplicationWindow {
                             }
                         }
 
-                        // Grows to fit the pills and clips them only when the
-                        // window is too narrow, so RB stays right after them.
-                        Item {
-                            Layout.fillWidth: true
-                            Layout.minimumWidth: 120
-                            Layout.maximumWidth: platformPillRow.implicitWidth
-                            Layout.preferredHeight: 36
-                            clip: true
+                        // System picker: one chip naming the current system.
+                        // LB/RB step through systems without opening it; click
+                        // or Select opens the full list. The header keeps its
+                        // size however many systems the library has.
+                        Button {
+                            id: systemPickerButton
+                            readonly property int gameCount:
+                                window.libraryPlatformCounts[window.selectedPlatform] || 0
+                            activeFocusOnTab: true
+                            focusPolicy: Qt.StrongFocus
+                            Layout.preferredHeight: 34
+                            leftPadding: 14
+                            rightPadding: 12
+                            topPadding: 0
+                            bottomPadding: 0
+                            Accessible.name: "System: " + window.systemLabel(window.selectedPlatform)
+                                + ", " + gameCount + (gameCount === 1 ? " game" : " games")
+                            Accessible.role: Accessible.ButtonDropDown
+                            contentItem: Row {
+                                spacing: 8
+                                Label {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: window.systemLabel(window.selectedPlatform)
+                                    color: theme.textPrimary
+                                    font.pixelSize: 13 * theme.fontScale
+                                    font.bold: true
+                                }
+                                Label {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: systemPickerButton.gameCount
+                                    color: theme.textMuted
+                                    font.pixelSize: 12 * theme.fontScale
+                                }
+                                Label {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "\u25BE"
+                                    color: theme.textMuted
+                                    font.pixelSize: 11 * theme.fontScale
+                                }
+                            }
+                            background: Rectangle {
+                                radius: height / 2
+                                color: systemPicker.visible
+                                    ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.22)
+                                    : systemPickerButton.hovered ? theme.controlHover
+                                    : Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.8)
+                                border.width: systemPickerButton.activeFocus || systemPicker.visible ? 2 : 0
+                                border.color: theme.accent
+                            }
+                            onClicked: systemPicker.visible ? systemPicker.close() : systemPicker.open()
 
-                            Row {
-                                id: platformPillRow
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 6
+                            Popup {
+                                id: systemPicker
+                                y: systemPickerButton.height + 8
+                                width: 560
+                                padding: 16
+                                topPadding: 14
+                                modal: true
+                                dim: false
+                                focus: true
+                                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+                                onOpened: Qt.callLater(function() {
+                                    const items = []
+                                    window.collectFocusableItems(systemPickerContent, items, [])
+                                    const current = items.find(function(item) {
+                                        return item.systemName === window.selectedPlatform
+                                    })
+                                    if (current)
+                                        current.forceActiveFocus()
+                                    else if (items.length > 0)
+                                        items[0].forceActiveFocus()
+                                })
+                                onClosed: systemPickerButton.forceActiveFocus()
+                                background: Rectangle {
+                                    radius: 14
+                                    color: theme.windowBackground
+                                    border.color: theme.divider
+                                }
 
-                                Repeater {
-                                    model: ["All Platforms"].concat(platformManager.platforms())
-                                    delegate: Button {
-                                        id: platformPill
-                                        required property string modelData
-                                        readonly property bool selected:
-                                            window.selectedPlatform === modelData
-                                        readonly property int gameCount:
-                                            window.libraryPlatformCounts[modelData] || 0
-                                        activeFocusOnTab: true
-                                        focusPolicy: Qt.StrongFocus
-                                        height: 34
-                                        leftPadding: 14
-                                        rightPadding: 14
-                                        topPadding: 0
-                                        bottomPadding: 0
-                                        Accessible.name: (modelData === "All Platforms" ? "All platforms" : modelData)
-                                            + ", " + gameCount + (gameCount === 1 ? " game" : " games")
-                                        contentItem: Row {
-                                            spacing: 6
+                                contentItem: ColumnLayout {
+                                    id: systemPickerContent
+                                    spacing: 8
+
+                                    // First group: "All systems" alone, full width.
+                                    Repeater {
+                                        model: [{ maker: "", columns: 1, systems: ["All Platforms"] }]
+                                            .concat(window.librarySystemGroups)
+                                        delegate: ColumnLayout {
+                                            id: systemGroup
+                                            required property var modelData
+                                            Layout.fillWidth: true
+                                            spacing: 7
                                             Label {
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: platformPill.modelData === "All Platforms"
-                                                    ? "All" : platformPill.modelData
-                                                color: platformPill.selected ? theme.windowBackground
-                                                    : platformPill.gameCount === 0 ? theme.textSubtle
-                                                    : theme.textPrimary
-                                                font.pixelSize: 13 * theme.fontScale
-                                                font.bold: platformPill.selected
+                                                visible: systemGroup.modelData.maker.length > 0
+                                                Layout.topMargin: 4
+                                                text: systemGroup.modelData.maker.toUpperCase()
+                                                color: theme.textMuted
+                                                font.pixelSize: 10.5 * theme.fontScale
+                                                font.bold: true
+                                                font.letterSpacing: 1.3
                                             }
-                                            Label {
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: platformPill.gameCount
-                                                color: platformPill.selected
-                                                    ? Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
-                                                              theme.windowBackground.b, 0.7)
-                                                    : theme.textMuted
-                                                font.pixelSize: 12 * theme.fontScale
+                                            GridLayout {
+                                                Layout.fillWidth: true
+                                                columns: systemGroup.modelData.columns || 4
+                                                columnSpacing: 7
+                                                rowSpacing: 7
+                                                Repeater {
+                                                    model: systemGroup.modelData.systems
+                                                    delegate: Button {
+                                                        id: option
+                                                        required property string modelData
+                                                        readonly property string systemName: modelData
+                                                        readonly property bool selected:
+                                                            window.selectedPlatform === modelData
+                                                        readonly property int gameCount:
+                                                            window.libraryPlatformCounts[modelData] || 0
+                                                        Layout.fillWidth: true
+                                                        Layout.preferredWidth: 1
+                                                        activeFocusOnTab: true
+                                                        focusPolicy: Qt.StrongFocus
+                                                        implicitHeight: 36
+                                                        leftPadding: 12
+                                                        rightPadding: 12
+                                                        topPadding: 0
+                                                        bottomPadding: 0
+                                                        Accessible.name: window.systemLabel(modelData) + ", " + gameCount
+                                                            + (gameCount === 1 ? " game" : " games")
+                                                        contentItem: RowLayout {
+                                                            spacing: 8
+                                                            Label {
+                                                                Layout.fillWidth: true
+                                                                text: window.systemLabel(option.modelData)
+                                                                elide: Text.ElideRight
+                                                                color: option.selected ? theme.windowBackground
+                                                                                       : theme.textPrimary
+                                                                font.pixelSize: 13.5 * theme.fontScale
+                                                                font.bold: option.selected
+                                                            }
+                                                            Label {
+                                                                text: option.gameCount
+                                                                color: option.selected
+                                                                    ? Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
+                                                                              theme.windowBackground.b, 0.7)
+                                                                    : theme.textMuted
+                                                                font.pixelSize: 12 * theme.fontScale
+                                                            }
+                                                        }
+                                                        background: Rectangle {
+                                                            radius: 8
+                                                            color: option.selected ? theme.textPrimary
+                                                                : option.hovered ? theme.controlHover
+                                                                : Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.8)
+                                                            border.width: option.activeFocus ? 2 : 0
+                                                            border.color: theme.accent
+                                                        }
+                                                        onClicked: {
+                                                            window.selectLibraryPlatform(option.modelData)
+                                                            systemPicker.close()
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
-                                        background: Rectangle {
-                                            radius: height / 2
-                                            color: platformPill.selected ? theme.textPrimary
-                                                : platformPill.hovered ? theme.controlHover
-                                                : Qt.rgba(theme.surface.r, theme.surface.g,
-                                                          theme.surface.b, 0.8)
-                                            border.width: platformPill.activeFocus ? 2 : 0
-                                            border.color: theme.accent
-                                        }
-                                        onClicked: window.selectLibraryPlatform(modelData)
+                                    }
+
+                                    Label {
+                                        Layout.topMargin: 4
+                                        Layout.fillWidth: true
+                                        text: "Only systems with games are listed"
+                                            + (window.activeInputDevice === "controller" && controllerManager.connected
+                                               ? " \u00B7 " + window.inputGlyph(window.actionInput("select", "a")) + " to pick \u00B7 "
+                                                 + window.inputGlyph(window.actionInput("back", "b")) + " to close"
+                                               : "")
+                                        color: theme.textMuted
+                                        font.pixelSize: 11.5 * theme.fontScale
+                                        wrapMode: Text.Wrap
                                     }
                                 }
                             }

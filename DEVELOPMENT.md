@@ -16,7 +16,7 @@ This document is the current development status and implementation order for Rec
 - Interface scale (Auto from the screen's logical height, or 75–200%) applied at startup through `QT_SCALE_FACTOR`; changing it restarts the app on the same Settings page.
 
 **Library**
-- Four views: Shelves (with a spotlight panel), Grid (sectioned by platform in All Platforms), List with a preview pane, and a full-screen hero Carousel. Covers use their platform's box shape (`GameArtwork.qml`). Platform pills (LB/RB, Q/E), expanding search, per-view size presets, all persisted.
+- Four views: Shelves (with a spotlight panel), Grid (sectioned by platform in All Platforms), List with a preview pane, and a full-screen hero Carousel. Covers use their platform's box shape (`GameArtwork.qml`). A system picker in the header (one chip; LB/RB and Q/E step through systems with games, the list groups them by maker), expanding search, per-view size presets, all persisted.
 - Backgrounds: theme gradient, live GPU shader waves (color, motion, quality; paused during games and under Reduced motion), or the user's own image (Fill/Fit, Dim).
 - Filesystem monitoring and automatic reconciliation of added and removed games.
 
@@ -31,8 +31,8 @@ This document is the current development status and implementation order for Rec
 - Automatic matching after every scan, including games added while the app runs; TheGamesDB failures fall back to LaunchBox and are retried an hour later; enabling LaunchBox or updating its catalog re-matches unmatched games. Covers and screenshots from either provider.
 
 **First-time setup and adding games**
-- Full-window setup: library folder (suggests `~/Games/RecompStation` or `~/RecompStation`), Add games, covers and info (LaunchBox progress with stages, Cancel and Retry), ready.
-- `GameImporter`: finds games in folders or dropped files, identifies the system (extension plus disc headers), keeps `.cue` tracks together, unpacks N64 ROMs from `.zip`/`.7z`, copies (default) or moves them into the platform folders, never overwrites. Available from setup, Settings › Library and drag-and-drop.
+- Full-window setup: library folder (just the folder choice; suggests `~/Games/RecompStation` or `~/RecompStation`), Add games, covers and info (LaunchBox progress with stages, Cancel and Retry), ready.
+- `GameImporter`: finds games in folders or dropped files, identifies the system (extension plus disc headers), keeps `.cue` tracks together, unpacks cartridge ROMs (N64, GB, GBC, GBA, SNES) from `.zip`/`.7z`, copies (default) or moves them into the platform folders, never overwrites. Available from setup, Settings › Library and drag-and-drop.
 
 **Launchers**
 - Curated catalog of 26 projects (22 N64, 4 GameCube) queried through the GitHub API; Linux x86_64/arm64 AppImage, ZIP and TAR.GZ assets (including a ZIP wrapping a TAR.GZ); staged download, extraction, install, launch, uninstall, rediscovery. Game input ownership while a launcher runs. The launcher file inside an archive is matched by name without case (it must still be the only match).
@@ -56,7 +56,9 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 - [ ] Controller: a second controller type changes the drawing and every symbol; a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
 - [ ] Application: Remove for a launcher whose game is gone; Reset settings.
 - [ ] First-time setup: from scratch; adding from Downloads and another folder; a zipped N64 ROM; a `.cue`/`.bin` game; an unsure `.iso` with the system picker; Move; drag-and-drop onto the Library; Settings › Library › Add games.
-- [ ] Library: List and Carousel size stepping and persistence; narrow-window behaviour (pills clip rather than wrap); Shelves spacing polish; the empty-library screen after a reset.
+- [ ] Library: List and Carousel size stepping and persistence; Shelves spacing polish; the empty-library screen after a reset.
+- [ ] System picker: shows only systems with games; LB/RB and Q/E step through them; click, Enter or A opens the list, D-pad moves inside it, A picks, B or Esc closes and focus returns to the chip; removing a system's last game falls back to All systems.
+- [ ] New systems: a library folder appears for each; adding a GB, GBC (dual-mode and colour-only), GBA and SNES ROM, loose and zipped; a PS2 `.iso` and `.chd` are not taken for PS1; a Wii U `.wua`; covers have the right shape after Update catalog.
 - [ ] Game Details states: downloading/installing pill, release and launch errors, a game with several projects (Open Nectar), a game without metadata.
 - [ ] Launchers: install, launch and uninstall for the catalog projects not yet exercised (confirmed so far: Banjo-Kazooie, Banjo-Tooie, Star Fox 64, Donkey Kong 64, PaperBoat); download cancellation and failure feedback; uninstall keeps ROM files.
 - [ ] Controller-only and keyboard-only pass over dialogs and the in-app folder browser (focus entry, actions, cancel, focus return).
@@ -79,8 +81,10 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [ ] Next batches from playported.com: more PS1 (Castlevania: SotN, Dino Crisis 1/2, Ape Escape), Xbox (Black, Jet Set Radio Future, SoulCalibur II), N64 (Bomberman 64, Harvest Moon 64, Snowboard Kids 2), Xbox 360 (Spider-Man: Edge of Time, Ninja Gaiden II).
 - [ ] Skipped for now: Blue Dragon (re:Blue's setup copies the program to a folder of the user's choice, outside the managed install), Gran Turismo 2 (Windows only), SSX 3 (Linux build from source only).
 - [ ] The launchers of batch 1 pick the game file themselves; research launch recipes (command-line arguments or data folders) so Play can hand them the file.
-- [ ] LaunchBox: catalogs downloaded before Xbox 360 was added don't contain it; Update catalog fixes that. Detect a missing platform and offer the update.
-- [ ] Add platforms supported by recompilation projects (PS2, others), each with researched file formats, detection rules, metadata mappings and box-art shape.
+- [ ] LaunchBox: catalogs downloaded before a system was added (Xbox 360, and now GB, GBC, GBA, SNES, PS2, Wii U) don't contain its games; Update catalog fixes that. Detect a missing platform and offer the update.
+- [x] Six more systems (on `feature/platform-expansion`): Game Boy, Game Boy Color, Game Boy Advance, SNES, PlayStation 2 and Wii U, each with library folder, file types, detection when adding games, TheGamesDB and LaunchBox mappings and a cover shape (GB/GBC/GBA 0.92, SNES 7:5, PS2 and Wii U 5:7). Detection: the Game Boy header's CGB flag tells GB from GBC (also inside .zip/.7z); `SYSTEM.CNF` (`BOOT2`) tells PS2 discs from PS1, in `.iso`, `.bin` and `.cue`; a CHD's metadata tells DVD (PS2) from CD (PS1); `.wua`/`.wud`/`.wux` are Wii U (no longer listed under Wii).
+- [ ] Projects for the new systems: SNES from the RetComM catalog (Aladdin, Super Metroid, Mega Man X, Gundam Wing: Endless Duel); GB/GBC/GBA, PS2 and Wii U still to research.
+- [ ] More N64 projects from playported.com's Playable list (Bomberman 64, Harvest Moon 64, Dr. Mario 64, Bomberman Hero, Snowboard Kids 2, Space Station Silicon Valley, Pilotwings 64, Glover, Rocket: Robot on Wheels, and others), with `n64recomp` launch recipes where the launcher uses the N64Recomp frontend.
 - [ ] Review archive extraction safety (path traversal, absolute paths and symlinks, special files, nested archive depth, size and file-count limits) and add regression tests for each case.
 - [ ] Flatpak packages stay out of scope.
 

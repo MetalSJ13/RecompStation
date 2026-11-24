@@ -32,6 +32,18 @@ private slots:
                  QStringLiteral("Microsoft Xbox"));
         QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("Xbox 360"),
                  QStringLiteral("Microsoft Xbox 360"));
+        QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("GB"),
+                 QStringLiteral("Nintendo Game Boy"));
+        QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("GBC"),
+                 QStringLiteral("Nintendo Game Boy Color"));
+        QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("GBA"),
+                 QStringLiteral("Nintendo Game Boy Advance"));
+        QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("SNES"),
+                 QStringLiteral("Super Nintendo Entertainment System"));
+        QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("PS2"),
+                 QStringLiteral("Sony Playstation 2"));
+        QCOMPARE(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("Wii U"),
+                 QStringLiteral("Nintendo Wii U"));
         QVERIFY(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("Nintendo 64").isEmpty());
         QVERIFY(LaunchBoxCatalogMatcher::canonicalPlatformForInternalName("64DD").isEmpty());
     }

@@ -29,10 +29,16 @@ MetadataManager::MetadataManager(MetadataProvider *provider, QObject *parent,
             {QStringLiteral("name"), QStringLiteral("All Platforms")},
             {QStringLiteral("id"), 0}});
         const QList<QPair<QString, QString>> supported = {
+            {QStringLiteral("GB"), QStringLiteral("Game Boy")},
+            {QStringLiteral("GBC"), QStringLiteral("Game Boy Color")},
+            {QStringLiteral("GBA"), QStringLiteral("Game Boy Advance")},
+            {QStringLiteral("SNES"), QStringLiteral("Super Nintendo")},
             {QStringLiteral("N64"), QStringLiteral("Nintendo 64")},
-            {QStringLiteral("PS1"), QStringLiteral("PlayStation")},
             {QStringLiteral("GameCube"), QStringLiteral("Nintendo GameCube")},
             {QStringLiteral("Wii"), QStringLiteral("Nintendo Wii")},
+            {QStringLiteral("Wii U"), QStringLiteral("Nintendo Wii U")},
+            {QStringLiteral("PS1"), QStringLiteral("PlayStation")},
+            {QStringLiteral("PS2"), QStringLiteral("PlayStation 2")},
             {QStringLiteral("Xbox"), QStringLiteral("Microsoft Xbox")},
             {QStringLiteral("Xbox 360"), QStringLiteral("Microsoft Xbox 360")}
         };

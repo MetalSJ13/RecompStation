@@ -97,6 +97,73 @@ private slots:
         QCOMPARE(GameImporter::detectPlatform(root + "/ps1.iso", &sure), QStringLiteral("PS1"));
         QVERIFY(sure);
 
+        // PS2 DVD: same "PLAYSTATION" volume, but SYSTEM.CNF says BOOT2.
+        // Root directory at sector 20 lists SYSTEM.CNF at sector 21.
+        {
+            QByteArray record(46, '\0');
+            record[0] = char(46);
+            record[2] = char(21);           // extent LBA (LE)
+            record[10] = char(0x40);        // size
+            record[32] = char(12);          // name length
+            record.replace(33, 12, "SYSTEM.CNF;1");
+            QByteArray rootRecord(34, '\0');
+            rootRecord[2] = char(20);
+            rootRecord[11] = char(0x08);    // 2048 bytes
+            QVERIFY(writeImage(root + "/ps2.iso", 22 * 2048,
+                               {{0x8001, QByteArray("CD001")}, {0x8008, QByteArray("PLAYSTATION")},
+                                {0x8000 + 156, rootRecord}, {20 * 2048, record},
+                                {21 * 2048, QByteArray("BOOT2 = cdrom0:\\SCUS_971.99;1\r\nVER = 1.00\r\n")}}));
+            QCOMPARE(GameImporter::detectPlatform(root + "/ps2.iso", &sure), QStringLiteral("PS2"));
+            QVERIFY(sure);
+
+            // The same layout with a PS1 SYSTEM.CNF stays PS1.
+            QVERIFY(writeImage(root + "/ps1-cnf.iso", 22 * 2048,
+                               {{0x8001, QByteArray("CD001")}, {0x8008, QByteArray("PLAYSTATION")},
+                                {0x8000 + 156, rootRecord}, {20 * 2048, record},
+                                {21 * 2048, QByteArray("BOOT = cdrom:\\SCUS_944.26;1\r\n")}}));
+            QCOMPARE(GameImporter::detectPlatform(root + "/ps1-cnf.iso", &sure), QStringLiteral("PS1"));
+        }
+
+        // CHD: a DVD metadata entry means PS2, a CD track entry PS1.
+        {
+            QByteArray header(124, '\0');
+            header.replace(0, 8, "MComprHD");
+            header[15] = char(5);                       // version 5 (BE)
+            header[48 + 7] = char(124);                 // metadata offset (BE u64)
+            QVERIFY(writeImage(root + "/ps2.chd", 256, {{0, header}, {124, QByteArray("DVD ")}}));
+            QCOMPARE(GameImporter::detectPlatform(root + "/ps2.chd", &sure), QStringLiteral("PS2"));
+            QVERIFY(sure);
+            QVERIFY(writeImage(root + "/ps1.chd", 256, {{0, header}, {124, QByteArray("CHT2")}}));
+            QCOMPARE(GameImporter::detectPlatform(root + "/ps1.chd", &sure), QStringLiteral("PS1"));
+            QVERIFY(sure);
+        }
+
+        // Game Boy: the CGB flag decides GB or GBC; a dual-mode ROM follows
+        // its extension.
+        const QByteArray logo = QByteArray::fromHex("ceed6666");
+        QVERIFY(writeImage(root + "/mono.gb", 0x8000, {{0x104, logo}}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/mono.gb", &sure), QStringLiteral("GB"));
+        QVERIFY(sure);
+        QVERIFY(writeImage(root + "/colour-only.gb", 0x8000, {{0x104, logo}, {0x143, QByteArray(1, char(0xC0))}}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/colour-only.gb", &sure), QStringLiteral("GBC"));
+        QVERIFY(writeImage(root + "/dual.gbc", 0x8000, {{0x104, logo}, {0x143, QByteArray(1, char(0x80))}}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/dual.gbc", &sure), QStringLiteral("GBC"));
+        QVERIFY(writeImage(root + "/dual.gb", 0x8000, {{0x104, logo}, {0x143, QByteArray(1, char(0x80))}}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/dual.gb", &sure), QStringLiteral("GB"));
+        QVERIFY(writeImage(root + "/nologo.gb", 0x8000, {}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/nologo.gb", &sure), QStringLiteral("GB"));
+        QVERIFY(!sure);
+
+        QVERIFY(writeImage(root + "/a.gba", 0x1000, {}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/a.gba", &sure), QStringLiteral("GBA"));
+        QVERIFY(sure);
+        QVERIFY(writeImage(root + "/a.sfc", 0x1000, {}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/a.sfc", &sure), QStringLiteral("SNES"));
+        QVERIFY(writeImage(root + "/a.wua", 0x1000, {}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/a.wua", &sure), QStringLiteral("Wii U"));
+        QVERIFY(writeImage(root + "/a.wud", 0x1000, {}));
+        QCOMPARE(GameImporter::detectPlatform(root + "/a.wud", &sure), QStringLiteral("Wii U"));
+
         QVERIFY(writeImage(root + "/unknown.iso", 0x9000, {}));
         QCOMPARE(GameImporter::detectPlatform(root + "/unknown.iso", &sure), QString());
         QVERIFY(!sure);
@@ -159,6 +226,36 @@ private slots:
         importer.setSources({source});
         QTRY_COMPARE(importer.candidates().size(), 2);
         QCOMPARE(importer.selectedCount(), 0);
+    }
+
+    void detectsCartridgeSystemsInsideArchives()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString source = directory.path() + "/downloads";
+        QVERIFY(QDir().mkpath(source));
+
+        // A .gb ROM whose header marks it Game Boy Color only.
+        QByteArray colour(0x8000, '\0');
+        colour.replace(0x104, 4, QByteArray::fromHex("ceed6666"));
+        colour[0x143] = char(0xC0);
+        QVERIFY(writeZip(source + "/Oracle.zip", QStringLiteral("Oracle of Seasons (USA).gb"), colour));
+        QVERIFY(writeZip(source + "/Metroid.zip", QStringLiteral("Super Metroid (USA).sfc"),
+                         QByteArray(0x8000, 'm')));
+        QVERIFY(writeZip(source + "/Minish.zip", QStringLiteral("Minish Cap (USA).gba"),
+                         QByteArray(0x8000, 'g')));
+
+        const QVariantList found = GameImporter::findCandidates({source}, QString());
+        QCOMPARE(found.size(), 3);
+        QMap<QString, QString> platformByEntry;
+        for (const QVariant &entry : found) {
+            const QVariantMap item = entry.toMap();
+            platformByEntry.insert(item.value("archiveEntry").toString(), item.value("platform").toString());
+            QVERIFY(item.value("selected").toBool());
+        }
+        QCOMPARE(platformByEntry.value("Oracle of Seasons (USA).gb"), QStringLiteral("GBC"));
+        QCOMPARE(platformByEntry.value("Super Metroid (USA).sfc"), QStringLiteral("SNES"));
+        QCOMPARE(platformByEntry.value("Minish Cap (USA).gba"), QStringLiteral("GBA"));
     }
 };
 

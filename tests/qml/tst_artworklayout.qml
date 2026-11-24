@@ -11,6 +11,11 @@ TestCase {
         fuzzyCompare(ArtworkLayout.platformAspectRatio("GameCube"), 5 / 7, 0.0001)
         fuzzyCompare(ArtworkLayout.platformAspectRatio("Wii"), 5 / 7, 0.0001)
         fuzzyCompare(ArtworkLayout.platformAspectRatio("Xbox"), 5 / 7, 0.0001)
+        fuzzyCompare(ArtworkLayout.platformAspectRatio("GB"), 0.92, 0.0001)
+        fuzzyCompare(ArtworkLayout.platformAspectRatio("GBA"), 0.92, 0.0001)
+        fuzzyCompare(ArtworkLayout.platformAspectRatio("SNES"), 1.4, 0.0001)
+        fuzzyCompare(ArtworkLayout.platformAspectRatio("PS2"), 5 / 7, 0.0001)
+        fuzzyCompare(ArtworkLayout.platformAspectRatio("Wii U"), 5 / 7, 0.0001)
         compare(ArtworkLayout.platformAspectRatio("Dreamcast"), 0)
         compare(ArtworkLayout.platformAspectRatio(""), 0)
     }

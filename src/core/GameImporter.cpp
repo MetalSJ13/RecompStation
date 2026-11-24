@@ -19,73 +19,123 @@
 namespace {
 constexpr qint64 CopyChunk = 4 * 1024 * 1024;
 const QStringList N64Extensions{QStringLiteral("z64"), QStringLiteral("n64"), QStringLiteral("v64")};
+// Cartridge ROMs recognised inside .zip/.7z archives, and their systems.
+const QStringList CartridgeExtensions{
+    QStringLiteral("z64"), QStringLiteral("n64"), QStringLiteral("v64"), QStringLiteral("gb"),
+    QStringLiteral("gbc"), QStringLiteral("gba"), QStringLiteral("sfc"), QStringLiteral("smc")};
+// Enough of a Game Boy ROM to read its header.
+constexpr qint64 CartridgeHeadSize = 0x150;
 
-QByteArray readAt(QFile &file, qint64 offset, qint64 length)
+quint8 byteAt(const QByteArray &data, qint64 offset)
 {
-    if (file.size() < offset + length || !file.seek(offset))
-        return {};
-    return file.read(length);
+    return offset < data.size() ? quint8(data.at(offset)) : 0;
 }
 
-bool hasBytes(QFile &file, qint64 offset, const QByteArray &expected)
+// Platform of a cartridge ROM from its extension and first bytes. Each of
+// these extensions belongs to one system, except that Game Boy and Game Boy
+// Color ROMs are told apart by the CGB flag at 0x143 of their header
+// (0xC0: Game Boy Color only; 0x80: runs on both, so the extension decides).
+// `sure` is false only for a Game Boy file without the Nintendo logo at 0x104.
+QString cartridgePlatform(const QByteArray &head, const QString &extension, bool *sure)
 {
-    return readAt(file, offset, expected.size()) == expected;
-}
-
-const QByteArray GameCubeMagic = QByteArray::fromHex("c2339f3d");  // at 0x1C
-const QByteArray WiiMagic = QByteArray::fromHex("5d1c9ea3");       // at 0x18
-
-// Platform from a Nintendo disc header starting at `base`.
-QString nintendoDiscPlatform(QFile &file, qint64 base)
-{
-    if (hasBytes(file, base + 0x18, WiiMagic))
-        return QStringLiteral("Wii");
-    if (hasBytes(file, base + 0x1C, GameCubeMagic))
-        return QStringLiteral("GameCube");
+    *sure = true;
+    if (N64Extensions.contains(extension))
+        return QStringLiteral("N64");
+    if (extension == QStringLiteral("gba"))
+        return QStringLiteral("GBA");
+    if (extension == QStringLiteral("sfc") || extension == QStringLiteral("smc"))
+        return QStringLiteral("SNES");
+    if (extension == QStringLiteral("gb") || extension == QStringLiteral("gbc")) {
+        const bool logo = head.mid(0x104, 4) == QByteArray::fromHex("ceed6666");
+        *sure = logo;
+        const quint8 cgb = byteAt(head, 0x143);
+        if (logo && cgb == 0xC0)
+            return QStringLiteral("GBC");
+        if (logo && cgb != 0x80)
+            return QStringLiteral("GB");
+        return extension == QStringLiteral("gbc") ? QStringLiteral("GBC") : QStringLiteral("GB");
+    }
+    *sure = false;
     return {};
 }
 
-// "Xbox" or "Xbox 360" for an XDVDFS disc image, or empty. The volume
-// descriptor sits 0x10000 into the game partition, which starts at 0 in
-// trimmed images (extract-xiso) and at a fixed offset in full redump images:
-// 0x18300000 on original Xbox discs (XGD1), 0xFD90000 (XGD2) or 0x2080000
-// (XGD3) on Xbox 360 discs. A trimmed image is told apart by its boot
-// executable: default.xex on Xbox 360, default.xbe on the original Xbox.
-QString xboxDiscPlatform(QFile &file)
+// Which PlayStation a disc image belongs to: 1, 2 or 0 when it isn't one.
+// Both use ISO 9660 with "PLAYSTATION" as the system identifier, cooked
+// (2048-byte sectors) or raw (2352-byte sectors); SYSTEM.CNF in the root
+// directory names the boot file with "BOOT2" on PS2 and "BOOT" on PS1.
+int playStationGeneration(QFile &file)
 {
-    const QByteArray magic("MICROSOFT*XBOX*MEDIA");
-    if (hasBytes(file, 0x18300000 + 0x10000, magic))
-        return QStringLiteral("Xbox");
-    if (hasBytes(file, 0xFD90000 + 0x10000, magic) || hasBytes(file, 0x2080000 + 0x10000, magic))
-        return QStringLiteral("Xbox 360");
-    if (!hasBytes(file, 0x10000, magic))
-        return {};
+    struct Layout { qint64 sectorSize; qint64 dataOffset; };
+    for (const Layout layout : {Layout{2048, 0}, Layout{2352, 24}, Layout{2352, 16}}) {
+        const auto sector = [&](qint64 lba) { return lba * layout.sectorSize + layout.dataOffset; };
+        const qint64 descriptor = sector(16);
+        if (!hasBytes(file, descriptor + 1, QByteArray("CD001"))
+            || !readAt(file, descriptor + 8, 32).startsWith("PLAYSTATION"))
+            continue;
 
-    // Root directory: sector (u32 LE) at +0x14 and size at +0x18 of the
-    // volume descriptor; read at most 64 KiB of it.
-    const QByteArray descriptor = readAt(file, 0x10000, 0x20);
-    const auto u32 = [&descriptor](int offset) {
-        return quint32(quint8(descriptor[offset])) | quint32(quint8(descriptor[offset + 1])) << 8
-            | quint32(quint8(descriptor[offset + 2])) << 16 | quint32(quint8(descriptor[offset + 3])) << 24;
-    };
-    const qint64 rootOffset = qint64(u32(0x14)) * 2048;
-    const qint64 rootSize = qMin<qint64>(u32(0x18), 64 * 1024);
-    const QByteArray root = readAt(file, rootOffset, rootSize).toLower();
-    if (root.contains("default.xex"))
-        return QStringLiteral("Xbox 360");
-    return QStringLiteral("Xbox");
+        const QByteArray rootRecord = readAt(file, descriptor + 156, 34);
+        const auto u32 = [](const QByteArray &data, int offset) {
+            return quint32(byteAt(data, offset)) | quint32(byteAt(data, offset + 1)) << 8
+                | quint32(byteAt(data, offset + 2)) << 16 | quint32(byteAt(data, offset + 3)) << 24;
+        };
+        const qint64 rootLba = u32(rootRecord, 2);
+        const qint64 rootSize = qMin<qint64>(u32(rootRecord, 10), 2048 * 4);
+        QByteArray root;
+        for (qint64 read = 0; read < rootSize; read += 2048)
+            root += readAt(file, sector(rootLba + read / 2048), 2048);
+
+        // Walk the directory records looking for SYSTEM.CNF.
+        for (int pos = 0; pos + 33 < root.size();) {
+            const int length = byteAt(root, pos);
+            if (length == 0) {
+                pos = (pos / 2048 + 1) * 2048;  // records never cross a sector
+                continue;
+            }
+            const int nameLength = byteAt(root, pos + 32);
+            const QByteArray name = root.mid(pos + 33, nameLength).toUpper();
+            if (name == "SYSTEM.CNF;1" || name == "SYSTEM.CNF") {
+                const QByteArray config = readAt(file, sector(u32(root, pos + 2)), 512).toUpper();
+                if (config.contains("BOOT2"))
+                    return 2;
+                return 1;
+            }
+            pos += length;
+        }
+        return 1;  // PlayStation disc without a readable SYSTEM.CNF
+    }
+    return 0;
 }
 
-bool isPlayStationIso(QFile &file)
+// The kind of disc a CHD holds, from its metadata (stored uncompressed):
+// "DVD" for DVD images, "CD" for CD images, empty if unknown.
+QString chdMediaType(QFile &file)
 {
-    // ISO 9660 primary volume descriptor, cooked (2048-byte sectors) or raw
-    // (2352-byte sectors), with "PLAYSTATION" as the system identifier.
-    for (qint64 descriptor : {qint64(0x8000), qint64(16 * 2352 + 24)}) {
-        if (hasBytes(file, descriptor + 1, QByteArray("CD001"))
-            && readAt(file, descriptor + 8, 32).startsWith("PLAYSTATION"))
-            return true;
+    const QByteArray header = readAt(file, 0, 64);
+    if (!header.startsWith("MComprHD"))
+        return {};
+    const auto be = [&header](int offset, int bytes) {
+        quint64 value = 0;
+        for (int i = 0; i < bytes; ++i)
+            value = value << 8 | byteAt(header, offset + i);
+        return value;
+    };
+    const quint64 version = be(12, 4);
+    quint64 offset = version >= 5 ? be(48, 8) : (version >= 3 ? be(36, 8) : 0);
+    for (int entries = 0; offset != 0 && entries < 32; ++entries) {
+        const QByteArray entry = readAt(file, qint64(offset), 16);
+        if (entry.size() < 16)
+            break;
+        const QByteArray tag = entry.left(4);
+        if (tag == "DVD ")
+            return QStringLiteral("DVD");
+        if (tag == "CHT2" || tag == "CHTR" || tag == "CHCD")
+            return QStringLiteral("CD");
+        quint64 next = 0;
+        for (int i = 8; i < 16; ++i)
+            next = next << 8 | byteAt(entry, i);
+        offset = next;
     }
-    return false;
+    return {};
 }
 
 bool isRawCdImage(QFile &file)
@@ -120,9 +170,9 @@ QStringList cueTracks(const QString &cuePath)
     return tracks;
 }
 
-struct ArchiveRom { QString name; qint64 size = 0; };
+struct ArchiveRom { QString name; qint64 size = 0; QString platform; bool sure = false; };
 
-QList<ArchiveRom> n64RomsInArchive(const QString &archivePath)
+QList<ArchiveRom> romsInArchive(const QString &archivePath)
 {
     QList<ArchiveRom> roms;
     archive *reader = archive_read_new();
@@ -139,8 +189,23 @@ QList<ArchiveRom> n64RomsInArchive(const QString &archivePath)
         if (archive_entry_filetype(entry) != AE_IFREG)
             continue;
         const QString name = QFileInfo(QString::fromUtf8(archive_entry_pathname(entry))).fileName();
-        if (N64Extensions.contains(QFileInfo(name).suffix().toLower()))
-            roms.append({name, archive_entry_size(entry)});
+        const QString extension = QFileInfo(name).suffix().toLower();
+        if (!CartridgeExtensions.contains(extension)) {
+            archive_read_data_skip(reader);
+            continue;
+        }
+        // Read the start of the ROM to check its header.
+        QByteArray head;
+        char buffer[4096];
+        while (head.size() < CartridgeHeadSize) {
+            const la_ssize_t count = archive_read_data(reader, buffer, sizeof(buffer));
+            if (count <= 0)
+                break;
+            head.append(buffer, int(count));
+        }
+        bool sure = false;
+        const QString platform = cartridgePlatform(head, extension, &sure);
+        roms.append({name, archive_entry_size(entry), platform, sure});
         archive_read_data_skip(reader);
     }
     archive_read_free(reader);
@@ -392,16 +457,32 @@ QString GameImporter::detectPlatform(const QString &filePath, bool *sure)
     QFile file(filePath);
     const bool readable = file.open(QIODevice::ReadOnly);
 
-    if (N64Extensions.contains(extension)) {
-        platform = QStringLiteral("N64");
-    } else if (extension == QStringLiteral("cue") || extension == QStringLiteral("pbp")
-               || extension == QStringLiteral("chd")) {
+    if (CartridgeExtensions.contains(extension)) {
+        const QByteArray head = readable ? file.read(CartridgeHeadSize) : QByteArray();
+        platform = cartridgePlatform(head, extension, &certain);
+    } else if (extension == QStringLiteral("pbp")) {
         platform = QStringLiteral("PS1");
+    } else if (extension == QStringLiteral("cue")) {
+        // Check the first data track: PS2 also shipped some games on CD.
+        platform = QStringLiteral("PS1");
+        const QStringList tracks = cueTracks(filePath);
+        if (!tracks.isEmpty()) {
+            QFile track(tracks.first());
+            if (track.open(QIODevice::ReadOnly) && playStationGeneration(track) == 2)
+                platform = QStringLiteral("PS2");
+        }
+    } else if (extension == QStringLiteral("chd")) {
+        // DVD images are PS2; CD images are almost always PS1.
+        const QString media = readable ? chdMediaType(file) : QString();
+        platform = media == QStringLiteral("DVD") ? QStringLiteral("PS2") : QStringLiteral("PS1");
+        certain = !media.isEmpty();
     } else if (extension == QStringLiteral("gcm") || extension == QStringLiteral("ciso")) {
         platform = QStringLiteral("GameCube");
-    } else if (extension == QStringLiteral("wbfs") || extension == QStringLiteral("wud")
-               || extension == QStringLiteral("wux")) {
+    } else if (extension == QStringLiteral("wbfs")) {
         platform = QStringLiteral("Wii");
+    } else if (extension == QStringLiteral("wud") || extension == QStringLiteral("wux")
+               || extension == QStringLiteral("wua")) {
+        platform = QStringLiteral("Wii U");
     } else if (extension == QStringLiteral("xiso")) {
         platform = QStringLiteral("Xbox");
     } else if (extension == QStringLiteral("rvz") && readable) {
@@ -413,12 +494,20 @@ QString GameImporter::detectPlatform(const QString &filePath, bool *sure)
         platform = nintendoDiscPlatform(file, 0);
         if (platform.isEmpty())
             platform = xboxDiscPlatform(file);
-        if (platform.isEmpty() && isPlayStationIso(file))
-            platform = QStringLiteral("PS1");
+        if (platform.isEmpty()) {
+            const int generation = playStationGeneration(file);
+            if (generation == 2)
+                platform = QStringLiteral("PS2");
+            else if (generation == 1)
+                platform = QStringLiteral("PS1");
+        }
         certain = !platform.isEmpty();
     } else if ((extension == QStringLiteral("bin") || extension == QStringLiteral("img")) && readable) {
         // A loose CD image without a .cue: most likely PS1, but not certain.
-        if (isPlayStationIso(file) || isRawCdImage(file))
+        const int generation = playStationGeneration(file);
+        if (generation == 2)
+            platform = QStringLiteral("PS2");
+        else if (generation == 1 || isRawCdImage(file))
             platform = QStringLiteral("PS1");
         certain = false;
     } else {
@@ -437,7 +526,8 @@ QVariantList GameImporter::findCandidates(const QStringList &paths, const QStrin
         QStringLiteral("7z"), QStringLiteral("cue"), QStringLiteral("chd"), QStringLiteral("pbp"),
         QStringLiteral("iso"), QStringLiteral("bin"), QStringLiteral("img"), QStringLiteral("gcm"),
         QStringLiteral("rvz"), QStringLiteral("ciso"), QStringLiteral("wbfs"), QStringLiteral("wud"),
-        QStringLiteral("wux"), QStringLiteral("xiso")};
+        QStringLiteral("wux"), QStringLiteral("wua"), QStringLiteral("xiso"), QStringLiteral("gb"),
+        QStringLiteral("gbc"), QStringLiteral("gba"), QStringLiteral("sfc"), QStringLiteral("smc")};
     const QString excluded = excludedRoot.isEmpty() ? QString()
         : QFileInfo(excludedRoot).canonicalFilePath() + QLatin1Char('/');
 
@@ -488,8 +578,8 @@ QVariantList GameImporter::findCandidates(const QStringList &paths, const QStrin
         const QString extension = info.suffix().toLower();
 
         if (extension == QStringLiteral("zip") || extension == QStringLiteral("7z")) {
-            for (const ArchiveRom &rom : n64RomsInArchive(file))
-                result.append(candidate(file, {file}, rom.name, QStringLiteral("N64"), true,
+            for (const ArchiveRom &rom : romsInArchive(file))
+                result.append(candidate(file, {file}, rom.name, rom.platform, rom.sure,
                                         rom.size, rom.name));
             continue;
         }

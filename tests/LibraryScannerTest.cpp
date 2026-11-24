@@ -155,8 +155,13 @@ private slots:
             {"PS1", {"Game.cue", "Game.chd", "Game.pbp", "Game.iso",
                      "Standalone/Standalone.bin", "Standalone/Standalone.img"}},
             {"GameCube", {"Mario.iso", "Luigi.gcm", "Metroid.rvz", "Zelda.ciso"}},
-            {"Wii", {"Galaxy.iso", "Kart.wbfs", "Zelda.rvz", "Sports.wud",
-                     "Adventure.wux"}},
+            {"Wii", {"Galaxy.iso", "Kart.wbfs", "Zelda.rvz"}},
+            {"Wii U", {"Kart.wua", "Sports.wud", "Adventure.wux"}},
+            {"GB", {"Tetris.gb"}},
+            {"GBC", {"Oracle.gbc", "Pinball.gb"}},
+            {"GBA", {"Minish.gba"}},
+            {"SNES", {"Metroid.sfc", "Aladdin.smc"}},
+            {"PS2", {"Ratchet.iso", "Jak.chd"}},
             {"Xbox", {"Halo.iso", "Fable.xiso"}}
         };
 

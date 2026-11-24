@@ -59,6 +59,9 @@ void PlatformManagerTest::initializeCreatesStagingDirectory()
     QVERIFY(QFileInfo(QDir(temporaryDirectory.path())
                           .filePath("launchers/N64")).isDir());
     QVERIFY(manager.platforms().contains(QStringLiteral("Xbox")));
+    // Nintendo, Sony, Microsoft; oldest first. The system picker uses this order.
+    QCOMPARE(manager.platforms(), (QStringList{
+        "GB", "GBC", "GBA", "SNES", "N64", "GameCube", "Wii", "Wii U", "PS1", "PS2", "Xbox", "Xbox 360"}));
     QVERIFY(QFileInfo(QDir(temporaryDirectory.path())
                           .filePath("launchers/Xbox")).isDir());
 }

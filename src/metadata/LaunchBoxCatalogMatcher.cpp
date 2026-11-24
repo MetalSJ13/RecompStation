@@ -50,10 +50,22 @@ QString LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(
     const QString &internalName)
 {
     const QString key = normalizedPlatform(internalName);
+    if (key == QStringLiteral("gb"))
+        return QStringLiteral("Nintendo Game Boy");
+    if (key == QStringLiteral("gbc"))
+        return QStringLiteral("Nintendo Game Boy Color");
+    if (key == QStringLiteral("gba"))
+        return QStringLiteral("Nintendo Game Boy Advance");
+    if (key == QStringLiteral("snes"))
+        return QStringLiteral("Super Nintendo Entertainment System");
     if (key == QStringLiteral("n64"))
         return QStringLiteral("Nintendo 64");
     if (key == QStringLiteral("ps1"))
         return QStringLiteral("Sony Playstation");
+    if (key == QStringLiteral("ps2"))
+        return QStringLiteral("Sony Playstation 2");
+    if (key == QStringLiteral("wiiu"))
+        return QStringLiteral("Nintendo Wii U");
     if (key == QStringLiteral("gamecube"))
         return QStringLiteral("Nintendo GameCube");
     if (key == QStringLiteral("wii"))

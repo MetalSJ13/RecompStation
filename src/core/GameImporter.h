@@ -58,7 +58,7 @@ public:
     Q_INVOKABLE void importSelected(bool move);
     Q_INVOKABLE void cancel();
 
-    // System for a single file: "N64", "PS1", "GameCube", "Wii", "Xbox", or
+    // System for a single file, one of PlatformManager's platforms, or
     // empty. *sure is false when the file could belong to another system.
     static QString detectPlatform(const QString &filePath, bool *sure);
     // Searches files and folders. Skips anything inside excludedRoot.

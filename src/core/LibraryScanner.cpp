@@ -169,14 +169,26 @@ void LibraryScanner::refreshDirectoryWatches()
 
 QStringList LibraryScanner::supportedExtensions(const QString &platform) const
 {
+    if (platform == "GB")
+        return {"gb"};
+    if (platform == "GBC")
+        return {"gbc", "gb"};
+    if (platform == "GBA")
+        return {"gba"};
+    if (platform == "SNES")
+        return {"sfc", "smc"};
     if (platform == "N64")
         return {"z64", "n64", "v64"};
     if (platform == "PS1")
         return {"cue", "chd", "pbp", "iso", "bin", "img"};
+    if (platform == "PS2")
+        return {"iso", "chd", "cue", "bin"};
     if (platform == "GameCube")
         return {"iso", "gcm", "rvz", "ciso"};
     if (platform == "Wii")
-        return {"iso", "wbfs", "rvz", "wud", "wux"};
+        return {"iso", "wbfs", "rvz"};
+    if (platform == "Wii U")
+        return {"wua", "wud", "wux"};
     if (platform == "Xbox")
         return {"iso", "xiso"};
     if (platform == "Xbox 360")
