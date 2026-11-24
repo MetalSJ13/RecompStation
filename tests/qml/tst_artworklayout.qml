@@ -16,6 +16,11 @@ TestCase {
         fuzzyCompare(ArtworkLayout.platformAspectRatio("SNES"), 1.4, 0.0001)
         fuzzyCompare(ArtworkLayout.platformAspectRatio("PS2"), 5 / 7, 0.0001)
         fuzzyCompare(ArtworkLayout.platformAspectRatio("Wii U"), 5 / 7, 0.0001)
+        compare(ArtworkLayout.placeholderSystemName("N64"), "NINTENDO 64")
+        compare(ArtworkLayout.placeholderSystemName("GBA"), "GAME BOY ADVANCE")
+        compare(ArtworkLayout.placeholderSystemName("Dreamcast"), "DREAMCAST")
+        verify(ArtworkLayout.placeholderBandColor("SNES") !== ArtworkLayout.placeholderBandColor("N64"))
+        compare(ArtworkLayout.placeholderBandColor("Unknown"), "#2a2f45")
         compare(ArtworkLayout.platformAspectRatio("Dreamcast"), 0)
         compare(ArtworkLayout.platformAspectRatio(""), 0)
     }

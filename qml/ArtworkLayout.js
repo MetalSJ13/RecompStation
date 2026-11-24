@@ -52,3 +52,24 @@ function fitFrame(availableWidth, availableHeight, ratio) {
         height: Math.min(availableHeight, availableWidth / safeRatio)
     }
 }
+
+// Name printed on a placeholder cover's band.
+function placeholderSystemName(platformName) {
+    var names = {
+        "GB": "GAME BOY", "GBC": "GAME BOY COLOR", "GBA": "GAME BOY ADVANCE",
+        "SNES": "SUPER NINTENDO", "N64": "NINTENDO 64", "GameCube": "GAMECUBE",
+        "Wii": "WII", "Wii U": "WII U", "PS1": "PLAYSTATION", "PS2": "PLAYSTATION 2",
+        "Xbox": "XBOX", "Xbox 360": "XBOX 360"
+    }
+    return names[platformName] || String(platformName || "").toUpperCase()
+}
+
+// Band colour of a placeholder cover: muted, one per system.
+function placeholderBandColor(platformName) {
+    var colors = {
+        "GB": "#3c4a3a", "GBC": "#4a3a5c", "GBA": "#2f4a63", "SNES": "#4a3a6b",
+        "N64": "#2f3a63", "GameCube": "#3a2f63", "Wii": "#4a4f5c", "Wii U": "#2f5263",
+        "PS1": "#3b3f4f", "PS2": "#2a3550", "Xbox": "#2f4a36", "Xbox 360": "#3a5236"
+    }
+    return colors[platformName] || "#2a2f45"
+}

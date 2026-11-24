@@ -55,14 +55,15 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 - [ ] Settings: LB/RB and Q/E switch sections; ◀ value ▶ rows with D-pad and keyboard; interface scale change and restart (a manual value, then back to Auto).
 - [x] Metadata: Update catalog refreshes the catalog and its size; a TheGamesDB key added in the app tests successfully and shows the remaining request quota (2026-11-24).
 - [ ] Metadata: with automatic matching off, a scan does not match; with artwork downloads off, matching does not download covers.
-- [ ] Controller: a second connected controller takes over navigation, the drawing and every symbol when it is used (was broken: only the first controller was ever read; fixed on `fix/validation-round-1`, to retest); a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
+- [x] Controller: a second connected controller takes over navigation when it is used (fixed on `fix/validation-round-1`; only the first controller used to be read), confirmed 2026-11-24.
+- [ ] Controller: a remapped Select shows in the hint bar; default Xbox and PlayStation mappings.
 - [ ] Application: Remove for a launcher whose game is gone; Reset settings.
 - [x] First-time setup: the simplified first step (folder choice only), confirmed 2026-11-24.
 - [ ] First-time setup: from scratch; adding from Downloads and another folder; a zipped N64 ROM; a `.cue`/`.bin` game; an unsure `.iso` with the system picker; Move; drag-and-drop onto the Library; Settings › Library › Add games.
 - [ ] Library: List and Carousel size stepping and persistence; Shelves spacing polish; the empty-library screen after a reset.
 - [x] System picker: shows only systems with games; LB/RB and Q/E step through them; the controller's Select button opens the list; removing a system's last game updates it (2026-11-24).
 - [x] New systems: each appears in the library, with its folder (confirmed 2026-11-24).
-- [ ] Zipped cartridge ROMs (N64, GB, GBC, GBA, SNES) copied straight into a system folder were ignored; the scanner now unpacks them (on `fix/validation-round-1`, to retest).
+- [x] Zipped cartridge ROMs (N64, GB, GBC, GBA, SNES) copied straight into a system folder are unpacked by the scanner and the archive removed (on `fix/validation-round-1`), confirmed 2026-11-24.
 - [ ] New systems: adding a GB, GBC (dual-mode and colour-only), GBA and SNES ROM, loose and zipped; a PS2 `.iso` and `.chd` are not taken for PS1; a Wii U `.wua`; covers have the right shape after Update catalog.
 - [x] Game Details states: downloading/installing pill, release and launch errors, a game with several projects (Open Nectar, Super Mario 64), a game without metadata, Uninstall under ⋯ (2026-11-24). Follow-ups: the ⋯ menu and the no-metadata page (roadmap 6a).
 - [ ] Launchers: install, launch and uninstall for the catalog projects not yet exercised (confirmed so far: Banjo-Kazooie, Banjo-Tooie, Star Fox 64, Donkey Kong 64, PaperBoat, Shadow the Hedgehog (Xbox), Bomberman 64, Bomberman Hero); download cancellation and failure feedback; uninstall keeps ROM files.
@@ -122,8 +123,10 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 `runtime.log` is written for whoever reads a bug report: a session header (version and commit, system, desktop and session type, display, settings, library counts, installed launchers, data and log paths) and footer, one line per event (`2026-11-23 15:14:02.239 INFO  launch    …`), the home folder written as `~`, and the renderer (graphics API and OpenGL driver) once the window is up. Per-frame and per-request chatter (geometry, screenshot rotation, every metadata query) is debug-only; debug is off unless Settings › Application › Detailed logging is on or `RECOMPSTATION_DEBUG=1` (`QT_LOGGING_RULES` still overrides). Launcher output is captured to `logs/launchers/<project>.log` and, when a launcher crashes or exits with an error, its last 40 lines are copied into `runtime.log`.
 
 ### 6a. Validation follow-ups (2026-11-24)
-- [ ] Game Details ⋯: open a small drop-down menu (Uninstall, and later other launcher actions) under the button, instead of placing an Uninstall button beside it. Mock up first.
-- [ ] The "Metadata not available" page and the placeholder cover frame do not match the rest of the app; redesign both (mock up first; the user's screenshot shows the current state).
+- [x] Game Details ⋯ opens a drop-down menu under the button: Show install folder, Open launcher log (the folder of logs before a first start), and Uninstall… set apart in red, still asking first. D-pad moves inside it, A picks, B or Esc closes it and focus returns to ⋯. Built on `fix/validation-round-1` from the approved mockup; to validate.
+- [x] Game Details without game info: the hero layout with a "No game info" chip, the file name under the title, Find game info (the main action when there is no launcher) and Metadata settings as styled buttons, an About card explaining what happened and how to fix it, matching Recompilation card text, three empty screenshot frames, and an accent glow behind the page when there is neither a screenshot nor a cover. Built from the approved mockup; to validate.
+- [x] Placeholder covers drawn at each system's box shape in every view (system name band, faint logo, the game's title), replacing the generic portrait picture. Built from the approved mockup; to validate.
+- [ ] Validate the three items above: a game without info (focus starts on Find game info; Metadata settings opens Settings › Metadata), placeholders in Shelves, Grid, List, Carousel, Game Details and the starting screen for several systems, and the ⋯ menu with a controller, keyboard and mouse.
 - [ ] A launcher whose game was removed stays installed by design (uninstalling never happens behind the user's back); Settings › Application › Launchers whose game is gone lists it with Remove. Consider pointing to that from the Library once a game disappears.
 
 ### 6. Input, accessibility and regression

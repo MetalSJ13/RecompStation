@@ -14,6 +14,8 @@ Popup {
     // Inner items used by Main.qml for controller navigation and scrolling.
     property alias contentFrame: detailsContentFrame
     property alias infoScroll: gameInfoScroll
+    // The ⋯ menu, so Main.qml's controller routing can move and close it.
+    property alias moreMenu: detailsMoreMenu
 
     parent: Overlay.overlay
     x: 0
@@ -553,6 +555,33 @@ Popup {
             autoPaddingEnabled: false
         }
 
+        // Nothing to show behind the page (no screenshot, no cover): a soft
+        // glow in the theme's accent, so the page never sits on a flat colour.
+        Item {
+            anchors.fill: parent
+            visible: detailsBackdropImage.visible && detailsBackdropImage.status !== Image.Ready
+            Rectangle {
+                id: detailsGlowSource
+                width: parent.width * 0.7
+                height: width
+                radius: width / 2
+                x: parent.width * 0.48
+                y: -height * 0.42
+                color: theme.accent
+                opacity: 0.28
+                visible: false
+            }
+            MultiEffect {
+                anchors.fill: detailsGlowSource
+                source: detailsGlowSource
+                opacity: detailsGlowSource.opacity
+                blurEnabled: true
+                blur: 1.0
+                blurMax: 64
+                autoPaddingEnabled: true
+            }
+        }
+
         Rectangle {
             anchors.fill: parent
             gradient: Gradient {
@@ -644,6 +673,11 @@ Popup {
             anchors.rightMargin: detailsContentFrame.pageMargin
             anchors.topMargin: 76 + Math.round(detailsContentFrame.verticalSlack * 0.42)
             readonly property real coverHeight: Math.round(Math.max(220, Math.min(360, detailsContentFrame.height * 0.36)))
+            // No metadata matched this game yet.
+            readonly property bool noGameInfo: !!window.selectedGame
+                && (!window.selectedGame.metadataTitle || window.selectedGame.metadataTitle.length === 0)
+            readonly property string gameFileName: window.selectedGame && window.selectedGame.path
+                ? String(window.selectedGame.path).split("/").pop() : ""
             height: coverHeight
 
             GameArtwork {
@@ -655,6 +689,7 @@ Popup {
                     window.selectedGame ? window.selectedGame.platform : ""))
                 source: window.selectedGame ? window.selectedGame.artworkPath : ""
                 platform: window.selectedGame ? window.selectedGame.platform : ""
+                title: window.selectedGame ? (window.selectedGame.metadataTitle || window.selectedGame.title) : ""
                 themeTokens: theme
                 reducedMotion: settingsManager.reducedMotion
                 frameMode: "platform"
@@ -683,6 +718,22 @@ Popup {
                             text: window.selectedGame
                                 ? window.platformDisplayName(window.selectedGame.platform).toUpperCase() : ""
                             color: theme.textPrimary
+                            font.pixelSize: 11 * theme.fontScale
+                            font.bold: true
+                            font.letterSpacing: 0.6
+                        }
+                    }
+                    Rectangle {
+                        visible: detailsHero.noGameInfo
+                        height: 26
+                        width: detailsNoInfoChipLabel.implicitWidth + 24
+                        radius: 13
+                        color: Qt.rgba(theme.warningSurface.r, theme.warningSurface.g, theme.warningSurface.b, 0.7)
+                        Label {
+                            id: detailsNoInfoChipLabel
+                            anchors.centerIn: parent
+                            text: "NO GAME INFO"
+                            color: theme.warningText
                             font.pixelSize: 11 * theme.fontScale
                             font.bold: true
                             font.letterSpacing: 0.6
@@ -749,8 +800,8 @@ Popup {
                     readonly property string rating: window.selectedGame
                         ? window.formatGameRating(window.selectedGame.metadataRating) : ""
                     text: [year, rating].filter(part => part.length > 0).join("  ·  ")
-                        || (window.selectedGame && !window.selectedGame.metadataTitle
-                            ? "Local library entry" : "")
+                        || (detailsHero.noGameInfo && detailsHero.gameFileName.length > 0
+                            ? "From your library  ·  " + detailsHero.gameFileName : "")
                     visible: text.length > 0
                     color: theme.textSecondary
                     font.pixelSize: 15 * theme.fontScale
@@ -774,7 +825,6 @@ Popup {
                         && !gameDetailsPopup.releaseState.loading
                         && !gameDetailsPopup.releaseInfo
                         && gameDetailsPopup.releaseState.error.length === 0
-                    property bool moreOpen: false
 
                     // Installed: Play.
                     Button {
@@ -943,30 +993,204 @@ Popup {
                         Accessible.name: "More actions"
                         implicitHeight: 46
                         implicitWidth: 46
-                        onClicked: detailsActions.moreOpen = !detailsActions.moreOpen
+                        background: Rectangle {
+                            radius: height / 2
+                            color: detailsMoreMenu.visible
+                                ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.3)
+                                : detailsMoreButton.hovered ? theme.controlHover : theme.controlBackground
+                            border.width: detailsMoreButton.activeFocus || detailsMoreMenu.visible ? 2 : 0
+                            border.color: theme.accent
+                        }
+                        onClicked: detailsMoreMenu.visible ? detailsMoreMenu.close() : detailsMoreMenu.open()
+
+                        // ⋯ opens a small menu under the button. D-pad moves inside
+                        // it, A picks, B or Esc closes it; Uninstall still asks.
+                        Popup {
+                            id: detailsMoreMenu
+                            y: detailsMoreButton.height + 8
+                            width: 270
+                            padding: 7
+                            modal: true
+                            dim: false
+                            focus: true
+                            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+                            readonly property var installation: gameDetailsPopup.installedProject
+                            readonly property string logPath: gameDetailsPopup.selectedProject
+                                ? platformManager.dataDirectory + "/logs/launchers/"
+                                    + gameDetailsPopup.selectedProject.id + ".log" : ""
+                            onOpened: Qt.callLater(function() { detailsShowFolderItem.forceActiveFocus() })
+                            onClosed: {
+                                if (gameDetailsPopup.visible && detailsMoreButton.visible)
+                                    detailsMoreButton.forceActiveFocus()
+                            }
+                            background: Rectangle {
+                                radius: 14
+                                color: theme.windowBackground
+                                border.color: theme.divider
+                            }
+
+                            component MoreMenuItem: Button {
+                                id: menuItem
+                                property bool danger: false
+                                property string note: ""
+                                property string iconSource: ""
+                                Layout.fillWidth: true
+                                implicitHeight: 42
+                                leftPadding: 14
+                                rightPadding: 14
+                                activeFocusOnTab: true
+                                focusPolicy: Qt.StrongFocus
+                                contentItem: RowLayout {
+                                    spacing: 10
+                                    Image {
+                                        visible: menuItem.iconSource.length > 0
+                                        source: menuItem.iconSource
+                                        sourceSize: Qt.size(16, 16)
+                                        Layout.preferredWidth: 16
+                                        Layout.preferredHeight: 16
+                                        opacity: 0.85
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: menuItem.text
+                                        color: menuItem.danger ? theme.error : theme.textPrimary
+                                        font.pixelSize: 14.5 * theme.fontScale
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Label {
+                                        visible: menuItem.note.length > 0
+                                        text: menuItem.note
+                                        color: theme.textMuted
+                                        font.pixelSize: 12 * theme.fontScale
+                                    }
+                                }
+                                background: Rectangle {
+                                    radius: 9
+                                    color: menuItem.activeFocus
+                                        ? Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.22)
+                                        : menuItem.hovered ? theme.controlHover : "transparent"
+                                    border.width: menuItem.activeFocus ? 2 : 0
+                                    border.color: theme.accent
+                                }
+                            }
+
+                            contentItem: ColumnLayout {
+                                spacing: 2
+                                MoreMenuItem {
+                                    id: detailsShowFolderItem
+                                    text: "Show install folder"
+                                    iconSource: "qrc:/icons/folder.svg"
+                                    enabled: !!detailsMoreMenu.installation && !!detailsMoreMenu.installation.directory
+                                    onClicked: {
+                                        detailsMoreMenu.close()
+                                        Qt.openUrlExternally("file://" + detailsMoreMenu.installation.directory)
+                                    }
+                                }
+                                MoreMenuItem {
+                                    text: "Open launcher log"
+                                    iconSource: "qrc:/icons/log.svg"
+                                    // Before the first start there is no log yet:
+                                    // open the folder the logs go to instead.
+                                    onClicked: {
+                                        detailsMoreMenu.close()
+                                        const path = detailsMoreMenu.logPath
+                                        Qt.openUrlExternally("file://" + (platformManager.pathExists(path)
+                                            ? path : platformManager.dataDirectory + "/logs"))
+                                    }
+                                }
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 8
+                                    Layout.rightMargin: 8
+                                    Layout.topMargin: 4
+                                    Layout.bottomMargin: 4
+                                    implicitHeight: 1
+                                    color: theme.divider
+                                }
+                                MoreMenuItem {
+                                    text: "Uninstall…"
+                                    iconSource: "qrc:/icons/uninstall.svg"
+                                    danger: true
+                                    note: "asks first"
+                                    onClicked: {
+                                        detailsMoreMenu.close()
+                                        window.pendingUninstallProjectId = gameDetailsPopup.selectedProject.id
+                                        uninstallDialog.open()
+                                    }
+                                }
+                            }
+                        }
                     }
-                    // The ⋯ menu opens inline so it stays reachable with the
-                    // D-pad; Uninstall still asks for confirmation.
+                    // No game info: look it up again, or open the metadata settings.
+                    // The main action when the game has no launcher to install.
                     Button {
-                        id: detailsUninstallButton
-                        visible: detailsActions.installed && detailsActions.moreOpen
-                        text: "Uninstall…"
-                        icon.source: "qrc:/icons/uninstall.svg"
-                        icon.width: 16
-                        icon.height: 16
-                        implicitHeight: 46
-                        leftPadding: 18
-                        rightPadding: 18
+                        id: detailsFindInfoButton
+                        readonly property bool primary: !detailsActions.hasProject
+                        visible: detailsHero.noGameInfo
+                        enabled: (metadataManager.configured
+                            || (settingsManager.launchBoxEnabled && launchBoxCatalogManager.catalogAvailable))
+                            && !metadataMatcher.busy
+                        text: metadataMatcher.busy ? "Looking…" : "Find game info"
+                        implicitHeight: primary ? 52 : 46
+                        leftPadding: 22
+                        rightPadding: 22
+                        contentItem: Label {
+                            text: detailsFindInfoButton.text
+                            color: detailsFindInfoButton.primary && detailsFindInfoButton.enabled
+                                ? theme.windowBackground : theme.textPrimary
+                            font.pixelSize: 15 * theme.fontScale
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Rectangle {
+                            radius: height / 2
+                            color: detailsFindInfoButton.primary && detailsFindInfoButton.enabled
+                                ? theme.textPrimary
+                                : detailsFindInfoButton.hovered ? theme.controlHover : theme.controlBackground
+                            border.width: detailsFindInfoButton.activeFocus ? 3 : 0
+                            border.color: theme.accent
+                        }
                         onClicked: {
-                            detailsActions.moreOpen = false
-                            window.pendingUninstallProjectId = gameDetailsPopup.selectedProject.id
-                            uninstallDialog.open()
+                            console.info("[UI] Find game info requested for game ID:", window.selectedGame.id)
+                            metadataMatcher.scrapeGame(window.selectedGame.id)
+                        }
+                    }
+                    Button {
+                        id: detailsMetadataSettingsButton
+                        visible: detailsHero.noGameInfo
+                        text: "Metadata settings"
+                        implicitHeight: 46
+                        leftPadding: 22
+                        rightPadding: 22
+                        contentItem: Label {
+                            text: detailsMetadataSettingsButton.text
+                            color: theme.textPrimary
+                            font.pixelSize: 15 * theme.fontScale
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Rectangle {
+                            radius: height / 2
+                            color: detailsMetadataSettingsButton.hovered ? theme.controlHover : theme.controlBackground
+                            border.width: detailsMetadataSettingsButton.activeFocus ? 3 : 0
+                            border.color: theme.accent
+                        }
+                        onClicked: {
+                            gameDetailsPopup.close()
+                            currentPage = "Settings"
+                            settingsPage.section = "Metadata"
+                            Qt.callLater(function() {
+                                metadataNavigationButton.forceActiveFocus()
+                            })
                         }
                     }
                     Connections {
                         target: gameDetailsPopup
-                        function onSelectedProjectChanged() { detailsActions.moreOpen = false }
-                        function onClosed() { detailsActions.moreOpen = false }
+                        function onSelectedProjectChanged() { detailsMoreMenu.close() }
+                        function onClosed() { detailsMoreMenu.close() }
                     }
                 }
 
@@ -1106,6 +1330,7 @@ Popup {
                     spacing: 10
 
                     Label {
+                        visible: !detailsHero.noGameInfo
                         text: "ABOUT"
                         color: theme.textMuted
                         font.pixelSize: 11 * theme.fontScale
@@ -1123,59 +1348,66 @@ Popup {
                         lineHeight: 1.22
                         lineHeightMode: Text.ProportionalHeight
                     }
-                    // No metadata: same guidance and actions as before.
+                    // No metadata: what happened and how to fix it. The actions
+                    // (Find game info, Metadata settings) sit in the hero.
                     Rectangle {
                         Layout.fillWidth: true
-                        visible: !!window.selectedGame
-                            && (!window.selectedGame.metadataTitle
-                                || window.selectedGame.metadataTitle.length === 0)
-                        radius: theme.radiusCard
-                        color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.85)
-                        border.color: theme.divider
-                        implicitHeight: metadataEmptyContent.implicitHeight + 32
+                        visible: detailsHero.noGameInfo
+                        radius: theme.radiusLarge
+                        color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g, theme.sidebarBackground.b, 0.88)
+                        border.color: Qt.rgba(theme.divider.r, theme.divider.g, theme.divider.b, 0.7)
+                        implicitHeight: metadataEmptyContent.implicitHeight + 40
                         ColumnLayout {
                             id: metadataEmptyContent
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.margins: 16
+                            anchors.margins: 20
                             spacing: 10
                             Label {
-                                Layout.fillWidth: true
-                                text: "GAME INFORMATION NOT FOUND"
-                                color: theme.textPrimary
-                                font.pixelSize: 13 * theme.fontScale
+                                text: "ABOUT"
+                                color: theme.textMuted
+                                font.pixelSize: 11 * theme.fontScale
                                 font.bold: true
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: "We couldn't find matching game information. Try a different metadata provider in Settings → Metadata, then retry the lookup. Your local game entry is safe, and compatible launchers can still be installed and played."
-                                color: theme.textSecondary
-                                font.pixelSize: 14 * theme.fontScale
-                                wrapMode: Text.Wrap
+                                font.letterSpacing: 0.8
                             }
                             RowLayout {
-                                spacing: 10
-                                Button {
-                                    text: metadataMatcher.busy ? "Checking Metadata…" : "Retry Metadata"
-                                    enabled: (metadataManager.configured
-                                        || (settingsManager.launchBoxEnabled
-                                            && launchBoxCatalogManager.catalogAvailable))
-                                        && !metadataMatcher.busy
-                                    onClicked: {
-                                        console.info("[UI] Retry metadata requested for game ID:", window.selectedGame.id)
-                                        metadataMatcher.scrapeGame(window.selectedGame.id)
+                                Layout.fillWidth: true
+                                spacing: 14
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignTop
+                                    implicitWidth: 34
+                                    implicitHeight: 34
+                                    radius: 17
+                                    color: Qt.rgba(theme.warningSurface.r, theme.warningSurface.g, theme.warningSurface.b, 0.7)
+                                    Label {
+                                        anchors.centerIn: parent
+                                        text: "?"
+                                        color: theme.warningText
+                                        font.pixelSize: 16 * theme.fontScale
+                                        font.bold: true
                                     }
                                 }
-                                Button {
-                                    text: "View Metadata Settings"
-                                    onClicked: {
-                                        gameDetailsPopup.close()
-                                        currentPage = "Settings"
-                                        settingsPage.section = "Metadata"
-                                        Qt.callLater(function() {
-                                            metadataNavigationButton.forceActiveFocus()
-                                        })
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 6
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: metadataMatcher.busy ? "Looking for game info…" : "No game info found yet"
+                                        color: theme.textPrimary
+                                        font.pixelSize: 16 * theme.fontScale
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Neither LaunchBox nor TheGamesDB had a clear match for "
+                                            + (detailsHero.gameFileName || "this game")
+                                            + ", so nothing was applied rather than the wrong cover. Naming the file after the game's title usually fixes it; then choose Find game info."
+                                        color: theme.textSecondary
+                                        font.pixelSize: 14 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                        lineHeight: 1.2
+                                        lineHeightMode: Text.ProportionalHeight
                                     }
                                 }
                             }
@@ -1232,11 +1464,30 @@ Popup {
                                 onClicked: gameDetailsPopup.selectScreenshot(index)
                             }
                         }
+                        // No screenshots: three empty frames and a short note.
+                        Repeater {
+                            model: detailsScreenshotStrip.shots.length === 0 ? 3 : 0
+                            delegate: Rectangle {
+                                width: Math.min(250, detailsScreenshotStrip.thumbWidth)
+                                height: Math.round(width * 9 / 16)
+                                radius: theme.radiusSmall
+                                color: Qt.rgba(theme.sidebarBackground.r, theme.sidebarBackground.g, theme.sidebarBackground.b, 0.45)
+                                border.color: Qt.rgba(theme.divider.r, theme.divider.g, theme.divider.b, 0.8)
+                                border.width: 1
+                            }
+                        }
                         Label {
                             visible: detailsScreenshotStrip.shots.length === 0
-                            text: "No screenshots yet. Run Refresh All Metadata in Settings to fetch them."
+                            width: Math.min(300, detailsScreenshotStrip.width)
+                            height: detailsScreenshotStrip.shots.length === 0
+                                ? Math.round(Math.min(250, detailsScreenshotStrip.thumbWidth) * 9 / 16) : implicitHeight
+                            verticalAlignment: Text.AlignVCenter
+                            text: detailsHero.noGameInfo
+                                ? "Screenshots appear here once the game's info is found."
+                                : "No screenshots yet. Run Refresh All Metadata in Settings to fetch them."
                             color: theme.textMuted
                             font.pixelSize: 13 * theme.fontScale
+                            wrapMode: Text.Wrap
                         }
                     }
                 }
@@ -1305,11 +1556,21 @@ Popup {
                             Layout.fillWidth: true
                             text: gameDetailsPopup.selectedProject
                                 ? gameDetailsPopup.selectedProject.name
-                                : "No supported recompilation project is currently listed for this game."
-                            color: gameDetailsPopup.selectedProject ? theme.textPrimary : theme.textSecondary
-                            font.pixelSize: (gameDetailsPopup.selectedProject ? 19 : 14) * theme.fontScale
-                            font.bold: gameDetailsPopup.selectedProject !== null
+                                : "No project for this game yet"
+                            color: theme.textPrimary
+                            font.pixelSize: (gameDetailsPopup.selectedProject ? 19 : 16) * theme.fontScale
+                            font.bold: true
                             wrapMode: Text.Wrap
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            visible: gameDetailsPopup.selectedProject === null
+                            text: "No recompilation project in the catalog supports this game. When one is added, Install appears here."
+                            color: theme.textSecondary
+                            font.pixelSize: 14 * theme.fontScale
+                            wrapMode: Text.Wrap
+                            lineHeight: 1.2
+                            lineHeightMode: Text.ProportionalHeight
                         }
                         Label {
                             Layout.fillWidth: true
@@ -1507,7 +1768,8 @@ Popup {
         // Focus the most useful action when the page opens or switches games,
         // so A plays or installs straight away; Back otherwise.
         function focusPrimaryAction() {
-            const candidates = [detailsPlayButton, detailsInstallButton, detailsFindButton]
+            const candidates = [detailsPlayButton, detailsInstallButton, detailsFindButton,
+                                detailsFindInfoButton, detailsMetadataSettingsButton]
             for (let i = 0; i < candidates.length; ++i) {
                 if (candidates[i].visible && candidates[i].enabled) {
                     candidates[i].forceActiveFocus()

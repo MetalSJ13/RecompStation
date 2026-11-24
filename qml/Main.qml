@@ -388,6 +388,10 @@ ApplicationWindow {
             return
         }
 
+        if (gameDetailsPopup.visible && gameDetailsPopup.moreMenu.visible) {
+            window.moveDirectionalFocus(gameDetailsPopup.moreMenu.contentItem, direction)
+            return
+        }
         if (gameDetailsPopup.visible) {
             if (window.moveDirectionalFocus(gameDetailsPopup.contentFrame, direction))
                 return
@@ -751,7 +755,9 @@ ApplicationWindow {
             screenshotViewer.close()
             return
         }
-        if (gameDetailsPopup.visible)
+        if (gameDetailsPopup.visible && gameDetailsPopup.moreMenu.visible)
+            gameDetailsPopup.moreMenu.close()
+        else if (gameDetailsPopup.visible)
             gameDetailsPopup.close()
         else if (currentPage === "Library"
                  && window.isDescendantOf(window.activeFocusItem, listPreviewShots))
@@ -1843,6 +1849,7 @@ ApplicationWindow {
         launchErrors = errors
         launchOverlay.artworkPath = game && game.artworkPath ? game.artworkPath : ""
         launchOverlay.platform = game && game.platform ? game.platform : ""
+        launchOverlay.gameTitle = game ? (game.metadataTitle || game.title || "") : ""
         gameLaunchManager.launchGame(projectId, game && game.path ? game.path : "")
     }
 
@@ -4170,6 +4177,7 @@ ApplicationWindow {
                                     visible: parent.width > 1100
                                     source: shelvesSpotlight.game ? shelvesSpotlight.game.artworkPath : ""
                                     platform: shelvesSpotlight.game ? shelvesSpotlight.game.platform : ""
+                                    title: shelvesSpotlight.game ? (shelvesSpotlight.game.metadataTitle || shelvesSpotlight.game.title) : ""
                                     themeTokens: theme
                                     reducedMotion: settingsManager.reducedMotion
                                     frameMode: "platform"
@@ -4303,6 +4311,7 @@ ApplicationWindow {
                                                         height: shelvesView.cardHeight
                                                         source: shelfCard.game ? shelfCard.game.artworkPath : ""
                                                         platform: shelfCard.game ? shelfCard.game.platform : ""
+                                                        title: shelfCard.game ? (shelfCard.game.metadataTitle || shelfCard.game.title) : ""
                                                         highlighted: shelfCard.isCurrent || shelfCardMouse.containsMouse
                                                         focused: shelfCard.isCurrent
                                                         hovered: shelfCardMouse.containsMouse
@@ -4498,6 +4507,7 @@ ApplicationWindow {
                                     height: listTile.thumbHeight
                                     source: listTile.artworkPath
                                     platform: listTile.platform
+                                    title: listTile.metadataTitle || listTile.title
                                     themeTokens: theme
                                     reducedMotion: settingsManager.reducedMotion
                                     frameMode: "platform"
@@ -4634,6 +4644,7 @@ ApplicationWindow {
                                     listPreview.game ? listPreview.game.platform : ""))
                                 source: listPreview.game ? listPreview.game.artworkPath : ""
                                 platform: listPreview.game ? listPreview.game.platform : ""
+                                title: listPreview.game ? (listPreview.game.metadataTitle || listPreview.game.title) : ""
                                 themeTokens: theme
                                 reducedMotion: settingsManager.reducedMotion
                                 frameMode: "platform"
@@ -4975,6 +4986,7 @@ ApplicationWindow {
                                         anchors.fill: parent
                                         source: carouselCard.game ? carouselCard.game.artworkPath : ""
                                         platform: carouselCard.game ? carouselCard.game.platform : ""
+                                        title: carouselCard.game ? (carouselCard.game.metadataTitle || carouselCard.game.title) : ""
                                         highlighted: carouselCard.isCurrent || carouselCardMouse.containsMouse
                                         focused: carouselCard.isCurrent
                                         hovered: carouselCardMouse.containsMouse
@@ -7250,6 +7262,7 @@ ApplicationWindow {
                                         height: parent.height - 62
                                         source: settingsPreviewPane.previewGame ? settingsPreviewPane.previewGame.artworkPath : ""
                                         platform: settingsPreviewPane.previewGame ? settingsPreviewPane.previewGame.platform : ""
+                                        title: settingsPreviewPane.previewGame ? (settingsPreviewPane.previewGame.metadataTitle || settingsPreviewPane.previewGame.title) : ""
                                         reducedMotion: settingsManager.reducedMotion
                                         themeTokens: theme
                                         frameAlignment: "center"

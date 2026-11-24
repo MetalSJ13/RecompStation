@@ -15,6 +15,8 @@
     <file alias="play.svg">../assets/icons/play.svg</file>
     <file alias="install.svg">../assets/icons/install.svg</file>
     <file alias="uninstall.svg">../assets/icons/uninstall.svg</file>
+    <file alias="folder.svg">../assets/icons/folder.svg</file>
+    <file alias="log.svg">../assets/icons/log.svg</file>
     <file alias="check.svg">../assets/icons/check.svg</file>
     <file alias="close.svg">../assets/icons/close.svg</file>
   </qresource>
