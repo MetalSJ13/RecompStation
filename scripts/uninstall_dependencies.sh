@@ -57,8 +57,8 @@ echo
 # Installs made before the record existed can still be traced: apt and pacman
 # log every install with the exact packages it added. Only installs whose
 # command line was install_dependencies.sh's are used (on Debian it names
-# qt6-shadertools-dev and libsdl2-dev; on Arch qt6-shadertools and
-# qt6-declarative, as the first Arch-only version of the script did too); everything they added goes into the record, and
+# qt6-shadertools-dev and libsdl2-dev; on Arch, every version of the script
+# ran pacman -S --needed with cmake, qt6-base and qt6-declarative); everything they added goes into the record, and
 # the checks below still decide what can actually be removed.
 history_debian() {
     local logs=(/var/log/apt/history.log /var/log/apt/history.log.*.gz)
@@ -85,7 +85,7 @@ history_debian() {
 history_arch() {
     [[ -r /var/log/pacman.log ]] || return 0
     awk '
-        /\[PACMAN\] Running / { ours = ($0 ~ /pacman -S/ && $0 ~ /qt6-shadertools/ && $0 ~ /qt6-declarative/) }
+        /\[PACMAN\] Running / { ours = ($0 ~ /pacman -S/ && $0 ~ /--needed/ && $0 ~ / cmake / && $0 ~ / qt6-base / && $0 ~ / qt6-declarative /) }
         ours && /\[ALPM\] installed / {
             for (i = 1; i <= NF; i++) if ($i == "installed") { print $(i + 1); break }
         }' /var/log/pacman.log
