@@ -441,11 +441,16 @@ Popup {
                 width: Math.min(parent.width, 640)
                 visible: setup.step === 3
                 spacing: 14
-                ControllerOutline {
+                Image {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: 220
-                    Layout.preferredHeight: 145
-                    kind: window.controllerLayout
+                    Layout.preferredWidth: 120
+                    Layout.preferredHeight: 120
+                    Layout.bottomMargin: 12
+                    source: "qrc:/qt/qml/RecompStation/assets/logo/recompstation-mark.svg"
+                    sourceSize: Qt.size(240, 240)
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    Accessible.ignored: true
                 }
                 Label {
                     Layout.fillWidth: true
