@@ -7980,7 +7980,6 @@ ApplicationWindow {
                                     lineColor: controllerManager.connected ? theme.textSecondary : theme.textSubtle
                                     accentColor: controllerManager.connected ? theme.accent : theme.textSubtle
                                     litColor: theme.accentHover
-                                    lineWidth: 1.8
                                 }
                                 // Shoulder buttons and triggers are not on the front of the drawing.
                                 Row {

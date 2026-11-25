@@ -13,9 +13,12 @@ Item {
     property color lineColor: theme.textSecondary
     property color accentColor: theme.accent
     property color litColor: theme.accent
-    property color bodyColor: theme.elevatedSurface
-    property color wellColor: theme.windowBackground
-    property color partColor: theme.controlBackground
+    // Drawn on Settings panels (theme.sidebarBackground): the body one step
+    // lighter, buttons one more, recesses a touch darker than the panel,
+    // as in the approved mockup.
+    property color bodyColor: theme.surface
+    property color wellColor: Qt.darker(theme.sidebarBackground, 1.1)
+    property color partColor: theme.elevatedSurface
     property color labelColor: theme.textPrimary
     property real lineWidth: 2.2   // in the 200 x 130 drawing
 

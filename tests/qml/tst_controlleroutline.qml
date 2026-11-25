@@ -16,9 +16,9 @@ Item {
         property color textSecondary: "#b5bbcd"
         property color textPrimary: "#f4f5fb"
         property color accent: "#8174e8"
-        property color elevatedSurface: "#222635"
-        property color windowBackground: "#11131b"
-        property color controlBackground: "#2b3042"
+        property color surface: "#222635"
+        property color elevatedSurface: "#2a3042"
+        property color sidebarBackground: "#191c27"
     }
 
     Component {
