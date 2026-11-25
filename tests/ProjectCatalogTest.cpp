@@ -178,9 +178,24 @@ void ProjectCatalogTest::matchesGameByTitleAndPlatform()
 
     const QVariantList matches =
         catalog.projectsForGame(QStringLiteral("Banjo Kazooie"), QStringLiteral("N64"));
-    QCOMPARE(matches.size(), 1);
+    QCOMPARE(matches.size(), 2);
     QCOMPARE(matches.first().toMap().value("id").toString(),
              QStringLiteral("banjo-kazooie-recompiled"));
+    QCOMPARE(matches.at(1).toMap().value("id").toString(),
+             QStringLiteral("lighthouse-banjo-kazooie"));
+
+    // Games with a second launcher from HarbourMasters: the catalog's order
+    // keeps the first project first.
+    const QList<QPair<QString, QString>> secondLaunchers = {
+        {QStringLiteral("The Legend of Zelda: Majora's Mask"), QStringLiteral("2ship2harkinian-majoras-mask")},
+        {QStringLiteral("Mario Kart 64"), QStringLiteral("spaghettikart-mario-kart-64")},
+        {QStringLiteral("Star Fox 64"), QStringLiteral("starship-star-fox-64")}
+    };
+    for (const auto &item : secondLaunchers) {
+        const QVariantList found = catalog.projectsForGame(item.first, QStringLiteral("N64"));
+        QVERIFY2(found.size() == 2, qPrintable(item.first));
+        QCOMPARE(found.at(1).toMap().value("id").toString(), item.second);
+    }
     QVERIFY(catalog.projectsForGame(
         QStringLiteral("Banjo-Kazooie"), QStringLiteral("PS1")).isEmpty());
     const QVariantList donkeyKongMatches = catalog.projectsForGame(
@@ -224,7 +239,7 @@ void ProjectCatalogTest::matchesNewN64ProjectsAndMultiplePorts()
 
     for (const auto &item : expected) {
         const QVariantList matches = catalog.projectsForGame(item.first, QStringLiteral("N64"));
-        QVERIFY2(matches.size() == 1, qPrintable(item.first));
+        QVERIFY2(!matches.isEmpty(), qPrintable(item.first));
         QCOMPARE(matches.first().toMap().value(QStringLiteral("id")).toString(), item.second);
     }
 }
@@ -253,7 +268,7 @@ void ProjectCatalogTest::matchesTenNewProjectsAndPlatforms()
             || item.second == QStringLiteral("luigis-mansion-recompiled"))
             ? QStringLiteral("GameCube") : QStringLiteral("N64");
         const QVariantList matches = catalog.projectsForGame(item.first, platform);
-        QVERIFY2(matches.size() == 1, qPrintable(item.first));
+        QVERIFY2(!matches.isEmpty(), qPrintable(item.first));
         QCOMPARE(matches.first().toMap().value(QStringLiteral("id")).toString(), item.second);
     }
     QVERIFY(catalog.projectsForGame(QStringLiteral("The Legend of Zelda: Ocarina of Time"),
