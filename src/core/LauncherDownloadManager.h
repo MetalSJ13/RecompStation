@@ -47,7 +47,11 @@ public:
         const QString &packageFormat,
         const QString &expectedExecutable,
         const QString &releaseTag = QString(),
-        bool replaceExisting = false
+        bool replaceExisting = false,
+        // "linux-x86_64" or "windows-x86_64": recorded with the install. A
+        // Windows build may leave expectedExecutable empty: the download's
+        // one main .exe is used.
+        const QString &build = QString()
     );
 
     // SHA-256 of a file as lowercase hex, or an empty string if unreadable.
@@ -61,7 +65,12 @@ public:
     // folder (saves, settings, portable mode) are first moved to
     // keptFilesDirectory(), and put back when the launcher is installed again.
     Q_INVOKABLE bool uninstallLauncher(const QString &projectId);
-    Q_INVOKABLE QString keptFilesDirectory(const QString &projectId) const;
+    // Kept apart per build: a Windows launcher's files never end up in the
+    // Linux launcher's folder, or the reverse.
+    Q_INVOKABLE QString keptFilesDirectory(const QString &projectId, const QString &build = QString()) const;
+    // The build recorded in an installed launcher's folder ("" for Linux
+    // installs from before builds were recorded).
+    static QString installedBuild(const QString &installDirectory);
     // At startup, before any download: removes what interrupted downloads
     // and installs left in the staging area (partial files, extraction
     // folders, archives that were never installed). Nothing there is reused

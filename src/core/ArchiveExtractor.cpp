@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <climits>
 #include <QSaveFile>
 #include <QSet>
 #include <QUuid>
@@ -81,7 +82,9 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
         return result;
     }
 
-    if (!isSafeRelativePath(expectedExecutable)) {
+    // An empty name means "pick the Windows program" (Windows builds only).
+    const bool chooseProgram = expectedExecutable.isEmpty();
+    if (!chooseProgram && !isSafeRelativePath(expectedExecutable)) {
         result.error = QStringLiteral("The expected launcher executable path is invalid.");
         return result;
     }
@@ -144,6 +147,7 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
     int entryCount = 0;
     QString exactExecutablePath;
     QStringList executableNameMatches;
+    QStringList windowsPrograms;
     QString failure;
 
     struct archive_entry *entry = nullptr;
@@ -238,12 +242,14 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
             break;
         }
 
-        if (normalizedPath == expectedExecutable)
+        if (chooseProgram && normalizedPath.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive))
+            windowsPrograms.append(normalizedPath);
+        if (!chooseProgram && normalizedPath == expectedExecutable)
             exactExecutablePath = normalizedPath;
         // Projects change the capitalisation of their release files between
         // versions (Ghostship.appimage became ghostship.appimage), so the file
         // name is matched without case. It must still be the only match.
-        if (QFileInfo(normalizedPath).fileName().compare(
+        if (!chooseProgram && QFileInfo(normalizedPath).fileName().compare(
                 QFileInfo(expectedExecutable).fileName(), Qt::CaseInsensitive) == 0)
             executableNameMatches.append(normalizedPath);
 
@@ -268,7 +274,7 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
 
     // Some Linux releases are ZIP wrappers around a TAR.GZ package.
     // Only unwrap this single supported nesting level.
-    if (failure.isEmpty() && exactExecutablePath.isEmpty()
+    if (failure.isEmpty() && !chooseProgram && exactExecutablePath.isEmpty()
         && executableNameMatches.isEmpty()
         && QFileInfo(archivePath).suffix().compare(QStringLiteral("zip"), Qt::CaseInsensitive) == 0) {
         QStringList nestedArchives;
@@ -310,7 +316,12 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
     }
 
     QString selectedExecutablePath = exactExecutablePath;
-    if (failure.isEmpty() && selectedExecutablePath.isEmpty()) {
+    if (failure.isEmpty() && chooseProgram) {
+        QString choiceError;
+        selectedExecutablePath = chooseWindowsProgram(windowsPrograms, &choiceError);
+        if (selectedExecutablePath.isEmpty())
+            failure = choiceError;
+    } else if (failure.isEmpty() && selectedExecutablePath.isEmpty()) {
         if (executableNameMatches.size() == 1) {
             selectedExecutablePath = executableNameMatches.constFirst();
         } else if (executableNameMatches.size() > 1) {
@@ -440,4 +451,39 @@ bool ArchiveExtractor::isSafeRelativePath(const QString &path)
     }
 
     return true;
+}
+
+QString ArchiveExtractor::chooseWindowsProgram(const QStringList &relativePaths, QString *error)
+{
+    // Programs that come with a launcher but aren't it.
+    static const QRegularExpression helper(
+        QStringLiteral("^(unins.*|uninstall.*|setup.*|install.*|.*crashpad.*|.*crash_?handler.*|"
+                       "crashreport.*|vc_?redist.*|vcredist.*|dxsetup.*|dxwebsetup.*|updater.*|"
+                       "update\\.exe|.*_debug\\.exe|.*-debug\\.exe)$"),
+        QRegularExpression::CaseInsensitiveOption);
+    QStringList candidates;
+    int shallowest = INT_MAX;
+    for (const QString &path : relativePaths) {
+        if (!path.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive) || !isSafeRelativePath(path))
+            continue;
+        if (helper.match(QFileInfo(path).fileName()).hasMatch())
+            continue;
+        const int depth = int(path.count(QLatin1Char('/')));
+        if (depth < shallowest) {
+            shallowest = depth;
+            candidates.clear();
+        }
+        if (depth == shallowest)
+            candidates.append(path);
+    }
+    if (candidates.size() == 1)
+        return candidates.constFirst();
+    if (error) {
+        if (candidates.isEmpty())
+            *error = QStringLiteral("The download has no Windows program (.exe) to start.");
+        else
+            *error = QStringLiteral("The download has several Windows programs (%1); the catalog needs to say which one is the launcher.")
+                         .arg(candidates.mid(0, 4).join(QStringLiteral(", ")));
+    }
+    return {};
 }

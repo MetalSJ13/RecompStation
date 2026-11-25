@@ -476,6 +476,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("softwareGraphics", openGL != QStringLiteral("hardware"));
     WineSupport wineSupport;
     wineSupport.refresh();
+    gameLaunchManager.setWineSupport(&wineSupport);
     engine.rootContext()->setContextProperty("wineSupport", &wineSupport);
     engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
     engine.rootContext()->setContextProperty("platformManager", &platformManager);

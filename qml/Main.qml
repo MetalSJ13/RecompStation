@@ -340,7 +340,7 @@ ApplicationWindow {
     function libraryKeyboardShortcutsAllowed() {
         return window.visible && currentPage === "Library"
             && !systemMenuVisible && !gameDetailsPopup.visible
-            && !uninstallDialog.visible && !librarySetupDialog.visible
+            && !uninstallDialog.visible && !launcherSwitchDialog.visible && !librarySetupDialog.visible
             && window.keyboardDirectionalNavigationAllowed()
     }
 
@@ -844,7 +844,7 @@ ApplicationWindow {
                 libraryFolderDialog.reject()
             return
         }
-        if (importGamesPopup.visible && !libraryFolderDialog.visible && !uninstallDialog.visible) {
+        if (importGamesPopup.visible && !libraryFolderDialog.visible && !uninstallDialog.visible && !launcherSwitchDialog.visible) {
             importGamesPopup.close()
             return
         }
@@ -967,7 +967,7 @@ ApplicationWindow {
         sequence: "PageDown"
         context: Qt.ApplicationShortcut
         enabled: window.visible && currentPage === "Settings"
-            && !systemMenuVisible && !uninstallDialog.visible
+            && !systemMenuVisible && !uninstallDialog.visible && !launcherSwitchDialog.visible
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.scrollSettingsContent("down", Math.max(120, settingsContentCard.height * 0.72))
@@ -977,7 +977,7 @@ ApplicationWindow {
         sequence: "PageUp"
         context: Qt.ApplicationShortcut
         enabled: window.visible && currentPage === "Settings"
-            && !systemMenuVisible && !uninstallDialog.visible
+            && !systemMenuVisible && !uninstallDialog.visible && !launcherSwitchDialog.visible
         onActivated: {
             window.activeInputDevice = "keyboard"
             window.scrollSettingsContent("up", Math.max(120, settingsContentCard.height * 0.72))
@@ -1045,7 +1045,7 @@ ApplicationWindow {
         sequence: "Escape"
         context: Qt.ApplicationShortcut
         enabled: window.visible && currentPage === "Settings"
-            && !systemMenuVisible && !uninstallDialog.visible
+            && !systemMenuVisible && !uninstallDialog.visible && !launcherSwitchDialog.visible
             && !libraryFolderDialog.visible && !librarySetupDialog.visible
             && !libraryBackgroundFileDialog.visible
             // A text field (the TheGamesDB key) handles Escape itself.
@@ -1164,6 +1164,8 @@ ApplicationWindow {
         if (libraryFolderDialog.visible)
             return libraryFolderDialog.contentItem
         if (uninstallDialog.visible)
+            return null
+        if (launcherSwitchDialog.visible)
             return null
         if (systemPicker.visible)
             return systemPicker.contentItem
@@ -1800,7 +1802,7 @@ ApplicationWindow {
         enabled: window.visible
             && (currentPage === "Library" || currentPage === "Settings")
             && !systemMenuVisible && !gameDetailsPopup.visible
-            && !uninstallDialog.visible && !librarySetupDialog.visible
+            && !uninstallDialog.visible && !launcherSwitchDialog.visible && !librarySetupDialog.visible
             && window.keyboardDirectionalNavigationAllowed()
         onActivated: window.controllerSelect("keyboard")
     }
@@ -1810,7 +1812,7 @@ ApplicationWindow {
         enabled: window.visible
             && (currentPage === "Library" || currentPage === "Settings")
             && !systemMenuVisible && !gameDetailsPopup.visible
-            && !uninstallDialog.visible && !librarySetupDialog.visible
+            && !uninstallDialog.visible && !launcherSwitchDialog.visible && !librarySetupDialog.visible
             && window.keyboardDirectionalNavigationAllowed()
         onActivated: window.controllerSelect("keyboard")
     }
@@ -2096,6 +2098,107 @@ ApplicationWindow {
         return ids
     }
 
+    // ---- Linux or Windows launcher ------------------------------------------
+    // The player's pick on Game Details while nothing is installed yet.
+    property var chosenBuilds: ({})
+    readonly property string windowsBuildKey: "windows-x86_64"
+
+    // Windows launchers can be offered: Linux, the switch on, Wine found.
+    function windowsLaunchersAllowed() {
+        return projectCatalog.currentSystem === "linux"
+            && settingsManager.windowsLaunchersThroughWine && wineSupport.available
+    }
+    function projectHasBuild(project, build) {
+        return !!project && projectCatalog.availableBuilds(project.id).indexOf(build) >= 0
+    }
+    // The build Game Details shows and installs: the installed one; else
+    // the player's pick; else this system's own build when the project has
+    // it (Linux always comes first); else Windows through Wine if allowed.
+    function launcherBuild(project) {
+        if (!project)
+            return projectCatalog.currentBuild
+        const installed = installedLauncher(project.id)
+        if (installed)
+            return installed.build && installed.build.length > 0 ? installed.build
+                : (String(installed.executablePath || "").toLowerCase().endsWith(".exe")
+                    ? windowsBuildKey : projectCatalog.currentBuild)
+        const windowsOk = windowsLaunchersAllowed() && projectHasBuild(project, windowsBuildKey)
+        const chosen = chosenBuilds[project.id]
+        if (chosen === windowsBuildKey && windowsOk)
+            return chosen
+        if (projectHasBuild(project, projectCatalog.currentBuild))
+            return projectCatalog.currentBuild
+        return windowsOk ? windowsBuildKey : projectCatalog.currentBuild
+    }
+    // Game Details' Launcher row: both builds exist and Windows is allowed,
+    // or a Windows launcher is installed.
+    function launcherChoiceVisible(project) {
+        if (!project || projectCatalog.currentSystem !== "linux")
+            return false
+        const both = projectHasBuild(project, projectCatalog.currentBuild) && projectHasBuild(project, windowsBuildKey)
+        return both && (windowsLaunchersAllowed() || launcherBuild(project) === windowsBuildKey)
+    }
+    // A Windows-only project that can't be installed yet.
+    function needsWindowsSwitch(project) {
+        return !!project && projectCatalog.currentSystem === "linux"
+            && !projectHasBuild(project, projectCatalog.currentBuild)
+            && projectHasBuild(project, windowsBuildKey) && !windowsLaunchersAllowed()
+            && !installedLauncher(project.id)
+    }
+
+    property var pendingSwitch: null
+    // Picking the other build. Before anything is installed, Install just
+    // follows the pick; with a launcher installed, a warning comes first.
+    function chooseLauncherBuild(project, build) {
+        if (!project || build === launcherBuild(project))
+            return
+        if (!installedLauncher(project.id)) {
+            let chosen = Object.assign({}, chosenBuilds)
+            chosen[project.id] = build
+            chosenBuilds = chosen
+            return
+        }
+        pendingSwitch = { project: project, build: build }
+        launcherSwitchDialog.open()
+    }
+    function confirmLauncherSwitch() {
+        const pending = pendingSwitch
+        pendingSwitch = null
+        if (!pending)
+            return
+        const project = pending.project
+        if (!window.uninstallProjectLauncher(project.id))
+            return
+        let chosen = Object.assign({}, chosenBuilds)
+        chosen[project.id] = pending.build
+        chosenBuilds = chosen
+        // Download the other build straight away when the release is known.
+        const state = releaseStates[project.id]
+        const release = state && state.release
+        if (release) {
+            const assets = projectCatalog.compatibleAssets(project.id, release.assets || [], pending.build)
+            if (assets.length > 0)
+                startAssetDownload(project, assets[0], { releaseTag: String(release.tagName || "") })
+        }
+    }
+
+    // Uninstall with the player's files set aside (as the ⋯ menu does).
+    function uninstallProjectLauncher(projectId) {
+        if (!launcherDownloadManager.uninstallLauncher(projectId))
+            return false
+        let states = Object.assign({}, window.downloadStates)
+        for (const key of Object.keys(states)) {
+            if (key.startsWith(projectId + "|")) {
+                states[key] = Object.assign({}, states[key], {
+                    completed: false, installing: false, installed: false, error: "", filePath: ""
+                })
+            }
+        }
+        window.downloadStates = states
+        window.launcherRevision++
+        return true
+    }
+
     function installedLauncher(projectId) {
         launcherRevision
         const entries = launcherDownloadManager.installedLaunchers()
@@ -2135,12 +2238,15 @@ ApplicationWindow {
     function startAssetInstall(projectId, assetName) {
         const key = projectId + "|" + assetName
         const project = projectCatalog.project(projectId)
-        const rules = projectCatalog.buildRules(projectId, projectCatalog.currentBuild)
-        if (!rules || !rules.executablePath) {
+        const build = window.launcherBuild(project)
+        const rules = projectCatalog.buildRules(projectId, build)
+        // Windows builds may leave the program out: the installer picks it.
+        if (!rules || !rules.packageFormat
+                || (!rules.executablePath && build.indexOf("windows-") !== 0)) {
             let states = Object.assign({}, downloadStates)
             states[key] = Object.assign({}, states[key] || {}, {
                 installing: false,
-                error: "This project has no package for " + projectCatalog.buildLabel(projectCatalog.currentBuild) + " in the catalog."
+                error: "This project has no package for " + projectCatalog.buildLabel(build) + " in the catalog."
             })
             downloadStates = states
             return
@@ -2155,8 +2261,8 @@ ApplicationWindow {
         downloadStates = states
 
         const requestId = launcherDownloadManager.installDownloadedAsset(
-            projectId, assetName, rules.packageFormat, rules.executablePath,
-            states[key].releaseTag || "", states[key].replace === true)
+            projectId, assetName, rules.packageFormat, rules.executablePath || "",
+            states[key].releaseTag || "", states[key].replace === true, build)
         let pending = Object.assign({}, pendingInstallRequests)
         pending[requestId] = key
         pendingInstallRequests = pending
@@ -2195,7 +2301,7 @@ ApplicationWindow {
             loading: false,
             error: "",
             release: cached,
-            assets: projectCatalog.compatibleAssets(project.id, cached.assets || [])
+            assets: projectCatalog.compatibleAssets(project.id, cached.assets || [], window.launcherBuild(project))
         }
         releaseStates = nextStates
     }
@@ -2256,7 +2362,8 @@ ApplicationWindow {
                 loading: false,
                 error: "",
                 release: release,
-                assets: projectCatalog.compatibleAssets(projectId, release.assets)
+                assets: projectCatalog.compatibleAssets(projectId, release.assets,
+                                                        window.launcherBuild(projectCatalog.project(projectId)))
             }
             window.releaseStates = states
         }
@@ -3424,24 +3531,36 @@ ApplicationWindow {
                   + ". Your games aren't touched. Saves and settings the launcher kept in its own folder are set aside and put back if you install it again."
             color: theme.textPrimary
         }
-        onAccepted: {
-            if (launcherDownloadManager.uninstallLauncher(window.pendingUninstallProjectId)) {
-                let states = Object.assign({}, window.downloadStates)
-                for (const key of Object.keys(states)) {
-                    if (key.startsWith(window.pendingUninstallProjectId + "|")) {
-                        states[key] = Object.assign({}, states[key], {
-                            completed: false,
-                            installing: false,
-                            installed: false,
-                            error: "",
-                            filePath: ""
-                        })
-                    }
-                }
-                window.downloadStates = states
-                window.launcherRevision++
-            }
+        onAccepted: window.uninstallProjectLauncher(window.pendingUninstallProjectId)
+    }
+
+    // Switching an installed game between its Linux and Windows launcher.
+    // Saves are never copied between the two; each launcher's stay where
+    // they are, so switching back finds them again.
+    Dialog {
+        id: launcherSwitchDialog
+        readonly property bool toWindows: !!window.pendingSwitch && window.pendingSwitch.build === window.windowsBuildKey
+        title: toWindows ? "Switch to the Windows launcher?" : "Switch to the Linux launcher?"
+        modal: true
+        anchors.centerIn: parent
+        width: 520
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        Label {
+            width: 460
+            wrapMode: Text.Wrap
+            color: theme.textPrimary
+            text: launcherSwitchDialog.toWindows
+                ? "Your saves from the Linux launcher won't carry over to the Windows one. They stay where they are, and switching back to Linux finds them again.\n\nThe Linux launcher will be uninstalled and the Windows launcher downloaded, to run through Wine " + wineSupport.version + "."
+                : "Your saves from the Windows launcher stay in Wine's folders and won't carry over to the Linux one. Switching back to Windows finds them again.\n\nThe Windows launcher will be uninstalled and the Linux launcher downloaded."
         }
+        onAboutToShow: {
+            standardButton(Dialog.Ok).text = toWindows ? "Switch to Windows" : "Switch to Linux"
+            standardButton(Dialog.Cancel).text = toWindows ? "Keep Linux" : "Keep Windows"
+            // Keeping things as they are is the safe default.
+            Qt.callLater(function() { launcherSwitchDialog.standardButton(Dialog.Cancel).forceActiveFocus() })
+        }
+        onAccepted: window.confirmLauncherSwitch()
+        onRejected: window.pendingSwitch = null
     }
 
     GameDetailsPage {
@@ -3474,7 +3593,7 @@ ApplicationWindow {
         running: appUpdater.promptPending && !updateDialog.visible
         onTriggered: {
             if (firstRunSetup.visible || window.systemMenuVisible || gameDetailsPopup.visible
-                    || window.activeModalRoot() !== null || uninstallDialog.visible
+                    || window.activeModalRoot() !== null || uninstallDialog.visible || launcherSwitchDialog.visible
                     || Object.keys(window.runningLaunchers).length > 0 || !window.active)
                 return
             updateDialog.open()

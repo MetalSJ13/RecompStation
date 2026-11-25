@@ -40,6 +40,8 @@ private slots:
     void dropsSetuidAndWorldWritableModes();
     void unwrapsOnlyOneNestingLevel();
     void refusesZipWithSeveralNestedPackages();
+    void choosesTheMainWindowsProgram();
+    void extractsWindowsZipPickingItsProgram();
 };
 
 bool ArchiveExtractorTest::createArchive(
@@ -551,6 +553,48 @@ void ArchiveExtractorTest::refusesZipWithSeveralNestedPackages()
     QVERIFY(!result.success);
     QVERIFY(result.error.contains(QStringLiteral("multiple")));
     QVERIFY(onlyTheArchiveRemains(work, QStringLiteral("launcher.zip")));
+}
+
+
+void ArchiveExtractorTest::choosesTheMainWindowsProgram()
+{
+    QString error;
+    // One program beside its helpers.
+    QCOMPARE(ArchiveExtractor::chooseWindowsProgram({
+        QStringLiteral("Zelda64Recompiled.exe"), QStringLiteral("crashpad_handler.exe"),
+        QStringLiteral("unins000.exe"), QStringLiteral("assets/readme.txt")}, &error),
+        QStringLiteral("Zelda64Recompiled.exe"));
+    // The shallowest folder wins; tools deeper inside are left alone.
+    QCOMPARE(ArchiveExtractor::chooseWindowsProgram({
+        QStringLiteral("Game/Game.exe"), QStringLiteral("Game/tools/texture-pack-tool.exe")}, &error),
+        QStringLiteral("Game/Game.exe"));
+    QCOMPARE(ArchiveExtractor::chooseWindowsProgram({
+        QStringLiteral("Game.exe"), QStringLiteral("vc_redist.x64.exe"), QStringLiteral("Game-debug.exe")}, &error),
+        QStringLiteral("Game.exe"));
+    // Unclear or nothing to start: refused with a reason.
+    QVERIFY(ArchiveExtractor::chooseWindowsProgram({
+        QStringLiteral("GameA.exe"), QStringLiteral("GameB.exe")}, &error).isEmpty());
+    QVERIFY(error.contains(QStringLiteral("several Windows programs")));
+    QVERIFY(ArchiveExtractor::chooseWindowsProgram({QStringLiteral("setup.exe")}, &error).isEmpty());
+    QVERIFY(error.contains(QStringLiteral("no Windows program")));
+    QVERIFY(ArchiveExtractor::chooseWindowsProgram({QStringLiteral("../evil.exe")}, &error).isEmpty());
+}
+
+void ArchiveExtractorTest::extractsWindowsZipPickingItsProgram()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+    const QString archivePath = QDir(temp.path()).filePath("Game-Windows.zip");
+    const QString destination = QDir(temp.path()).filePath("extracted");
+    QVERIFY(createArchive(archivePath, {
+        {{QStringLiteral("name"), QStringLiteral("Game/")}, {QStringLiteral("type"), QStringLiteral("directory")}},
+        {{QStringLiteral("name"), QStringLiteral("Game/Game.exe")}, {QStringLiteral("data"), QByteArray("MZ")}},
+        {{QStringLiteral("name"), QStringLiteral("Game/crashpad_handler.exe")}, {QStringLiteral("data"), QByteArray("MZ")}},
+        {{QStringLiteral("name"), QStringLiteral("Game/SDL2.dll")}, {QStringLiteral("data"), QByteArray("dll")}}
+    }, true, true));
+    const auto result = ArchiveExtractor::extractArchive(archivePath, destination, QString());
+    QVERIFY2(result.success, qPrintable(result.error));
+    QCOMPARE(QDir(result.extractedDirectory).relativeFilePath(result.executablePath), QStringLiteral("Game/Game.exe"));
 }
 
 QTEST_GUILESS_MAIN(ArchiveExtractorTest)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 
 class ArchiveExtractor
 {
@@ -35,6 +36,12 @@ public:
         const QString &destinationDirectory,
         const QString &expectedExecutable
     );
+
+    // A Windows download with no program named in the catalog: the one
+    // main .exe among relativePaths, leaving out helpers (uninstallers,
+    // setup programs, crash reporters, redistributables) and preferring the
+    // shallowest folder. Empty, with error set, when it isn't clear.
+    static QString chooseWindowsProgram(const QStringList &relativePaths, QString *error = nullptr);
 
 private:
     static bool isSafeRelativePath(const QString &path);

@@ -12,6 +12,7 @@
 class LauncherDownloadManager;
 class ProjectCatalog;
 class SettingsManager;
+class WineSupport;
 class QProcess;
 
 class GameLaunchManager : public QObject
@@ -27,6 +28,8 @@ public:
 
     void setProjectCatalog(ProjectCatalog *catalog);
     void setSettingsManager(SettingsManager *settings);
+    // Windows launchers run through this Wine (Linux only).
+    void setWineSupport(WineSupport *wine);
     // Folders used instead of the user's home in tests.
     void setPreparationRoots(const QString &homeDirectory, const QString &dataHome);
 
@@ -50,10 +53,15 @@ signals:
 private:
     QString installDirectory(const QString &projectId, QString *executablePath = nullptr) const;
     LaunchPreparer::Options preparationOptions(const QString &projectId) const;
+    // Whether the installed launcher is a Windows build.
+    bool isWindowsLauncher(const QString &projectId) const;
+    // The line under Play for a Windows launcher, and why it can't start.
+    QVariantMap wineReadiness(const QString &gamePath) const;
 
     LauncherDownloadManager *m_launcherDownloadManager = nullptr;
     ProjectCatalog *m_projectCatalog = nullptr;
     SettingsManager *m_settingsManager = nullptr;
+    WineSupport *m_wine = nullptr;
     QString m_homeDirectory;
     QString m_dataHome;
     LaunchPreparer m_preparer;

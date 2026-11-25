@@ -26,6 +26,9 @@ class WineSupport : public QObject
     // "10.0", "10.19 (Staging)"; empty when not available.
     Q_PROPERTY(QString version READ version NOTIFY changed)
     Q_PROPERTY(QString program READ program NOTIFY changed)
+    // Wine's C: drive: $WINEPREFIX/drive_c when set, else ~/.wine/drive_c.
+    // It exists once Wine has run at least once.
+    Q_PROPERTY(QString cDrive READ cDrive NOTIFY changed)
 
 public:
     explicit WineSupport(QObject *parent = nullptr);
@@ -36,6 +39,7 @@ public:
     bool isChecking() const;
     QString version() const;
     QString program() const;
+    QString cDrive() const;
 
     // Looks for Wine again (startup, opening Settings › Library, and before
     // a Windows launcher is installed or started). Does nothing while a

@@ -170,8 +170,17 @@ Popup {
     property string releaseTag: releaseState && releaseState.release
         && releaseState.release.tagName
         ? String(releaseState.release.tagName) : "Not available"
-    property var compatibleAssets: releaseState && releaseState.assets
-        ? releaseState.assets : []
+    // Linux or Windows: what Install, updates and the version line go by.
+    readonly property string launcherBuild: {
+        window.launcherRevision
+        settingsManager.launchSettingsRevision
+        wineSupport.available
+        window.chosenBuilds
+        return window.launcherBuild(selectedProject)
+    }
+    readonly property bool windowsLauncher: launcherBuild.indexOf("windows-") === 0
+    property var compatibleAssets: releaseInfo && selectedProject
+        ? projectCatalog.compatibleAssets(selectedProject.id, releaseInfo.assets || [], launcherBuild) : []
     property var selectedAsset: compatibleAssets.length > 0
         ? compatibleAssets[0] : null
     // The installed version ("" for installs from before versions were
@@ -814,8 +823,10 @@ Popup {
                         && !!window.runningLaunchers[gameDetailsPopup.selectedProject.id]
                     readonly property bool canInstall: hasProject && !installed && !busy
                         && !gameDetailsPopup.releaseState.loading
-                        && gameDetailsPopup.releaseState.assets.length > 0
+                        && gameDetailsPopup.compatibleAssets.length > 0
+                        && !window.needsWindowsSwitch(gameDetailsPopup.selectedProject)
                     readonly property bool canFind: hasProject && !installed && !busy
+                        && !window.needsWindowsSwitch(gameDetailsPopup.selectedProject)
                         && !gameDetailsPopup.releaseState.loading
                         && !gameDetailsPopup.releaseInfo
                         && gameDetailsPopup.releaseState.error.length === 0
@@ -824,7 +835,10 @@ Popup {
                     Button {
                         id: detailsPlayButton
                         visible: detailsActions.installed
+                        // A Windows launcher needs the Wine switch on and Wine installed.
                         enabled: !detailsActions.running && !detailsActions.busy
+                            && gameDetailsPopup.launchState.state !== "wine_off"
+                            && gameDetailsPopup.launchState.state !== "wine_missing"
                         text: detailsActions.running ? "Running…" : "Play"
                         icon.source: "qrc:/icons/play.svg"
                         icon.width: 18
@@ -844,6 +858,7 @@ Popup {
                         id: detailsInstallButton
                         visible: detailsActions.canInstall && !gameDetailsPopup.installPromptVisible
                         text: "Install " + (gameDetailsPopup.selectedProject ? gameDetailsPopup.selectedProject.name : "")
+                            + (gameDetailsPopup.windowsLauncher ? " (Windows)" : "")
                         icon.source: "qrc:/icons/install.svg"
                         icon.width: 18
                         icon.height: 18
@@ -899,6 +914,28 @@ Popup {
                         implicitHeight: 46
                         Layout.minimumWidth: 96
                         onClicked: gameDetailsPopup.installPromptVisible = false
+                    }
+                    // Windows-only project with Windows launchers not available:
+                    // go to the switch in Settings › Library.
+                    Button {
+                        id: detailsWineSettingsButton
+                        visible: window.needsWindowsSwitch(gameDetailsPopup.selectedProject)
+                        text: "Library settings"
+                        implicitHeight: 52
+                        leftPadding: 24
+                        rightPadding: 24
+                        background: Rectangle {
+                            radius: height / 2
+                            color: theme.accent
+                            border.width: detailsWineSettingsButton.activeFocus ? 3 : 0
+                            border.color: theme.textPrimary
+                        }
+                        onClicked: {
+                            gameDetailsPopup.close()
+                            currentPage = "Settings"
+                            settingsPage.section = "Library"
+                            Qt.callLater(function() { libraryNavigationButton.forceActiveFocus() })
+                        }
                     }
                     // Not installed, release not checked yet: look it up.
                     Button {
@@ -1298,14 +1335,16 @@ Popup {
                                 : gameDetailsPopup.releaseInfo && !detailsLaunchStatus.visible
                                     ? (gameDetailsPopup.compatibleAssets.length === 0
                                         ? projectCatalog.explainNoCompatibleAsset(gameDetailsPopup.selectedProject.id,
-                                                                                  gameDetailsPopup.releaseInfo.assets || [])
+                                                                                  gameDetailsPopup.releaseInfo.assets || [],
+                                                                                  gameDetailsPopup.launcherBuild)
                                         : "Up to date: " + gameDetailsPopup.releaseTag)
                                 : "")
                         : gameDetailsPopup.releaseInfo && gameDetailsPopup.compatibleAssets.length === 0
                             ? projectCatalog.explainNoCompatibleAsset(gameDetailsPopup.selectedProject.id,
-                                                                      gameDetailsPopup.releaseInfo.assets || [])
+                                                                      gameDetailsPopup.releaseInfo.assets || [],
+                                                                      gameDetailsPopup.launcherBuild)
                         : gameDetailsPopup.releaseInfo
-                            ? "Version " + gameDetailsPopup.releaseTag + "  ·  " + projectCatalog.buildLabel(projectCatalog.currentBuild)
+                            ? "Version " + gameDetailsPopup.releaseTag + "  ·  " + projectCatalog.buildLabel(gameDetailsPopup.launcherBuild)
                         : ""
                     visible: text.length > 0
                     color: errorText.length > 0 ? theme.error : theme.textMuted
@@ -1662,6 +1701,66 @@ Popup {
                                 font.pixelSize: 13 * theme.fontScale
                                 wrapMode: Text.Wrap
                             }
+                            // Linux or Windows (through Wine): only when there is a choice.
+                            Label {
+                                visible: detailsLauncherChoice.visible
+                                Layout.alignment: Qt.AlignTop
+                                Layout.topMargin: 8
+                                text: "Launcher"
+                                color: theme.textMuted
+                                font.pixelSize: 13 * theme.fontScale
+                            }
+                            ColumnLayout {
+                                id: detailsLauncherChoice
+                                visible: window.launcherChoiceVisible(gameDetailsPopup.selectedProject)
+                                Layout.fillWidth: true
+                                spacing: 4
+                                ValueCycler {
+                                    id: detailsLauncherCycler
+                                    preferredWidth: 280
+                                    enabled: !detailsActions.busy && !detailsActions.running
+                                    options: [
+                                        { label: "Linux · recommended", value: projectCatalog.currentBuild },
+                                        { label: "Windows · through Wine", value: window.windowsBuildKey }
+                                    ]
+                                    value: gameDetailsPopup.launcherBuild
+                                    onPicked: (value) => window.chooseLauncherBuild(gameDetailsPopup.selectedProject, value)
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: gameDetailsPopup.windowsLauncher
+                                        ? (detailsActions.installed ? "Runs through Wine. Switching back to Linux asks first."
+                                                                    : "Runs through Wine. Opens to its own menu, where you pick the game.")
+                                        : "Made for your system. A Windows launcher is also available."
+                                    color: theme.textMuted
+                                    font.pixelSize: 11.5 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                            }
+                        }
+                        // A Windows-only project while Windows launchers aren't available.
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 6
+                            visible: window.needsWindowsSwitch(gameDetailsPopup.selectedProject)
+                            radius: 10
+                            color: Qt.rgba(theme.warning.r, theme.warning.g, theme.warning.b, 0.08)
+                            border.color: Qt.rgba(theme.warning.r, theme.warning.g, theme.warning.b, 0.3)
+                            implicitHeight: detailsWindowsOnlyText.implicitHeight + 22
+                            Label {
+                                id: detailsWindowsOnlyText
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.margins: 12
+                                wrapMode: Text.Wrap
+                                textFormat: Text.StyledText
+                                color: theme.textSecondary
+                                font.pixelSize: 13 * theme.fontScale
+                                text: "<b>Only made for Windows</b><br>" + (wineSupport.available
+                                    ? "This project has no Linux launcher. Turn on <b>Windows launchers through Wine</b> in Settings › Library to install it."
+                                    : "This project has no Linux launcher. It needs Wine, which isn't installed.")
+                            }
                         }
 
                         // How Play starts this game: which file, window mode, saves.
@@ -1698,7 +1797,53 @@ Popup {
                                     font.pixelSize: 13 * theme.fontScale
                                     elide: Text.ElideMiddle
                                 }
-                                Item { implicitWidth: 1; implicitHeight: 1 }
+                                Item { implicitWidth: 1; implicitHeight: 1; visible: detailsLaunchSection.method !== "wine" }
+                                // Windows launchers pick the file themselves.
+                                RowLayout {
+                                    visible: detailsLaunchSection.method === "wine"
+                                        && (gameDetailsPopup.launchState.gameFile || "").length > 0
+                                    spacing: 6
+                                    Button {
+                                        text: "Show file"
+                                        implicitHeight: 34
+                                        onClicked: Qt.openUrlExternally("file://" + gameDetailsPopup.folderOf(gameDetailsPopup.launchState.gameFile || ""))
+                                    }
+                                    Button {
+                                        text: "Copy path"
+                                        implicitHeight: 34
+                                        onClicked: gameDetailsPopup.copyText(gameDetailsPopup.launchState.gameFile || "")
+                                    }
+                                }
+                                Item {
+                                    implicitWidth: 1; implicitHeight: 1
+                                    visible: detailsLaunchSection.method === "wine"
+                                        && (gameDetailsPopup.launchState.gameFile || "").length === 0
+                                }
+
+                                // Windows launchers save inside Wine's folders.
+                                Label {
+                                    visible: detailsLaunchSection.method === "wine"
+                                    text: "Saves"
+                                    color: theme.textMuted
+                                    font.pixelSize: 13 * theme.fontScale
+                                }
+                                Label {
+                                    visible: detailsLaunchSection.method === "wine"
+                                    Layout.fillWidth: true
+                                    text: platformManager.pathExists(gameDetailsPopup.launchState.wineDrive || "")
+                                        ? "Kept in Wine's folders"
+                                        : "Kept in Wine's folders, created the first time the launcher starts"
+                                    color: theme.textSecondary
+                                    font.pixelSize: 13 * theme.fontScale
+                                    wrapMode: Text.Wrap
+                                }
+                                Button {
+                                    visible: detailsLaunchSection.method === "wine"
+                                    enabled: platformManager.pathExists(gameDetailsPopup.launchState.wineDrive || "")
+                                    text: "Open Wine's C: drive"
+                                    implicitHeight: 34
+                                    onClicked: Qt.openUrlExternally("file://" + gameDetailsPopup.launchState.wineDrive)
+                                }
 
                                 Label {
                                     visible: detailsLaunchSection.method === "n64recomp"
@@ -1749,6 +1894,14 @@ Popup {
                                             ? saves : gameDetailsPopup.launchState.dataFolder))
                                     }
                                 }
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: detailsLaunchSection.method === "wine"
+                                text: "Window and display settings are made in the launcher itself."
+                                color: theme.textMuted
+                                font.pixelSize: 11.5 * theme.fontScale
+                                wrapMode: Text.Wrap
                             }
                             Label {
                                 Layout.fillWidth: true

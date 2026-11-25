@@ -34,6 +34,7 @@ private slots:
     void installsLauncherFromNestedArchiveDirectory();
     void installsZipLauncherWithCompanionFiles();
     void installsStandaloneAppImage();
+    void installsWindowsBuildAndKeepsItsFilesApart();
 };
 
 void LauncherDownloadManagerTest::rejectsInvalidProjectIdentifiers()
@@ -771,6 +772,70 @@ void LauncherDownloadManagerTest::installsStandaloneAppImage()
     QFile installed(installedPath);
     QVERIFY(installed.open(QIODevice::ReadOnly));
     QCOMPARE(installed.readAll(), content);
+}
+
+
+// A Windows build: the program is picked from the zip, the build is
+// recorded, and files the launcher made are kept apart from the Linux
+// launcher's, so switching builds never mixes saves.
+void LauncherDownloadManagerTest::installsWindowsBuildAndKeepsItsFilesApart()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("windows-sample-project");
+    const QString assetName = QStringLiteral("Sample-Windows.zip");
+    const QString stagingDirectory = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(stagingDirectory));
+    const QString archivePath = QDir(stagingDirectory).filePath(assetName);
+    struct archive *writer = archive_write_new();
+    QCOMPARE(archive_write_set_format_zip(writer), ARCHIVE_OK);
+    QCOMPARE(archive_write_open_filename(writer, QFile::encodeName(archivePath).constData()), ARCHIVE_OK);
+    for (const auto &file : QList<QPair<QByteArray, QByteArray>>{
+             {"Sample.exe", "MZ"}, {"crashpad_handler.exe", "MZ"}, {"data/assets.bin", "data"}}) {
+        struct archive_entry *entry = archive_entry_new();
+        archive_entry_set_pathname(entry, file.first.constData());
+        archive_entry_set_filetype(entry, AE_IFREG);
+        archive_entry_set_perm(entry, 0644);
+        archive_entry_set_size(entry, file.second.size());
+        QCOMPARE(archive_write_header(writer, entry), ARCHIVE_OK);
+        archive_write_data(writer, file.second.constData(), file.second.size());
+        archive_entry_free(entry);
+    }
+    QCOMPARE(archive_write_close(writer), ARCHIVE_OK);
+    QCOMPARE(archive_write_free(writer), ARCHIVE_OK);
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completedSpy(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failedSpy(&manager, &LauncherDownloadManager::installationFailed);
+
+    // A Linux build must name its program.
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("zip"), QString(),
+                                   QStringLiteral("v1"), false, QStringLiteral("linux-x86_64"));
+    QTRY_COMPARE(failedSpy.count(), 1);
+    failedSpy.clear();
+
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("zip"), QString(),
+                                   QStringLiteral("v1"), false, QStringLiteral("windows-x86_64"));
+    QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 10000);
+    QCOMPARE(failedSpy.count(), 0);
+    QVERIFY(completedSpy.takeFirst().at(2).toString().endsWith(QStringLiteral("/Sample.exe")));
+
+    const QVariantList installed = manager.installedLaunchers();
+    QCOMPARE(installed.size(), 1);
+    QCOMPARE(installed.first().toMap().value(QStringLiteral("build")).toString(), QStringLiteral("windows-x86_64"));
+
+    // A file the Windows launcher made is set aside in its own folder.
+    const QString installRoot = QDir(platformManager.dataDirectory()).filePath("launchers/" + projectId);
+    QVERIFY(writeText(QDir(installRoot).filePath(QStringLiteral("portable-save.dat")), "save"));
+    QVERIFY(manager.uninstallLauncher(projectId));
+    const QString windowsKept = manager.keptFilesDirectory(projectId, QStringLiteral("windows-x86_64"));
+    const QString linuxKept = manager.keptFilesDirectory(projectId, QStringLiteral("linux-x86_64"));
+    QVERIFY(windowsKept != linuxKept);
+    QCOMPARE(readText(QDir(windowsKept).filePath(QStringLiteral("portable-save.dat"))), QByteArray("save"));
+    QVERIFY(!QFileInfo::exists(QDir(linuxKept).filePath(QStringLiteral("portable-save.dat"))));
 }
 
 QTEST_GUILESS_MAIN(LauncherDownloadManagerTest)

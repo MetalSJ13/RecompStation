@@ -2,6 +2,7 @@
 
 #include "Logging.h"
 
+#include <QDir>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QStandardPaths>
@@ -37,6 +38,14 @@ bool WineSupport::isAvailable() const { return m_available; }
 bool WineSupport::isChecking() const { return m_checking; }
 QString WineSupport::version() const { return m_version; }
 QString WineSupport::program() const { return m_program; }
+
+QString WineSupport::cDrive() const
+{
+    const QString prefix = qEnvironmentVariable("WINEPREFIX");
+    const QString root = !prefix.trimmed().isEmpty()
+        ? prefix : QDir::homePath() + QStringLiteral("/.wine");
+    return QDir::cleanPath(root + QStringLiteral("/drive_c"));
+}
 
 void WineSupport::setSearchPaths(const QStringList &paths) { m_searchPaths = paths; }
 void WineSupport::setSupportedForTesting(bool supported) { m_supported = supported; }

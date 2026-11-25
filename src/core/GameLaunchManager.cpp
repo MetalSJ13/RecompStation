@@ -1,4 +1,5 @@
 #include "GameLaunchManager.h"
+#include "WineSupport.h"
 
 #include "LauncherDownloadManager.h"
 #include "Logging.h"
@@ -127,6 +128,61 @@ void GameLaunchManager::setSettingsManager(SettingsManager *settings)
     m_settingsManager = settings;
 }
 
+void GameLaunchManager::setWineSupport(WineSupport *wine)
+{
+    m_wine = wine;
+}
+
+bool GameLaunchManager::isWindowsLauncher(const QString &projectId) const
+{
+    if (!m_launcherDownloadManager)
+        return false;
+    for (const QVariant &entry : m_launcherDownloadManager->installedLaunchers()) {
+        const QVariantMap installation = entry.toMap();
+        if (installation.value(QStringLiteral("projectId")).toString() != projectId)
+            continue;
+        return installation.value(QStringLiteral("build")).toString().startsWith(QStringLiteral("windows-"))
+            || installation.value(QStringLiteral("executablePath")).toString()
+                   .endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive);
+    }
+    return false;
+}
+
+QVariantMap GameLaunchManager::wineReadiness(const QString &gamePath) const
+{
+    const bool hasGame = !gamePath.isEmpty() && QFileInfo(gamePath).isFile();
+    QVariantMap result{
+        {QStringLiteral("method"), QStringLiteral("wine")},
+        {QStringLiteral("gameFile"), hasGame ? gamePath : QString()},
+        {QStringLiteral("dataFolder"), QString()},
+        {QStringLiteral("savesFolder"), QString()},
+        {QStringLiteral("wineDrive"), m_wine ? m_wine->cDrive() : QString()}
+    };
+    auto set = [&result](const QString &state, const QString &tone,
+                         const QString &title, const QString &detail) {
+        result.insert(QStringLiteral("state"), state);
+        result.insert(QStringLiteral("tone"), tone);
+        result.insert(QStringLiteral("title"), title);
+        result.insert(QStringLiteral("detail"), detail);
+        return result;
+    };
+    if (!m_settingsManager || !m_settingsManager->windowsLaunchersThroughWine())
+        return set(QStringLiteral("wine_off"), QStringLiteral("warn"),
+                   QStringLiteral("Turn on Windows launchers through Wine to play"),
+                   QStringLiteral("It's off in Settings › Library. The launcher stays installed."));
+    if (!m_wine || !m_wine->isAvailable())
+        return set(QStringLiteral("wine_missing"), QStringLiteral("warn"),
+                   QStringLiteral("Wine isn't installed"),
+                   QStringLiteral("Install Wine with your system's package manager to play. The launcher stays installed."));
+    if (!hasGame)
+        return set(QStringLiteral("no_game"), QStringLiteral("warn"),
+                   QStringLiteral("Add your copy of the game"),
+                   QStringLiteral("RecompStation doesn't supply games. Add the file from your own copy."));
+    return set(QStringLiteral("wine"), QStringLiteral("ok"),
+               QStringLiteral("Ready to play through Wine %1").arg(m_wine->version()),
+               QStringLiteral("The Windows launcher opens to its own menu, where you pick your game file."));
+}
+
 void GameLaunchManager::setPreparationRoots(const QString &homeDirectory, const QString &dataHome)
 {
     m_homeDirectory = homeDirectory;
@@ -169,6 +225,8 @@ QVariantMap GameLaunchManager::launchReadiness(const QString &projectId, const Q
     const QVariantMap project = m_projectCatalog->project(projectId);
     if (project.isEmpty())
         return {};
+    if (isWindowsLauncher(projectId))
+        return wineReadiness(gamePath);
     const QVariantMap readiness = m_preparer.readiness(project, gamePath, installDirectory(projectId),
                                                        preparationOptions(projectId));
     // Read new game files off the UI thread (up to 64 MB each); the answer
@@ -208,11 +266,24 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
         previous->deleteLater();
 
     QString executablePath;
-    const QString workingDirectory = installDirectory(projectId, &executablePath);
+    QString workingDirectory = installDirectory(projectId, &executablePath);
+    const bool throughWine = isWindowsLauncher(projectId);
+    if (throughWine) {
+        if (m_wine)
+            m_wine->refresh();
+        const QVariantMap readiness = wineReadiness(gamePath);
+        const QString state = readiness.value(QStringLiteral("state")).toString();
+        if (state == QStringLiteral("wine_off") || state == QStringLiteral("wine_missing")) {
+            qCWarning(lcGameLaunch) << "Windows launcher not started:" << projectId << state;
+            emit launchFailed(projectId, readiness.value(QStringLiteral("title")).toString() + QStringLiteral(". ")
+                                             + readiness.value(QStringLiteral("detail")).toString());
+            return false;
+        }
+    }
 
     const QFileInfo executableInfo(executablePath);
     if (executablePath.isEmpty() || !executableInfo.isFile()
-        || executableInfo.isSymLink() || !executableInfo.isExecutable()) {
+        || executableInfo.isSymLink() || (!throughWine && !executableInfo.isExecutable())) {
         qCWarning(lcGameLaunch) << "Launcher executable validation failed for:" << projectId;
         emit launchFailed(projectId,
                           QStringLiteral("The installed launcher is missing or is not executable."));
@@ -220,7 +291,8 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
     }
 
     LaunchPreparer::Plan plan;
-    if (m_projectCatalog) {
+    // Windows launchers pick the game themselves; nothing is prepared.
+    if (m_projectCatalog && !throughWine) {
         const QVariantMap project = m_projectCatalog->project(projectId);
         if (!project.isEmpty())
             plan = m_preparer.prepare(project, gamePath, workingDirectory, preparationOptions(projectId));
@@ -251,7 +323,14 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
 
     // Startup scripts often rely on being invoked from their installation
     // directory (for example, "./run.sh") so their relative asset paths work.
-    if (executableInfo.suffix().compare(QStringLiteral("sh"), Qt::CaseInsensitive) == 0) {
+    if (throughWine) {
+        // wine <program>.exe, from the program's own folder, with the
+        // player's environment (and WINEPREFIX) unchanged.
+        process->setWorkingDirectory(executableInfo.absolutePath());
+        process->setProgram(m_wine->program());
+        plan.arguments.prepend(executableInfo.absoluteFilePath());
+        qCInfo(lcGameLaunch).noquote() << projectId << "starts through Wine" << m_wine->version();
+    } else if (executableInfo.suffix().compare(QStringLiteral("sh"), Qt::CaseInsensitive) == 0) {
         const QString relativePath =
             QDir(workingDirectory).relativeFilePath(executableInfo.absoluteFilePath());
         if (relativePath == QStringLiteral("..")
