@@ -6448,28 +6448,6 @@ ApplicationWindow {
                                         font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
                                     }
-                                    Flow {
-                                        Layout.fillWidth: true
-                                        Layout.topMargin: 4
-                                        spacing: 8
-                                        Repeater {
-                                            model: platformManager.platforms()
-                                            delegate: Rectangle {
-                                                required property string modelData
-                                                radius: 13
-                                                color: theme.surface
-                                                width: platformChip.implicitWidth + 24
-                                                height: 28
-                                                Label {
-                                                    id: platformChip
-                                                    anchors.centerIn: parent
-                                                    text: window.platformDisplayName(modelData)
-                                                    color: theme.textSecondary
-                                                    font.pixelSize: 11.5 * theme.fontScale
-                                                }
-                                            }
-                                        }
-                                    }
                                     SettingsGroupLabel { text: "SCANNING" }
                                     SettingRow {
                                         title: "Scan library on startup"
@@ -6538,10 +6516,6 @@ ApplicationWindow {
                                             onToggled: settingsManager.setStartGamesFullscreen(checked)
                                             Accessible.name: "Start games in fullscreen"
                                         }
-                                    }
-                                    SettingRow {
-                                        title: "Saves stay with each launcher"
-                                        description: "Uninstalling or updating a launcher keeps your saves. Each game's page shows where they are."
                                     }
                                     Item { Layout.preferredHeight: 16 }
                                 }
