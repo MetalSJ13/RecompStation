@@ -203,6 +203,16 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
 - Builds: a GitHub Actions `windows-latest` runner with MSVC and Qt from aqtinstall, packaged with `windeployqt`. No Windows PC is needed to build; a Windows VM is useful for testing. Cross-compiling from Linux (MinGW/MXE) is possible but harder to keep working with Qt 6 and SDL2.
 - Code: the catalog needs Windows asset matching (`.zip`/`.exe`) alongside Linux; Linux-specific parts need Windows versions: paths (XDG folders → `%LOCALAPPDATA%`), launching (AppImage, `./run.sh`), file permissions (the owner-only key file), `xdg-open`, and the build scripts.
 - Release: a portable zip first, an installer later; unsigned builds trigger SmartScreen warnings until code signing is set up.
+- Launchers per system (decided 2026-11-25):
+  - The catalog lists each project's builds by system: a Linux build and a Windows build, each with its own download-name rule and file format. Today's entries read as Linux builds. 64-bit x86 only: ARM is not supported and not planned for now.
+  - RecompStation detects the system it is running on at startup (not only from how it was built) and offers only launchers built for that system. The Windows version never installs Linux launchers. If the Windows version finds itself running under Wine on Linux, it says so and points to the Linux version.
+  - On Linux the Linux build always comes first: when a project offers both, Play installs the Linux build. A Windows build is used only when the player chooses it, or when the project has no Linux build.
+  - Windows launchers are installed and started directly from their own launcher; opening straight into the game is not attempted for Windows or Wine launchers until there is an official Windows release.
+- Windows launchers through Wine on Linux (decided 2026-11-25, details to plan):
+  - Uses the system's own Wine as it is configured (including a `WINEPREFIX` the player set); RecompStation does not bundle Wine or manage its own Wine setup, and debugging Wine itself is out of scope. Gaming distributions such as Bazzite and Garuda already configure Wine; the option appears only where Wine is installed and runs.
+  - Game Details gets a small choice between the Linux and Windows build for projects that have both, controller-friendly and hidden when there is nothing to choose; Windows-only projects say they need Wine when it isn't available.
+  - Saves under Wine live in Wine's own folders: where to show them, and what switching builds means for saves, to be worked out before this ships.
+  - Still to decide: whether Windows launchers through Wine sit behind a Settings switch (off by default) or appear whenever Wine is found, and whether this comes before or with the Windows release.
 - Testing cost: every feature needs checking on both systems.
 
 ### 9. Application updates — built (merged 2026-11-25; the update itself needs a newer release to try)
@@ -237,6 +247,7 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 - No settings without real behaviour: placeholder controls are removed until their feature exists.
 - Settings text is written for players, not developers: say what a setting does and what it keeps, without internals such as file layouts, environment variables or render percentages (2026-11-25).
 - Dependency removal never guesses: only packages the installer added are candidates, anything the system or other programs use (including optional dependencies, and `qt6-wayland` on Wayland) is kept, and nothing happens if the package manager's simulation would touch anything else (2026-11-25).
+- Launchers match the system RecompStation is running on, detected at startup; on Linux the Linux build is preferred, and Windows builds run through the system's own Wine only by the player's choice or when no Linux build exists. RecompStation never bundles or manages Wine (2026-11-25).
 - Releases: an AppImage and a portable zip for 64-bit Linux (x86_64), Qt included, built by GitHub Actions; ARM later. Windows `.exe` builds follow once the Linux files work well (2026-11-24).
 - Launcher updates replace the installed version only after the new one is unpacked and checked, keep the player's files, and roll back on failure; downloads are checked against the SHA-256 the project publishes on GitHub (2026-11-24).
 
