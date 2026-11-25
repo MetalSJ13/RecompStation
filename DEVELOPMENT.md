@@ -164,12 +164,20 @@ Source list: playported.com (about 1,200 entries; it names repositories but not 
 - [x] Interface sounds (validated 2026-11-24): the "Glass, refined" set, synthesized by `tools/sounds/generate.py` and played through SDL2 audio with a small mixer (Qt Multimedia 6.12 reported playback but stayed silent on PipeWire, 2026-11-24). Move on every directional input that moves something, Open a game, Back, a swoosh for cycling with the shoulder buttons, the switch sound for picking a system, menus, switches, Play and launch errors. Settings › Appearance › Sounds: on/off and volume (default on, 60%). Silent while a game is running.
 
 ### 7. Desktop environment compatibility
-Developed and tested on KDE Plasma (Wayland). Before a public release, check the release files (AppImage and zip) on a Debian-based system first, then on VMs of mainstream distributions with XFCE, Cinnamon and MATE (all X11-based), and GNOME:
-- [ ] The AppImage and the portable zip start, show the right icon and name in the taskbar, and restart correctly after an interface scale change.
-- [ ] Fullscreen on launch and F11 toggling, maximized and windowed sizes, window placement.
-- [ ] The shader wave background under each compositor or none (XFCE and MATE may run without compositing), and the software-renderer fallback.
-- [ ] High-DPI and fractional scaling, including the interface scale's Auto mode under X11.
-- [ ] Controller hot-plug and input focus while a launcher runs; drag-and-drop from each file manager (Thunar, Nemo, Caja, Nautilus); opening folders with `xdg-open`.
+Developed on KDE Plasma (Wayland); the release files run on Debian 13 with XFCE (X11). What is left is testing the release files on VMs with Cinnamon, MATE and GNOME (Linux Mint and Ubuntu are the easy way to get them). Code work done:
+- [x] Taskbar icon and name: the desktop file name is set and the icon is sent on X11 and on Wayland (Qt 6.10, KDE Plasma 6.3+). GNOME shows the icon only with the desktop entry installed, which is not planned (decided 2026-11-24).
+- [x] Restarting after an interface scale change or an update restarts the AppImage file, or the portable folder's program (2026-11-25).
+- [x] Graphics without a GPU (2026-11-25): RecompStation checks OpenGL before opening its window. With none (a VM without 3D), it draws with Qt's software renderer and shows the theme gradient instead of the waves. With OpenGL drawn by the CPU (llvmpipe), Background › Quality on Auto picks Low. The runtime log records which happened.
+- [x] Windowed sizes on X11 centre the window on its screen after resizing, so a larger size can't spill off screen (Wayland places windows itself) (2026-11-25).
+- [x] Wayland window decorations and shell plugins are bundled (GNOME draws Qt's own title bar); X11 libraries (`libxcb-cursor` and friends) are bundled.
+- [x] Already in place: controller hot-plug and game input ownership (section 6), drag-and-drop of `file://` URLs, folders opened through the desktop's default handler.
+
+Test on each VM (AppImage and zip), then tick here:
+- [ ] Cinnamon · [ ] MATE · [ ] GNOME — the app starts with its name and icon in the taskbar (GNOME: name only), fullscreen on launch, F11, maximized, windowed sizes stay on screen.
+- [ ] Interface scale: Auto at 100% and at 200% desktop scaling (and 125/150% where offered); changing it restarts correctly.
+- [ ] Background waves with and without compositing (MATE and XFCE can turn it off); with 3D acceleration turned off in the VM, the app still opens.
+- [ ] Drag a ROM from the file manager (Nemo, Caja, Nautilus) onto the library; Show file and Open folder open the file manager.
+- [ ] Plug a controller in and out while the app runs; start a game and check RecompStation ignores the controller until it closes.
 
 ### 7b. Packaging — Linux x86_64 (started 2026-11-24)
 Two release files, both with Qt included, built by GitHub Actions on Ubuntu 22.04 (glibc 2.35, so they run on Debian 12, Ubuntu 22.04, Fedora 36 and newer) with Qt 6.10 from the Qt installer (6.9 or newer is needed for the window icon on Wayland). x86_64 only; ARM later.

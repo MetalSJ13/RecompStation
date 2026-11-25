@@ -1102,6 +1102,12 @@ ApplicationWindow {
         )
         window.width = Math.round(requestedWidth * scale)
         window.height = Math.round(requestedHeight * scale)
+        // On X11 the window keeps its top-left corner when it grows, so it
+        // could spill off the screen: centre it. Wayland places windows itself.
+        if (Qt.platform.pluginName === "xcb") {
+            window.x = Screen.virtualX + Math.max(0, Math.round((Screen.width - window.width) / 2))
+            window.y = Screen.virtualY + Math.max(0, Math.round((Screen.height - window.height) / 2))
+        }
     }
 
     property string currentPage: "Library"
@@ -1279,9 +1285,11 @@ ApplicationWindow {
     readonly property color waveColorValue: wavePreset(libraryVisualSettings.waveColor).color
     readonly property real waveSpeed: libraryVisualSettings.waveMotion === "calm" ? 0.6
         : libraryVisualSettings.waveMotion === "lively" ? 1.7 : 1.0
-    // Auto: full quality up to 2560 × 1440 physical pixels, Balanced above.
+    // Auto: Low when the CPU draws OpenGL (common in VMs), otherwise full
+    // quality up to 2560 × 1440 physical pixels and Balanced above.
     readonly property string waveQualityResolved: libraryVisualSettings.waveQuality !== "auto"
         ? libraryVisualSettings.waveQuality
+        : softwareGraphics ? "low"
         : (Screen.width * Screen.height * Screen.devicePixelRatio * Screen.devicePixelRatio > 3686400
             ? "balanced" : "high")
     readonly property real waveRenderScale: waveQualityResolved === "low" ? 0.5
@@ -6272,10 +6280,13 @@ ApplicationWindow {
                                     SettingRow {
                                         visible: settingsManager.libraryBackgroundType === "animated"
                                         title: "Quality"
-                                        description: "Lower settings are easier on older or built-in graphics."
+                                        description: softwareGraphics
+                                            ? "This computer draws without a graphics card, so Auto keeps the waves light."
+                                            : "Lower settings are easier on older or built-in graphics."
                                         ValueCycler {
                                             options: [
-                                                { label: "Auto · " + (window.waveQualityResolved === "balanced" ? "Balanced" : "High"), value: "auto" },
+                                                { label: "Auto · " + (window.waveQualityResolved === "low" ? "Low"
+                                                    : window.waveQualityResolved === "balanced" ? "Balanced" : "High"), value: "auto" },
                                                 { label: "High", value: "high" },
                                                 { label: "Balanced", value: "balanced" },
                                                 { label: "Low", value: "low" }

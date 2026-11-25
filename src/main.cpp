@@ -14,6 +14,7 @@
 #include <QElapsedTimer>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
+#include <QOffscreenSurface>
 #include <QQuickWindow>
 #include <QSGRendererInterface>
 
@@ -120,6 +121,31 @@ QStringList sessionHeader(const PlatformManager &platformManager,
                       onOff(RecompLogging::detailedLogging()));
     lines << rule;
     return lines;
+}
+
+// What OpenGL this computer offers, checked before any window exists.
+//  - none: no usable OpenGL (a VM without 3D, a broken driver). Qt Quick
+//    would fail to draw, so RecompStation uses Qt's software renderer.
+//  - software: OpenGL drawn by the CPU (Mesa llvmpipe or softpipe, common in
+//    VMs); it works, but the live background is kept light.
+//  - hardware: a real GPU.
+// The user's own QT_QUICK_BACKEND or QSG_RHI_BACKEND is left alone.
+QString probeOpenGL()
+{
+    if (qEnvironmentVariableIsSet("QT_QUICK_BACKEND") || qEnvironmentVariableIsSet("QSG_RHI_BACKEND"))
+        return QStringLiteral("hardware");
+    QOpenGLContext context;
+    QOffscreenSurface surface;
+    surface.create();
+    if (!context.create() || !surface.isValid() || !context.makeCurrent(&surface))
+        return QStringLiteral("none");
+    const auto *renderer = reinterpret_cast<const char *>(
+        context.functions()->glGetString(GL_RENDERER));
+    const QString name = QString::fromLatin1(renderer ? renderer : "").toLower();
+    context.doneCurrent();
+    return name.contains(QStringLiteral("llvmpipe")) || name.contains(QStringLiteral("softpipe"))
+            || name.contains(QStringLiteral("swrast"))
+        ? QStringLiteral("software") : QStringLiteral("hardware");
 }
 
 // Interface scale is applied with QT_SCALE_FACTOR, which Qt reads while
@@ -436,7 +462,17 @@ int main(int argc, char *argv[])
                                             launcherDownloadManager, projectCatalog,
                                             interfaceScaleInfo, interfaceScale.setting));
 
+    const QString openGL = probeOpenGL();
+    if (openGL == QStringLiteral("none")) {
+        qCWarning(lcUI) << "No usable OpenGL; drawing with Qt's software renderer"
+                           " (the live background is replaced by a gradient).";
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
+    } else if (openGL == QStringLiteral("software")) {
+        qCInfo(lcUI) << "OpenGL is drawn by the CPU; the live background runs at reduced quality.";
+    }
+
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("softwareGraphics", openGL != QStringLiteral("hardware"));
     engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
     engine.rootContext()->setContextProperty("platformManager", &platformManager);
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);
