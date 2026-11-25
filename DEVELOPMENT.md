@@ -256,7 +256,7 @@ From the repository root:
 
 Choose a configuration with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`. The build script reuses the configured generator and build directory; keep the build directory and prefer incremental builds. Every new `.qml` or `.js` file must be listed in `QML_FILES` in `CMakeLists.txt` (the QML tests read from the source tree and will not catch a missing entry).
 
-The CMake `WrapVulkanHeaders` warning is harmless.
+The CMake `WrapVulkanHeaders` warning is harmless. On Debian and openSUSE, configuring also prints many "The qml plugin '…' is a dependency of 'RecompStationApp', but the link target it defines … does not exist" warnings: those distributions leave out the CMake files for Qt's QML plugins, which only matter for static Qt builds. The plugins load at run time as usual, so these are harmless too (seen on Debian 13, 2026-11-25).
 
 ## Development principles
 
