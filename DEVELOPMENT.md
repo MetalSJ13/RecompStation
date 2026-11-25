@@ -183,7 +183,7 @@ Two release files, both with Qt included, built by GitHub Actions on Ubuntu 22.0
 - [ ] AppImage FUSE: check whether the AppImage starts on Ubuntu 24.04 without `libfuse2t64`; if not, document it (already in the release notes) or switch to the static AppImage runtime.
 - [ ] AppStream metadata (`.metainfo.xml`) for software centres and AppImage catalogues.
 - [x] First release: v0.1.0 published 2026-11-24 (the tag build needed one re-run: a timing-sensitive library scanner test, since fixed).
-- [ ] Application updates (section 9), now that releases exist.
+- [x] Application updates (section 9), built 2026-11-25; needs a second release to validate.
 
 ### 8. Windows support — decided, after Linux packaging
 Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once the AppImage and portable zip work well. Work to plan when it starts:
@@ -192,8 +192,15 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
 - Release: a portable zip first, an installer later; unsigned builds trigger SmartScreen warnings until code signing is set up.
 - Testing cost: every feature needs checking on both systems.
 
-### 9. Application updates — deferred
-Releases exist since v0.1.0 (2026-11-24); the update check itself is not built yet. Plan: a manual "Check for updates" and an optional daily check that compares the installed version with the latest release and links to the release page; never download or install automatically. The Settings switch and the first-run question were removed until this exists.
+### 9. Application updates (branch `feature/app-updates`, needs validation)
+Built 2026-11-25 from the approved mockups (Update prompt, Skip, download states, Settings › Application › Updates), replacing the earlier "link only, never install" plan at the user's request:
+- [x] `AppUpdater` compares this version with the latest GitHub release: at most once a day at startup when Check automatically is on (default), or with Check now. A newer version found earlier is offered again at the next start ("Remind me later") without asking GitHub.
+- [x] The prompt appears once per version, when nothing else is in the way (not during setup, a game, a menu or another dialog): what's new (the "## Changes" section of the release notes), size, Update now, Remind me later, Skip <version>; a line under the buttons says what the focused one does, and skipping shows "Skipped 0.2.0 · Undo".
+- [x] Downloads are checked against GitHub's SHA-256 digest (a release without one isn't installed). AppImage: downloaded next to it and swapped in under the same name; the old file is kept hidden until the new version starts. Portable zip: unpacked beside the folder with the archive extractor and swapped in on restart, on quit (Later), or at the next start after a crash; the old folder is kept until the new version starts. Copies built from source are pointed to the website.
+- [x] States: downloading (Hide keeps it going, with a header chip), checking, ready (Restart now / Later), failed (nothing changed; Try again / Download from the website).
+- [x] Settings › Application › Updates: status and Check now, Update… / Restart now, Check automatically, and "You skipped <version> · Show it again".
+- [x] Tests (`AppUpdaterTest`): version comparison, detecting the kind of install, choosing the download, the Changes section, the AppImage swap, staging and swapping the portable folder, refusing a zip that isn't RecompStation, finishing a staged update at startup, and the prompt, remind and skip rules.
+- [ ] Validate with a real release: publish a newer version (for example 0.1.1), then update both the AppImage and the portable zip from 0.1.0. The first version that can update itself is the one with this feature, so 0.1.0 itself can't update.
 
 ### 10. Documentation and licensing — done
 GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, features, screenshots (metadata stripped, see `docs/screenshots/README.md`), building from source and file locations; the original logo (pixel d-pad) in `assets/logo/`, used in the header, first-time setup, the README and as the window icon. The desktop entry and hicolor icons ship with the release files (2026-11-24); third-party notices are in `packaging/THIRD_PARTY_NOTICES.md` and in each download.
@@ -208,6 +215,7 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 - RecompStation never creates a launcher's settings files; it changes single documented keys in files the launcher wrote itself.
 - Launchers come from native Linux release assets of curated projects. Flatpak-only projects are an open question (Catalog, platforms and file formats), not ruled out: players shouldn't need to install Flatpak themselves.
 - No settings without real behaviour: placeholder controls are removed until their feature exists.
+- Settings text is written for players, not developers: say what a setting does and what it keeps, without internals such as file layouts, environment variables or render percentages (2026-11-25).
 - Releases: an AppImage and a portable zip for 64-bit Linux (x86_64), Qt included, built by GitHub Actions; ARM later. Windows `.exe` builds follow once the Linux files work well (2026-11-24).
 - Launcher updates replace the installed version only after the new one is unpacked and checked, keep the player's files, and roll back on failure; downloads are checked against the SHA-256 the project publishes on GitHub (2026-11-24).
 

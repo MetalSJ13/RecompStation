@@ -60,7 +60,8 @@ RecompStation never creates a launcher's settings files; it only changes the win
 - Desktop-environment checks on VMs of mainstream distributions (GNOME, Cinnamon, MATE) after Debian 13 with XFCE.
 - Catalog: add Final Fantasy Tactics Advance (GBA), Budokai Tenkaichi 3 (PS2), Goemon's Great Adventure (N64) and Gen1Recomp (needs a field for projects covering several systems). Donkey Kong Country waits for an official Linux release.
 - Open decisions: projects that compile the game on the player's machine at first start; Flatpak-only projects.
-- Later: Fix match in Game Details, request retry and backoff, multi-display placement, application update checks, Windows builds.
+- In-app updates are built (`feature/app-updates`); they can only be validated once a version newer than 0.1.0 is released.
+- Later: Fix match in Game Details, request retry and backoff, multi-display placement, Windows builds.
 
 ## Key decisions
 

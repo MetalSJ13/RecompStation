@@ -95,9 +95,17 @@ Layout: a category rail on the left, each entry with a one-line summary of its c
 - **Library:** library folder and system folders, Add games, startup scan and manual scan, and Playing (prepare games for their launcher, start games in fullscreen).
 - **Metadata:** provider cards (LaunchBox with catalog download, update, size and any systems missing from an old catalog; TheGamesDB with the user's own key, stored privately, its connection and requests left), which provider is asked first (LaunchBox by default), automatic matching and artwork switches, and Refresh all metadata.
 - **Controller:** connected devices, a drawing of the controller with a live button test, button symbols, and remapping. Capturing a button shows clear states: let go first, listening with a 15-second countdown, replacing (old inputs struck out), added (with a warning when another action uses it), and nothing pressed; other rows dim. No sounds while mapping.
-- **Application:** about (version), storage use, data and log folders, detailed logging, launchers whose game is gone, and reset settings.
+- **Application:** about (version), Updates (status, Check now, Update…, Check automatically, a skipped version), storage use, data and log folders, detailed logging, launchers whose game is gone, and reset settings.
 
-Only settings with real behaviour are shown; no placeholder controls.
+Only settings with real behaviour are shown; no placeholder controls. Descriptions are written for players: what the setting does and what it keeps, in a sentence or two, without internals (file layouts, environment variables, render percentages, retry timings).
+
+## Application updates
+
+- Checked at most once a day at startup (Settings › Application › Check automatically, on by default) or with Check now; RecompStation always asks before updating.
+- A newer version is offered once, when nothing else is in the way: title, "You have 0.1.0 · released … · 61 MB", What's new (the Changes section of the release notes), a one-line promise that games, settings and launchers stay as they are, and Update now / Remind me later / Skip <version>. A line under the buttons explains the focused one; skipping shows "Skipped <version> · Undo".
+- The same panel then shows downloading (Hide keeps it going, with a header chip), checking, ready (Restart now / Later) and failed (nothing changed).
+- Wording avoids internals (checksums, file types, build steps). Release notes describe what improved in RecompStation, never "this game works now".
+- Copies built from source say they can't update themselves and link to the website.
 
 ## Visual language
 

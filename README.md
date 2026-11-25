@@ -65,6 +65,7 @@ RecompStation brings them together in a single library that you can use from the
 **Careful by design**
 - Downloads come only from each project's official GitHub releases and are checked against the SHA-256 checksum the release publishes; a download that doesn't match is refused. Archives are unpacked with checks against path traversal, absolute paths and links.
 - Your game files are only read. RecompStation never modifies, deletes or uploads them.
+- RecompStation keeps itself up to date: it checks for new versions once a day and always asks before updating (the AppImage and the portable zip update in place; your library and settings are kept).
 
 ## Screenshots
 
@@ -136,7 +137,7 @@ To run the regression tests while building, add `--test`: `./scripts/build.sh Re
 
 To build the two release files yourself (x86_64): `./scripts/package.sh` (they only run on systems as new as yours; the published ones are built on Ubuntu 22.04).
 
-With a prebuilt download, update by downloading the new release and replacing the AppImage or the unzipped folder; your settings, library and installed launchers are kept.
+With a prebuilt download, RecompStation checks for new versions and offers to update itself (Settings › Application › Updates); you can also download the new release and replace the AppImage or the unzipped folder yourself. Your settings, library and installed launchers are kept either way.
 
 ## First start
 
