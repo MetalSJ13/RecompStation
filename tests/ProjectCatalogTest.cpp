@@ -598,7 +598,10 @@ void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
     for (const QString &id : {QStringLiteral("super-metroid-recompiled"), QStringLiteral("mega-man-x-recompiled")}) {
         const QVariantMap launch = catalog.project(id).value("launch").toMap();
         QCOMPARE(launch.value("method").toString(), QStringLiteral("fileargument"));
-        QCOMPARE(launch.value("arguments").toStringList(), (QStringList{QStringLiteral("--rom"), QStringLiteral("{gamePath}")}));
+        // Their own launcher opens with the ROM selected, so settings and
+        // mods stay reachable.
+        QCOMPARE(launch.value("arguments").toStringList(),
+                 (QStringList{QStringLiteral("--launcher"), QStringLiteral("--rom"), QStringLiteral("{gamePath}")}));
     }
     QCOMPARE(catalog.project(QStringLiteral("banjo-kazooie-recompiled"))
                  .value("launch").toMap().value("romFileName").toString(),

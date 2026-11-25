@@ -1287,12 +1287,13 @@
       ],
       "repositoryOwner": "mstan",
       "repositoryName": "SuperMetroidRecomp",
-      "romRequirements": "Requires your own unmodified Super Metroid (Japan, USA) ROM (.sfc or .smc, 3,145,728 bytes). RecompStation passes it to the launcher when you press Play.",
+      "romRequirements": "Requires your own unmodified Super Metroid (Japan, USA) ROM (.sfc or .smc, 3,145,728 bytes). RecompStation selects it in the launcher for you.",
       "romFile": "Super Metroid (Japan, USA) ROM",
       "launch": {
         "method": "fileargument",
-        "arguments": ["--rom", "{gamePath}"],
-        "fileExtensions": ["sfc", "smc"]
+        "arguments": ["--launcher", "--rom", "{gamePath}"],
+        "fileExtensions": ["sfc", "smc"],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings and mods before pressing Play."
       },
       "builds": {
         "linux-x86_64": {
@@ -1318,12 +1319,13 @@
       ],
       "repositoryOwner": "mstan",
       "repositoryName": "MegaManXSNESRecomp",
-      "romRequirements": "Requires your own Mega Man X (USA) (Rev 1) ROM (.sfc or .smc, with or without a copier header). RecompStation passes it to the launcher when you press Play. Optional mods use your own Mega Man X2 or X3 USA ROMs.",
+      "romRequirements": "Requires your own Mega Man X (USA) (Rev 1) ROM (.sfc or .smc, with or without a copier header). RecompStation selects it in the launcher for you. Optional mods use your own Mega Man X2 or X3 USA ROMs.",
       "romFile": "Mega Man X (USA, Rev 1) ROM",
       "launch": {
         "method": "fileargument",
-        "arguments": ["--rom", "{gamePath}"],
-        "fileExtensions": ["sfc", "smc"]
+        "arguments": ["--launcher", "--rom", "{gamePath}"],
+        "fileExtensions": ["sfc", "smc"],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings and mods before pressing Play."
       },
       "builds": {
         "linux-x86_64": {
