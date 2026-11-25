@@ -82,10 +82,35 @@ Popup {
     }
     property var installedProject: selectedProject
         ? window.installedLauncher(selectedProject.id) : null
+    // Several launchers: the game's default one (Main.qml), and another
+    // installed launcher while looking at one that isn't.
+    function defaultProjectId() {
+        const project = window.defaultLauncherProject(supportedProjects)
+        return project ? project.id : ""
+    }
+    readonly property var defaultProject: {
+        window.installedLauncherProjectIds
+        window.launcherChosenTimes
+        return supportedProjects.length > 1 ? window.defaultLauncherProject(supportedProjects) : null
+    }
+    readonly property var otherInstalledProject: {
+        if (!selectedProject || installedProject !== null)
+            return null
+        for (let i = 0; i < supportedProjects.length; ++i) {
+            const project = supportedProjects[i]
+            if (project.id !== selectedProject.id && window.installedLauncherProjectIds[project.id] === true)
+                return project
+        }
+        return null
+    }
     // The line under Play: whether Play will just work (LaunchPreparer).
     property var launchState: {
         window.launchStatusRevision
         settingsManager.launchSettingsRevision
+        if (selectedProject && installedProject === null && otherInstalledProject !== null)
+            return ({ state: "other_installed", tone: "ok",
+                      title: otherInstalledProject.name + " stays installed",
+                      detail: "Keep both and switch here whenever you like. Each launcher keeps its own saves and settings; nothing is copied between them." })
         if (!selectedProject || installedProject === null || !visible)
             return ({})
         return gameLaunchManager.launchReadiness(selectedProject.id,
@@ -252,9 +277,7 @@ Popup {
             gameDetailsPopup.screenshotLayerA = true
             gameDetailsPopup.installPromptVisible = false
             gameDetailsPopup.resettingProjectSelection = true
-            gameDetailsPopup.selectedProjectId =
-                gameDetailsPopup.supportedProjects.length > 0
-                    ? gameDetailsPopup.supportedProjects[0].id : ""
+            gameDetailsPopup.selectedProjectId = gameDetailsPopup.defaultProjectId()
             gameDetailsPopup.resettingProjectSelection = false
 
             detailsContentFrame.x =
@@ -307,7 +330,7 @@ Popup {
 
     onOpened: {
         resettingProjectSelection = true
-        selectedProjectId = supportedProjects.length > 0 ? supportedProjects[0].id : ""
+        selectedProjectId = defaultProjectId()
         resettingProjectSelection = false
         Qt.callLater(detailsContentFrame.focusPrimaryAction)
         screenshotIndex = 0
@@ -1154,7 +1177,8 @@ Popup {
                                     color: theme.divider
                                 }
                                 MoreMenuItem {
-                                    text: "Uninstall…"
+                                    text: gameDetailsPopup.supportedProjects.length > 1 && gameDetailsPopup.selectedProject
+                                        ? "Uninstall " + gameDetailsPopup.selectedProject.name + "…" : "Uninstall…"
                                     iconSource: "qrc:/icons/uninstall.svg"
                                     danger: true
                                     note: "asks first"
@@ -1245,7 +1269,8 @@ Popup {
                     Layout.fillWidth: true
                     Layout.topMargin: 4
                     spacing: 12
-                    visible: gameDetailsPopup.installedProject !== null
+                    visible: (gameDetailsPopup.installedProject !== null
+                              || gameDetailsPopup.launchState.state === "other_installed")
                         && (gameDetailsPopup.launchState.state || "").length > 0
                         && !(gameDetailsPopup.selectedProject
                              && window.launchErrors[gameDetailsPopup.selectedProject.id])
@@ -1568,49 +1593,113 @@ Popup {
                         anchors.margins: 20
                         spacing: 10
 
-                        Label {
-                            text: "RECOMPILATION"
-                            color: theme.textMuted
-                            font.pixelSize: 11 * theme.fontScale
-                            font.bold: true
-                            font.letterSpacing: 0.8
+                        RowLayout {
+                            spacing: 8
+                            Label {
+                                text: "RECOMPILATION"
+                                color: theme.textMuted
+                                font.pixelSize: 11 * theme.fontScale
+                                font.bold: true
+                                font.letterSpacing: 0.8
+                            }
+                            Label {
+                                visible: gameDetailsPopup.supportedProjects.length > 1
+                                text: gameDetailsPopup.supportedProjects.length + " launchers for this game"
+                                color: theme.textMuted
+                                font.pixelSize: 11 * theme.fontScale
+                            }
                         }
-                        // Games with several supported projects: pick one.
-                        Flow {
+                        // Games with several launchers (projects): one tile each. The
+                        // installed one chosen most recently is the Default (Main.qml).
+                        GridLayout {
                             Layout.fillWidth: true
                             visible: gameDetailsPopup.supportedProjects.length > 1
-                            spacing: 8
+                            columns: Math.max(1, Math.min(gameDetailsPopup.supportedProjects.length, 2))
+                            columnSpacing: 10
+                            rowSpacing: 10
                             Repeater {
                                 model: gameDetailsPopup.supportedProjects
                                 delegate: Button {
-                                    id: projectChip
+                                    id: projectTile
                                     required property var modelData
                                     readonly property bool selected: gameDetailsPopup.selectedProject !== null
                                         && gameDetailsPopup.selectedProject.id === modelData.id
-                                    text: modelData.name
-                                    implicitHeight: 34
-                                    leftPadding: 14
-                                    rightPadding: 14
+                                    readonly property bool installed: window.installedLauncherProjectIds[modelData.id] === true
+                                    readonly property bool isDefault: gameDetailsPopup.defaultProject !== null
+                                        && gameDetailsPopup.defaultProject.id === modelData.id && installed
+                                    readonly property var installInfo: installed ? window.installedLauncher(modelData.id) : null
+                                    Layout.fillWidth: true
+                                    Layout.preferredWidth: 1
+                                    Accessible.name: modelData.name + (installed ? ", installed" : ", not installed")
+                                        + (isDefault ? ", default" : "")
+                                    padding: 12
                                     background: Rectangle {
-                                        radius: height / 2
-                                        color: projectChip.selected ? theme.textPrimary : theme.controlBackground
-                                        border.width: projectChip.activeFocus ? 2 : 0
-                                        border.color: theme.accent
+                                        radius: 10
+                                        color: projectTile.selected ? theme.controlBackground : Qt.rgba(1, 1, 1, 0.04)
+                                        border.width: projectTile.activeFocus ? 3 : 1
+                                        border.color: projectTile.selected || projectTile.activeFocus ? theme.accent : theme.divider
                                     }
-                                    contentItem: Label {
-                                        text: projectChip.text
-                                        color: projectChip.selected ? theme.windowBackground : theme.textPrimary
-                                        font.pixelSize: 12 * theme.fontScale
-                                        font.bold: projectChip.selected
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
+                                    contentItem: ColumnLayout {
+                                        spacing: 3
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 8
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: projectTile.modelData.name
+                                                color: theme.textPrimary
+                                                font.pixelSize: 14 * theme.fontScale
+                                                font.bold: true
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                visible: projectTile.isDefault
+                                                text: "DEFAULT"
+                                                color: theme.accentText
+                                                font.pixelSize: 10 * theme.fontScale
+                                                font.bold: true
+                                                font.letterSpacing: 0.5
+                                                leftPadding: 6
+                                                rightPadding: 6
+                                                topPadding: 2
+                                                bottomPadding: 2
+                                                background: Rectangle { radius: 5; color: theme.accent }
+                                            }
+                                        }
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: projectTile.modelData.repositoryOwner + "/" + projectTile.modelData.repositoryName
+                                            color: theme.textMuted
+                                            font.pixelSize: 11.5 * theme.fontScale
+                                            elide: Text.ElideRight
+                                        }
+                                        RowLayout {
+                                            Layout.topMargin: 4
+                                            spacing: 6
+                                            Rectangle {
+                                                width: 8; height: 8; radius: 4
+                                                color: projectTile.installed ? theme.success : theme.textMuted
+                                            }
+                                            Label {
+                                                text: projectTile.installed
+                                                    ? "Installed" + (projectTile.installInfo && projectTile.installInfo.version
+                                                        ? " · " + projectTile.installInfo.version : "")
+                                                    : "Not installed"
+                                                color: theme.textSecondary
+                                                font.pixelSize: 11.5 * theme.fontScale
+                                            }
+                                        }
                                     }
-                                    onClicked: gameDetailsPopup.selectedProjectId = modelData.id
+                                    onClicked: {
+                                        gameDetailsPopup.selectedProjectId = modelData.id
+                                        window.markLauncherChosen(modelData.id)
+                                    }
                                 }
                             }
                         }
                         Label {
                             Layout.fillWidth: true
+                            visible: gameDetailsPopup.supportedProjects.length < 2
                             text: gameDetailsPopup.selectedProject
                                 ? gameDetailsPopup.selectedProject.name
                                 : "No project for this game yet"
@@ -1632,6 +1721,7 @@ Popup {
                         Label {
                             Layout.fillWidth: true
                             visible: gameDetailsPopup.selectedProject !== null
+                                && gameDetailsPopup.supportedProjects.length < 2
                             text: gameDetailsPopup.selectedProject
                                 ? gameDetailsPopup.selectedProject.repositoryOwner + "/"
                                     + gameDetailsPopup.selectedProject.repositoryName : ""
@@ -1706,7 +1796,7 @@ Popup {
                                 visible: detailsLauncherChoice.visible
                                 Layout.alignment: Qt.AlignTop
                                 Layout.topMargin: 8
-                                text: "Launcher"
+                                text: "Build"
                                 color: theme.textMuted
                                 font.pixelSize: 13 * theme.fontScale
                             }

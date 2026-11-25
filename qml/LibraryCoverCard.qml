@@ -29,11 +29,12 @@ Item {
     readonly property string displayTitle:
         metadataTitle.length > 0 ? metadataTitle : title
 
+    // The game's default launcher when several support it (Main.qml).
     readonly property var supportedProject: {
-        const projects = projectCatalog.projectsForGame(
+        root.installedProjectIds
+        return window.defaultLauncherProject(projectCatalog.projectsForGame(
             root.metadataTitle.length > 0 ? root.metadataTitle : root.title,
-            root.platform)
-        return projects.length > 0 ? projects[0] : null
+            root.platform))
     }
     readonly property bool launcherInstalled:
         root.supportedProject !== null

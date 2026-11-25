@@ -39,6 +39,14 @@ ApplicationWindow {
     // Tracks the ComboBox whose popup is currently owned by controller input.
     property var controllerOpenComboBox: null
 
+    // Games with several launchers: when each launcher was last chosen
+    // (project id → milliseconds since 1970, as JSON).
+    Settings {
+        id: launcherChoiceSettings
+        category: "Launchers"
+        property string chosenAt: "{}"
+    }
+
     Settings {
         id: libraryVisualSettings
         category: "LibraryVisuals"
@@ -2028,9 +2036,53 @@ ApplicationWindow {
     function libraryGameProject(game) {
         if (!game)
             return null
-        const projects = projectCatalog.projectsForGame(
-            game.metadataTitle ? game.metadataTitle : game.title, game.platform)
-        return projects.length > 0 ? projects[0] : null
+        return window.defaultLauncherProject(projectCatalog.projectsForGame(
+            game.metadataTitle ? game.metadataTitle : game.title, game.platform))
+    }
+
+    // A game's default launcher, when several projects support it: the
+    // installed one chosen most recently in Game Details (else the first
+    // installed); with none installed, the one last looked at, else the
+    // catalog's first. Library Play starts it and Game Details opens on it.
+    readonly property var launcherChosenTimes: {
+        try {
+            const times = JSON.parse(launcherChoiceSettings.chosenAt)
+            return times && typeof times === "object" ? times : ({})
+        } catch (error) {
+            return ({})
+        }
+    }
+    function defaultLauncherProject(projects) {
+        if (!projects || projects.length === 0)
+            return null
+        const times = window.launcherChosenTimes
+        const pick = (installedOnly) => {
+            let best = null
+            let bestTime = -1
+            for (let i = 0; i < projects.length; ++i) {
+                const project = projects[i]
+                if (installedOnly && window.installedLauncherProjectIds[project.id] !== true)
+                    continue
+                const time = Number(times[project.id]) || 0
+                if (time > bestTime) {
+                    best = project
+                    bestTime = time
+                }
+            }
+            return best
+        }
+        return pick(true) || pick(false) || projects[0]
+    }
+    function markLauncherChosen(projectId) {
+        if (!projectId)
+            return
+        let times = Object.assign({}, window.launcherChosenTimes)
+        times[projectId] = Date.now()
+        launcherChoiceSettings.chosenAt = JSON.stringify(times)
+    }
+    function projectName(projectId) {
+        const project = projectCatalog.project(projectId)
+        return project && project.name ? project.name : projectId
     }
     function libraryGameInstalled(game) {
         const project = window.libraryGameProject(game)
@@ -2210,6 +2262,7 @@ ApplicationWindow {
     property int launchStatusRevision: 0
 
     function launchSupportedGame(projectId, game) {
+        window.markLauncherChosen(projectId)
         let errors = Object.assign({}, launchErrors)
         delete errors[projectId]
         launchErrors = errors
@@ -3519,7 +3572,7 @@ ApplicationWindow {
 
     Dialog {
         id: uninstallDialog
-        title: "Uninstall launcher?"
+        title: "Uninstall " + window.projectName(window.pendingUninstallProjectId) + "?"
         modal: true
         anchors.centerIn: parent
         width: 420
@@ -3527,8 +3580,8 @@ ApplicationWindow {
         Label {
             width: 340
             wrapMode: Text.Wrap
-            text: "This removes the launcher for " + window.pendingUninstallProjectId
-                  + ". Your games aren't touched. Saves and settings the launcher kept in its own folder are set aside and put back if you install it again."
+            text: "This removes " + window.projectName(window.pendingUninstallProjectId)
+                  + ". Any other launcher for the game stays installed. Your games aren't touched. Saves and settings the launcher kept in its own folder are set aside and put back if you install it again."
             color: theme.textPrimary
         }
         onAccepted: window.uninstallProjectLauncher(window.pendingUninstallProjectId)
