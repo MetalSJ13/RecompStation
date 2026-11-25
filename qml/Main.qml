@@ -5732,7 +5732,7 @@ ApplicationWindow {
                                 Label {
                                     Layout.fillWidth: true
                                     visible: window.librarySearchText.trim().length === 0
-                                    text: "Place supported game files in your platform folders. RecompStation discovers them automatically and keeps your collection up to date."
+                                    text: "Put games in their system folders and RecompStation finds them on its own."
                                     color: theme.textSecondary
                                     font.pixelSize: 13 * theme.fontScale
                                     horizontalAlignment: Text.AlignHCenter
@@ -5958,7 +5958,7 @@ ApplicationWindow {
                                         title: "Interface sounds"
                                         description: uiSounds.available
                                             ? "Soft sounds when you move, open, go back and play. Silent while a game is running."
-                                            : "Not available: no audio output could be opened, or this build has no SDL2. See the log for details."
+                                            : "Not available: no sound output was found. The log has details."
                                         ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -5970,7 +5970,7 @@ ApplicationWindow {
                                     }
                                     SettingRow {
                                         title: "Volume"
-                                        description: "Of the interface sounds only. Each change plays a sample."
+                                        description: "Each change plays a sample."
                                         dimmed: !settingsManager.soundsEnabled || !uiSounds.available
                                         ValueCycler {
                                             id: soundVolumeSelector
@@ -6023,7 +6023,7 @@ ApplicationWindow {
                                     SettingRow {
                                         title: "Interface scale"
                                         description: interfaceScaleInfo.external
-                                            ? "QT_SCALE_FACTOR=" + interfaceScaleInfo.environmentValue + " is set in your environment, so RecompStation leaves scaling to it."
+                                            ? "Scaling is set outside RecompStation (QT_SCALE_FACTOR=" + interfaceScaleInfo.environmentValue + "), so it's left as is."
                                             : "Auto picks a size from your screen height. Text, covers and spacing scale together."
                                         ValueCycler {
                                             id: interfaceScaleSelector
@@ -6235,7 +6235,7 @@ ApplicationWindow {
                                     SettingRow {
                                         visible: settingsManager.libraryBackgroundType === "animated"
                                         title: "Quality"
-                                        description: "Balanced renders at 75% resolution; Low at half resolution and 30 fps, for older or integrated graphics."
+                                        description: "Lower settings are easier on older or built-in graphics."
                                         ValueCycler {
                                             options: [
                                                 { label: "Auto · " + (window.waveQualityResolved === "balanced" ? "Balanced" : "High"), value: "auto" },
@@ -6258,7 +6258,7 @@ ApplicationWindow {
                                         title: settingsManager.customLibraryBackground.length > 0 ? "Wallpaper" : "Choose a wallpaper"
                                         description: settingsManager.customLibraryBackground.length > 0
                                             ? decodeURIComponent(settingsManager.customLibraryBackground.toString().split("/").pop())
-                                            : "PNG, JPEG or WebP. Large images are loaded at your screen's size to save memory."
+                                            : "A PNG, JPEG or WebP image."
                                         RowLayout {
                                             spacing: 8
                                             Button {
@@ -6441,7 +6441,7 @@ ApplicationWindow {
                                     Label {
                                         Layout.fillWidth: true
                                         Layout.leftMargin: 4
-                                        text: "Changing the folder doesn't move or delete game files. RecompStation creates a subfolder for each platform and scans it."
+                                        text: "Changing it doesn't move or delete any games. Each system gets its own folder inside."
                                         color: theme.textMuted
                                         font.pixelSize: 12 * theme.fontScale
                                         wrapMode: Text.Wrap
@@ -6471,7 +6471,7 @@ ApplicationWindow {
                                     SettingsGroupLabel { text: "SCANNING" }
                                     SettingRow {
                                         title: "Scan library on startup"
-                                        description: "Check the platform folders for new or removed games when RecompStation starts. Folders are also watched while it runs."
+                                        description: "Looks for new or removed games at startup. Changes are also noticed while RecompStation is open."
                                         ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -6483,7 +6483,7 @@ ApplicationWindow {
                                     SettingRow {
                                         title: "Scan now"
                                         description: window.scanMessage.length > 0 ? window.scanMessage
-                                            : "Place game files in their platform folders, then scan."
+                                            : "Put games in their system folders, then scan."
                                         Button {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -6515,7 +6515,7 @@ ApplicationWindow {
                                     SettingsGroupLabel { text: "PLAYING" }
                                     SettingRow {
                                         title: "Prepare games for launchers"
-                                        description: "Give your copy to the launcher before it starts, so you don't have to find the file in each launcher. Copies are checked first, and your library files are only read."
+                                        description: "Hands your game to its launcher when you press Play, so you don't have to find the file in each launcher. Your game files are never changed."
                                         ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -6526,7 +6526,7 @@ ApplicationWindow {
                                     }
                                     SettingRow {
                                         title: "Start games in fullscreen"
-                                        description: "Switches each launcher to fullscreen once. Launchers create their settings on their first start, so it applies from the second. If you change it inside the launcher later, that choice is kept. Widescreen is already the launchers' default."
+                                        description: "Sets each launcher to fullscreen from its second start on. If you change it in the launcher later, your choice is kept."
                                         dimmed: !settingsManager.prepareGameFiles
                                         ToggleSwitch {
                                             activeFocusOnTab: true
@@ -6539,7 +6539,7 @@ ApplicationWindow {
                                     }
                                     SettingRow {
                                         title: "Saves stay with each launcher"
-                                        description: "In the launcher's own folder, such as ~/.config/BanjoRecompiled, so uninstalling or updating a launcher keeps them. Each game's page shows where its saves are."
+                                        description: "Uninstalling or updating a launcher keeps your saves. Each game's page shows where they are."
                                     }
                                     Item { Layout.preferredHeight: 16 }
                                 }
@@ -6827,7 +6827,7 @@ ApplicationWindow {
                                         delegate: SettingRow {
                                             required property var modelData
                                             title: modelData.projectId
-                                            description: "Its game is no longer in your library. Removing it frees the space; saves stored by the launcher elsewhere are not touched."
+                                            description: "Its game is no longer in your library. Removing it frees the space and keeps your saves."
                                             Button {
                                                 activeFocusOnTab: true
                                                 focusPolicy: Qt.StrongFocus
@@ -6865,7 +6865,7 @@ ApplicationWindow {
                                     SettingsGroupLabel { text: "DIAGNOSTICS" }
                                     SettingRow {
                                         title: "Runtime log"
-                                        description: "runtime.log records what RecompStation does; each game's own output is in logs/launchers. Your home folder is written as ~. Attach both when reporting a problem."
+                                        description: "Attach these when reporting a problem. Your home folder's name is left out."
                                         Button {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -6894,7 +6894,7 @@ ApplicationWindow {
                                     }
                                     SettingRow {
                                         title: "Detailed logging"
-                                        description: "Adds step-by-step details to the log, for tracking down a problem. Leave it off otherwise; the log grows faster."
+                                        description: "Adds more detail to the log while tracking down a problem. Leave it off otherwise."
                                         ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -6909,7 +6909,7 @@ ApplicationWindow {
                                         title: "Reset settings"
                                         description: window.resetSettingsArmed
                                             ? "Press again to reset and restart RecompStation."
-                                            : "Restores appearance, display, background, library view, controller and metadata settings. Your games, library folder, covers, launchers, LaunchBox catalog and TheGamesDB key are kept."
+                                            : "Puts every setting back to its default. Your games, library folder, covers, launchers and TheGamesDB key are kept."
                                         Button {
                                             id: resetSettingsButton
                                             activeFocusOnTab: true
@@ -7329,7 +7329,7 @@ ApplicationWindow {
                                                     }
                                                     Label {
                                                         Layout.fillWidth: true
-                                                        text: "Matches by ROM file name and title, with covers and screenshots. Works without a key or internet once downloaded (about 106 MB)."
+                                                        text: "Descriptions, covers and screenshots from a catalog kept on your computer. No key needed, and it works offline once downloaded (about 106 MB)."
                                                         color: theme.textMuted
                                                         font.pixelSize: 12 * theme.fontScale
                                                         wrapMode: Text.Wrap
@@ -7363,7 +7363,6 @@ ApplicationWindow {
                                                         ? window.launchBoxStatusMessage
                                                         : settingsManager.launchBoxLastUpdated.length > 0
                                                             ? "Updated " + window.formatShortDate(settingsManager.launchBoxLastUpdated)
-                                                                + " · indexes " + platformManager.platforms().map(window.platformDisplayName).join(", ")
                                                             : "Download the catalog to start matching with LaunchBox."
                                                     color: theme.textMuted
                                                     font.pixelSize: 11.5 * theme.fontScale
@@ -7470,7 +7469,7 @@ ApplicationWindow {
                                     SettingsGroupLabel { text: "AUTOMATION" }
                                     SettingRow {
                                         title: "Match new games automatically"
-                                        description: "After every scan, including when files are added while RecompStation is open. Games skipped because a provider was unreachable are retried an hour later."
+                                        description: "Looks up new games as soon as they're found. If a source can't be reached, it tries again later."
                                         ToggleSwitch {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -8206,18 +8205,10 @@ ApplicationWindow {
                                 SettingsGroupLabel { Layout.topMargin: 0; text: "WHERE THINGS LIVE" }
                                 Label {
                                     Layout.fillWidth: true
-                                    text: "Everything RecompStation downloads or creates is in its data folder:"
+                                    text: "Everything RecompStation downloads or creates is kept in its data folder."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap
-                                }
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: "launchers/ · artwork/ · downloads/\nmetadata/launchbox/ · database/\nlogs/ · config/"
-                                    color: theme.textSecondary
-                                    font.family: "monospace"
-                                    font.pixelSize: 12 * theme.fontScale
-                                    lineHeight: 1.4
                                 }
                                 Label {
                                     Layout.fillWidth: true
@@ -8245,7 +8236,7 @@ ApplicationWindow {
                                 SettingsGroupLabel { Layout.topMargin: 0; text: "HOW MATCHING WORKS" }
                                 Label {
                                     Layout.fillWidth: true
-                                    text: "Each new game is looked up by its ROM file name and title, in the order you chose. A game is only matched when one result clearly fits; otherwise it stays unmatched rather than getting the wrong cover."
+                                    text: "New games are looked up by file name and title, in the order you chose. A game is only matched when one result clearly fits, so you won't get the wrong cover."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap
@@ -8269,7 +8260,7 @@ ApplicationWindow {
                                 SettingsGroupLabel { text: "GETTING A THEGAMESDB KEY" }
                                 Label {
                                     Layout.fillWidth: true
-                                    text: "Request a free key on the TheGamesDB forums, then choose Add key and paste it. It is stored in its own file in RecompStation's config folder, readable only by your user. If RECOMPSTATION_TGDB_API_KEY is set in your environment, that key is used instead."
+                                    text: "Ask for a free key on the TheGamesDB forums, then choose Add key and paste it. It's stored privately on this computer."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap
@@ -8387,7 +8378,7 @@ ApplicationWindow {
                                 Label {
                                     Layout.fillWidth: true
                                     Layout.topMargin: 6
-                                    text: "Heights are measured after your desktop's own scaling, so a 4K screen already set to 200% in your desktop counts as 1080p and is not scaled twice."
+                                    text: "Your desktop's own scaling counts first, so a 4K screen already at 200% is treated as 1080p and isn't scaled twice."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap
