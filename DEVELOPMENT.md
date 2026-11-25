@@ -246,10 +246,13 @@ From the repository root:
 ```bash
 ./scripts/setup.sh                  # new computer: dependencies, build, tests
 ./scripts/install_dependencies.sh   # dependencies only (Arch, or Debian 13+ / Ubuntu 25.04+)
+./scripts/uninstall_dependencies.sh # remove what the installer added (--dry-run to preview)
 ./scripts/build.sh                  # Debug build
 ./scripts/build.sh --test           # build and run the CTest suites in parallel
 ./scripts/run.sh                    # start the app
 ```
+
+`install_dependencies.sh` records the packages it adds (those not already installed, plus what they pulled in) in `~/.local/state/recompstation-dev/installed-packages`. `uninstall_dependencies.sh` removes only those, keeps any that something outside the list still needs (and, on Debian, Essential, Required and Important packages), and stops if the package manager's own simulated removal would take anything else. Without the record it removes nothing.
 
 Choose a configuration with `./scripts/build.sh Release` or `./scripts/build.sh RelWithDebInfo`. The build script reuses the configured generator and build directory; keep the build directory and prefer incremental builds. Every new `.qml` or `.js` file must be listed in `QML_FILES` in `CMakeLists.txt` (the QML tests read from the source tree and will not catch a missing entry).
 

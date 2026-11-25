@@ -10,6 +10,29 @@ set -Eeuo pipefail
 
 MINIMUM_QT="6.5"
 
+# Packages this script adds (the ones you didn't already have, and what
+# they pulled in) are recorded here, so ./scripts/uninstall_dependencies.sh
+# can take exactly those away again and nothing you had before.
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/recompstation-dev"
+RECORD="$STATE_DIR/installed-packages"
+
+installed_now() {
+    if command -v pacman >/dev/null 2>&1; then
+        pacman -Qq | sort -u
+    else
+        dpkg-query -W -f='${Package}\t${db:Status-Abbrev}\n' | awk '$2 ~ /^ii/ {print $1}' | sort -u
+    fi
+}
+
+record_new_packages() {
+    local before="$1"
+    mkdir -p "$STATE_DIR"
+    touch "$RECORD"
+    comm -13 "$before" <(installed_now) | cat - "$RECORD" | sort -u > "$RECORD.new"
+    mv "$RECORD.new" "$RECORD"
+    echo "Recorded $(wc -l < "$RECORD") package(s) added for RecompStation in $RECORD"
+}
+
 if ! command -v sudo >/dev/null 2>&1; then
     echo "ERROR: sudo is required."
     exit 1
@@ -86,10 +109,16 @@ echo " RecompStation - Install dependencies"
 echo "======================================"
 echo
 
+BEFORE="$(mktemp)"
+trap 'rm -f "$BEFORE"' EXIT
 if command -v pacman >/dev/null 2>&1; then
+    installed_now > "$BEFORE"
     install_arch
+    record_new_packages "$BEFORE"
 elif command -v apt-get >/dev/null 2>&1; then
+    installed_now > "$BEFORE"
     install_debian
+    record_new_packages "$BEFORE"
 else
     echo "ERROR: this script supports Arch (pacman) and Debian/Ubuntu (apt)."
     echo "On other distributions, install the requirements listed in README.md."

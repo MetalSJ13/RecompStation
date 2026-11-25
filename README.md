@@ -122,6 +122,8 @@ cd RecompStation
 
 `setup.sh` uses `./scripts/install_dependencies.sh`, which installs the requirements with pacman or apt and checks that your Qt is new enough. Debian 12 and Ubuntu 24.04 ship Qt 6.4, which is too old: use a prebuilt download there.
 
+When you are finished building, `./scripts/uninstall_dependencies.sh` removes the packages the installer added (add `--dry-run` to only see the list). It never removes packages you had before, or anything your system or other programs still need, and it asks before removing anything.
+
 #### Other distributions
 
 Install the requirements above with your package manager, then run `./scripts/build.sh Release` and `./scripts/run.sh`.
