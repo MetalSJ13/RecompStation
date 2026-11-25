@@ -212,7 +212,8 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
   - Uses the system's own Wine as it is configured (including a `WINEPREFIX` the player set); RecompStation does not bundle Wine or manage its own Wine setup, and debugging Wine itself is out of scope. Gaming distributions such as Bazzite and Garuda already configure Wine; the option appears only where Wine is installed and runs.
   - Game Details gets a small choice between the Linux and Windows build for projects that have both, controller-friendly and hidden when there is nothing to choose; Windows-only projects say they need Wine when it isn't available.
   - Saves under Wine live in Wine's own folders: where to show them, and what switching builds means for saves, to be worked out before this ships.
-  - Still to decide: whether Windows launchers through Wine sit behind a Settings switch (off by default) or appear whenever Wine is found, and whether this comes before or with the Windows release.
+  - A Settings switch decides it (decided 2026-11-25): "Use Windows launchers through Wine", off by default, shown only in the Linux version. RecompStation checks whether Wine is installed and runs; without it the switch is greyed out with a short note that Wine must be installed. Game Details offers Windows builds only while the switch is on.
+  - Comes first, as a Linux-only feature, before the Windows release (decided 2026-11-25). It needs the catalog's per-system builds, which the Windows release reuses.
 - Testing cost: every feature needs checking on both systems.
 
 ### 9. Application updates — built (merged 2026-11-25; the update itself needs a newer release to try)
@@ -247,7 +248,7 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 - No settings without real behaviour: placeholder controls are removed until their feature exists.
 - Settings text is written for players, not developers: say what a setting does and what it keeps, without internals such as file layouts, environment variables or render percentages (2026-11-25).
 - Dependency removal never guesses: only packages the installer added are candidates, anything the system or other programs use (including optional dependencies, and `qt6-wayland` on Wayland) is kept, and nothing happens if the package manager's simulation would touch anything else (2026-11-25).
-- Launchers match the system RecompStation is running on, detected at startup; on Linux the Linux build is preferred, and Windows builds run through the system's own Wine only by the player's choice or when no Linux build exists. RecompStation never bundles or manages Wine (2026-11-25).
+- Launchers match the system RecompStation is running on, detected at startup; on Linux the Linux build is preferred, and Windows builds run through the system's own Wine only when the player turns on the Linux-only Wine switch in Settings (greyed out without Wine), and then only by choice or when no Linux build exists. RecompStation never bundles or manages Wine (2026-11-25).
 - Releases: an AppImage and a portable zip for 64-bit Linux (x86_64), Qt included, built by GitHub Actions; ARM later. Windows `.exe` builds follow once the Linux files work well (2026-11-24).
 - Launcher updates replace the installed version only after the new one is unpacked and checked, keep the player's files, and roll back on failure; downloads are checked against the SHA-256 the project publishes on GitHub (2026-11-24).
 
