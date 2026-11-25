@@ -235,16 +235,17 @@ GPL-3.0 `LICENSE`; `README.md` with the no-game-files notice at the top, feature
 ## Build and development workflow
 
 Dependencies:
-- Qt 6.5 or newer, including Qt SVG and Qt Shader Tools (`qt6-shadertools` on Arch Linux)
+- Qt 6.5 or newer, including Qt SVG and Qt Shader Tools (`qt6-shadertools` on Arch Linux, `qt6-shadertools-dev` on Debian); Debian 12 and Ubuntu 24.04 are too old
 - A C++20 compiler and CMake; Ninja is recommended
 - Optional, for faster builds: ccache and mold (or lld), picked up automatically
-- libarchive (`libarchive` on Arch Linux)
+- libarchive (`libarchive` on Arch Linux, `libarchive-dev` on Debian)
 - SDL2 for controller support (optional at build time)
 
 From the repository root:
 
 ```bash
-./scripts/install_dependencies.sh   # Arch-based systems
+./scripts/setup.sh                  # new computer: dependencies, build, tests
+./scripts/install_dependencies.sh   # dependencies only (Arch, or Debian 13+ / Ubuntu 25.04+)
 ./scripts/build.sh                  # Debug build
 ./scripts/build.sh --test           # build and run the CTest suites in parallel
 ./scripts/run.sh                    # start the app

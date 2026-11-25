@@ -105,25 +105,26 @@ They run on Debian 12, Ubuntu 22.04, Fedora 36 and newer distributions (glibc 2.
 
 #### Requirements
 
-- Linux on x86_64 or ARM64 (developed on Arch Linux with KDE Plasma)
+- Linux on x86_64 or ARM64
 - Qt 6.5 or newer: Base (with the SQLite driver), Declarative, Svg and ShaderTools, plus Qt Wayland on Wayland sessions
 - CMake 3.21+, Ninja and a C++20 compiler (GCC or Clang)
 - libarchive
 - SDL2 2.0.14+ (optional, for controller support and interface sounds; keyboard and mouse work without it)
 
-#### Arch Linux and derivatives
+#### Arch Linux, Debian 13+, Ubuntu 25.04+ and their derivatives
 
 ```bash
 git clone https://github.com/MetalSJ13/RecompStation.git
 cd RecompStation
-./scripts/install_dependencies.sh   # installs the packages above with pacman
-./scripts/build.sh Release          # builds into ./build
+./scripts/setup.sh                  # installs the packages, builds, runs the tests
 ./scripts/run.sh                    # starts RecompStation
 ```
 
+`setup.sh` uses `./scripts/install_dependencies.sh`, which installs the requirements with pacman or apt and checks that your Qt is new enough. Debian 12 and Ubuntu 24.04 ship Qt 6.4, which is too old: use a prebuilt download there.
+
 #### Other distributions
 
-Install the requirements above with your package manager, then run the same `build.sh` and `run.sh` commands. Make sure your distribution ships **Qt 6.5 or newer**; some long-term-support releases (Debian 12, Ubuntu 24.04) have older versions, so use a prebuilt download there. Building from source has been tested on Arch Linux; the prebuilt downloads also on Debian 13 with XFCE.
+Install the requirements above with your package manager, then run `./scripts/build.sh Release` and `./scripts/run.sh`.
 
 #### Updating
 
