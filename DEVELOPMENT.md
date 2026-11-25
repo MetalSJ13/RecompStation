@@ -170,6 +170,7 @@ Developed on KDE Plasma (Wayland); the release files run on Debian 13 with XFCE 
 - [x] Graphics without a GPU (2026-11-25): RecompStation checks OpenGL before opening its window. With none (a VM without 3D), it draws with Qt's software renderer and shows the theme gradient instead of the waves. With OpenGL drawn by the CPU (llvmpipe), Background › Quality on Auto picks Low. The runtime log records which happened.
 - [x] Windowed sizes on X11 centre the window on its screen after resizing, so a larger size can't spill off screen (Wayland places windows itself) (2026-11-25).
 - [x] Wayland window decorations and shell plugins are bundled (GNOME draws Qt's own title bar); X11 libraries (`libxcb-cursor` and friends) are bundled.
+- [x] The AppImage carries its own icon (`.DirIcon`), so file managers and AppImage tools show the logo for the file (2026-11-25).
 - [x] Already in place: controller hot-plug and game input ownership (section 6), drag-and-drop of `file://` URLs, folders opened through the desktop's default handler.
 
 Test on each VM (AppImage and zip), then tick here:

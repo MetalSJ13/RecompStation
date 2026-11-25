@@ -189,6 +189,11 @@ echo "Links in the portable folder: $(find "$PORTABLE" -type l | wc -l)"
 
 # 5. AppImage.
 cp -a "$NOTICES/." "$APPDIR/"
+# The icon file managers and AppImage tools show for the AppImage itself:
+# a 256 px PNG, both as .DirIcon and under the app ID.
+rm -f "$APPDIR/.DirIcon" "$APPDIR/$APP_ID.png"
+cp "$PROJECT_ROOT/assets/logo/png/recompstation-icon-256.png" "$APPDIR/$APP_ID.png"
+cp "$PROJECT_ROOT/assets/logo/png/recompstation-icon-256.png" "$APPDIR/.DirIcon"
 (cd "$BUILD_DIR" && rm -f ./*.AppImage && \
     LDAI_OUTPUT="$APPIMAGE_FILE" OUTPUT="$APPIMAGE_FILE" "$LINUXDEPLOY" --appdir "$APPDIR" --output appimage)
 mv "$BUILD_DIR/$APPIMAGE_FILE" "$DIST_DIR/$APPIMAGE_FILE"
