@@ -8,6 +8,8 @@ pre-release for projects marked includePrereleases).
 
     python3 tools/catalog/release_assets.py            # every project
     python3 tools/catalog/release_assets.py banjo      # ids containing "banjo"
+    python3 tools/catalog/release_assets.py --repo owner/name [owner/name ...]
+                                                       # repositories not in the catalog yet
 
 GitHub allows 60 requests an hour without signing in, enough for one run.
 Set GITHUB_TOKEN to a personal access token for more.
@@ -54,34 +56,46 @@ def releases(repo: str):
         return json.load(response)
 
 
+def show(label: str, repo: str, prereleases: bool) -> bool:
+    try:
+        found = releases(repo)
+    except urllib.error.HTTPError as error:
+        print(f"{label}  {repo}  ERROR {error.code} {error.reason}")
+        if error.code == 403:
+            print("  GitHub's limit was reached; set GITHUB_TOKEN or try again in an hour.")
+            return False
+        return True
+    except OSError as error:
+        print(f"{label}  {repo}  ERROR {error}")
+        return True
+    if not prereleases:
+        found = [r for r in found if not r.get("prerelease")] or found
+    if not found:
+        print(f"{label}  {repo}  no releases")
+        return True
+    latest = found[0]
+    tag = latest.get("tag_name", "?") + (" (pre-release)" if latest.get("prerelease") else "")
+    print(f"{label}  {repo}  {tag}  {latest.get('published_at', '')[:10]}")
+    for asset in latest.get("assets", []):
+        print(f"  {kind(asset['name'])}  {asset['name']}")
+    return True
+
+
 def main() -> int:
-    wanted = sys.argv[1] if len(sys.argv) > 1 else ""
+    arguments = sys.argv[1:]
+    if arguments[:1] == ["--repo"]:
+        for repo in arguments[1:]:
+            if not show("candidate", repo, prereleases=True):
+                return 1
+        return 0
+    wanted = arguments[0] if arguments else ""
     catalog = json.loads((ROOT / "data" / "projects.json").read_text())
     for project in catalog["projects"]:
         if wanted and wanted not in project["id"]:
             continue
         repo = f'{project["repositoryOwner"]}/{project["repositoryName"]}'
-        try:
-            found = releases(repo)
-        except urllib.error.HTTPError as error:
-            print(f'{project["id"]}  {repo}  ERROR {error.code} {error.reason}')
-            if error.code == 403:
-                print("  GitHub's limit was reached; set GITHUB_TOKEN or try again in an hour.")
-                return 1
-            continue
-        except OSError as error:
-            print(f'{project["id"]}  {repo}  ERROR {error}')
-            continue
-        if not project.get("includePrereleases"):
-            found = [r for r in found if not r.get("prerelease")] or found
-        if not found:
-            print(f'{project["id"]}  {repo}  no releases')
-            continue
-        latest = found[0]
-        tag = latest.get("tag_name", "?") + (" (pre-release)" if latest.get("prerelease") else "")
-        print(f'{project["id"]}  {repo}  {tag}')
-        for asset in latest.get("assets", []):
-            print(f'  {kind(asset["name"])}  {asset["name"]}')
+        if not show(project["id"], repo, bool(project.get("includePrereleases"))):
+            return 1
     return 0
 
 
