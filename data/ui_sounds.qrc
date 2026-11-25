@@ -5,6 +5,7 @@
     <file alias="error.wav">../assets/sounds/error.wav</file>
     <file alias="launch.wav">../assets/sounds/launch.wav</file>
     <file alias="menu.wav">../assets/sounds/menu.wav</file>
+    <file alias="pause.wav">../assets/sounds/pause.wav</file>
     <file alias="move-1.wav">../assets/sounds/move-1.wav</file>
     <file alias="move-2.wav">../assets/sounds/move-2.wav</file>
     <file alias="move-3.wav">../assets/sounds/move-3.wav</file>

@@ -175,6 +175,7 @@ qt_add_qml_module(RecompStationApp
         qml/ValueCycler.qml
         qml/SettingsButton.qml
         qml/UpdateDialog.qml
+        qml/InputKeyChip.qml
         qml/SettingRow.qml
         qml/SettingsGroupLabel.qml
         qml/SettingsNavItem.qml

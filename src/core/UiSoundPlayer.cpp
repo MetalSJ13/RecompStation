@@ -168,7 +168,7 @@ void UiSoundPlayer::loadSounds()
     }
     for (const QString &name : {QStringLiteral("select"), QStringLiteral("cycle"),
                                 QStringLiteral("back"), QStringLiteral("switch"),
-                                QStringLiteral("menu"), QStringLiteral("toggle-on"),
+                                QStringLiteral("menu"), QStringLiteral("pause"), QStringLiteral("toggle-on"),
                                 QStringLiteral("toggle-off"), QStringLiteral("launch"),
                                 QStringLiteral("error")}) {
         if (const auto *sound = load(name)) {

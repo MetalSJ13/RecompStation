@@ -81,11 +81,11 @@ ApplicationWindow {
             if (libraryFolderDialog.visible && !newLibraryFolderDialog.visible) {
                 return [
                     { icon: "qrc:/icons/dpad.svg", key: "", label: "Move", color: "#B8C7D9", round: false },
-                    { icon: "", key: selectButton, label: "Open", color: selectColor,
+                    { icon: "", key: selectButton, token: selectToken, label: "Open", color: selectColor,
                       round: window.isFaceButton(selectToken) },
-                    { icon: "", key: backButton, label: libraryFolderDialog.history.length > 0 ? "Back" : "Close",
+                    { icon: "", key: backButton, token: backToken, label: libraryFolderDialog.history.length > 0 ? "Back" : "Close",
                       color: backColor, round: window.isFaceButton(backToken) },
-                    { icon: "", key: detailsButton, label: "Use this folder", color: detailsColor,
+                    { icon: "", key: detailsButton, token: detailsToken, label: "Use this folder", color: detailsColor,
                       round: window.isFaceButton(detailsToken) }
                 ]
             }
@@ -95,9 +95,9 @@ ApplicationWindow {
                 && window.libraryGameInstalled((gameGrid.model || [])[Math.max(0, gameGrid.currentIndex)])
             const items = [
                 { icon: "qrc:/icons/dpad.svg", key: "", label: "Navigate", color: "#B8C7D9", round: false },
-                { icon: "", key: selectButton, label: carouselPlays ? "Play" : "Select", color: selectColor,
+                { icon: "", key: selectButton, token: selectToken, label: carouselPlays ? "Play" : "Select", color: selectColor,
                   round: window.isFaceButton(selectToken) },
-                { icon: "", key: backButton, label: "Back", color: backColor,
+                { icon: "", key: backButton, token: backToken, label: "Back", color: backColor,
                   round: window.isFaceButton(backToken) },
                 { icon: "", key: switchButtons,
                   label: gameDetailsPopup.visible ? "Switch game"
@@ -105,7 +105,7 @@ ApplicationWindow {
                   color: "#A9B7CA", round: false }
             ]
             if (libraryActive)
-                items.splice(2, 0, { icon: "", key: detailsButton, label: "Details", color: detailsColor,
+                items.splice(2, 0, { icon: "", key: detailsButton, token: detailsToken, label: "Details", color: detailsColor,
                                      round: window.isFaceButton(detailsToken) })
             return items
         }
@@ -259,6 +259,31 @@ ApplicationWindow {
         flickable.contentY = Math.max(0, Math.min(maxY,
             flickable.contentY + (direction === "down" ? delta : -delta)))
         return true
+    }
+
+    // The system (pause) menu only uses Move, Select and Resume.
+    function systemMenuHintItems() {
+        if (activeInputDevice === "controller" && controllerManager.connected) {
+            const selectToken = window.actionInput("select", "a")
+            const backToken = window.actionInput("back", "b")
+            return [
+                { icon: "qrc:/icons/dpad.svg", key: "", label: "Move", color: "#B8C7D9", round: false },
+                { icon: "", key: window.inputGlyph(selectToken), token: selectToken, label: "Select",
+                  color: window.inputGlyphColor(selectToken), round: window.isFaceButton(selectToken) },
+                { icon: "", key: window.inputGlyph(backToken), token: backToken, label: "Resume",
+                  color: window.inputGlyphColor(backToken), round: window.isFaceButton(backToken) }
+            ]
+        }
+        if (activeInputDevice === "mouse")
+            return [
+                { icon: "qrc:/icons/mouse.svg", key: "", label: "Select", color: "#B8C7D9", round: false },
+                { icon: "", key: "Esc", label: "Resume", color: "#A9B7CA", round: false }
+            ]
+        return [
+            { icon: "", key: "↑ ↓", label: "Move", color: "#A9B7CA", round: false },
+            { icon: "", key: "Enter", label: "Select", color: "#A9B7CA", round: false },
+            { icon: "", key: "Esc", label: "Resume", color: "#A9B7CA", round: false }
+        ]
     }
 
     function navigationHintSummary() {
@@ -773,9 +798,10 @@ ApplicationWindow {
         }
     }
 
-    function closeSystemMenu() {
+    function closeSystemMenu(silent) {
         if (!systemMenuVisible)
             return
+        systemMenuSilentClose = silent === true
         systemMenuClosing = true
         systemMenuVisible = false
     }
@@ -852,7 +878,16 @@ ApplicationWindow {
         }
     }
 
-    onSystemMenuVisibleChanged: uiSounds.play(systemMenuVisible ? "menu" : "back")
+    // Opening the system menu plays the pause sound; closing it, Back.
+    // Choosing Settings there closes it silently (user, 2026-11-25).
+    property bool systemMenuSilentClose: false
+    onSystemMenuVisibleChanged: {
+        if (systemMenuVisible)
+            uiSounds.play("pause")
+        else if (!systemMenuSilentClose)
+            uiSounds.play("back")
+        systemMenuSilentClose = false
+    }
 
     onCurrentPageChanged: {
         if (controllerManager.mappingCaptureActive && currentPage !== "Settings")
@@ -7729,13 +7764,15 @@ ApplicationWindow {
                                                                         anchors.leftMargin: 9
                                                                         anchors.rightMargin: 4
                                                                         spacing: 4
-                                                                        Label {
-                                                                            text: window.inputGlyph(bindingChip.modelData)
-                                                                            color: window.isFaceButton(bindingChip.modelData)
+                                                                        InputKeyChip {
+                                                                            bare: true
+                                                                            size: 24
+                                                                            key: window.inputGlyph(bindingChip.modelData)
+                                                                            token: bindingChip.modelData
+                                                                            round: window.isFaceButton(bindingChip.modelData)
+                                                                            keyColor: window.isFaceButton(bindingChip.modelData)
                                                                                 ? window.inputGlyphColor(bindingChip.modelData) : theme.textPrimary
-                                                                            font.pixelSize: (window.isFaceButton(bindingChip.modelData) ? 14 : 12.5) * theme.fontScale
-                                                                            font.bold: true
-                                                                            font.strikeout: mappingRow.replacing
+                                                                            strikeout: mappingRow.replacing
                                                                         }
                                                                         Button {
                                                                             id: removeBindingButton
@@ -9088,8 +9125,8 @@ ApplicationWindow {
                     enabled: !settingsManager.reducedMotion
                     NumberAnimation { duration: 220; easing.type: Easing.OutBack }
                 }
-                width: Math.min(parent.width - 48, 520)
-                height: systemMenuContent.implicitHeight + 68
+                width: Math.min(parent.width - 48, 600)
+                height: systemMenuContent.implicitHeight + 76
                 radius: theme.radiusLarge
                 color: theme.sidebarBackground
                 border.color: theme.divider
@@ -9098,14 +9135,14 @@ ApplicationWindow {
                 ColumnLayout {
                     id: systemMenuContent
                     anchors.fill: parent
-                    anchors.margins: 32
+                    anchors.margins: 36
                     spacing: 14
 
                     Label {
                         Layout.fillWidth: true
                         text: window.quitConfirmationVisible ? "Quit RecompStation?" : "RecompStation"
                         color: theme.textPrimary
-                        font.pixelSize: 25 * theme.fontScale
+                        font.pixelSize: 29 * theme.fontScale
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -9115,7 +9152,7 @@ ApplicationWindow {
                               ? "Are you sure you want to close RecompStation?"
                               : "What would you like to do?"
                         color: theme.textSecondary
-                        font.pixelSize: 13 * theme.fontScale
+                        font.pixelSize: 15 * theme.fontScale
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.Wrap
                     }
@@ -9123,7 +9160,7 @@ ApplicationWindow {
                     component MenuChoice: Button {
                         id: choice
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 54
+                        Layout.preferredHeight: 62
                         activeFocusOnTab: true
                         focusPolicy: Qt.StrongFocus
                         leftPadding: 18
@@ -9149,7 +9186,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 text: choice.text
                                 color: choice.activeFocus ? theme.textPrimary : theme.textSecondary
-                                font.pixelSize: 15 * theme.fontScale
+                                font.pixelSize: 17 * theme.fontScale
                                 font.bold: choice.activeFocus
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -9175,7 +9212,7 @@ ApplicationWindow {
                         text: "Settings"
                         visible: !window.quitConfirmationVisible
                         onClicked: {
-                            window.closeSystemMenu()
+                            window.closeSystemMenu(true)
                             window.navigateToPage("Settings")
                         }
                     }
@@ -9209,12 +9246,40 @@ ApplicationWindow {
                         height: 1
                         color: theme.divider
                     }
-                    Label {
-                        Layout.fillWidth: true
-                        text: window.navigationHintSummary()
-                        color: theme.textMuted
-                        font.pixelSize: 10 * theme.fontScale
-                        horizontalAlignment: Text.AlignHCenter
+                    Row {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 2
+                        spacing: 18
+                        Repeater {
+                            model: window.systemMenuHintItems()
+                            delegate: Row {
+                                required property var modelData
+                                spacing: 6
+                                Image {
+                                    visible: modelData.icon !== ""
+                                    source: modelData.icon
+                                    width: 18
+                                    height: 18
+                                    sourceSize: Qt.size(36, 36)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                InputKeyChip {
+                                    visible: modelData.key !== ""
+                                    key: modelData.key
+                                    token: modelData.token || ""
+                                    keyColor: modelData.color
+                                    round: modelData.round
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Label {
+                                    text: modelData.label
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12 * theme.fontScale
+                                    font.weight: Font.DemiBold
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -9266,25 +9331,13 @@ ApplicationWindow {
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Rectangle {
+                        InputKeyChip {
                             visible: modelData.key !== ""
-                            width: Math.max(22, hintKeyLabel.implicitWidth + 12)
-                            height: 23
-                            radius: modelData.round ? 12 : 5
-                            color: modelData.round
-                                   ? Qt.rgba(0.22, 0.68, 0.50, 0.16)
-                                   : Qt.rgba(0.58, 0.68, 0.82, 0.12)
-                            border.color: modelData.color
+                            key: modelData.key
+                            token: modelData.token || ""
+                            keyColor: modelData.color
+                            round: modelData.round
                             anchors.verticalCenter: parent.verticalCenter
-
-                            Label {
-                                id: hintKeyLabel
-                                anchors.centerIn: parent
-                                text: modelData.key
-                                color: modelData.color
-                                font.pixelSize: 10 * theme.fontScale
-                                font.weight: Font.Bold
-                            }
                         }
 
                         Label {

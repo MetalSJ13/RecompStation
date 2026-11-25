@@ -7,7 +7,8 @@ sampled or taken from elsewhere. Run from the repository root:
 
 Needs Python 3 with numpy and scipy (only to regenerate; the WAV files are
 committed). The chosen set is "Glass, refined", with option A for opening a
-game and for Play (approved 2026-11-24).
+game and for Play (approved 2026-11-24), and "settle" for the system menu
+(approved 2026-11-25).
 """
 import os
 import sys
@@ -21,6 +22,7 @@ sys.path.insert(0, HERE)
 import synth as base  # noqa: E402
 import synth_glass2 as g2  # noqa: E402
 import synth_glass3 as g3  # noqa: E402
+import synth_pause as sp  # noqa: E402
 
 OUT = os.path.join(HERE, "..", "..", "assets", "sounds")
 SR = base.SR
@@ -57,6 +59,11 @@ def main():
     # holding a direction never sounds mechanical.
     for i, cents in enumerate((-18, 0, 18), start=1):
         write(f"move-{i}", move if cents == 0 else repitch(move, cents))
+    # Opening the system (pause) menu: option A, "settle" (approved
+    # 2026-11-25). Made last, with its own random state, so every sound
+    # above stays as approved.
+    base.LEVELS.update(sp.LEVELS)
+    kept["pause"] = g2.finish(sp.sounds()["pause-a-settle"], "pause")
     for name in sorted(kept):
         write(name, kept[name])
 

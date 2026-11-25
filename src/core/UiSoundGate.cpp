@@ -11,6 +11,7 @@ const QHash<QString, int> &ranks()
         {QStringLiteral("switch"), 3},
         {QStringLiteral("cycle"), 3},
         {QStringLiteral("menu"), 3},
+        {QStringLiteral("pause"), 3},
         {QStringLiteral("back"), 3},
         {QStringLiteral("error"), 3},
         {QStringLiteral("select"), 4},

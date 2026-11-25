@@ -390,24 +390,13 @@ Popup {
                             fillMode: Image.PreserveAspectFit
                             anchors.verticalCenter: parent.verticalCenter
                         }
-                        Rectangle {
+                        InputKeyChip {
                             visible: modelData.key !== ""
-                            width: Math.max(22, detailsHintKeyLabel.implicitWidth + 12)
-                            height: 23
-                            radius: modelData.round ? 12 : 5
-                            color: modelData.round
-                                   ? Qt.rgba(0.22, 0.68, 0.50, 0.16)
-                                   : Qt.rgba(0.58, 0.68, 0.82, 0.12)
-                            border.color: modelData.color
+                            key: modelData.key
+                            token: modelData.token || ""
+                            keyColor: modelData.color
+                            round: modelData.round
                             anchors.verticalCenter: parent.verticalCenter
-                            Label {
-                                id: detailsHintKeyLabel
-                                anchors.centerIn: parent
-                                text: modelData.key
-                                color: modelData.color
-                                font.pixelSize: 10 * theme.fontScale
-                                font.weight: Font.Bold
-                            }
                         }
                         Label {
                             text: modelData.label
