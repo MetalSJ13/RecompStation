@@ -214,6 +214,8 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
   - Saves under Wine live in Wine's own folders: where to show them, and what switching builds means for saves, to be worked out before this ships.
   - A Settings switch decides it (decided 2026-11-25): "Use Windows launchers through Wine", off by default, shown only in the Linux version. RecompStation checks whether Wine is installed and runs; without it the switch is greyed out with a short note that Wine must be installed. Game Details offers Windows builds only while the switch is on.
   - Comes first, as a Linux-only feature, before the Windows release (decided 2026-11-25). It needs the catalog's per-system builds, which the Windows release reuses.
+  - Works the same on every Linux distribution: availability depends only on whether Wine is installed and runs, never on which distribution it is. The app names no distributions; setting up Wine is left to players who use it (decided 2026-11-25). Note: Bazzite installs only part of Wine for Lutris and advises against using system Wine; if detection finds a working `wine` there, the switch is available like anywhere else.
+  - Mockups approved 2026-11-25 (canvas row "Windows launchers through Wine" and "Windows version of RecompStation"): the Settings switch found and greyed out, the Game Details Launcher choice (Linux by default, Windows through Wine), a Windows-only project with the switch off, and the Windows version's Game Details (no Launcher choice, no mention of Linux or Wine; "No Windows launcher yet" for Linux-only projects).
 - Testing cost: every feature needs checking on both systems.
 
 ### 9. Application updates — built (merged 2026-11-25; the update itself needs a newer release to try)
