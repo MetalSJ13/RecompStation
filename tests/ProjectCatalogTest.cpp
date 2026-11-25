@@ -520,11 +520,20 @@ void ProjectCatalogTest::parsesLaunchRecipes()
         R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C", "arguments": ["--x"]})",
         R"({"method": "discargument", "arguments": ["--disc"]})",
         R"({"method": "discargument", "arguments": ["--disc", "{gamePath}", "--exec=/bin/sh"]})",
-        R"({"method": "discargument", "arguments": ["--disc", "{gamePath}"], "fileExtensions": ["is o"]})"
+        R"({"method": "discargument", "arguments": ["--disc", "{gamePath}"], "fileExtensions": ["is o"]})",
+        // Only HarbourMasters launchers pick the file themselves.
+        R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C", "picksGameFile": true})",
+        R"({"method": "harbourmasters", "dataFolder": "ok", "romName": "A"})"
     };
     for (const QByteArray &launchJson : invalid)
         QVERIFY2(!ProjectCatalog::parseCatalog(catalogWithLaunch(launchJson), &projects, &error),
                  launchJson.constData());
+
+    // A HarbourMasters launcher with its own file picker needs no ROM file name.
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(
+        R"({"method": "harbourmasters", "dataFolder": "ok", "romName": "A", "picksGameFile": true})"), &projects, &error),
+             qPrintable(error));
+    QVERIFY(projects.first().toMap().value("launch").toMap().value("picksGameFile").toBool());
 
     const QByteArray romFolder = R"({"method": "romfolder", "dataFolder": "Sample",
         "romFileName": "rom/sample.z64", "romXxh3": "1b67585d56e07f8c", "romVersion": "North America",

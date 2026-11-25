@@ -146,6 +146,7 @@ private slots:
     void doesNotCopyMismatchedRom();
     void preparesHarbourMastersPort();
     void harbourMastersSavesStayOutsideInstallWhenPreparingIsOff();
+    void harbourMastersPortThatPicksItsOwnFile();
     void romFolderPointsTheLauncherAtItsDataFolder();
     void romFolderPassesThePlacedRomOnlyWhenItMatches();
     void discArgumentPassesTheGameFile();
@@ -385,6 +386,39 @@ void LaunchPreparerTest::preparesHarbourMastersPort()
 
     QVERIFY(preparer.readiness(shipProject(), QString(), install, opts).value("state").toString()
             == QStringLiteral("has_copy"));
+}
+
+// A port that only takes the game file from its own file picker: its folder
+// is still set (saves stay outside the install folder), but no copy is placed.
+void LaunchPreparerTest::harbourMastersPortThatPicksItsOwnFile()
+{
+    if (!qEnvironmentVariableIsEmpty("SHIP_HOME"))
+        QSKIP("SHIP_HOME is set in this environment.");
+
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const LaunchPreparer::Options opts = options(root);
+    const QString install = QDir(root.path()).filePath(QStringLiteral("launchers/test-ship"));
+    QVERIFY(writeFile(QDir(install).filePath(QStringLiteral("Port.AppImage")), QByteArray("binary")));
+    const QString game = QDir(root.path()).filePath(QStringLiteral("game.z64"));
+    QVERIFY(writeFile(game, makeRom("TEST GAME", 'E')));
+
+    QVariantMap project = shipProject();
+    QVariantMap recipe = project.value(QStringLiteral("launch")).toMap();
+    recipe.insert(QStringLiteral("picksGameFile"), true);
+    project.insert(QStringLiteral("launch"), recipe);
+
+    LaunchPreparer preparer;
+    QCOMPARE(preparer.readiness(project, game, install, opts).value("state").toString(),
+             QStringLiteral("manual"));
+    const LaunchPreparer::Plan plan = preparer.prepare(project, game, install, opts);
+    const QString folder = QDir(opts.dataHome).filePath(QStringLiteral("testship"));
+    QCOMPARE(plan.environment.value(QStringLiteral("SHIP_HOME")), folder);
+    QVERIFY(!QFileInfo::exists(QDir(folder).filePath(QStringLiteral("baserom.us.z64"))));
+
+    QVERIFY(writeFile(QDir(folder).filePath(QStringLiteral("game.o2r")), QByteArray("assets")));
+    QCOMPARE(preparer.readiness(project, game, install, opts).value("state").toString(),
+             QStringLiteral("has_copy"));
 }
 
 void LaunchPreparerTest::harbourMastersSavesStayOutsideInstallWhenPreparingIsOff()

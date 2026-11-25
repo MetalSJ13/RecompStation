@@ -41,6 +41,46 @@
       "developmentStatus": "playable"
     },
     {
+      "id": "lighthouse-banjo-kazooie",
+      "name": "Lighthouse (Banjo-Kazooie)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Banjo-Kazooie",
+        "Banjo Kazooie",
+        "Lighthouse"
+      ],
+      "repositoryOwner": "HarbourMasters",
+      "repositoryName": "Lighthouse",
+      "romRequirements": "Requires a supported Banjo-Kazooie ROM in big-endian .z64 format: USA 1.0, USA 1.1, PAL or Japan. The project does not include game data; it extracts what it needs from your copy on first start.",
+      "romFile": "Banjo-Kazooie ROM",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^lighthouse\\.appimage$",
+          "packageFormat": "appimage",
+          "executablePath": "lighthouse.appimage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Lighthouse-.+-Win64\\.zip$",
+          "packageFormat": "zip"
+        }
+      },
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "bk",
+        "romFileName": "baserom.us.v10.z64",
+        "romName": "Banjo-Kazooie",
+        "dataFiles": [
+          "saves",
+          "lighthouse.cfg.json",
+          "*.o2r",
+          "mods",
+          "imgui.ini",
+          "logs"
+        ]
+      }
+    },
+    {
       "id": "conkers-bad-fur-day-recompiled",
       "name": "Conker's Bad Fur Day: Recompiled",
       "platform": "N64",
@@ -266,6 +306,46 @@
       }
     },
     {
+      "id": "starship-star-fox-64",
+      "name": "Starship (Star Fox 64)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Star Fox 64",
+        "Starfox 64",
+        "Starship"
+      ],
+      "repositoryOwner": "HarbourMasters",
+      "repositoryName": "Starship",
+      "romRequirements": "Requires a USA Star Fox 64 ROM, version 1.0 or 1.1. Japanese and European copies can be added later for their voices. The project does not include game data; it asks for your copy with its own file picker on first start.",
+      "romFile": "Star Fox 64 (USA) ROM",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Starship-.+-Linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "starship.appimage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Starship-.+-Windows\\.zip$",
+          "packageFormat": "zip"
+        }
+      },
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "ship",
+        "picksGameFile": true,
+        "romName": "STARFOX64",
+        "dataFiles": [
+          "saves",
+          "starship.cfg.json",
+          "*.o2r",
+          "mods",
+          "imgui.ini",
+          "logs"
+        ]
+      }
+    },
+    {
       "id": "donkey-kong-64-recompiled",
       "name": "Donkey Kong 64: Recompiled",
       "platform": "N64",
@@ -345,6 +425,47 @@
         "romXxh3": "54572403569B87C1",
         "romVersion": "North America",
         "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "spaghettikart-mario-kart-64",
+      "name": "SpaghettiKart (Mario Kart 64)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mario Kart 64",
+        "MarioKart 64",
+        "SpaghettiKart",
+        "Spaghetti Kart"
+      ],
+      "repositoryOwner": "HarbourMasters",
+      "repositoryName": "SpaghettiKart",
+      "romRequirements": "Requires the USA Mario Kart 64 ROM in big-endian .z64 format (SHA-1 579c48e211ae952530ffc8738709f078d5dd215e). The project does not include game data; it asks for your copy with its own file picker on first start.",
+      "romFile": "Mario Kart 64 (USA) ROM",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^spaghetti-linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "spaghetti.appimage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^spaghetti-windows\\.zip$",
+          "packageFormat": "zip"
+        }
+      },
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "spaghettify",
+        "picksGameFile": true,
+        "romName": "MARIOKART64",
+        "dataFiles": [
+          "saves",
+          "spaghettify.cfg.json",
+          "*.o2r",
+          "mods",
+          "imgui.ini",
+          "logs"
+        ]
       }
     },
     {
@@ -790,6 +911,47 @@
         "romXxh3": "EF18B4A9E2386169",
         "romVersion": "North America 1.0",
         "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "2ship2harkinian-majoras-mask",
+      "name": "2 Ship 2 Harkinian (Majora's Mask)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "The Legend of Zelda: Majora's Mask",
+        "Zelda: Majora's Mask",
+        "Majora's Mask",
+        "2 Ship 2 Harkinian"
+      ],
+      "repositoryOwner": "HarbourMasters",
+      "repositoryName": "2ship2harkinian",
+      "romRequirements": "Requires a supported Majora's Mask ROM: USA 1.0 or the USA GameCube version. The project does not include game data; it extracts what it needs from your copy on first start.",
+      "romFile": "The Legend of Zelda: Majora's Mask (USA) ROM",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^2Ship-.+-Linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "2ship.appimage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^2Ship-.+-Win64\\.zip$",
+          "packageFormat": "zip"
+        }
+      },
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "2ship",
+        "romFileName": "baserom.us.z64",
+        "romName": "ZELDA MAJORA'S MASK",
+        "dataFiles": [
+          "saves",
+          "2ship2harkinian.json",
+          "*.o2r",
+          "mods",
+          "imgui.ini",
+          "logs"
+        ]
       }
     },
     {

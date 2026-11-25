@@ -315,6 +315,13 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
     }
     if (!hasGame)
         return noGame();
+    // Some HarbourMasters launchers only take the game file from their own
+    // file picker: nothing is placed for them, only their folder is set.
+    if (recipe.value(QStringLiteral("picksGameFile")).toBool()) {
+        return set(QStringLiteral("manual"), QStringLiteral("info"),
+                   QStringLiteral("Pick the file once in the launcher"),
+                   QStringLiteral("%1 asks for your game file the first time it starts and extracts its game files from it. Show file opens its folder.").arg(name));
+    }
     if (m_backgroundReads && !isInspected(gamePath)) {
         if (!m_pendingReads.contains(gamePath))
             m_pendingReads.append(gamePath);
@@ -468,7 +475,7 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
         }
         if (method == QStringLiteral("harbourmasters")
             && (!options.prepareFiles || folderHasArchive(folder) || QFileInfo::exists(romPath)
-                || gamePath.isEmpty()))
+                || gamePath.isEmpty() || recipe.value(QStringLiteral("picksGameFile")).toBool()))
             return plan;
         if (!options.prepareFiles)
             return plan;

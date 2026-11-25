@@ -134,6 +134,12 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         && method != QStringLiteral("romfolder"))
         return false;
     const bool romFolder = method == QStringLiteral("romfolder");
+    // HarbourMasters launchers that only take the game file from their own
+    // file picker: nothing is placed for them, so no ROM file name.
+    const bool picksGameFile = method == QStringLiteral("harbourmasters")
+        && object.value(QStringLiteral("picksGameFile")).toBool();
+    if (object.contains(QStringLiteral("picksGameFile")) && method != QStringLiteral("harbourmasters"))
+        return false;
 
     const QString dataFolder = object.value(QStringLiteral("dataFolder")).toString();
     const QString romFileName = object.value(QStringLiteral("romFileName")).toString();
@@ -145,8 +151,9 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
     // romfolder launchers may keep the ROM one folder down ("rom/game.z64"),
     // and may read the name from the ROM themselves (no romName).
     if (!validFileName(dataFolder)
-        || !(romFolder ? validRelativePath(romFileName) : validFileName(romFileName))
-        || !romFileName.endsWith(QStringLiteral(".z64"))
+        || (!(picksGameFile && romFileName.isEmpty())
+            && (!(romFolder ? validRelativePath(romFileName) : validFileName(romFileName))
+                || !romFileName.endsWith(QStringLiteral(".z64"))))
         || (romName.isEmpty() && !romFolder) || romName.size() > 20
         || (!romXxh3.isEmpty() && !hashPattern.match(romXxh3).hasMatch())
         || (!graphicsFile.isEmpty()
@@ -187,6 +194,8 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         {QStringLiteral("graphicsFile"), graphicsFile},
         {QStringLiteral("dataFiles"), dataFiles}
     };
+    if (picksGameFile)
+        recipe->insert(QStringLiteral("picksGameFile"), true);
     if (romFolder) {
         recipe->insert(QStringLiteral("arguments"), arguments);
         recipe->insert(QStringLiteral("environment"), environment);
