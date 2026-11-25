@@ -94,7 +94,10 @@ Item {
                 y: 3 + root.drawingOffset + modelData.y - height / 2
                 text: modelData.text
                 color: lit ? root.wellColor : root.labelColor
-                font.pixelSize: 6.2
+                // pixelSize takes whole numbers only: drawn at 12 px and
+                // scaled to the drawing's 6.2.
+                font.pixelSize: 12
+                scale: 6.2 / 12
                 font.bold: true
                 renderType: Text.QtRendering
             }
