@@ -34,10 +34,11 @@ LINUX = re.compile(r"(linux|\.appimage$)", re.I)
 def kind(name: str) -> str:
     if MAC.search(name):
         return "·"
+    # Linux first: "Twin-Linux.tar.gz" contains "win-".
+    if LINUX.search(name) and not name.lower().endswith((".exe", ".msi")):
+        return "L"
     if WINDOWS.search(name + " ") or WINDOWS.search(name):
         return "W"
-    if LINUX.search(name):
-        return "L"
     return "·"
 
 
