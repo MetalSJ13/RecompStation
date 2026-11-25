@@ -24,6 +24,10 @@ private slots:
     void filtersReleaseAssetsForCurrentArchitecture();
     void parsesLaunchRecipes();
     void bundledLaunchRecipesAreComplete();
+    void detectsSystemFromKernelType();
+    void parsesBuildsPerSystem();
+    void acceptsOnlyPortableWindowsBuilds();
+    void choosesAssetsForTheRequestedBuild();
 };
 
 void ProjectCatalogTest::parsesValidCatalog()
@@ -87,8 +91,8 @@ void ProjectCatalogTest::acceptsZipPackageFormat()
     QVERIFY2(ProjectCatalog::parseCatalog(json, &projects, &error), qPrintable(error));
     QCOMPARE(projects.size(), 1);
     const QVariantMap rule = projects.first().toMap()
-        .value(QStringLiteral("architectures")).toMap()
-        .value(QStringLiteral("x86_64")).toMap();
+        .value(QStringLiteral("builds")).toMap()
+        .value(QStringLiteral("linux-x86_64")).toMap();
     QCOMPARE(rule.value(QStringLiteral("packageFormat")).toString(),
              QStringLiteral("zip"));
 }
@@ -281,8 +285,8 @@ void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForTenNewProjects()
     QVERIFY(accepts("luigis-mansion-recompiled", "x86_64", "LuigisMansionRecompiled-1.1.6-linux-x86_64.tar.gz"));
     QVERIFY(!accepts("luigis-mansion-recompiled", "x86_64", "LuigisMansionRecompiled-1.1.6-windows-x64.zip"));
     const QVariantMap luigisMansion = catalog.project(QStringLiteral("luigis-mansion-recompiled"));
-    const QVariantMap luigisMansionRule = luigisMansion.value(QStringLiteral("architectures"))
-        .toMap().value(QStringLiteral("x86_64")).toMap();
+    const QVariantMap luigisMansionRule = luigisMansion.value(QStringLiteral("builds"))
+        .toMap().value(QStringLiteral("linux-x86_64")).toMap();
     QCOMPARE(luigisMansionRule.value(QStringLiteral("executablePath")).toString(),
              QStringLiteral("LuigisMansionRecompiled.sh"));
 }
@@ -323,8 +327,8 @@ void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForNewProjects()
     QVERIFY(accepts("banjo-tooie-recompiled", "x86_64",
         "BanjoTooieRecompiled-linux-x64.tar.gz"));
     const QVariantMap banjoTooie = catalog.project(QStringLiteral("banjo-tooie-recompiled"));
-    const QVariantMap banjoTooieRule = banjoTooie.value(QStringLiteral("architectures"))
-        .toMap().value(QStringLiteral("x86_64")).toMap();
+    const QVariantMap banjoTooieRule = banjoTooie.value(QStringLiteral("builds"))
+        .toMap().value(QStringLiteral("linux-x86_64")).toMap();
     QCOMPARE(banjoTooieRule.value(QStringLiteral("executablePath")).toString(),
              QStringLiteral("run.sh"));
     QVERIFY(accepts("paper-mario-64-recompiled", "x86_64",
@@ -572,6 +576,140 @@ void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
     QCOMPARE(catalog.project(QStringLiteral("banjo-kazooie-recompiled"))
                  .value("launch").toMap().value("romFileName").toString(),
              QStringLiteral("bk.n64.us.1.0.z64"));
+}
+
+void ProjectCatalogTest::detectsSystemFromKernelType()
+{
+    QCOMPARE(ProjectCatalog::systemForKernelType(QStringLiteral("linux")), QStringLiteral("linux"));
+    QCOMPARE(ProjectCatalog::systemForKernelType(QStringLiteral("winnt")), QStringLiteral("windows"));
+    QVERIFY(ProjectCatalog::systemForKernelType(QStringLiteral("darwin")).isEmpty());
+
+    ProjectCatalog catalog;
+    // The build key combines the running system and processor.
+    if (!catalog.currentSystem().isEmpty() && !catalog.currentArchitecture().isEmpty()) {
+        QCOMPARE(catalog.currentBuild(),
+                 catalog.currentSystem() + QLatin1Char('-') + catalog.currentArchitecture());
+    }
+#ifdef Q_OS_LINUX
+    QCOMPARE(catalog.currentSystem(), QStringLiteral("linux"));
+#endif
+}
+
+namespace {
+QByteArray twoSystemCatalog()
+{
+    return QByteArray(R"({"schemaVersion": 1, "projects": [{
+        "id": "both-builds", "name": "Both Recompiled", "developmentStatus": "playable",
+        "platform": "N64", "gameTitles": ["Both Game"],
+        "repositoryOwner": "ExampleOrg", "repositoryName": "Both",
+        "builds": {
+            "linux-x86_64": {"assetNameRegex": "^Both-.*-Linux-X64\\.tar\\.gz$",
+                             "packageFormat": "tar.gz", "executablePath": "Both"},
+            "windows-x86_64": {"assetNameRegex": "^Both-.*-Windows-X64\\.zip$",
+                               "packageFormat": "zip", "executablePath": "Both.exe"}
+        }
+    }, {
+        "id": "windows-only", "name": "Windows Recompiled", "developmentStatus": "beta",
+        "platform": "N64", "gameTitles": ["Windows Game"],
+        "repositoryOwner": "ExampleOrg", "repositoryName": "WindowsOnly",
+        "builds": {
+            "windows-x86_64": {"assetNameRegex": "^WindowsOnly\\.exe$",
+                               "packageFormat": "executable", "executablePath": "WindowsOnly.exe"}
+        }
+    }]})");
+}
+
+QByteArray windowsRule(const QByteArray &format, const QByteArray &executable)
+{
+    return QByteArray(R"({"schemaVersion": 1, "projects": [{
+        "id": "rule-test", "name": "Rule Test", "developmentStatus": "playable",
+        "platform": "N64", "gameTitles": ["Rule Game"],
+        "repositoryOwner": "ExampleOrg", "repositoryName": "RuleTest",
+        "builds": {"windows-x86_64": {"assetNameRegex": "^rule$", "packageFormat": ")")
+        + format + QByteArray(R"(", "executablePath": ")") + executable + QByteArray(R"("}}}]})");
+}
+}
+
+void ProjectCatalogTest::parsesBuildsPerSystem()
+{
+    QVariantList projects;
+    QString error;
+    QVERIFY2(ProjectCatalog::parseCatalog(twoSystemCatalog(), &projects, &error), qPrintable(error));
+    const QVariantMap builds = projects.first().toMap().value(QStringLiteral("builds")).toMap();
+    QCOMPARE(builds.keys(), (QStringList{QStringLiteral("linux-x86_64"), QStringLiteral("windows-x86_64")}));
+    QCOMPARE(builds.value(QStringLiteral("windows-x86_64")).toMap().value(QStringLiteral("system")).toString(),
+             QStringLiteral("windows"));
+
+    // The older "architectures" key still reads, as Linux builds.
+    QVERIFY(ProjectCatalog::parseCatalog(catalogWithLaunch(QByteArray()), &projects, &error));
+    QCOMPARE(projects.first().toMap().value(QStringLiteral("builds")).toMap().keys(),
+             QStringList{QStringLiteral("linux-x86_64")});
+
+    // Unknown systems are rejected.
+    QByteArray unknown = twoSystemCatalog();
+    unknown.replace("linux-x86_64", "macos-x86_64");
+    QVERIFY(!ProjectCatalog::parseCatalog(unknown, &projects, &error));
+    QVERIFY(error.contains(QStringLiteral("build rule")));
+}
+
+void ProjectCatalogTest::acceptsOnlyPortableWindowsBuilds()
+{
+    QVariantList projects;
+    QString error;
+    QVERIFY(ProjectCatalog::parseCatalog(windowsRule("zip", "Game/Game.exe"), &projects, &error));
+    QVERIFY(ProjectCatalog::parseCatalog(windowsRule("executable", "Game.exe"), &projects, &error));
+    // Not portable, or not a Windows program.
+    QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("tar.gz", "Game.exe"), &projects, &error));
+    QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("appimage", "Game.exe"), &projects, &error));
+    QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("msi", "Game.exe"), &projects, &error));
+    QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("zip", "Game.sh"), &projects, &error));
+    QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("zip", "..\\\\Game.exe"), &projects, &error));
+}
+
+void ProjectCatalogTest::choosesAssetsForTheRequestedBuild()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.loadFromJson(twoSystemCatalog()));
+    const QString linux = QStringLiteral("linux-x86_64");
+    const QString windows = QStringLiteral("windows-x86_64");
+
+    QCOMPARE(catalog.availableBuilds(QStringLiteral("both-builds")), (QStringList{linux, windows}));
+    QCOMPARE(catalog.availableBuilds(QStringLiteral("windows-only")), QStringList{windows});
+
+    QVERIFY(catalog.isAssetCompatible(QStringLiteral("both-builds"), linux, QStringLiteral("Both-1.0-Linux-X64.tar.gz")));
+    QVERIFY(!catalog.isAssetCompatible(QStringLiteral("both-builds"), linux, QStringLiteral("Both-1.0-Windows-X64.zip")));
+    QVERIFY(catalog.isAssetCompatible(QStringLiteral("both-builds"), windows, QStringLiteral("Both-1.0-Windows-X64.zip")));
+    QVERIFY(!catalog.isAssetCompatible(QStringLiteral("both-builds"), windows, QStringLiteral("Both-1.0-Linux-X64.tar.gz")));
+    QVERIFY(!catalog.isAssetCompatible(QStringLiteral("windows-only"), linux, QStringLiteral("WindowsOnly.exe")));
+
+    const QVariantList assets = {
+        QVariantMap{{"name", "Both-1.0-Linux-X64.tar.gz"}},
+        QVariantMap{{"name", "Both-1.0-Windows-X64.zip"}},
+    };
+    QCOMPARE(catalog.compatibleAssets(QStringLiteral("both-builds"), assets, windows).size(), 1);
+    QCOMPARE(catalog.compatibleAssets(QStringLiteral("both-builds"), assets, windows)
+                 .first().toMap().value("name").toString(), QStringLiteral("Both-1.0-Windows-X64.zip"));
+
+    // With no build given, only the running system's build is used: a Linux
+    // copy never offers the Windows download, and the reverse.
+    const QVariantList current = catalog.compatibleAssets(QStringLiteral("both-builds"), assets);
+    if (catalog.currentBuild() == linux) {
+        QCOMPARE(current.size(), 1);
+        QVERIFY(current.first().toMap().value("name").toString().contains(QStringLiteral("Linux")));
+        QVERIFY(catalog.compatibleAssets(QStringLiteral("windows-only"),
+                                         {QVariantMap{{"name", "WindowsOnly.exe"}}}).isEmpty());
+        // An architecture alone means that architecture on this system.
+        QVERIFY(catalog.isAssetCompatible(QStringLiteral("both-builds"), QStringLiteral("x86_64"),
+                                          QStringLiteral("Both-1.0-Linux-X64.tar.gz")));
+    }
+
+    // Explanations name the build they were checked for.
+    QVERIFY(catalog.explainNoCompatibleAsset(QStringLiteral("both-builds"),
+                {QVariantMap{{"name", "Both-1.0-Linux-X64.tar.gz"}}}, windows)
+                .contains(QStringLiteral("offers Linux only")));
+    QVERIFY(catalog.explainNoCompatibleAsset(QStringLiteral("windows-only"), {}, linux)
+                .contains(QStringLiteral("64-bit Linux")));
+    QCOMPARE(catalog.buildLabel(windows), QStringLiteral("64-bit Windows (x86_64)"));
 }
 
 QTEST_GUILESS_MAIN(ProjectCatalogTest)

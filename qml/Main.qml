@@ -2133,13 +2133,12 @@ ApplicationWindow {
     function startAssetInstall(projectId, assetName) {
         const key = projectId + "|" + assetName
         const project = projectCatalog.project(projectId)
-        const rules = project.architectures
-            ? project.architectures[projectCatalog.currentArchitecture] : null
-        if (!rules) {
+        const rules = projectCatalog.buildRules(projectId, projectCatalog.currentBuild)
+        if (!rules || !rules.executablePath) {
             let states = Object.assign({}, downloadStates)
             states[key] = Object.assign({}, states[key] || {}, {
                 installing: false,
-                error: "No installation rules exist for this project and device architecture."
+                error: "This project has no package for " + projectCatalog.buildLabel(projectCatalog.currentBuild) + " in the catalog."
             })
             downloadStates = states
             return

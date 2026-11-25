@@ -1305,7 +1305,7 @@ Popup {
                             ? projectCatalog.explainNoCompatibleAsset(gameDetailsPopup.selectedProject.id,
                                                                       gameDetailsPopup.releaseInfo.assets || [])
                         : gameDetailsPopup.releaseInfo
-                            ? "Version " + gameDetailsPopup.releaseTag + "  ·  Linux / " + projectCatalog.currentArchitecture
+                            ? "Version " + gameDetailsPopup.releaseTag + "  ·  " + projectCatalog.buildLabel(projectCatalog.currentBuild)
                         : ""
                     visible: text.length > 0
                     color: errorText.length > 0 ? theme.error : theme.textMuted

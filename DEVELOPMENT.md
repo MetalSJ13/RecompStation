@@ -208,6 +208,11 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
   - RecompStation detects the system it is running on at startup (not only from how it was built) and offers only launchers built for that system. The Windows version never installs Linux launchers. If the Windows version finds itself running under Wine on Linux, it says so and points to the Linux version.
   - On Linux the Linux build always comes first: when a project offers both, Play installs the Linux build. A Windows build is used only when the player chooses it, or when the project has no Linux build.
   - Windows launchers are installed and started directly from their own launcher; opening straight into the game is not attempted for Windows or Wine launchers until there is an official Windows release.
+- Building it, step by step:
+  - [ ] 1. Catalog builds per system (`feature/catalog-builds`): `data/projects.json` lists `builds` keyed `linux-x86_64` / `windows-x86_64` (the older `architectures` key still reads as Linux); Windows builds must be a .zip or a single .exe with an `.exe` program; the system is detected at startup from the running kernel (`QSysInfo::kernelType()`), and only builds for it are offered. No Windows downloads are listed yet: they come with the catalog research.
+  - [ ] 2. Wine detection and the Settings switch.
+  - [ ] 3. Game Details: the Launcher choice, the switching warning, the Saves row.
+  - [ ] 4. Installing and starting Windows launchers through Wine.
 - Windows launchers through Wine on Linux (decided 2026-11-25, details to plan):
   - Uses the system's own Wine as it is configured (including a `WINEPREFIX` the player set); RecompStation does not bundle Wine or manage its own Wine setup, and debugging Wine itself is out of scope. Gaming distributions such as Bazzite and Garuda already configure Wine; the option appears only where Wine is installed and runs.
   - Game Details gets a small choice between the Linux and Windows build for projects that have both, controller-friendly and hidden when there is nothing to choose; Windows-only projects say they need Wine when it isn't available.

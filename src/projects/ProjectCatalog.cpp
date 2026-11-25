@@ -233,6 +233,94 @@ QString ProjectCatalog::currentArchitecture() const
     return normalizeArchitecture(QSysInfo::currentCpuArchitecture());
 }
 
+bool ProjectCatalog::loadFromJson(const QByteArray &json)
+{
+    QVariantList parsed;
+    QString error;
+    if (!parseCatalog(json, &parsed, &error)) {
+        m_errorString = error;
+        return false;
+    }
+    m_projects = parsed;
+    m_errorString.clear();
+    m_loaded = true;
+    return true;
+}
+
+QString ProjectCatalog::systemForKernelType(const QString &kernelType)
+{
+    const QString value = kernelType.trimmed().toLower();
+    if (value == QStringLiteral("linux"))
+        return QStringLiteral("linux");
+    if (value == QStringLiteral("winnt"))
+        return QStringLiteral("windows");
+    return {};
+}
+
+QString ProjectCatalog::currentSystem() const
+{
+    // Asked of the running kernel, not decided when compiling.
+    return systemForKernelType(QSysInfo::kernelType());
+}
+
+QString ProjectCatalog::currentBuild() const
+{
+    const QString system = currentSystem();
+    const QString architecture = currentArchitecture();
+    if (system.isEmpty() || architecture.isEmpty())
+        return {};
+    return system + QLatin1Char('-') + architecture;
+}
+
+QString ProjectCatalog::resolveBuild(const QString &build) const
+{
+    if (build.trimmed().isEmpty())
+        return currentBuild();
+    const QString value = build.trimmed().toLower();
+    const int dash = value.indexOf(QLatin1Char('-'));
+    if (dash < 0) {
+        const QString architecture = normalizeArchitecture(value);
+        const QString system = currentSystem();
+        return architecture.isEmpty() || system.isEmpty()
+            ? QString() : system + QLatin1Char('-') + architecture;
+    }
+    const QString system = value.left(dash);
+    const QString architecture = normalizeArchitecture(value.mid(dash + 1));
+    if ((system != QStringLiteral("linux") && system != QStringLiteral("windows"))
+        || architecture.isEmpty())
+        return {};
+    return system + QLatin1Char('-') + architecture;
+}
+
+QStringList ProjectCatalog::availableBuilds(const QString &projectId) const
+{
+    QStringList keys = project(projectId).value(QStringLiteral("builds")).toMap().keys();
+    keys.sort();
+    return keys;
+}
+
+QVariantMap ProjectCatalog::buildRules(const QString &projectId, const QString &build) const
+{
+    const QString key = resolveBuild(build);
+    if (key.isEmpty())
+        return {};
+    return project(projectId).value(QStringLiteral("builds")).toMap().value(key).toMap();
+}
+
+QString ProjectCatalog::buildLabel(const QString &build) const
+{
+    const QString key = resolveBuild(build);
+    const int dash = key.indexOf(QLatin1Char('-'));
+    if (dash < 0)
+        return QStringLiteral("this system");
+    const QString system = key.left(dash) == QStringLiteral("windows")
+        ? QStringLiteral("Windows") : QStringLiteral("Linux");
+    const QString architecture = key.mid(dash + 1);
+    return architecture == QStringLiteral("x86_64")
+        ? QStringLiteral("64-bit %1 (x86_64)").arg(system)
+        : QStringLiteral("%1 on %2").arg(system, architecture);
+}
+
 QVariantList ProjectCatalog::projects() const
 {
     return m_projects;
@@ -300,14 +388,13 @@ QVariantList ProjectCatalog::projectsForGame(const QString &metadataTitle,
 }
 
 QString ProjectCatalog::explainNoCompatibleAsset(const QString &projectId,
-                                                const QVariantList &assets) const
+                                                const QVariantList &assets,
+                                                const QString &build) const
 {
-    const QString architecture = currentArchitecture();
-    const QString system = architecture == QStringLiteral("x86_64")
-        ? QStringLiteral("64-bit Linux (x86_64)")
-        : QStringLiteral("Linux on %1").arg(architecture);
-    const QVariantMap rules = project(projectId).value(QStringLiteral("architectures")).toMap()
-                                  .value(normalizeArchitecture(architecture)).toMap();
+    const QString key = resolveBuild(build);
+    const bool forWindows = key.startsWith(QStringLiteral("windows-"));
+    const QString system = buildLabel(key);
+    const QVariantMap rules = buildRules(projectId, key);
     if (rules.isEmpty())
         return QStringLiteral("This project has no package for %1 in RecompStation's catalog.").arg(system);
     if (assets.isEmpty())
@@ -336,6 +423,14 @@ QString ProjectCatalog::explainNoCompatibleAsset(const QString &projectId,
         else if (lower.contains(QStringLiteral("linux")) || lower.endsWith(QStringLiteral(".appimage")))
             (armName.match(name).hasMatch() ? linuxArm : linuxOther) = true;
     }
+    if (forWindows) {
+        if (windows)
+            return QStringLiteral("The latest release's Windows package isn't in a form RecompStation recognises; "
+                                  "the project may have renamed its files, or only offer an installer.");
+        if (linuxOther || linuxArm || flatpak)
+            return QStringLiteral("The latest release has no Windows package; it offers Linux only.");
+        return QStringLiteral("The latest release has no package for %1.").arg(system);
+    }
     if (flatpak)
         return QStringLiteral("The latest release offers Linux only as a Flatpak, which RecompStation can't install yet.");
     if (linuxArm && !linuxOther)
@@ -354,33 +449,29 @@ QString ProjectCatalog::explainNoCompatibleAsset(const QString &projectId,
 }
 
 QVariantList ProjectCatalog::compatibleAssets(const QString &projectId,
-                                               const QVariantList &assets) const
+                                               const QVariantList &assets,
+                                               const QString &build) const
 {
+    const QString key = resolveBuild(build);
     QVariantList compatible;
+    if (key.isEmpty())
+        return compatible;
     for (const QVariant &entry : assets) {
         const QVariantMap asset = entry.toMap();
         const QString name = asset.value(QStringLiteral("name")).toString();
-        if (isAssetCompatible(projectId, currentArchitecture(), name))
+        if (isAssetCompatible(projectId, key, name))
             compatible.append(asset);
     }
     return compatible;
 }
 
 bool ProjectCatalog::isAssetCompatible(const QString &projectId,
-                                       const QString &architecture,
+                                       const QString &build,
                                        const QString &assetName) const
 {
-    const QVariantMap selectedProject = project(projectId);
-    if (selectedProject.isEmpty() || assetName.trimmed().isEmpty())
+    if (assetName.trimmed().isEmpty())
         return false;
-
-    const QString normalizedArch = normalizeArchitecture(architecture);
-    if (normalizedArch.isEmpty())
-        return false;
-
-    const QVariantMap architectures =
-        selectedProject.value(QStringLiteral("architectures")).toMap();
-    const QVariantMap rules = architectures.value(normalizedArch).toMap();
+    const QVariantMap rules = buildRules(projectId, build);
     if (rules.isEmpty())
         return false;
 
@@ -430,14 +521,19 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         const QString owner = object.value(QStringLiteral("repositoryOwner")).toString().trimmed();
         const QString repository = object.value(QStringLiteral("repositoryName")).toString().trimmed();
         const QJsonArray titles = object.value(QStringLiteral("gameTitles")).toArray();
-        const QJsonObject architectures = object.value(QStringLiteral("architectures")).toObject();
+        // "builds" keyed "<system>-<architecture>"; the older "architectures"
+        // (keyed by architecture alone) means Linux builds.
+        const bool legacyBuilds = !object.contains(QStringLiteral("builds"));
+        const QJsonObject buildObjects = legacyBuilds
+            ? object.value(QStringLiteral("architectures")).toObject()
+            : object.value(QStringLiteral("builds")).toObject();
         static const QRegularExpression idPattern(QStringLiteral("^[a-z0-9][a-z0-9-]*$"));
         static const QRegularExpression platformPattern(
             QStringLiteral("^[A-Za-z0-9][A-Za-z0-9 _-]*$"));
         if (!idPattern.match(id).hasMatch() || projectIds.contains(id)
             || name.isEmpty() || !platformPattern.match(platform).hasMatch()
             || !validRepositoryPart(owner) || !validRepositoryPart(repository)
-            || titles.isEmpty() || architectures.isEmpty()
+            || titles.isEmpty() || buildObjects.isEmpty()
             || !QStringList{QStringLiteral("playable"), QStringLiteral("beta"),
                             QStringLiteral("alpha"), QStringLiteral("in_progress"),
                             QStringLiteral("abandoned")}.contains(developmentStatus)) {
@@ -452,28 +548,48 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
             gameTitles.append(title);
         }
 
-        QVariantMap architectureRules;
-        for (auto it = architectures.begin(); it != architectures.end(); ++it) {
-            const QString architecture = normalizedArchitecture(it.key());
+        QVariantMap buildRulesByKey;
+        for (auto it = buildObjects.begin(); it != buildObjects.end(); ++it) {
+            QString system = QStringLiteral("linux");
+            QString architecture;
+            if (legacyBuilds) {
+                architecture = normalizedArchitecture(it.key());
+            } else {
+                const QString key = it.key().trimmed().toLower();
+                const int dash = key.indexOf(QLatin1Char('-'));
+                system = dash > 0 ? key.left(dash) : QString();
+                architecture = dash > 0 ? normalizedArchitecture(key.mid(dash + 1)) : QString();
+                if (system != QStringLiteral("linux") && system != QStringLiteral("windows"))
+                    architecture.clear();
+            }
             const QJsonObject rule = it.value().toObject();
             const QString regexText = rule.value(QStringLiteral("assetNameRegex")).toString();
             const QString packageFormat = rule.value(QStringLiteral("packageFormat")).toString();
             const QString executablePath = rule.value(QStringLiteral("executablePath")).toString();
             const QStringList executablePathParts = executablePath.split(QStringLiteral("/"), Qt::SkipEmptyParts);
             const bool unsafeExecutablePath = executablePath.startsWith(QStringLiteral("/"))
+                || executablePath.contains(QLatin1Char('\\'))
                 || executablePathParts.contains(QStringLiteral(".."));
             const QRegularExpression regex(regexText, QRegularExpression::CaseInsensitiveOption);
+            // Windows builds: portable downloads only (a .zip, or a single
+            // .exe that runs from its folder); installers are never run.
+            const bool windowsBuild = system == QStringLiteral("windows");
+            const bool formatAllowed = windowsBuild
+                ? (packageFormat == QStringLiteral("zip") || packageFormat == QStringLiteral("executable"))
+                    && executablePath.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)
+                : (packageFormat == QStringLiteral("tar.gz")
+                    || packageFormat == QStringLiteral("tar.xz")
+                    || packageFormat == QStringLiteral("zip")
+                    || packageFormat == QStringLiteral("appimage")
+                    || packageFormat == QStringLiteral("executable"));
             if (architecture.isEmpty() || regexText.isEmpty() || !regex.isValid()
-                || executablePath.trimmed().isEmpty() || unsafeExecutablePath
-                || (packageFormat != QStringLiteral("tar.gz")
-                    && packageFormat != QStringLiteral("tar.xz")
-                    && packageFormat != QStringLiteral("zip")
-                    && packageFormat != QStringLiteral("appimage")
-                    && packageFormat != QStringLiteral("executable"))) {
-                return fail(QStringLiteral("A project contains an invalid Linux asset rule."));
+                || executablePath.trimmed().isEmpty() || unsafeExecutablePath || !formatAllowed) {
+                return fail(QStringLiteral("A project contains an invalid build rule."));
             }
 
-            architectureRules.insert(architecture, QVariantMap{
+            buildRulesByKey.insert(system + QLatin1Char('-') + architecture, QVariantMap{
+                {QStringLiteral("system"), system},
+                {QStringLiteral("architecture"), architecture},
                 {QStringLiteral("assetNameRegex"), regexText},
                 {QStringLiteral("packageFormat"), packageFormat},
                 {QStringLiteral("executablePath"), executablePath}
@@ -500,7 +616,7 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
         // The short name Game Details shows ("Banjo-Tooie (USA) ROM").
         project.insert(QStringLiteral("romFile"),
                        object.value(QStringLiteral("romFile")).toString().left(120));
-        project.insert(QStringLiteral("architectures"), architectureRules);
+        project.insert(QStringLiteral("builds"), buildRulesByKey);
         project.insert(QStringLiteral("launch"), launchRecipe);
         // Projects that publish only pre-releases.
         project.insert(QStringLiteral("includePrereleases"),
