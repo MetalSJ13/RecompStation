@@ -5,7 +5,8 @@
 # What is removed, and what is always kept:
 #  - Only packages recorded by install_dependencies.sh: the ones that weren't
 #    on the system before it ran, and what they pulled in. Anything you had
-#    already is never touched.
+#    already is never touched. For installs made before the record existed,
+#    the record is rebuilt from apt's or pacman's history of that install.
 #  - A package is kept if anything else installed still needs it (your
 #    desktop, other programs, anything you installed later), or, on Debian,
 #    if it is marked Essential or has Required/Important priority.
@@ -28,7 +29,7 @@ for arg in "$@"; do
     case "$arg" in
         --dry-run|-n) DRY_RUN=true ;;
         -h|--help)
-            sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
             echo
             echo "Usage: ./scripts/uninstall_dependencies.sh [--dry-run]"
             exit 0 ;;
@@ -52,18 +53,75 @@ echo " RecompStation - Remove dependencies"
 echo "======================================"
 echo
 
+# ---- No record: rebuild it from the package manager's own history ---------
+# Installs made before the record existed can still be traced: apt and pacman
+# log every install with the exact packages it added. Only installs whose
+# command line was install_dependencies.sh's (it names qt6-shadertools and
+# sdl2 together) are used; everything they added goes into the record, and
+# the checks below still decide what can actually be removed.
+history_debian() {
+    local logs=(/var/log/apt/history.log /var/log/apt/history.log.*.gz)
+    local readable=() file
+    for file in "${logs[@]}"; do
+        [[ -e "$file" ]] && readable+=("$file")
+    done
+    (( ${#readable[@]} > 0 )) || return 0
+    { zcat -f "${readable[@]}" 2>/dev/null || sudo zcat -f "${readable[@]}"; } | awk '
+        /^Start-Date:/ { ours = 0 }
+        /^Commandline:/ { ours = ($0 ~ /apt(-get)? install/ && $0 ~ /qt6-shadertools-dev/ && $0 ~ /libsdl2-dev/) }
+        ours && /^Install:/ {
+            sub(/^Install: /, "")
+            n = split($0, entries, /\), /)
+            for (i = 1; i <= n; i++) {
+                name = entries[i]
+                sub(/ \(.*/, "", name)
+                sub(/:.*/, "", name)
+                if (name != "") print name
+            }
+        }'
+}
+
+history_arch() {
+    [[ -r /var/log/pacman.log ]] || return 0
+    awk '
+        /\[PACMAN\] Running / { ours = ($0 ~ /pacman -S/ && $0 ~ /qt6-shadertools/ && $0 ~ /sdl2/) }
+        ours && /\[ALPM\] installed / {
+            for (i = 1; i <= NF; i++) if ($i == "installed") { print $(i + 1); break }
+        }' /var/log/pacman.log
+}
+
 if [[ ! -s "$RECORD" ]]; then
-    echo "No record of packages added for RecompStation ($RECORD)."
+    echo "No record of packages added for RecompStation yet ($RECORD)."
+    echo "Looking in the package manager's history for the install that"
+    echo "./scripts/install_dependencies.sh ran..."
+    HISTORY_FILE="$(mktemp)"
+    if [[ "$FAMILY" == arch ]]; then
+        history_arch | sort -u > "$HISTORY_FILE" || true
+    else
+        history_debian | sort -u > "$HISTORY_FILE" || true
+    fi
+    if [[ ! -s "$HISTORY_FILE" ]]; then
+        rm -f "$HISTORY_FILE"
+        echo
+        echo "No install by install_dependencies.sh was found in the history, so there is"
+        echo "no safe way to tell what was added for RecompStation and what you had before."
+        echo "Nothing is removed. If you installed the dependencies by hand, remove them the"
+        echo "same way."
+        exit 0
+    fi
+    echo "Found $(wc -l < "$HISTORY_FILE") package(s) added by that install."
+    if ! $DRY_RUN; then
+        mkdir -p "$STATE_DIR"
+        mv "$HISTORY_FILE" "$RECORD"
+        echo "Saved as the record: $RECORD"
+    else
+        RECORD="$HISTORY_FILE"
+    fi
     echo
-    echo "The record is written by ./scripts/install_dependencies.sh. Without it there is"
-    echo "no safe way to tell what was added for RecompStation and what you had before,"
-    echo "so nothing is removed. If you installed the dependencies by hand, remove them"
-    echo "the same way."
-    exit 0
 fi
 
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+trap 'rm -rf "$WORK" "${HISTORY_FILE:-/nonexistent}"' EXIT
 
 # ---- Which recorded packages are still installed --------------------------
 if [[ "$FAMILY" == arch ]]; then
