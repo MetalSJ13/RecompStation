@@ -1,95 +1,54 @@
-# Metadata Provider Architecture
+# Metadata Providers
+
+Last reviewed: 2026-11-25. How RecompStation finds titles, descriptions, covers and screenshots for the games in the library, and the rules that keep it reliable.
 
 ## Purpose
 
-RecompStation should present one unified game-library entry while allowing metadata and artwork to come from different providers. This is an internal architecture decision, not a requirement to expose separate metadata and artwork workflows in the UI.
+Each game in the library is one entry with one details page. Its metadata (title, overview, release date, rating) and its artwork (a cover and up to three gameplay screenshots) can come from either provider; the player never chooses a provider per game, and matching happens in the background.
 
-TheGamesDB remains the existing provider and must continue to work when no other provider is configured. ScreenScraper is a planned optional provider, not a mandatory dependency.
+## Providers
 
-## Core concepts
+### LaunchBox (offline catalog, asked first by default)
 
-### 1. Stable library identity
+- The LaunchBox games database is downloaded once as an archive (from first-time setup or Settings › Metadata), extracted and indexed into a local SQLite catalog (`LaunchBoxCatalogManager`, `LaunchBoxXmlParser`, `LaunchBoxCatalogDatabase`). Only RecompStation's systems are indexed. Update catalog refreshes it.
+- Matching (`LaunchBoxCatalogMatcher`): the local file name is looked up in LaunchBox's `Files.xml` first; if that names a game, its record in `Metadata.xml` is used. Otherwise a conservative title match on the same system is tried. Only explicit system mappings are accepted; LaunchBox's platform aliases are not treated as interchangeable.
+- Artwork (`LaunchBoxArtworkManager`): one `Box - Front` cover (North American artwork preferred) and up to three `Screenshot - Gameplay` images, only for games in the user's library and only through a saved LaunchBox game ID. Images come from `images.launchbox-app.com`, requested one at a time with a 300 ms pause after every five.
+- A catalog downloaded before a system was supported has none of that system's games; the LaunchBox card names those systems and points to Update catalog.
 
-A library game is identified by RecompStation's own database record and internal platform key (for example, `N64`, `PS1`, `GameCube`, or `Wii`). Provider-specific game IDs and platform IDs must never be treated as universal identifiers.
+### TheGamesDB (online, the user's own key)
 
-Each provider adapter is responsible for translating RecompStation's internal platform key into that provider's platform identifier.
+- Each user enters their own API key in Settings › Metadata; it is stored in an owner-only file (the `THEGAMESDB_API_KEY` environment variable still wins). RecompStation never ships a key: TheGamesDB counts allowances per key and advised against bundling one (2026-11-24).
+- `TheGamesDbClient` searches by title and system. The platform list is reused for 30 days; screenshots are looked up 20 games per request, and games without any are not asked again for 30 days.
+- `TheGamesDbAllowance` protects the monthly allowance: automatic lookups pause at 50 or fewer requests left, and a 403 pauses them for 6 hours. Test in Settings shows the connection and requests left.
 
-### 2. Provider adapters
+## Matching pipeline
 
-Each provider implements a common contract for the capabilities it supports:
+`LibraryMetadataMatcher` and `MetadataManager`:
 
-- Report a stable provider identifier and whether it is configured.
-- Search or identify games using the available title, platform, and optional ROM hashes.
-- Return normalized game metadata with provider provenance.
-- Retrieve artwork candidates independently from descriptive metadata.
-- Report provider-specific errors, limits, and capabilities without leaking those details into library-matching logic.
+1. The scanner or the filesystem watcher registers a new game first.
+2. Games that already have saved metadata, or a finished lookup, are skipped. Provider errors are recorded and retried after an hour.
+3. The file name is turned into a search title by removing region tags (one or several, such as "(USA)" or "(Japan, USA)") and language tags ("(En,Fr,De)"), and by moving a trailing article to the front ("Legend of Zelda, The - …" → "The Legend of Zelda …"). Revision tags ("(Rev A)", "(v1.1)") are also ignored when comparing results.
+4. Providers are asked in the order chosen in Settings (`metadataProviderOrder`, LaunchBox first by default). When TheGamesDB fails, LaunchBox is tried.
+5. A result is accepted only when exactly one candidate clearly matches on the same system. Ambiguous games stay unmatched rather than getting the wrong cover.
+6. The accepted record is saved with its provider and provider game ID (`game_metadata`); provider IDs are always scoped by provider. Artwork is downloaded and cached separately, so a missing image never undoes a good match, and retrying artwork never re-runs matching.
+7. Enabling LaunchBox or updating its catalog re-matches games that are still unmatched.
 
-Provider-specific response formats, IDs, platform catalogs, authentication, and rate limits stay inside the adapter. Shared matching and library code should not depend on TheGamesDB-specific types.
+## Provider contract
 
-### 3. Independent resources, unified presentation
+`MetadataProvider` (`src/metadata/MetadataProvider.h`) is the shared interface: `providerId()`, `isConfigured()`, `searchGames(title, platform)`, `fetchPlatforms()` and an optional cached platform list, with signals for results, failures, platforms and the remaining allowance. Provider-specific IDs, response formats, system mappings (`MetadataPlatformMapping.h`), authentication and limits stay inside each provider.
 
-Metadata and artwork are separate retrieval resources associated with the same library game.
+## Rules
 
-- Metadata includes title, description, release date, developer, publisher, genre, rating, and other descriptive fields.
-- Artwork includes an image URL or provider asset reference, image type/role, dimensions where available, and its source provider.
+- Never attach a low-confidence or cross-system match.
+- Never download artwork for catalog-only games, or infer artwork from a title alone.
+- Never replace good metadata or artwork just because another provider returned a candidate.
+- Credentials are never committed, logged, put in diagnostics or exposed to QML beyond what Settings needs.
+- A provider outage or missing key never stops browsing or playing games already in the library.
+- A metadata match is not proof that a ROM suits a recompilation project; the launch recipes check that separately.
 
-A successful metadata match remains successful if artwork is absent or its download fails. Missing artwork can be retried or sourced from another provider without repeating or discarding valid metadata. Conversely, artwork availability must not be treated as proof that game identification is correct.
+## Not planned or not yet done
 
-The UI continues to show one game entry and one cohesive details experience. Provider names and retry statuses are primarily diagnostic/configuration information, not mandatory clutter in the library.
-
-### 4. Provenance and persistence
-
-Persist enough provenance to understand and refresh each resource independently:
-
-- Provider identifier and provider game ID for the accepted metadata record.
-- Provider identifier and provider game ID (or asset ID, when available) for the selected artwork.
-- Artwork URL/reference and local cached path.
-- Retrieval/verification status and last-attempt information for metadata and artwork separately.
-
-Provider IDs must be scoped by provider. The same numeric ID from two services is not the same game record.
-
-Database changes should be additive and migration-safe. Existing TheGamesDB associations and cached artwork must remain valid. Do not overwrite good metadata or artwork merely because another provider returned a candidate.
-
-## Matching and fallback policy
-
-1. Identify the local game and its RecompStation platform.
-2. Reuse previously accepted metadata and provider identity when available; do not re-run title matching just to retry artwork.
-3. Query configured providers according to a deterministic priority order.
-4. Prefer strong identification evidence: exact provider/platform match, normalized title, and where supported ROM hashes (CRC/MD5/SHA-1). Hashes must be computed from the actual ROM bytes and tied to the correct platform/region context.
-5. Keep ambiguous or low-confidence matches unresolved. A candidate from another platform must never be accepted.
-6. Once identity is established, retrieve metadata and artwork independently.
-7. If artwork is missing or fails validation/download, try another configured provider for artwork without invalidating the metadata association.
-8. Cache successful results and respect provider quotas, throttling, and retry/backoff behavior.
-9. Record resource-specific outcomes so the UI and logs can distinguish unmatched games, metadata failures, missing artwork, and artwork download failures.
-
-Provider fallback must be bounded and deterministic. Avoid querying every provider repeatedly when a result is already cached or a provider has recently failed for the same resource.
-
-## Configuration and security
-
-- TheGamesDB remains usable by itself.
-- ScreenScraper is optional and only participates when the user configures it.
-- Provider credentials are local user configuration and must never be committed, logged, included in diagnostics, or exposed to QML unnecessarily.
-- Provide a connection/credential test before enabling a provider.
-- Respect each service's documented authentication, usage limits, and terms.
-- Do not make account credentials or a provider outage prevent browsing or launching games already in the library.
-
-The exact credential-storage mechanism should be selected after reviewing the application's existing settings infrastructure and the target desktop environments. Prefer an OS-backed secret store when a suitable cross-platform solution is available; do not silently fall back to committing secrets or writing them into project files.
-
-## Implementation sequence
-
-1. Refactor the existing TheGamesDB integration behind a provider-neutral contract while preserving current behavior and tests.
-2. Move provider-specific platform mapping and response types into provider adapters.
-3. Separate metadata matching/persistence from artwork candidate selection, download, and retry state.
-4. Add provider registry/coordination and deterministic fallback policy.
-5. Add migration-safe resource provenance and independent status tracking.
-6. Implement ScreenScraper as an optional adapter after credentials and API behavior are verified.
-7. Add hash-based identification where supported, with conservative title/platform fallback.
-8. Add tests for provider ordering, provider failure, ambiguous matches, cross-provider fallback, independent artwork retry, persistence migration, and secret redaction.
-
-## Non-goals
-
-- Do not make users manually select providers for every game.
-- Do not expose two separate library entries for metadata and artwork.
-- Do not replace valid metadata or artwork automatically without a defined quality/priority policy.
-- Do not make ScreenScraper mandatory.
-- Do not treat a metadata-provider match as proof that a ROM is compatible with a recompilation project.
+- ScreenScraper and other artwork providers are not planned; artwork comes from LaunchBox and TheGamesDB.
+- Fix match: a Game Details action to search either provider and pick the right game (planned).
+- Bounded retry and backoff for HTTP 429 and 5xx responses (planned).
+- Matching by ROM hash: N64 ROM hashes are computed for launch checks (`N64RomHash`), not yet used for metadata.
