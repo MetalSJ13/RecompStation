@@ -8,8 +8,9 @@
 #    already is never touched. For installs made before the record existed,
 #    the record is rebuilt from apt's or pacman's history of that install.
 #  - A package is kept if anything else installed still needs it (your
-#    desktop, other programs, anything you installed later), or, on Debian,
-#    if it is marked Essential or has Required/Important priority.
+#    desktop, other programs, anything you installed later; on Arch also as
+#    an optional dependency), on a Wayland desktop qt6-wayland, and on
+#    Debian anything marked Essential or with Required/Important priority.
 #  - The package manager then works out the removal without changing
 #    anything; if it would remove a single package outside the list, nothing
 #    is removed.
@@ -145,9 +146,11 @@ echo "Recorded and still installed: $(wc -l < "$WORK/candidates") package(s)."
 echo "Checking what else on the system needs them..."
 while read -r package; do
     if [[ "$FAMILY" == arch ]]; then
+        # Required By, and Optional For: an optional dependency of something
+        # installed (qt6-wayland for Qt, for example) is in use too.
         pacman -Qi "$package" | awk -v p="$package" '
-            /^Required By/ { on = 1; sub(/^Required By *: */, "") }
-            on && /^[A-Z][A-Za-z ]+:/ && !/^Required By/ { on = 0 }
+            /^[A-Z][A-Za-z ]+ *:/ { on = 0 }
+            /^(Required By|Optional For) *:/ { on = 1; sub(/^[A-Za-z ]+ *: */, "") }
             on { for (i = 1; i <= NF; i++) if ($i != "None") print p, $i }
         ' >> "$WORK/needed-by"
     else
@@ -163,6 +166,12 @@ while read -r package; do
     fi
 done < "$WORK/candidates"
 sort -u -o "$WORK/needed-by" "$WORK/needed-by"
+
+# Qt programs need qt6-wayland to draw on a Wayland desktop.
+if [[ "${XDG_SESSION_TYPE:-}" == wayland || -n "${WAYLAND_DISPLAY:-}" ]] \
+        && grep -qx qt6-wayland "$WORK/candidates"; then
+    echo qt6-wayland >> "$WORK/protected"
+fi
 
 # ---- Keep anything still needed, repeating until nothing changes -----------
 # Keeping one package keeps everything it needs too.
