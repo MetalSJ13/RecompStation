@@ -627,3 +627,23 @@ The build script reuses the configured generator and build directory. Prefer inc
 ## Definition of done
 
 A milestone is complete when its checklist is satisfied, the application builds, relevant automated tests pass, existing workflows have been manually checked where appropriate, and documentation reflects the actual implementation. Do not describe planned monitoring, controller support, display controls, or other future behavior as already implemented.
+## Appendix: Milestone 1 design audit (moved from UI_DESIGN.md on 2026-11-25)
+
+
+The current implementation was reviewed against this specification. This is a design/structure audit, not a claim that every later milestone feature is complete.
+
+| Area | Current state | Audit outcome |
+|---|---|---|
+| Primary navigation | Library and Settings only | Aligned |
+| Platform navigation | Filter inside Library | Aligned |
+| Metadata Search | Removed from the page stack; metadata controls remain in Settings and game context | Aligned; obsolete presentation code removed |
+| Launcher management | Available contextually from Game Details | Aligned |
+| Game Details | Full-window modal overlay with Back to Library and Escape | Aligned |
+| Settings hierarchy | Appearance, Display, Library, Metadata, Controller, Application | Aligned |
+| Focus model | Library grid/list navigation and Settings category/content focus handling; visible control focus styling | Implemented baseline; full accessibility/controller-only pass remains later work |
+| Dialogs and popups | First-run library setup, folder/background pickers, uninstall confirmation, project install prompt, ComboBox popups, and global system/quit overlay | Contextual overlays; must preserve parent context and close in Escape order |
+| Display modes | Windowed, Maximized, Fullscreen; F11 restores prior non-fullscreen mode | Documented accurately |
+| Monitor handling | Current screen is informational; no explicit monitor selector or monitor-mode changes | Safe compositor-respecting baseline; additional selection deferred |
+| Library presentation | Title search, platform filter, Grid/List/Carousel, configurable density and backgrounds | Search and browsing controls are grouped in the Library; sorting and remaining library states tracked in later milestones |
+
+Audit follow-up: finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.

@@ -1,235 +1,147 @@
-### Non-blocking first-run setup
-- The first-run library setup panel is informational and must not be modal. Users can still interact with the application toolbar and navigate to Settings before choosing a library folder.
-- Keep its visibility scoped to the Library page and suppress it while the controller pause menu is open.
-
-### First-run setup visibility and controller pause menu
-- The first-run library setup overlay is visible only while the Library page is active and no library root is configured.
-- Navigating to Settings hides the setup overlay; returning to Library restores it until setup is completed.
-- The controller pause menu takes precedence over first-run setup. The setup overlay reappears after the pause menu closes if still required.
-- Keep the pause panel centered and modestly enlarge its width and internal spacing without allowing it to dominate the screen.
-
 # RecompStation UI and Experience Specification
+
+Last reviewed: 2026-11-25. This document describes the interface as it is built, and the rules new work follows. The current status and roadmap are in [`DEVELOPMENT.md`](../DEVELOPMENT.md); earlier design audits and step-by-step history are in [`development-history.md`](development-history.md).
 
 ## Product identity
 
-RecompStation is a dedicated environment for browsing and launching the user's own collection of games that have supported recompilation projects. It is not a storefront and should not imitate an existing carousel dashboard. The experience should feel polished, responsive, immersive, and distinctly RecompStation.
+RecompStation is a dedicated environment for browsing and playing the user's own game collection through native recompilation projects. It is not a storefront and does not imitate an existing dashboard (RecompLauncher, Steam Big Picture and others were references only). It should feel polished, responsive, immersive and distinctly RecompStation.
 
-The library is the center of the application. Users should spend their time browsing and playing games, not maintaining metadata or navigating administrative screens.
+The library is the centre of the application. Players spend their time browsing and playing, not maintaining metadata or managing launchers: scanning, matching, artwork, launcher installs and updates happen in the background or in the context of a game.
 
-## Primary navigation
+Avoid storefront patterns: promotional modules, sales-like badges, recommendations, marketing copy.
 
-The primary navigation contains only:
+## Application shell
 
-- **Game Library** — the default landing view and main application experience.
-- **Settings** — appearance, display, library, metadata, controller, and application configuration.
+- **Two destinations:** Library (the default) and Settings, as tabs at the right of the header. Platforms, metadata and launchers are not destinations of their own.
+- **Header:** the logo and name; the system picker; on the Library, a search button, the view switch (Shelves, Grid, List, Carousel) and the current view's size toggle; then Library and Settings.
+- **Hint bar:** a small bar at the bottom shows the actions available right now. It follows the last input used: controller glyphs that match the connected controller (Xbox or PlayStation layout, and the user's remapping), keyboard keys, or mouse hints.
+- **System menu:** an overlay opened with the controller's Menu/Start button, with Resume, Settings and Quit RecompStation; Ctrl+Q opens it at the quit confirmation. It takes precedence over everything else and closes back to where the user was.
+- **Window:** fullscreen on every launch, declared before the window appears so there is no windowed-to-fullscreen jump. F11 toggles fullscreen for the session. Windowed and Maximized are available in Settings › Display.
+- **First-time setup:** a full-window flow shown until a library folder is chosen: library folder (suggests `~/Games/RecompStation` or `~/RecompStation`), Add games, covers and info (the LaunchBox catalog download with stages, Cancel and Retry), ready.
 
-Platforms are filters or navigation choices inside the Game Library, not a separate top-level destination. Metadata Search is not an active destination; metadata association and refresh belong to the library/game context. Launcher discovery, installation, launch, and uninstall are presented contextually from a game's details or supported-project state rather than requiring a separate management destination. Existing backend capabilities must remain available during the transition.
+## Library
 
-### Page hierarchy and navigation model
+### System picker and search
 
-1. **Application shell**
-   - Persistent compact primary navigation: Game Library and Settings.
-   - A global system menu is an overlay for application-level actions such as fullscreen and quit; it is not a third content destination.
-2. **Game Library** (default)
-   - Collection header with an always-available game-title search field and platform filter. Search applies to the current platform selection, or the entire collection when All Platforms is selected.
-   - Curated Shelves/Grid/List/Carousel presentation and view-specific size controls live together in the Library header. Grid and Carousel use independent persistent card-size preferences (Compact, Comfortable, Spacious); List row size remains independent. Shelves shows a spotlight panel above one horizontal shelf per platform; Carousel is a hero carousel over the selected game's full-window screenshot (see the Carousel section). Persist the selected view and both size preferences.
-   - Game selection opens the immersive Game Details experience.
-3. **Game Details** (full-window modal experience over the Library)
-   - Back to Library is always visible.
-   - Escape closes Details and returns to the prior Library context.
-   - Present game metadata/artwork, platform, supported recompilation projects, release/install state, and relevant launch/install/uninstall actions together.
-   - Project selection and installation prompts remain inside this context.
-4. **Settings**
-   - Category navigation: Appearance, Display, Library, Metadata, Controller, Application.
-   - Category selection changes the content panel without creating another primary destination.
-   - Settings content is scrollable; category navigation and content controls have distinct focus ownership.
-   - All Settings categories share a 30 px content gutter, a consistent page-title/description/divider hierarchy, 16 px section spacing, and disabled horizontal scrolling; vertical scrolling appears only when content exceeds the viewport.
-   - Back/Escape returns to the Library when no nested popup/dialog is active.
+- One chip in the header: "All systems" with the game count, or the selected system. Its list shows only systems that have games, grouped by maker. LB/RB (Q/E) step through them; the controller's Select button opens the list. Picking a system plays the switch sound; opening the list is silent.
+- Twelve systems, ordered by maker and generation: Game Boy, Game Boy Color, Game Boy Advance, Super Nintendo, Nintendo 64, GameCube, Wii, Wii U, PlayStation, PlayStation 2, Xbox, Xbox 360.
+- Search is a button that expands into a field. It filters by title as the user types, within the selected system, and shows a clear no-results state.
+- Sorting is not implemented yet; games are in title order within each system.
 
-The obsolete Metadata Search, Platforms, and standalone Launcher Discovery page implementations have been removed from the active QML page stack. Their underlying metadata, platform-filtering, and launcher backend services remain available through the Library, Settings, and Game Details workflows.
+### Views
 
-## Game Library
+Four views share the same filtered games, selection and system choice. The view and each view's size preset persist. Carousel is the default for new installs.
 
-The library should support:
+**Shelves.** A spotlight panel at the top for the selected game: system chip, title, year and rating, a short overview, Details, and the cover at its true shape on the right over a blurred backdrop. Below it, one horizontal shelf per system. Shelf covers have no captions; a placeholder cover shows the title instead.
 
-- Browsing all games and filtering by platform.
-- A prominent, responsive title-search field that filters the current collection as the user types, respects the selected platform filter, and provides a clear no-results state.
-- Sorting options appropriate to a personal collection (for example title, platform, and recently added).
-- Two curated presentation modes: a cover-art-forward Grid View (the signature default) and a compact, readable List View. Avoid arbitrary layout editors or unrestricted card resizing.
-- Three curated Grid View density presets (Compact (220 px), Comfortable (270 px), Spacious (350 px)) that calculate responsive columns from target card widths and distribute the full available viewport width without a trailing empty strip. Comfortable is the default.
-- Grid cards are artwork-forward: the cover art is the card, with no card surface, padding, or inner inset, and the focus ring is drawn outside the artwork. Each cover uses its platform's box-art frame (N64 7:5, PS1 1:1, GameCube/Wii/Xbox 5:7) and fills it edge to edge; a cover whose measured shape differs by more than 12% (for example a PAL portrait N64 box) keeps its own shape. A platform-filtered Grid uses that platform's frame for every cell. The All Platforms Grid is sectioned by platform, with a header (name and game count) and a row height per section. Captions show the matched metadata title when available, then one status line: "Recomp installed", "Recompilation available", or the platform name. Artwork comes from LaunchBox and TheGamesDB only. (Updated 2026-11-22; replaces the shared 2:3 frame and blurred-backdrop rule.)
-- List View (updated 2026-11-22) pairs a row list with a preview pane. Rows take about 45% of the width (420–900 px): platform-shaped thumbnails in a fixed-width column so titles align, the metadata title, platform and release year, and a recompilation status line (hidden at Compact). Three row-size presets set thumbnail height (60 / 84 / 108 px). All Platforms groups rows under non-focusable platform headers. The preview pane follows the selection: a screenshot header (blurred cover when none), the cover at its true shape, platform and status chips, title, year and rating, Play (installed only) and Details beside the cover, a four-line overview, and up to three screenshot thumbnails that share the pane width. A / Enter play an installed recompilation or open Game Details; clicking a row opens Game Details.
-- The selected List row uses an elevated surface, an accent border, and a slight scale, with Reduced Motion support.
-- Switching between Grid, List, and Carousel uses a restrained cross-fade. On startup, Grid delegates begin in their hidden entrance state so they cannot flash fully visible before the reveal; the staggered reveal waits for fullscreen layout readiness. Returning to Grid and returning to the Game Library from Settings replay the same bottom-up fade, subtle scale-up, and upward movement from below the background; cards within a row appear from left to right. The sequence is based on the visible viewport rather than the full library, and is disabled by Reduced Motion. Searching, changing the platform filter, and opening or closing Game Details do not replay the entrance.
-- Grid/List/Carousel and the active view-specific size selector in the Library header; do not duplicate browsing/presentation controls in Settings → Library. Persist the shared Grid/Carousel card density and List row size independently.
-- A library-only background selector in Settings → Library: static theme-coordinated background (default), subtle optional animated ambience, or a user-selected custom still image (PNG/JPEG/WebP). Keep the background dark enough for legibility and preserve the active theme's accent and surface language.
-- Animated ambience must pause when the window is hidden or minimized and be disabled when Reduced Motion is enabled.
-- Custom backgrounds are still images only; do not turn this into a wallpaper editor or allow unrestricted colors/layout rearrangement.
-- Cover-art-forward browsing with clear keyboard/controller focus and selection states in both presentation modes.
-- A dedicated game-details experience with available metadata, artwork, platform, supported recompilation project information, launcher installation state, and launch action.
-- Useful empty, loading, scanning, missing-artwork, metadata-unavailable, unsupported-project, and launch-error states.
-- A single platform selector for narrowing the collection; library scanning remains in Settings rather than duplicating maintenance controls on the browsing page.
+**Grid.** Artwork-forward: the cover is the card, with no surface or padding, and the focus ring sits outside the artwork. Size presets set the target card width (Compact 220 px, Comfortable 270 px, Spacious 350 px); columns fill the full width without a trailing empty strip. With All systems, the grid is sectioned by system, each section with a header (name and game count). Captions show the matched title, then one status line: "Recomp installed", "Recompilation available", or the system name. Both grids leave a 14 px left inset so the grown selected card and its ring are never clipped.
 
-The library should not become a storefront: avoid promotional modules, sales-like badges, recommendations that imply products for purchase, or excessive marketing copy.
+**List.** Rows on the left (about 45% of the width, 420–900 px) and a preview pane on the right. Rows: a platform-shaped thumbnail in a fixed column so titles align, the title, system and year, and the recompilation status (hidden at Compact). Size presets set the thumbnail height (60 / 84 / 108 px). With All systems, rows are grouped under system headers. The selected row has an elevated surface, an accent border and a slight scale. The preview pane: a screenshot header (blurred cover when there is none), the cover, system and status chips, title, year and rating, Play (when installed) and Details, a four-line overview and up to three screenshots.
 
-## Metadata and library maintenance
+**Carousel.** The selected game's first screenshot fills the window behind the page (a blurred, dimmed cover when there is none), cross-fading between selections under a gradient that keeps text legible; the collection heading is hidden. One edge-to-edge row of covers in their platform shapes, the selected one centred and about 1.43× larger with the focus ring, fading toward the window edges. Size presets set the row height (170 / 210 / 250 px, scaled gently with window height). Beneath it: system and position ("N of M") chips, title, year and rating, Play when installed, and Details.
 
-Metadata management is a background service, not a separate user workflow.
+### Covers
 
-Use a combined approach:
+- Each cover uses its system's box shape: N64 and SNES 7:5; PlayStation 1:1; GameCube, Wii, Wii U, PS2 and Xbox 5:7; Game Boy, Game Boy Color and Game Boy Advance 0.92. A cover whose real shape differs by more than 12% (for example a PAL portrait N64 box) keeps its own shape.
+- Artwork comes from LaunchBox and TheGamesDB only.
+- A game without a cover gets a placeholder at its system's shape: a plain dark tile with the logo faintly in the middle.
 
-1. (Planned) Monitor configured game folders for additions, removals, and relevant file changes, where supported by the platform and filesystem.
-2. Provide a manual library scan action in Settings for initial setup and recovery. A configurable startup scan discovers new files; it must not re-query games that already have saved metadata or a completed lookup attempt.
-3. Route discovery through one pipeline. Register newly found games first, then queue metadata only for games without a saved metadata association and without a completed lookup attempt.
+### Interaction
 
-The intended flow is:
+- Directional input moves the selection; Enter/A plays an installed recompilation or opens Game Details; the Details action (Y by default, `I` on the keyboard) opens Game Details from any view. Clicking a cover opens Game Details; in the Carousel, hover highlights without changing the selection.
+- Switching views cross-fades. Grid plays a staggered bottom-up entrance (cards in a row appear left to right) on startup, when switching to Grid and when returning from Settings; searching, filtering and opening or closing Game Details do not replay it.
+- Grid and List fade cards near the top and bottom edges while scrolling (smoothstep, minimum opacity 0.18).
+- Selection and focus are separate: the selected game stays selected while focus moves to the header or a dialog.
+- Screen readers hear the selected game and its system in every view.
 
-1. Discover a ROM and identify its RecompStation platform.
-2. Search the metadata provider using title and platform context.
-3. Evaluate candidate matches and confidence.
-4. Automatically associate a sufficiently reliable match.
-5. Cache metadata and artwork locally.
-6. Avoid repeatedly querying unchanged games; respect API limits and retry failures sensibly.
-7. Keep uncertain matches unassociated and communicate that attention may be needed. Never silently attach a low-confidence or clearly incorrect match.
+### Backgrounds
 
-A user should not need to search a metadata database and manually associate every ROM. Any exceptional review should be presented in the context of the affected game, not as a separate metadata-management destination.
+Settings › Background, Library only:
+- **Gradient:** static, in the theme's colours (default).
+- **Waves:** two ribbons of thin glowing lines drawn live by a GPU shader (`shaders/waves.frag`, `WaveBackground.qml`): colour presets, the theme accent or a custom hue; Motion (Calm / Normal / Lively); Quality (Auto, High, Balanced at 75% resolution, Low at half resolution and 30 fps). It pauses on its current frame under Reduced motion, while a game runs, and when the window is inactive or minimized. Qt's software renderer falls back to the gradient.
+- **Image:** the user's still image (PNG, JPEG, WebP), decoded at screen size; Fill (crop) or Fit (whole image over a blurred copy) and an adjustable Dim.
+
+No wallpaper editor and no arbitrary colour or layout controls.
+
+## Game Details
+
+A full-window overlay over the Library. Back to Library (B, Esc or the button) returns to the same selection; LB/RB switch to the previous or next game, with the position ("N of M") in the corner.
+
+**Hero.** The first screenshot as a backdrop, the cover at its true shape, chips for the system and the recompilation project with its state ("Installed", "Available"), the title, year and rating.
+
+**Actions.** One primary action that follows the launcher's state: Find compatible launcher → Install → Downloading/Installing → Play. Beside it: Check for updates, which becomes "Update to <version>" when a newer release is out (not while the game runs), and ⋯, a drop-down with Show install folder, Open launcher log and Uninstall… (set apart in red, with a confirmation).
+
+**Status line.** One line under the actions with a coloured dot: ready to play, checking your copy, wrong version or wrong game (region and revision read from the ROM), update available ("your saves are kept"), up to date, or why no package fits this system (Windows or macOS only, ARM only, Flatpak only, no downloads).
+
+**About and screenshots.** The overview, and up to three selectable screenshots that open a full-screen viewer.
+
+**Recompilation card.** Kept short for players:
+- Project name and repository.
+- Status (Installed, Not installed, Downloading…), Version (the installed version, plus "· vX available"; or the latest release when not installed), and Requires (the game file it needs, e.g. "Banjo-Tooie (USA) ROM").
+- Launch section, when the project has a launch recipe: the game file from the library, a per-game Window choice (◀ Default (fullscreen) ▶, applied from the game's second start), and the saves folder with Open folder.
+- Package file names, install paths and checksum details are deliberately not shown; the install folder is in the ⋯ menu.
+
+**Without game info.** A "No game info" chip, the file name under the title, Find game info and Metadata settings buttons, an About card explaining what happened, empty screenshot frames, and an accent glow behind the page when there is neither a screenshot nor a cover.
+
+Opening plays the Open sound in every view, closing plays Back once.
+
+## Settings
+
+Layout: a category rail on the left, each entry with a one-line summary of its current values; setting rows in the middle, capped at 880 px; and, when the window is wide enough, a preview or reference pane on the right (Appearance, Display, Background, Metadata). Choices are ◀ value ▶ rows (`ValueCycler.qml`: left at the first value returns to the rail), switches (`ToggleSwitch.qml`), tiles or Settings-style buttons (`SettingsButton.qml`). No dropdowns and no Apply buttons; changes save immediately. LB/RB (Q/E) switch categories; Back returns to the Library when nothing nested is open.
+
+- **Appearance:** theme tiles (each a miniature Library in its colours; selecting applies and saves), Text size, Reduced motion, and Sounds (Interface sounds on/off, volume).
+- **Display:** Interface scale (Auto from the screen's logical height, or 75–200%; applied at startup, so changing it offers a restart that reopens this page), Windowed / Maximized / Fullscreen, and window-size presets for Windowed mode. The screen is shown for information; RecompStation never changes the monitor's mode.
+- **Background:** Gradient, Waves or Image, with their options (see Backgrounds).
+- **Library:** library folder and system folders, Add games, startup scan and manual scan, and Playing (prepare games for their launcher, start games in fullscreen).
+- **Metadata:** provider cards (LaunchBox with catalog download, update, size and any systems missing from an old catalog; TheGamesDB with the user's own key, stored privately, its connection and requests left), which provider is asked first (LaunchBox by default), automatic matching and artwork switches, and Refresh all metadata.
+- **Controller:** connected devices, a drawing of the controller with a live button test, button symbols, and remapping. Capturing a button shows clear states: let go first, listening with a 15-second countdown, replacing (old inputs struck out), added (with a warning when another action uses it), and nothing pressed; other rows dim. No sounds while mapping.
+- **Application:** about (version), storage use, data and log folders, detailed logging, launchers whose game is gone, and reset settings.
+
+Only settings with real behaviour are shown; no placeholder controls.
 
 ## Visual language
 
-- Dark-themed surfaces by default, using layered charcoal/near-black tones rather than one flat black.
-- Restrained accent colors, initially exploring blue-violet and electric-blue families.
-- Strong typography hierarchy, comfortable spacing, consistent radii, and subtle surface separation.
-- Game artwork is visually important, but layouts should remain readable and performant.
-- Motion should be smooth and purposeful: game details rise into view from below, followed by a slightly slower artwork and information dissolve. All motion respects Reduced Motion.
-- Use a consistent set of bundled SVG icon assets for primary navigation and common actions; avoid Unicode symbols as interface icons.
-- Visible focus states and predictable interaction feedback are essential.
-- Selection and focus are separate concepts: the selected game remains selected when pointer/controller focus moves elsewhere; focus indicates the next keyboard/controller action target.
-- The active primary destination and active Settings category must be visibly distinct from hover. Interactive controls must show a clear keyboard/controller focus treatment, not rely on color changes from hover alone.
-- In the Library, directional input moves between game tiles and preserves a sensible current selection when entering/leaving Details. Enter/Return opens the selected game; Escape closes Details. Mouse selection and activation remain available.
-- In Settings, Left/Right may move between category navigation and the content region; Up/Down move among controls in the active region. Popup controls (such as ComboBox menus) own focus while open; Escape closes the popup before leaving the current page.
-- Focus must remain visible at all supported window sizes and in both Grid and List modes. Reduced Motion removes/shortens transitions without changing navigation outcomes.
-- Avoid copying Steam Big Picture or other existing launcher/dashboard layouts. Use them only as broad evidence that controller-friendly, immersive browsing can be engaging.
+- Dark, layered surfaces rather than flat black; strong typography, consistent spacing and radii, subtle separation.
+- Themes are complete visual systems (background, surfaces, controls, text, status colours, artwork overlays): Electric Blue (default), Midnight Violet, Aurora (deep teal, mint accent) and Carbon (graphite, crimson accent). Ember was retired in November 2026; saved Ember settings move to Electric Blue.
+- Muted text meets WCAG AA (4.5:1) on panels in every theme.
+- Bundled SVG icons for navigation and actions; no Unicode symbols as icons (the ◀ ▶ arrows in value rows are the exception).
+- Focus is always visible and distinct from hover; the active tab and Settings category are clearly marked.
+- Motion is smooth and purposeful (Game Details rises into view, then its artwork and text dissolve in) and respects Reduced motion everywhere.
 
-## Themes and backgrounds
+## Sounds
 
-Provide three distinct background/theme types:
-
-1. **Static curated themes** — lightweight, coordinated palettes and surface treatments.
-2. **Optional animated themes** — subtle ambient gradients or particles, with motion paused while the app is minimized or inactive and disabled when reduced motion is enabled.
-3. **Custom still-image backgrounds** — user-selected PNG, JPEG, or WebP images, automatically scaled/cropped and previewed before applying.
-
-A theme is a complete visual system, not just an accent-color choice. It coordinates the background, layered surfaces, controls, dividers, text hierarchy, status colors, and artwork overlays. Start with a small set of carefully designed presets and a clear default. The presets are Electric Blue, Midnight Violet, Aurora (deep teal, mint accent) and Carbon (neutral graphite, crimson accent); Ember was retired in November 2026 and saved Ember settings move to Electric Blue. Themes are tiles with a miniature Library in their own colors; the preview pane follows the focused tile, and selecting a tile applies and saves it (no separate Apply step).
-
-Backgrounds (Settings → Background):
-- **Gradient:** static, in the theme's colors.
-- **Waves:** two ribbons of thin glowing lines drawn live by a GPU shader (`shaders/waves.frag`, `WaveBackground.qml`), chosen over pre-rendered video: no extra files, any color, sharp at any resolution. Color presets plus the theme accent and a custom hue; Motion (Calm / Normal / Lively); Quality (Auto, High, Balanced at 75% resolution, Low at half resolution and 30 fps). The animation pauses on its current frame under Reduced motion, while a game runs, and when the window is inactive or minimized. Qt's software renderer falls back to the gradient.
-- **Image:** the user's wallpaper, decoded at screen size; Fill (crop to cover) or Fit (whole image over a blurred copy of itself) and an adjustable Dim.
-
-Animated backgrounds must remain optional and lightweight. Bundle only original, public-domain, or appropriately licensed artwork.
-
-Do not begin with an overwhelming theme editor or dozens of arbitrary color controls.
-
-## Metadata and artwork maintenance
-
-- LaunchBox catalog indexing may retain the full catalog for matching, but image-file downloads must be restricted to games present in the user's available local library.
-- Resolve artwork records only through a saved, confident LaunchBox DatabaseID association in the local library. Do not infer an image association from title alone or download images for catalog-only games.
-- Fetch one preferred `Box - Front` cover and up to three `Screenshot - Gameplay` images per matched local game. Prefer North American artwork when available, preserve an existing cover, and reuse valid cached files.
-- Use the verified LaunchBox image CDN host `images.launchbox-app.com`. Keep requests sequential and pause 300 ms after every five image requests. Display artwork progress and downloaded/skipped/failed totals separately from catalog-indexing progress.
-
-## Display and window behavior
-
-- Display behavior must respect the desktop compositor; RecompStation must never change the monitor-wide display mode.
-- The current foundation detects the screen attached to the application window and offers preferred application window sizes, including common 16:9, 4:3, and ultrawide presets.
-- Preferred sizes are constrained to the available logical desktop area; the compositor remains responsible for window placement and may impose additional constraints, particularly on Wayland.
-- The default “Follow desktop” option leaves the current window size unchanged.
-- The implemented window modes are **Windowed**, **Maximized**, and **Fullscreen**. Every application launch requests **Fullscreen** by default, including first-run and existing installations. Fullscreen is declared as the initial native window state before the Wayland surface is mapped, avoiding a visible windowed-to-fullscreen transition. F11 can temporarily restore the previous non-fullscreen mode; the next application launch starts fullscreen again.
-- The Display page may identify the screen associated with the application window and report its desktop/available dimensions. This is informational; it does not currently provide explicit monitor selection.
-- Do not describe Maximized as Borderless. Borderless-windowed mode and explicit multi-monitor selection remain deferred until they can be implemented and validated reliably across supported compositors.
-- Preferred application window sizes are separate from monitor resolution. Never expose a control that changes the monitor-wide mode.
-
-## Settings organization
-
-Layout (redesigned November 2026): a category rail on the left where each entry shows a one-line summary of its current values; setting rows in the middle, capped at 880 px; and, when the window is wide enough, a preview or reference pane on the right (Appearance, Display, Background, Metadata). Choices are ◀ value ▶ rows (`ValueCycler.qml`: D-pad or arrow keys change the value; left at the first value returns to the rail), on/off switches (`ToggleSwitch.qml`), or tiles. There are no dropdowns and no separate Apply buttons. LB/RB (Q/E on the keyboard) switch sections.
-
-Current categories:
-
-- **Appearance:** theme tiles, text size, reduced motion.
-- **Display:** interface scale (Auto from the screen's logical height, or 75–200%; applied at startup, so changing it offers a restart that reopens this page), Windowed/Maximized/Fullscreen, and window-size presets (active in Windowed mode). Explicit monitor selection and borderless mode are deferred.
-- **Background:** Gradient, Waves or Image, with their options (see Themes and backgrounds).
-- **Library:** library folder, platform folders, startup scan preference and manual scan. Grid/List and grid-density controls are exclusive to the Game Library page.
-- **Metadata:** provider cards (TheGamesDB with the API key entered in the app and stored privately, connection status and requests left; LaunchBox with catalog download/update and size), which provider is asked first (LaunchBox by default), automation toggles, and Refresh all metadata. Additional providers, field selection, and independent artwork-source management remain future work.
-  - Keep manual metadata refresh and gameplay-screenshot download actions in Settings → Metadata, alongside provider configuration. Settings → Library is limited to ROM folders and library scanning.
-- **Controller:** connected-device status, controller-input enablement, active/default profile presentation, and navigation binding summary. Interactive remapping and per-device application remain future work.
-- **Application:** application-level preferences and diagnostics/logging where implemented.
-
-Launcher installation and management are contextual to Game Details rather than a Settings destination. A dedicated launcher Settings category may be added only when there are meaningful global launcher preferences to expose.
-
-Only expose settings that have real behavior. Avoid placeholder toggles.
+The "Glass, refined" set, original and synthesized (`tools/sounds/`), played through SDL2 audio:
+- Move when focus moves, Open a game, Back, a swoosh when cycling with the shoulder buttons, a switch sound for picking a system, menus, switches on and off, Play and a failed launch.
+- Rapid repeats are thinned so held directions don't stack; silent while a game runs, and never while mapping buttons.
+- On by default at 60%; Settings › Appearance › Sounds.
 
 ## Input and accessibility
 
-Mouse and keyboard remain supported. Controller navigation will support Xbox and PlayStation controllers with predefined mappings and user remapping. The frontend must suspend controller input while the launched game session owns the controller, then resume after the actual game process/session exits. Maintain readable contrast, accessible labels, predictable tab order, and scalable layouts.
+- Controller, keyboard and mouse all reach everything. Xbox and PlayStation controllers have default mappings and can be remapped; a second controller takes over when it is used.
+- While a launched game runs, RecompStation releases the controller and resumes after the game's process exits.
+- Popups and dialogs own focus while open; Back closes the innermost one first; focus returns to the control that opened them.
+- Accessible names on the header tabs, Game Details' back button and mapping chips; every control is reachable in tab order.
+
+## Metadata and library maintenance
+
+Metadata is a background service, not a workflow:
+1. The library folder is watched; added and removed games are reconciled automatically, and a manual scan is in Settings › Library for recovery.
+2. New games are registered first, then matched: LaunchBox's offline catalog (by file name, then title) and TheGamesDB, in the order chosen in Settings.
+3. A match is accepted only when one result clearly fits; uncertain games stay unmatched rather than getting the wrong cover.
+4. Games with saved metadata or a finished lookup are not asked again; provider errors are retried an hour later.
+5. Covers and up to three gameplay screenshots are cached locally, only for games in the library.
+
+Fixing a wrong or missing match belongs in the game's context (a Fix match action in Game Details is planned), never in a separate metadata page.
+
+## Display and window behaviour
+
+- RecompStation respects the compositor and never changes the monitor-wide display mode.
+- Window modes: Windowed, Maximized, Fullscreen. Preferred window sizes (16:9, 4:3, ultrawide presets) apply in Windowed mode and are limited to the available desktop area; the compositor decides placement, particularly on Wayland.
+- On Wayland the app identifies itself as `io.github.MetalSJ13.RecompStation`, matching its desktop entry, so the taskbar shows its icon.
+- Explicit monitor selection and borderless windowed mode are deferred until they can be validated across compositors.
 
 ## Implementation principles
 
-- Keep backend and business logic in C++; keep presentation and navigation in QML.
-- Extract reusable QML components when doing so reduces real duplication.
-- Keep changes incremental and buildable.
-- Preserve existing scanner, metadata provider, artwork, project catalog, download/install, uninstall, and process-launch behavior.
-- Avoid mixing the visual redesign with a broad backend rewrite.
-- Add filesystem monitoring and automatic matching as explicit, testable capabilities; do not imply that current one-shot scanning already provides continuous monitoring.
-
-
-## Milestone 1 design audit (2026-11-18)
-
-The current implementation was reviewed against this specification. This is a design/structure audit, not a claim that every later milestone feature is complete.
-
-| Area | Current state | Audit outcome |
-|---|---|---|
-| Primary navigation | Library and Settings only | Aligned |
-| Platform navigation | Filter inside Library | Aligned |
-| Metadata Search | Removed from the page stack; metadata controls remain in Settings and game context | Aligned; obsolete presentation code removed |
-| Launcher management | Available contextually from Game Details | Aligned |
-| Game Details | Full-window modal overlay with Back to Library and Escape | Aligned |
-| Settings hierarchy | Appearance, Display, Library, Metadata, Controller, Application | Aligned |
-| Focus model | Library grid/list navigation and Settings category/content focus handling; visible control focus styling | Implemented baseline; full accessibility/controller-only pass remains later work |
-| Dialogs and popups | First-run library setup, folder/background pickers, uninstall confirmation, project install prompt, ComboBox popups, and global system/quit overlay | Contextual overlays; must preserve parent context and close in Escape order |
-| Display modes | Windowed, Maximized, Fullscreen; F11 restores prior non-fullscreen mode | Documented accurately |
-| Monitor handling | Current screen is informational; no explicit monitor selector or monitor-mode changes | Safe compositor-respecting baseline; additional selection deferred |
-| Library presentation | Title search, platform filter, Grid/List/Carousel, configurable density and backgrounds | Search and browsing controls are grouped in the Library; sorting and remaining library states tracked in later milestones |
-
-Audit follow-up: finish complete keyboard/controller focus and accessibility validation under the dedicated input milestone; validate display behavior on supported compositors before adding more modes.
-
-
-### Library toolbar
-- Keep the collection heading on the left and use a compact, right-aligned single-row filter toolbar. The toolbar has a capped width rather than stretching across the entire window; search receives the flexible remaining space, while Platform, View, and Card/Row Size use deliberate proportional widths.
-
-### List View presentation
-- List rows use up to 68% of the available Library content width, capped at 1,200 px, rather than appearing as a narrow column on wide displays.
-- Unselected rows use translucent surfaces with a horizontal fade toward the right edge so the selected background artwork remains visible.
-- The selected row retains a stronger translucent surface and accent border for clear focus. Artwork and text remain fully opaque and readable.
-- List rows remain left-aligned; the expanded width is not centered.
-
-
-### List View density sizing
-- Compact: 104 px row height, 68 × 82 px artwork frame, 14 px title text.
-- Comfortable: 128 px row height, 86 × 104 px artwork frame, 16 px title text.
-- Spacious: retain the existing 144 px row height, 94 × 116 px artwork frame, and 17 px title text.
-- Keep the list density steps visually distinct while making Compact and Comfortable less undersized relative to Spacious.
-
-
-### Library scroll-edge fades
-- Grid View and List View apply a position-based opacity fade to cards near the top and bottom viewport edges.
-- List View retains its existing 140 px fade behavior.
-- Grid View uses a broader 240 px fade zone with a smoothstep easing curve and a subtle 0.18 minimum opacity for partially visible cards. This avoids the linear, abrupt-looking fade during fast scrolling.
-- Grid View combines the scroll-edge opacity with its existing startup reveal opacity.
-- Reduced Motion disables the scroll-edge fade by keeping cards fully opaque.
-
-
-### Carousel / Carousel View (hero carousel, updated 2026-11-22)
-- The selected game's first screenshot fills the window behind the page and header; a blurred, dimmed cover is used when no screenshot exists. Backdrops cross-fade between selections, under a gradient that keeps the header and details legible. The collection heading is hidden in this view.
-- One edge-to-edge row in library order. The selected cover is centered and about 1.43× larger; covers use their platform frame shapes (N64 7:5, PS1 1:1, disc cases 5:7), carry the outer focus ring when selected, and fade toward the window edges. The row and the details beneath it are centered together as one block, slightly below the middle.
-- The Carousel size preference (Compact / Comfortable / Spacious) sets the row height (170 / 210 / 250 px base), scaled gently with window height.
-- Beneath the selection: platform, recompilation status, and position ("N of M") chips; metadata title; release year and rating (numeric community scores shown as "★ 4.8"); Play when the recompilation is installed, and Details.
-- A / Enter / clicking the selected cover plays an installed recompilation and otherwise opens Game Details. The Details action (Y by default, remappable; `I` on the keyboard) opens Game Details from any Library view. Hover highlights without changing the selection, because the row recenters under the pointer; clicking another cover or using the wheel changes it.
-- Positions animate with Reduced Motion respected. The view keeps the shared filtered model, platform filter, search results, and selection used by the other views, and the choice persists.
+- Business logic in C++, presentation and navigation in QML; reusable components where they remove real duplication.
+- Keep changes incremental and buildable; UI changes are mocked up on the design canvas and approved before they are built.
+- Every new `.qml` or `.js` file is listed in `QML_FILES` in `CMakeLists.txt`.
