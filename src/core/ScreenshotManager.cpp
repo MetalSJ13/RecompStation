@@ -16,6 +16,15 @@
 #include <QUrlQuery>
 
 namespace {
+// "1 game", "3 games".
+QString gamesCount(int count)
+{
+    return count == 1 ? QStringLiteral("1 game") : QStringLiteral("%1 games").arg(count);
+}
+}
+
+
+namespace {
 QString screenshotExtension(const QByteArray &contentType, const QByteArray &bytes)
 {
     const QByteArray mime = contentType.split(';').first().trimmed().toLower();
@@ -156,21 +165,23 @@ void ScreenshotManager::refreshLibraryScreenshots(bool recheckAll)
     }
 
     if (m_queue.isEmpty()) {
-        setStatus(QString("Screenshot refresh complete: nothing new to look up (%1 game(s) already have screenshots or were checked recently).")
-                      .arg(m_skipped));
+        setStatus(QStringLiteral("Screenshots are up to date."));
         emit refreshFinished(0, m_skipped, 0, 0);
         return;
     }
     setBusy(true);
-    setStatus(QString("Checking screenshots for %1 game(s)...").arg(m_queue.size()));
+    setStatus(QStringLiteral("Looking for screenshots for %1…").arg(gamesCount(m_queue.size())));
     requestNextBatch();
 }
 
 void ScreenshotManager::finishRefresh(const QString &note)
 {
     setBusy(false);
-    QString message = QString("Screenshot refresh complete: %1 downloaded, %2 skipped, %3 had none, %4 failed.")
-                          .arg(m_downloaded).arg(m_skipped).arg(m_withoutScreenshots).arg(m_failed);
+    QString message = m_downloaded > 0
+        ? QStringLiteral("Screenshots: %1 downloaded.").arg(m_downloaded)
+        : QStringLiteral("Screenshots are up to date.");
+    if (m_failed > 0)
+        message += QStringLiteral(" %1 couldn't be downloaded.").arg(m_failed);
     if (!note.isEmpty())
         message += QStringLiteral(" ") + note;
     setStatus(message);
@@ -188,8 +199,8 @@ void ScreenshotManager::requestNextBatch()
     }
     if (m_allowance && !m_allowance->automaticLookupsAllowed()) {
         const int left = m_queue.size();
-        finishRefresh(QString("%1 game(s) left for later: %2")
-                          .arg(left).arg(m_allowance->pauseReason()));
+        finishRefresh(QStringLiteral("%1 left for later: %2")
+                          .arg(gamesCount(left), m_allowance->pauseReason()));
         return;
     }
     m_batch.clear();
@@ -236,8 +247,8 @@ void ScreenshotManager::requestImagesPage(int page)
                 // No requests left: stop instead of failing every batch.
                 if (m_allowance)
                     m_allowance->reportRejected();
-                finishRefresh(QString("TheGamesDB has no requests left right now; "
-                                      "%1 game(s) left for later.").arg(m_queue.size()));
+                finishRefresh(QStringLiteral("TheGamesDB has no requests left right now; "
+                                             "%1 left for later.").arg(gamesCount(m_queue.size())));
                 return;
             }
             m_batch.clear();

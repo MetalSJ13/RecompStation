@@ -18,6 +18,15 @@
 #include <QVariantMap>
 
 namespace {
+// "1 game", "3 games".
+QString gamesCount(int count)
+{
+    return count == 1 ? QStringLiteral("1 game") : QStringLiteral("%1 games").arg(count);
+}
+}
+
+
+namespace {
 QString normalizedTitle(QString title)
 {
     // ROM databases commonly put the leading article at the end of a title,
@@ -351,7 +360,7 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
     const bool primaryAvailable = m_metadata->isConfigured();
     if (!primaryAvailable && !launchBoxAvailable()) {
         qCWarning(lcMetadata) << "Library metadata scan skipped: no metadata provider is available.";
-        setStatus(QStringLiteral("No metadata provider is available. Configure TheGamesDB or enable LaunchBox and install its catalog."));
+        setStatus(QStringLiteral("No source for game info is set up. Turn on LaunchBox or add a TheGamesDB key in Metadata."));
         return;
     }
 
@@ -370,14 +379,14 @@ void LibraryMetadataMatcher::scrapeLibrary(bool includePreviouslyChecked,
     emit progressChanged();
 
     if (m_queue.isEmpty()) {
-        setStatus(QStringLiteral("All games already have metadata or have been checked."));
+        setStatus(QStringLiteral("Every game has been looked up."));
         emit scrapeFinished(0, 0);
         runPendingRescan();
         return;
     }
 
     setBusy(true);
-    setStatus(QStringLiteral("Matching metadata for %1 game(s)...").arg(m_totalCount));
+    setStatus(QStringLiteral("Looking up game info for %1…").arg(gamesCount(m_totalCount)));
     processNext();
 }
 
@@ -399,7 +408,7 @@ void LibraryMetadataMatcher::scrapeGame(int gameId)
     m_singleGameRun = true;
     const bool primaryAvailable = m_metadata->isConfigured();
     if (!primaryAvailable && !launchBoxAvailable()) {
-        setStatus(QStringLiteral("No metadata provider is available. Configure TheGamesDB or enable LaunchBox and install its catalog."));
+        setStatus(QStringLiteral("No source for game info is set up. Turn on LaunchBox or add a TheGamesDB key in Metadata."));
         return;
     }
 
@@ -586,10 +595,10 @@ void LibraryMetadataMatcher::processNext()
         setBusy(false);
         m_forceArtworkDownload = false;
         setStatus(m_theGamesDbUnavailable
-            ? QStringLiteral("Metadata complete: %1 matched, %2 left unresolved. TheGamesDB was unavailable: %3")
-                  .arg(m_matchedCount).arg(m_unresolvedCount).arg(m_theGamesDbFailure)
-            : QStringLiteral("Metadata complete: %1 matched, %2 left unresolved.")
-                  .arg(m_matchedCount).arg(m_unresolvedCount));
+            ? QStringLiteral("Game info found for %1; %2 without a match. TheGamesDB couldn't be reached, so it's tried again later.")
+                  .arg(gamesCount(m_matchedCount)).arg(m_unresolvedCount)
+            : QStringLiteral("Game info found for %1; %2 without a match.")
+                  .arg(gamesCount(m_matchedCount)).arg(m_unresolvedCount));
         emit scrapeFinished(m_matchedCount, m_unresolvedCount);
         runPendingRescan();
         return;

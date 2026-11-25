@@ -1108,6 +1108,11 @@ ApplicationWindow {
         libraryScanner.scanAllAsync()
     }
     // The open full-window overlay that controller navigation stays inside.
+    // "No new games found." / "1 new game found." / "4 new games found."
+    function newGamesMessage(count) {
+        return count === 0 ? "No new games found."
+            : count === 1 ? "1 new game found." : count + " new games found."
+    }
     function activeModalRoot() {
         if (updateDialog.visible)
             return updateDialog.contentItem
@@ -1499,7 +1504,7 @@ ApplicationWindow {
         function onUpdateCompleted(platforms, files, games) {
             launchBoxProgressPercent = 100
             window.launchBoxStage = "ready"
-            launchBoxStatusMessage = "Catalog updated: " + games + " games for your platforms. Unmatched games in your library are being checked against it now."
+            launchBoxStatusMessage = "Catalog updated. Games without a match are being checked against it now."
         }
         function onUpdateFailed(message) {
             window.launchBoxStage = "failed"
@@ -1507,7 +1512,7 @@ ApplicationWindow {
         }
         function onUpdateCancelled() {
             window.launchBoxStage = "cancelled"
-            launchBoxStatusMessage = "Catalog update cancelled. The previous catalog was preserved."
+            launchBoxStatusMessage = "Update cancelled. The previous catalog is still in use."
         }
     }
     property int selectedLocalGameId: 0
@@ -2338,31 +2343,28 @@ ApplicationWindow {
     Connections {
         target: libraryScanner
         function onScanStarted() {
-            window.scanMessage = "Scanning your game library..."
+            window.scanMessage = "Scanning your library…"
         }
         function onPlatformScanStarted(platform, platformIndex, platformCount) {
             window.scanMessage = "Scanning " + platform + " (" + platformIndex
                 + " of " + platformCount + ")..."
         }
         function onPlatformScanCompleted(platform, gamesFound, unsupportedFiles) {
-            window.scanMessage = platform + " scanned: " + gamesFound
-                + " new game(s), " + unsupportedFiles + " unsupported file(s) ignored."
+            window.scanMessage = "Scanned " + platform + "."
         }
         function onScanCompleted(gamesFound) {
             window.libraryRevision++
             if (settingsManager.automaticMetadataMatchingEnabled) {
                 window.scanMessage = libraryScanner.lastError.length > 0
-                    ? libraryScanner.lastError + "\nChecking metadata for discovered games..."
-                    : gamesFound + " new game(s) found. " + libraryScanner.lastUnsupportedCount
-                        + " unsupported file(s) ignored. Checking metadata..."
+                    ? libraryScanner.lastError + "\nLooking up game info…"
+                    : window.newGamesMessage(gamesFound) + " Looking up game info…"
                 // A problem with one platform folder must not block metadata for
                 // games successfully discovered on other platforms.
                 metadataMatcher.scrapeLibrary()
             } else {
                 window.scanMessage = libraryScanner.lastError.length > 0
-                    ? libraryScanner.lastError + "\nAutomatic metadata matching is disabled."
-                    : gamesFound + " new game(s) found. " + libraryScanner.lastUnsupportedCount
-                        + " unsupported file(s) ignored. Automatic metadata matching is disabled."
+                    ? libraryScanner.lastError
+                    : window.newGamesMessage(gamesFound)
             }
         }
     }
@@ -2371,10 +2373,9 @@ ApplicationWindow {
         target: screenshotManager
         function onRefreshFinished(downloaded, skipped, withoutScreenshots, failed) {
             window.libraryRevision++
-            window.scanMessage = "Screenshots refreshed: " + downloaded
-                + " downloaded, " + skipped + " already available, "
-                + withoutScreenshots + " unavailable from the provider, "
-                + failed + " failed."
+            window.scanMessage = downloaded > 0
+                ? "Screenshots: " + downloaded + " downloaded." + (failed > 0 ? " " + failed + " couldn't be downloaded." : "")
+                : "Screenshots are up to date."
         }
     }
 
@@ -2386,8 +2387,9 @@ ApplicationWindow {
         }
         function onScrapeFinished(matched, unresolved) {
             window.libraryRevision++
-            window.scanMessage = "Metadata complete: " + matched
-                + " matched, " + unresolved + " left unresolved."
+            window.scanMessage = matched + unresolved === 0 ? "Every game has been looked up."
+                : "Game info found for " + matched + (matched === 1 ? " game" : " games")
+                  + (unresolved > 0 ? "; " + unresolved + " without a match." : ".")
             // TheGamesDB screenshots are a separate provider-specific pass.
             // LaunchBox artwork is refreshed independently by LaunchBoxArtworkManager.
             const recheckAll = window.universalRefreshPending
@@ -7277,7 +7279,7 @@ ApplicationWindow {
                                                     if (theGamesDbCard.keySource === "environment")
                                                         parts.push("Using the key from RECOMPSTATION_TGDB_API_KEY")
                                                     else if (theGamesDbCard.keySource === "saved")
-                                                        parts.push("Key saved for your user only")
+                                                        parts.push("Key saved privately")
                                                     // A public key's allowance is a rolling 30 days.
                                                     if ((theGamesDbCard.connection === "connected" || theGamesDbCard.connection === "ready")
                                                             && metadataManager.remainingAllowance >= 0)
@@ -7358,12 +7360,16 @@ ApplicationWindow {
                                                 visible: settingsManager.launchBoxEnabled
                                                 Label {
                                                     Layout.fillWidth: true
-                                                    text: launchBoxCatalogManager.busy || window.launchBoxStatusMessage.length > 0
-                                                            && !launchBoxCatalogManager.catalogAvailable
+                                                    // An installed catalog never asks to be downloaded,
+                                                    // even without a recorded update date.
+                                                    text: launchBoxCatalogManager.busy
+                                                            || (window.launchBoxStatusMessage.length > 0
+                                                                && !launchBoxCatalogManager.catalogAvailable)
                                                         ? window.launchBoxStatusMessage
                                                         : settingsManager.launchBoxLastUpdated.length > 0
                                                             ? "Updated " + window.formatShortDate(settingsManager.launchBoxLastUpdated)
-                                                            : "Download the catalog to start matching with LaunchBox."
+                                                        : launchBoxCatalogManager.catalogAvailable ? "Catalog installed."
+                                                        : "Download the catalog to start matching with LaunchBox."
                                                     color: theme.textMuted
                                                     font.pixelSize: 11.5 * theme.fontScale
                                                     wrapMode: Text.Wrap

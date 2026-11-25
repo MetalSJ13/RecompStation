@@ -14,6 +14,15 @@
 #include <algorithm>
 
 namespace {
+// "1 game", "3 games".
+QString gamesCount(int count)
+{
+    return count == 1 ? QStringLiteral("1 game") : QStringLiteral("%1 games").arg(count);
+}
+}
+
+
+namespace {
 QString supportedImageExtension(const QByteArray &contentType, const QByteArray &bytes)
 {
     const QByteArray mime = contentType.split(';').first().trimmed().toLower();
@@ -192,15 +201,13 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
     catalog.close();
 
     if (m_queue.isEmpty()) {
-        setStatus(QStringLiteral("LaunchBox artwork refresh: nothing to download for %1 library game(s).")
-                      .arg(eligibleGames));
+        setStatus(QStringLiteral("Covers and screenshots are up to date."));
         emit refreshFinished(0, m_skipped, 0);
         return;
     }
     m_totalRequests = m_queue.size();
     setBusy(true);
-    setStatus(QStringLiteral("Queued %1 LaunchBox images for %2 matched library game(s).")
-                  .arg(m_totalRequests).arg(eligibleGames));
+    setStatus(QStringLiteral("Downloading covers and screenshots for %1…").arg(gamesCount(eligibleGames)));
     qCInfo(lcArtwork) << "LaunchBox artwork queue contains" << m_queue.size()
                       << "images for" << eligibleGames << "library games.";
     processNext();
@@ -211,15 +218,16 @@ void LaunchBoxArtworkManager::processNext()
     if (!m_enabled) {
         m_queue.clear();
         setBusy(false);
-        setStatus(QStringLiteral("LaunchBox artwork paused: disabled in Metadata Settings (%1 downloaded, %2 failed).")
-                      .arg(m_downloaded).arg(m_failed));
+        setStatus(QStringLiteral("Cover downloads paused: LaunchBox is turned off."));
         emit refreshFinished(m_downloaded, m_skipped, m_failed);
         return;
     }
     if (m_queue.isEmpty()) {
         setBusy(false);
-        setStatus(QStringLiteral("LaunchBox artwork complete: %1 downloaded, %2 skipped, %3 failed.")
-                      .arg(m_downloaded).arg(m_skipped).arg(m_failed));
+        setStatus(m_failed > 0
+            ? QStringLiteral("Covers and screenshots: %1 downloaded, %2 couldn't be downloaded.").arg(m_downloaded).arg(m_failed)
+            : m_downloaded > 0 ? QStringLiteral("Covers and screenshots: %1 downloaded.").arg(m_downloaded)
+            : QStringLiteral("Covers and screenshots are up to date."));
         qCInfo(lcArtwork) << m_status;
         emit refreshFinished(m_downloaded, m_skipped, m_failed);
         if (m_refreshPending) {
