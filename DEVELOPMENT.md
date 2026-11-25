@@ -69,7 +69,8 @@ Runtime checks for implemented features that have not been fully confirmed yet. 
 - [x] Capture states (validated 2026-11-24): Add with ✕/A shows "Let go of ✕ first", then the listening panel and countdown; Replace strikes out the old inputs; adding an input another action uses shows the warning; waiting 15 s shows "Nothing was pressed"; Cancel works and focus returns to the row's Add; other rows dim while one listens.
 - [x] Luigi's Mansion opens straight to the game from Play with `--disc`, builds its shaders on the first start and starts fullscreen (validated 2026-11-24).
 - [x] Pokémon Snap boots straight to the game from Play (validated 2026-11-24).
-- [ ] Not yet tried: Conker and Snowboard Kids open straight to the game from Play; Snowboard Kids' saves sit under `~/.local/share/SnowboardKidsRecompiled/userdata`.
+- [x] Conker (validated 2026-11-25): like every N64Recomp launcher, it opens its own menu, with its own settings options, and the ROM already found; the player starts the game there. The status line under Play now says so for `n64recomp` launchers instead of "opens straight to the game".
+- [ ] Not yet tried: Snowboard Kids opens straight to the game from Play; its saves sit under `~/.local/share/SnowboardKidsRecompiled/userdata`.
 - [x] Saves on reinstall (validated 2026-11-24 with Conker: a saves/ folder made in the install came back after Uninstall and Install).
 - [x] Opening a game page for the first time doesn't stall (validated 2026-11-24).
 - [ ] LaunchBox card: with a catalog from before a system was supported, it names the systems missing; Update catalog clears the note. (With a current catalog no note shows.)

@@ -287,7 +287,11 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
         }
         if (info.xxh3Hex() == recipe.value(QStringLiteral("romXxh3")).toString()) {
             return set(QStringLiteral("ready"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
-                       QStringLiteral("Your copy is %1, the version this launcher needs. Play opens straight to the game.").arg(romVersion));
+                       method == QStringLiteral("n64recomp")
+                           // N64Recomp launchers open their own menu (settings,
+                           // mods), with the game file already found.
+                           ? QStringLiteral("Your copy is %1, the version this launcher needs. Play opens the launcher with it already found; start the game from its menu.").arg(romVersion)
+                           : QStringLiteral("Your copy is %1, the version this launcher needs. Play opens straight to the game.").arg(romVersion));
         }
         // No name in the recipe: the launcher reads it from the ROM, so a
         // mismatch is most likely the same game in another version.

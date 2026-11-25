@@ -10,7 +10,8 @@
 #include <QVariantMap>
 
 // Hands the player's own game file to a launcher before it starts, so the
-// launcher opens straight to the game instead of asking for the file.
+// launcher never asks for the file: some open straight to the game, others
+// (N64Recomp launchers) open their own menu with the game file found.
 //
 // The project's catalog "launch" recipe says how each launcher finds its
 // game data (see data/projects.json):
