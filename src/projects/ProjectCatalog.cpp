@@ -575,16 +575,20 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
             // Windows builds: portable downloads only (a .zip, or a single
             // .exe that runs from its folder); installers are never run.
             const bool windowsBuild = system == QStringLiteral("windows");
+            // A Windows build may leave executablePath out: the installer then
+            // picks the download's one main .exe.
             const bool formatAllowed = windowsBuild
                 ? (packageFormat == QStringLiteral("zip") || packageFormat == QStringLiteral("executable"))
-                    && executablePath.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)
+                    && (executablePath.isEmpty()
+                        || executablePath.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive))
                 : (packageFormat == QStringLiteral("tar.gz")
                     || packageFormat == QStringLiteral("tar.xz")
                     || packageFormat == QStringLiteral("zip")
                     || packageFormat == QStringLiteral("appimage")
                     || packageFormat == QStringLiteral("executable"));
             if (architecture.isEmpty() || regexText.isEmpty() || !regex.isValid()
-                || executablePath.trimmed().isEmpty() || unsafeExecutablePath || !formatAllowed) {
+                || (executablePath.trimmed().isEmpty() && !windowsBuild)
+                || unsafeExecutablePath || !formatAllowed) {
                 return fail(QStringLiteral("A project contains an invalid build rule."));
             }
 

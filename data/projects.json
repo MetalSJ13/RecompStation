@@ -23,6 +23,10 @@
           "assetNameRegex": "^BanjoRecompiled-.*-Linux-ARM64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "BanjoRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BanjoRecompiled-.*-Windows\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -63,6 +67,10 @@
           "assetNameRegex": "^ConkerRecompiled-V[0-9.]+-Linux\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "ConkerRecomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^ConkerRecompiled-V[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -90,6 +98,10 @@
           "assetNameRegex": "^DKR-R-.*-Linux-aarch64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "DKR-R-Linux-aarch64.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^DKR-R-.*-Windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -136,6 +148,10 @@
           "assetNameRegex": "^Snap64Recomp-.*-linux-arm64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "Snap64Recomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Snap64Recomp-.*-win64\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -158,6 +174,10 @@
           "assetNameRegex": "^SuperMario64Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "SuperMario64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SuperMario64Recompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -188,6 +208,10 @@
           "assetNameRegex": "^PerfectDarkRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "PerfectDarkRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^PerfectDarkRecompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -225,6 +249,10 @@
           "assetNameRegex": "^Starfox64Recompiled-v[0-9.]+-Linux-ARM64-Release\\.zip$",
           "packageFormat": "zip",
           "executablePath": "Starfox64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Starfox64Recompiled-v[0-9.]+-Windows(-[A-Za-z]+)?\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -262,6 +290,10 @@
           "assetNameRegex": "^DK64Recompiled-Linux-ARM64-Release-[0-9-]+\\.zip$",
           "packageFormat": "zip",
           "executablePath": "DK64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^DK64Recompiled-Windows-Release-[0-9-]+\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -299,6 +331,10 @@
           "assetNameRegex": "^MarioKart64Recompiled-v[0-9.]+-Linux-ARM64-Release\\.zip$",
           "packageFormat": "zip",
           "executablePath": "MarioKart64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MarioKart64Recompiled-v[0-9.]+-Windows(-[A-Za-z]+)?\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -330,6 +366,10 @@
           "assetNameRegex": "^MarioPartyRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "MarioPartyRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MarioPartyRecompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -361,6 +401,10 @@
           "assetNameRegex": "^MarioParty2Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "MarioParty2Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MarioParty2Recompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -392,6 +436,10 @@
           "assetNameRegex": "^MarioParty3Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "MarioParty3Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MarioParty3Recompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -424,6 +472,10 @@
           "assetNameRegex": "^SmashBrosRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "SmashBrosRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SmashBrosRecompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -455,6 +507,10 @@
           "assetNameRegex": "^.+-Linux\\.zip$",
           "packageFormat": "zip",
           "executablePath": "ghostship.appimage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^.+-Win64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -494,6 +550,10 @@
           "assetNameRegex": "^BanjoTooieRecompiled-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "run.sh"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BanjoTooieRecompiled-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -525,6 +585,10 @@
           "assetNameRegex": "^Paperboat-.*-Linux\\.zip$",
           "packageFormat": "zip",
           "executablePath": "Paperboat.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Paperboat-.*-Win64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -561,6 +625,10 @@
           "assetNameRegex": "^DinoTale-[0-9.]+-linux\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "DinoTale"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^DinoTale-[0-9.]+-windows\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -597,6 +665,10 @@
           "assetNameRegex": "^MegaMan64Recompiled-v[0-9.]+-Linux-ARM64\\.zip$",
           "packageFormat": "zip",
           "executablePath": "MegaMan64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MegaMan64Recompiled-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -628,6 +700,10 @@
           "assetNameRegex": "^FZeroXRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "FZeroXRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^FZeroXRecompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -659,6 +735,10 @@
           "assetNameRegex": "^MarioGolfRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "MarioGolfRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MarioGolfRecompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -696,6 +776,10 @@
           "assetNameRegex": "^Zelda64Recompiled-v[0-9.]+-Linux-ARM64\\.zip$",
           "packageFormat": "zip",
           "executablePath": "Zelda64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Zelda64Recompiled-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -728,6 +812,10 @@
           "assetNameRegex": "^SoH-.*\\.appimage$",
           "packageFormat": "appimage",
           "executablePath": "ShipOfHarkinian.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SoH-.*-Win64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -766,6 +854,10 @@
           "assetNameRegex": "^Open_Nectar-x86_64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "Open_Nectar.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^nectar-windows\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -793,6 +885,10 @@
           "assetNameRegex": "^strikers-linux-arm64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "Strikers.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^strikers-windows-x86_64\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -821,6 +917,10 @@
           "assetNameRegex": "^Dusklight-v[0-9.]+-linux-arm64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "Dusklight.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Dusklight-v[0-9.]+-win32-x86_64\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -861,6 +961,10 @@
           "assetNameRegex": "^LuigisMansionRecompiled-[0-9.]+-linux-x86_64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "LuigisMansionRecompiled.sh"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^LuigisMansionRecompiled-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -881,6 +985,10 @@
           "assetNameRegex": "^MediEvilRecomp-.*-linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "run.sh"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MediEvilRecomp-.*-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "developmentStatus": "playable"
@@ -924,6 +1032,10 @@
           "assetNameRegex": "^ShadowRecomp-Linux-x86_64-.*\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "ShadowRecomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^ShadowRecomp-Windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "developmentStatus": "playable"
@@ -944,6 +1056,10 @@
           "assetNameRegex": "^NinjaGaidenBlack-x86_64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "NinjaGaidenBlack-x86_64.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^NinjaGaidenBlack-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "includePrereleases": true,
@@ -965,6 +1081,10 @@
           "assetNameRegex": "^LostOdysseyRecomp-linux-x64-.*\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "LostOdysseyRecomp.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^LostOdysseyRecomp-windows-x64-.*\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "includePrereleases": true,
@@ -986,6 +1106,10 @@
           "assetNameRegex": "^TheSimpsonsGame-Recompiled-Linux-x64\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "Play.sh"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^TheSimpsonsGame-Recompiled-Windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "includePrereleases": true,
@@ -1013,6 +1137,10 @@
           "assetNameRegex": "^supermetroid-[0-9.]+-linux-x64\\.zip$",
           "packageFormat": "zip",
           "executablePath": "Launch.sh"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^supermetroid-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -1040,6 +1168,10 @@
           "assetNameRegex": "^MegaMan.*[Ll]inux.*x86_64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "MegaManXSNESRecomp.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MegaManXSNESRecomp-windows-[0-9.]+\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -1066,6 +1198,10 @@
           "assetNameRegex": "^BM64Recompiled.*linux.*arm64.*\\.zip$",
           "packageFormat": "zip",
           "executablePath": "BM64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BM64Recompiled-Windows-[A-Za-z]+\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -1096,6 +1232,10 @@
           "assetNameRegex": "^BMHeroRecompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
           "packageFormat": "zip",
           "executablePath": "BMHeroRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BMHeroRecompiled-Windows-[A-Za-z]+\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "includePrereleases": true,
@@ -1127,6 +1267,10 @@
           "assetNameRegex": "^HarvestMoon64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
           "packageFormat": "zip",
           "executablePath": "HarvestMoon64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^HarvestMoon64Recompiled-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -1154,9 +1298,13 @@
       "romFile": "Snowboard Kids 2 (USA) ROM",
       "builds": {
         "linux-x86_64": {
-          "assetNameRegex": "^SnowboardKids2Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
-          "packageFormat": "zip",
+          "assetNameRegex": "^SnowboardKids2Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
           "executablePath": "SnowboardKids2Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SnowboardKids2Recompiled-Windows\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -1187,6 +1335,10 @@
           "assetNameRegex": "^SSSVRecompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.tar\\.gz$",
           "packageFormat": "tar.gz",
           "executablePath": "SSSVRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SSSVRecompiled_v[0-9.]+_Windows\\.zip$",
+          "packageFormat": "zip"
         }
       },
       "launch": {
@@ -1258,6 +1410,10 @@
           "assetNameRegex": "^snowboard.?kids(?!.?2)(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
           "packageFormat": "zip",
           "executablePath": "SnowboardKidsRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SnowboardKidsRecompiled-Windows-[0-9.]+\\.zip$",
+          "packageFormat": "zip"
         }
       }
     },
@@ -1279,6 +1435,10 @@
           "assetNameRegex": "^Glover-R-[0-9.]+-Linux-x86_64\\.AppImage$",
           "packageFormat": "appimage",
           "executablePath": "Glover-R.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Glover-R-[0-9.]+-Windows-x64\\.zip$",
+          "packageFormat": "zip"
         }
       }
     }

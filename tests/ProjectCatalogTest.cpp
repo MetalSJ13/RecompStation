@@ -28,6 +28,7 @@ private slots:
     void parsesBuildsPerSystem();
     void acceptsOnlyPortableWindowsBuilds();
     void choosesAssetsForTheRequestedBuild();
+    void bundledWindowsBuildsMatchTheirReleases();
 };
 
 void ProjectCatalogTest::parsesValidCatalog()
@@ -660,6 +661,8 @@ void ProjectCatalogTest::acceptsOnlyPortableWindowsBuilds()
     QString error;
     QVERIFY(ProjectCatalog::parseCatalog(windowsRule("zip", "Game/Game.exe"), &projects, &error));
     QVERIFY(ProjectCatalog::parseCatalog(windowsRule("executable", "Game.exe"), &projects, &error));
+    // No program name: the installer picks the download's main .exe.
+    QVERIFY(ProjectCatalog::parseCatalog(windowsRule("zip", ""), &projects, &error));
     // Not portable, or not a Windows program.
     QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("tar.gz", "Game.exe"), &projects, &error));
     QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("appimage", "Game.exe"), &projects, &error));
@@ -712,6 +715,48 @@ void ProjectCatalogTest::choosesAssetsForTheRequestedBuild()
     QVERIFY(catalog.explainNoCompatibleAsset(QStringLiteral("windows-only"), {}, linux)
                 .contains(QStringLiteral("64-bit Linux")));
     QCOMPARE(catalog.buildLabel(windows), QStringLiteral("64-bit Windows (x86_64)"));
+}
+
+
+// Real file names from each project's latest release (2026-11-25): every
+// Windows rule picks its Windows download, and no Linux rule picks it.
+void ProjectCatalogTest::bundledWindowsBuildsMatchTheirReleases()
+{
+    ProjectCatalog catalog;
+    QVERIFY(catalog.isLoaded());
+    const QString windows = QStringLiteral("windows-x86_64");
+    const QString linux = QStringLiteral("linux-x86_64");
+    const QList<QPair<QString, QString>> releases = {
+        {"banjo-kazooie-recompiled", "BanjoRecompiled-v1.0.2-Windows.zip"},
+        {"pokemon-snap-recompiled", "Snap64Recomp-1.1.8-win64.zip"},
+        {"starfox-64-recompiled", "Starfox64Recompiled-v1.0.3-Windows-RelWithDebInfo.zip"},
+        {"ghostship-super-mario-64", "Nautilus-Alfa-Win64.zip"},
+        {"ship-of-harkinian-ocarina-of-time", "SoH-Dewey-Bravo-Win64.zip"},
+        {"twilight-princess-dusklight", "Dusklight-v2.0.3-win32-x86_64.zip"},
+        {"shadow-recompiled", "ShadowRecomp-Windows-x64-v1.0.1.zip"},
+        {"the-simpsons-game-recompiled", "TheSimpsonsGame-Recompiled-Windows-x64.zip"},
+        {"bomberman-64-recompiled", "BM64Recompiled-Windows-RelWithDebInfo.zip"},
+        {"space-station-silicon-valley-recompiled", "SSSVRecompiled_v0.2.0_Windows.zip"},
+        {"mega-man-x-recompiled", "MegaManXSNESRecomp-windows-2.4.9.zip"},
+    };
+    for (const auto &[id, asset] : releases) {
+        QVERIFY2(catalog.isAssetCompatible(id, windows, asset), qPrintable(id + " " + asset));
+        QVERIFY2(!catalog.isAssetCompatible(id, linux, asset), qPrintable(id + " " + asset));
+    }
+    // Look-alikes in the same releases are left out.
+    QVERIFY(!catalog.isAssetCompatible("shadow-recompiled", windows, "ShadowRecomp-Windows-x64-v1.0.1-PDB.zip"));
+    QVERIFY(!catalog.isAssetCompatible("the-simpsons-game-recompiled", windows,
+                                       "TheSimpsonsGame-Recompiled-Windows-x64-NoAVX2.zip"));
+    QVERIFY(!catalog.isAssetCompatible("twilight-princess-dusklight", windows, "Dusklight-v2.0.3-win32-arm64.zip"));
+    QVERIFY(!catalog.isAssetCompatible("pokemon-snap-recompiled", windows, "Snap64Recomp-1.1.8-win64.zip.sha256"));
+    QVERIFY(!catalog.isAssetCompatible("bomberman-64-recompiled", windows, "BM64Recompiled-PDB-RelWithDebInfo.zip"));
+    // Snowboard Kids 2 now publishes its Linux build as a .tar.gz.
+    QVERIFY(catalog.isAssetCompatible("snowboard-kids-2-recompiled", linux, "SnowboardKids2Recompiled-Linux-X64.tar.gz"));
+    QCOMPARE(catalog.buildRules("snowboard-kids-2-recompiled", linux).value("packageFormat").toString(),
+             QStringLiteral("tar.gz"));
+    // Windows builds leave the program name to the installer.
+    QVERIFY(catalog.buildRules("banjo-kazooie-recompiled", windows).value("executablePath").toString().isEmpty());
+    QCOMPARE(catalog.availableBuilds("quest-64-recompiled"), QStringList{linux});
 }
 
 QTEST_GUILESS_MAIN(ProjectCatalogTest)
