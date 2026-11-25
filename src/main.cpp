@@ -25,6 +25,7 @@
 #include "core/SettingsManager.h"
 #include "core/LauncherDownloadManager.h"
 #include "core/AppUpdater.h"
+#include "core/WineSupport.h"
 #include "core/GameLaunchManager.h"
 #include "core/LibraryScanner.h"
 #include "core/ArtworkManager.h"
@@ -473,6 +474,9 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("softwareGraphics", openGL != QStringLiteral("hardware"));
+    WineSupport wineSupport;
+    wineSupport.refresh();
+    engine.rootContext()->setContextProperty("wineSupport", &wineSupport);
     engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
     engine.rootContext()->setContextProperty("platformManager", &platformManager);
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);

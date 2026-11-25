@@ -11,6 +11,8 @@ Rectangle {
     property string title
     property string description
     property bool dimmed: false
+    // A short warning under the description ("Install Wine to use this.").
+    property string note: ""
     default property alias control: controlSlot.data
     readonly property Item controlItem: controlSlot.children.length > 0 ? controlSlot.children[0] : null
     readonly property bool focusWithin: controlItem !== null && controlItem.activeFocus
@@ -49,6 +51,15 @@ Rectangle {
             visible: row.description.length > 0
             text: row.description
             color: theme.textMuted
+            font.pixelSize: 12 * theme.fontScale
+            wrapMode: Text.Wrap
+        }
+        Label {
+            Layout.fillWidth: true
+            Layout.topMargin: 3
+            visible: row.note.length > 0
+            text: "⚠  " + row.note
+            color: theme.warningText
             font.pixelSize: 12 * theme.fontScale
             wrapMode: Text.Wrap
         }

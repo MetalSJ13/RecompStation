@@ -64,6 +64,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
     m_prepareGameFiles = settings.value(QStringLiteral("launch/prepareGameFiles"), true).toBool();
     m_detailedLogging = settings.value(QStringLiteral("application/detailedLogging"), false).toBool();
     m_startGamesFullscreen = settings.value(QStringLiteral("launch/startGamesFullscreen"), true).toBool();
+    m_windowsLaunchersThroughWine = settings.value(QStringLiteral("launch/windowsThroughWine"), false).toBool();
     const QString storedOrder = settings.value(
         QStringLiteral("metadata/providerOrder"), QStringLiteral("launchbox")).toString();
     m_metadataProviderOrder = storedOrder == QStringLiteral("thegamesdb")
@@ -1142,6 +1143,27 @@ void SettingsManager::setStartGamesFullscreen(bool enabled)
         return;
     }
     m_startGamesFullscreen = enabled;
+    ++m_launchSettingsRevision;
+    emit launchSettingsChanged();
+}
+
+bool SettingsManager::windowsLaunchersThroughWine() const
+{
+    return m_windowsLaunchersThroughWine;
+}
+
+void SettingsManager::setWindowsLaunchersThroughWine(bool enabled)
+{
+    if (m_windowsLaunchersThroughWine == enabled)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("launch/windowsThroughWine"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist the Wine preference.";
+        return;
+    }
+    m_windowsLaunchersThroughWine = enabled;
     ++m_launchSettingsRevision;
     emit launchSettingsChanged();
 }

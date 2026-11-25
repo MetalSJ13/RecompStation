@@ -38,6 +38,8 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool detailedLogging READ detailedLogging WRITE setDetailedLogging NOTIFY detailedLoggingChanged)
     Q_PROPERTY(bool prepareGameFiles READ prepareGameFiles WRITE setPrepareGameFiles NOTIFY launchSettingsChanged)
     Q_PROPERTY(bool startGamesFullscreen READ startGamesFullscreen WRITE setStartGamesFullscreen NOTIFY launchSettingsChanged)
+    // Linux only: offer Windows launchers, run through the system's Wine.
+    Q_PROPERTY(bool windowsLaunchersThroughWine READ windowsLaunchersThroughWine WRITE setWindowsLaunchersThroughWine NOTIFY launchSettingsChanged)
     Q_PROPERTY(int launchSettingsRevision READ launchSettingsRevision NOTIFY launchSettingsChanged)
     Q_PROPERTY(QString customLibraryBackground READ customLibraryBackground WRITE setCustomLibraryBackground NOTIFY customLibraryBackgroundChanged)
 
@@ -151,6 +153,8 @@ public:
     bool prepareGameFiles() const;
     Q_INVOKABLE void setPrepareGameFiles(bool enabled);
     bool startGamesFullscreen() const;
+    bool windowsLaunchersThroughWine() const;
+    Q_INVOKABLE void setWindowsLaunchersThroughWine(bool enabled);
     Q_INVOKABLE void setStartGamesFullscreen(bool enabled);
     // Per game: "default", "fullscreen" or "windowed".
     Q_INVOKABLE QString launchWindowMode(const QString &projectId) const;
@@ -218,6 +222,7 @@ private:
     bool m_prepareGameFiles = true;
     bool m_detailedLogging = false;
     bool m_startGamesFullscreen = true;
+    bool m_windowsLaunchersThroughWine = false;
     int m_launchSettingsRevision = 0;
     QString m_launchBoxLastUpdated;
     static QVariantMap defaultControllerProfile();

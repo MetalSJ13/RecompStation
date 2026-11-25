@@ -890,6 +890,8 @@ ApplicationWindow {
     }
 
     onCurrentPageChanged: {
+        if (currentPage === "Settings" && settingsPage.section === "Library")
+            wineSupport.refresh()
         if (controllerManager.mappingCaptureActive && currentPage !== "Settings")
             controllerManager.cancelMappingCapture()
         if (currentPage === "Settings")
@@ -5800,6 +5802,9 @@ ApplicationWindow {
                     id: settingsPage
                     property string section: "Appearance"
                     onSectionChanged: {
+                        // Wine may have been installed or removed since the last look.
+                        if (section === "Library")
+                            wineSupport.refresh()
                         console.debug("[Settings QML] Section changed:", section)
                         window.previewThemeId = settingsManager.themeName
                         if (section === "Application")
@@ -6560,6 +6565,26 @@ ApplicationWindow {
                                             checked: settingsManager.startGamesFullscreen
                                             onToggled: settingsManager.setStartGamesFullscreen(checked)
                                             Accessible.name: "Start games in fullscreen"
+                                        }
+                                    }
+                                    // Linux only. Greyed out until Wine is found on the system's
+                                    // program path; the player installs Wine themselves.
+                                    SettingRow {
+                                        visible: wineSupport.supported
+                                        title: "Windows launchers through Wine"
+                                        description: wineSupport.available
+                                            ? "Lets you install a game's Windows launcher when it has no Linux one, or when you pick it on the game's page. Uses Wine " + wineSupport.version + " as your system has it set up."
+                                            : "Lets you install a game's Windows launcher when it has no Linux one."
+                                        note: wineSupport.available ? ""
+                                            : wineSupport.checking ? "Looking for Wine…" : "Install Wine to use this."
+                                        dimmed: !wineSupport.available
+                                        ToggleSwitch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            enabled: wineSupport.available
+                                            checked: settingsManager.windowsLaunchersThroughWine
+                                            onToggled: settingsManager.setWindowsLaunchersThroughWine(checked)
+                                            Accessible.name: "Windows launchers through Wine"
                                         }
                                     }
                                     Item { Layout.preferredHeight: 16 }
@@ -8038,6 +8063,7 @@ ApplicationWindow {
                                 || settingsPage.section === "Metadata"
                                 || settingsPage.section === "Controller"
                                 || settingsPage.section === "Application"
+                                || (settingsPage.section === "Library" && wineSupport.supported)
                             visible: hasContent && settingsLayoutRow.width >= 1180
                             Layout.preferredWidth: Math.max(340, Math.min(460, settingsLayoutRow.width * 0.28))
                             Layout.fillHeight: true
@@ -8219,6 +8245,49 @@ ApplicationWindow {
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap
+                                }
+                                Item { Layout.fillHeight: true }
+                            }
+
+                            // Library: what Windows launchers through Wine means (Linux only).
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 20
+                                spacing: 10
+                                visible: settingsPage.section === "Library" && wineSupport.supported
+
+                                SettingsGroupLabel { Layout.topMargin: 0; text: "WINDOWS LAUNCHERS" }
+                                Repeater {
+                                    model: wineSupport.available
+                                        ? ["Some recompilations only offer a Windows launcher. With Wine, those can run here too.",
+                                           "Linux launchers always come first: when a project has both, Play installs the Linux one unless you choose Windows on the game's page.",
+                                           "RecompStation uses your Wine as it is. It doesn't install Wine or change its settings."]
+                                        : ["Some recompilations only offer a Windows launcher. With Wine installed, they can run here too.",
+                                           "Once Wine is installed and working on your system, this option becomes available on its own. RecompStation uses Wine as you have it set up."]
+                                    delegate: Label {
+                                        required property string modelData
+                                        Layout.fillWidth: true
+                                        text: modelData
+                                        color: theme.textSecondary
+                                        font.pixelSize: 12.5 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
+                                SettingsGroupLabel { text: "GOOD TO KNOW"; visible: wineSupport.available }
+                                Repeater {
+                                    model: wineSupport.available
+                                        ? ["Windows launchers open to their own menu, where you pick the game.",
+                                           "Their saves are kept in Wine's folders.",
+                                           "Not every launcher runs well under Wine."]
+                                        : []
+                                    delegate: Label {
+                                        required property string modelData
+                                        Layout.fillWidth: true
+                                        text: modelData
+                                        color: theme.textSecondary
+                                        font.pixelSize: 12.5 * theme.fontScale
+                                        wrapMode: Text.Wrap
+                                    }
                                 }
                                 Item { Layout.fillHeight: true }
                             }

@@ -85,6 +85,8 @@ qt_add_library(recompstation_core STATIC
     src/core/ArchiveExtractor.cpp
     src/core/AppUpdater.h
     src/core/AppUpdater.cpp
+    src/core/WineSupport.h
+    src/core/WineSupport.cpp
     src/core/LibraryScanner.h
     src/core/LibraryScanner.cpp
     src/core/LibraryMetadataMatcher.h
@@ -295,6 +297,7 @@ if(BUILD_TESTING)
     recompstation_add_test(ProjectCatalogTests tests/ProjectCatalogTest.cpp)
     recompstation_add_test(GitHubManagerTests tests/GitHubManagerTest.cpp tests/GitHubManagerTest.h)
     recompstation_add_test(AppUpdaterTests tests/AppUpdaterTest.cpp)
+    recompstation_add_test(WineSupportTests tests/WineSupportTest.cpp)
 
     # QML-side logic tests. Each tst_*.qml file in tests/qml runs as a test case.
     qt_add_executable(ArtworkLayoutTests
