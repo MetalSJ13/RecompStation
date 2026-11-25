@@ -4,10 +4,10 @@ This document is the current development status and implementation order for Rec
 
 ## Status
 
-- **Branches:** `main` holds the v0.1.0 release (tagged and published 2026-11-24) plus the README and screenshot updates that followed, merged with the user's approval. `ui/interface-redesign` is ahead of it with the Super Metroid launch and multi-region matching fixes. `ui/interface-redesign` remains the development branch: feature work happens on short-lived branches from it, is fast-forward merged after the user validates it, and reaches `main` when the user approves.
+- **Branches:** `main` holds the v0.1.0 release (tagged and published 2026-11-24) plus the README and screenshot updates that followed, merged with the user's approval. `ui/interface-redesign` is ahead of it with the Super Metroid launch and multi-region matching fixes, the redrawn controllers, in-app updates and the plain-language Settings text (all merged 2026-11-25). `ui/interface-redesign` remains the development branch: feature work happens on short-lived branches from it, is fast-forward merged after the user validates it, and reaches `main` when the user approves.
 - **Releases:** pushing a tag `v<version>` matching `CMakeLists.txt` drafts a GitHub release with the AppImage, the zip and `SHA256SUMS`; the user reviews and publishes it. Before the next release, raise the version in `CMakeLists.txt` (for example 0.1.1 or 0.2.0).
-- **Build:** C++20 / Qt 6.5+ / QML, 25 CTest suites (`./scripts/build.sh --test`), all passing on 2026-11-25, locally and on GitHub Actions.
-- **Last validated:** Super Metroid plays seamlessly from Play (2026-11-25); launcher versions, update checks and updates, both release files (AppImage and zip) on Debian 13 with XFCE, the Wayland taskbar icon with Qt 6.10, the simpler Recompilation pane (2026-11-24); launch recipes for Luigi's Mansion and Pokémon Snap, saves kept across reinstall, the background ROM check, accessibility (contrast, names, Grid inset), button-mapping capture states, the Open sound in every view, interface sounds, TheGamesDB request savings, the redesigned folder browser, Settings navigation and interface scale, Library sizing in all views, the Game Details ⋯ menu, the second controller taking over, zipped ROMs unpacked from system folders, Game Details without game info, placeholder covers; twelve library systems, the system picker, the simplified first-time setup, Update catalog, TheGamesDB key test, Game Details states; Bomberman 64 and Bomberman Hero (2026-11-24). Earlier: README, license, logo; seamless play (Banjo-Kazooie, Shipwright, Ghostship); the Settings redesign; the LaunchBox progress fix (2026-11-23).
+- **Build:** C++20 / Qt 6.5+ / QML, 26 CTest suites (`./scripts/build.sh --test`, including `AppUpdaterTests` and a QML test that loads every controller drawing), all passing on 2026-11-25 on GitHub Actions.
+- **Last validated:** the redrawn Xbox and PlayStation controllers, the plain-language Settings pages and status lines, and the Updates section on a source build ("This copy can't update itself") (2026-11-25); Super Metroid plays seamlessly from Play (2026-11-25); launcher versions, update checks and updates, both release files (AppImage and zip) on Debian 13 with XFCE, the Wayland taskbar icon with Qt 6.10, the simpler Recompilation pane (2026-11-24); launch recipes for Luigi's Mansion and Pokémon Snap, saves kept across reinstall, the background ROM check, accessibility (contrast, names, Grid inset), button-mapping capture states, the Open sound in every view, interface sounds, TheGamesDB request savings, the redesigned folder browser, Settings navigation and interface scale, Library sizing in all views, the Game Details ⋯ menu, the second controller taking over, zipped ROMs unpacked from system folders, Game Details without game info, placeholder covers; twelve library systems, the system picker, the simplified first-time setup, Update catalog, TheGamesDB key test, Game Details states; Bomberman 64 and Bomberman Hero (2026-11-24). Earlier: README, license, logo; seamless play (Banjo-Kazooie, Shipwright, Ghostship); the Settings redesign; the LaunchBox progress fix (2026-11-23).
 
 ## What is done
 
@@ -27,6 +27,8 @@ This document is the current development status and implementation order for Rec
 
 **Settings** (category rail with live summaries, ◀ value ▶ rows, toggles, preview pane)
 - Appearance (four themes: Electric Blue, Midnight Violet, Aurora, Carbon; Ember retired), Display, Background, Library (including Add games), Metadata, Controller (layout drawing, live button test, symbols, remapping), Application (about, storage use, data and log folders, launchers whose game is gone, reset settings).
+- Written for players: each description says what the setting does and what it keeps, without internals; status lines read as short sentences (2026-11-25).
+- Application › Updates: RecompStation checks GitHub for new versions (daily at startup, or Check now), asks before updating, and updates the AppImage or portable zip in place; source builds link to the website (see roadmap 9).
 
 **Metadata**
 - LaunchBox (offline catalog, first by default, indexed for supported platforms only) and TheGamesDB (key entered in the app and stored in an owner-only file; the environment variable still wins).
@@ -192,7 +194,7 @@ Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once 
 - Release: a portable zip first, an installer later; unsigned builds trigger SmartScreen warnings until code signing is set up.
 - Testing cost: every feature needs checking on both systems.
 
-### 9. Application updates (branch `feature/app-updates`, needs validation)
+### 9. Application updates — built (merged 2026-11-25; the update itself needs a newer release to try)
 Built 2026-11-25 from the approved mockups (Update prompt, Skip, download states, Settings › Application › Updates), replacing the earlier "link only, never install" plan at the user's request:
 - [x] `AppUpdater` compares this version with the latest GitHub release: at most once a day at startup when Check automatically is on (default), or with Check now. A newer version found earlier is offered again at the next start ("Remind me later") without asking GitHub.
 - [x] The prompt appears once per version, when nothing else is in the way (not during setup, a game, a menu or another dialog): what's new (the "## Changes" section of the release notes), size, Update now, Remind me later, Skip <version>; a line under the buttons says what the focused one does, and skipping shows "Skipped 0.2.0 · Undo".
@@ -200,6 +202,7 @@ Built 2026-11-25 from the approved mockups (Update prompt, Skip, download states
 - [x] States: downloading (Hide keeps it going, with a header chip), checking, ready (Restart now / Later), failed (nothing changed; Try again / Download from the website).
 - [x] Settings › Application › Updates: status and Check now, Update… / Restart now, Check automatically, and "You skipped <version> · Show it again".
 - [x] Tests (`AppUpdaterTest`): version comparison, detecting the kind of install, choosing the download, the Changes section, the AppImage swap, staging and swapping the portable folder, refusing a zip that isn't RecompStation, finishing a staged update at startup, and the prompt, remind and skip rules.
+- [x] Settings › Application › Updates checked by the user on a source build: "This copy can't update itself" with Get the latest version and Check now (2026-11-25).
 - [ ] Validate with a real release: publish a newer version (for example 0.1.1), then update both the AppImage and the portable zip from 0.1.0. The first version that can update itself is the one with this feature, so 0.1.0 itself can't update.
 
 ### 10. Documentation and licensing — done
