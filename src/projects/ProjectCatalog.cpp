@@ -418,7 +418,8 @@ QString ProjectCatalog::explainNoCompatibleAsset(const QString &projectId,
         // macOS first: "darwin" contains "win".
         else if (macName.match(name).hasMatch())
             mac = true;
-        else if (windowsName.match(name + QLatin1Char(' ')).hasMatch())
+        // The trailing space lets "win64" end a name; ".exe" must end it.
+        else if (windowsName.match(name + QLatin1Char(' ')).hasMatch() || windowsName.match(name).hasMatch())
             windows = true;
         else if (lower.contains(QStringLiteral("linux")) || lower.endsWith(QStringLiteral(".appimage")))
             (armName.match(name).hasMatch() ? linuxArm : linuxOther) = true;

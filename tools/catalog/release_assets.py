@@ -34,7 +34,7 @@ LINUX = re.compile(r"(linux|\.appimage$)", re.I)
 def kind(name: str) -> str:
     if MAC.search(name):
         return "·"
-    if WINDOWS.search(name + " "):
+    if WINDOWS.search(name + " ") or WINDOWS.search(name):
         return "W"
     if LINUX.search(name):
         return "L"

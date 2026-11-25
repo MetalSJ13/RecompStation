@@ -446,6 +446,8 @@ void ProjectCatalogTest::explainsMissingCompatibleAssets()
     QVERIFY(explain({}).contains(QStringLiteral("no downloads")));
     QVERIFY(explain({"Game-Windows-x64.zip", "Game-macOS.dmg"}).contains(QStringLiteral("Windows and macOS only")));
     QVERIFY(explain({"Game-darwin-universal.zip"}).contains(QStringLiteral("macOS only")));
+    QVERIFY(explain({"Game.exe"}).contains(QStringLiteral("Windows only")));
+    QVERIFY(explain({"Game-Setup.msi"}).contains(QStringLiteral("Windows only")));
     QVERIFY(!explain({"Game-darwin-universal.zip"}).contains(QStringLiteral("Windows")));
     QVERIFY(explain({"Game-Linux-aarch64.tar.gz"}).contains(QStringLiteral("only for ARM")));
     QVERIFY(explain({"Game.flatpak", "Game-Windows.zip"}).contains(QStringLiteral("Flatpak")));
