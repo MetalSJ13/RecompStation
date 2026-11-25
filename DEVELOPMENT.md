@@ -97,7 +97,7 @@ The core is done (see What is done). Remaining:
 
 ### 2. Catalog, platforms and file formats
 Source list: playported.com (about 1,200 entries; it names repositories but not owners, so each owner is found separately). A project is added only when its GitHub releases carry a native Linux build (AppImage, tar.gz or zip) that the installer can use; Flatpak-only projects are skipped until RecompStation can run them (see the Flatpak item below).
-- [x] Super Metroid and Mega Man X Recompiled get the ROM from RecompStation (`--rom <file>`, new `fileargument` recipe for cartridge ROMs) instead of asking for it in their launcher (branch `fix/super-metroid`, needs validation).
+- [x] Super Metroid and Mega Man X Recompiled get the ROM from RecompStation (`--rom <file>`, new `fileargument` recipe for cartridge ROMs) instead of asking for it in their launcher (Super Metroid validated 2026-11-25: plays seamlessly; Mega Man X not yet tested).
 - [x] File names with several regions, such as "Super Metroid (Japan, USA) (En,Ja)", now match covers and game information; the region cleanup only handled one region (branch `fix/super-metroid`, needs validation).
 - [x] Batch 1 (merged; Shadow the Hedgehog confirmed, the rest pending testing): Xbox 360 as a library platform (XDVDFS detection, metadata mappings); PS1: MediEvil, Bloody Roar II; Xbox: Shadow the Hedgehog, Ninja Gaiden Black; Xbox 360: Lost Odyssey, The Simpsons Game. Projects that publish only pre-releases are supported (`includePrereleases`, and an automatic fallback when a project has no full release).
 - [ ] Next batches from playported.com: more PS1 (Castlevania: SotN, Dino Crisis 1/2, Ape Escape), Xbox (Black, Jet Set Radio Future, SoulCalibur II), Xbox 360 (Spider-Man: Edge of Time, Ninja Gaiden II).
