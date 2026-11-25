@@ -344,6 +344,7 @@ bool GitHubManager::parseLatestReleaseResponse(
     parsed.name = root.value(QStringLiteral("name")).toString().trimmed();
     parsed.htmlUrl = root.value(QStringLiteral("html_url")).toString().trimmed();
     parsed.publishedAt = root.value(QStringLiteral("published_at")).toString();
+    parsed.body = root.value(QStringLiteral("body")).toString().left(20000);
 
     if (parsed.tagName.isEmpty() || !isHttpsUrl(parsed.htmlUrl)) {
         if (errorMessage) {

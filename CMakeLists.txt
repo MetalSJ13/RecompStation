@@ -83,6 +83,8 @@ qt_add_library(recompstation_core STATIC
     src/core/RomArchiveUnpacker.cpp
     src/core/ArchiveExtractor.h
     src/core/ArchiveExtractor.cpp
+    src/core/AppUpdater.h
+    src/core/AppUpdater.cpp
     src/core/LibraryScanner.h
     src/core/LibraryScanner.cpp
     src/core/LibraryMetadataMatcher.h
@@ -172,6 +174,7 @@ qt_add_qml_module(RecompStationApp
         qml/ScreenshotViewer.qml
         qml/ValueCycler.qml
         qml/SettingsButton.qml
+        qml/UpdateDialog.qml
         qml/SettingRow.qml
         qml/SettingsGroupLabel.qml
         qml/SettingsNavItem.qml
@@ -290,6 +293,7 @@ if(BUILD_TESTING)
     recompstation_add_test(LibraryMetadataMatcherTests tests/LibraryMetadataMatcherTest.cpp)
     recompstation_add_test(ProjectCatalogTests tests/ProjectCatalogTest.cpp)
     recompstation_add_test(GitHubManagerTests tests/GitHubManagerTest.cpp tests/GitHubManagerTest.h)
+    recompstation_add_test(AppUpdaterTests tests/AppUpdaterTest.cpp)
 
     # QML-side logic tests. Each tst_*.qml file in tests/qml runs as a test case.
     qt_add_executable(ArtworkLayoutTests

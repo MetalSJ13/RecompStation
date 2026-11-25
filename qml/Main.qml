@@ -784,7 +784,7 @@ ApplicationWindow {
         activeInputDevice = inputDevice || "controller"
         // Back has somewhere to go unless the Library is already showing
         // with nothing open over it.
-        if (quitConfirmationVisible || window.activeControllerComboBox() || systemPicker.visible
+        if (quitConfirmationVisible || updateDialog.visible || window.activeControllerComboBox() || systemPicker.visible
                 || newLibraryFolderDialog.visible || libraryFolderDialog.visible
                 || importGamesPopup.visible || firstRunSetup.visible || systemMenuVisible
                 || screenshotViewer.visible || gameDetailsPopup.visible || currentPage !== "Library"
@@ -792,6 +792,10 @@ ApplicationWindow {
             uiSounds.play("back")
         if (quitConfirmationVisible) {
             quitConfirmationVisible = false
+            return
+        }
+        if (updateDialog.visible) {
+            updateDialog.back()
             return
         }
         const openCombo = window.activeControllerComboBox()
@@ -1105,6 +1109,8 @@ ApplicationWindow {
     }
     // The open full-window overlay that controller navigation stays inside.
     function activeModalRoot() {
+        if (updateDialog.visible)
+            return updateDialog.contentItem
         if (newLibraryFolderDialog.visible)
             return newLibraryFolderDialog.contentItem
         if (libraryFolderDialog.visible)
@@ -1199,7 +1205,10 @@ ApplicationWindow {
         case "Controller":
             return controllerManager.connected ? controllerManager.controllerName : "No controller connected"
         case "Application":
-            return "Version " + Qt.application.version + " · Logs"
+            return "Version " + Qt.application.version
+                + (appUpdater.state === "ready" ? " · Restart to update"
+                   : appUpdater.updateAvailable ? " · Update available"
+                   : appUpdater.state === "upToDate" ? " · Up to date" : "")
         }
         return ""
     }
@@ -3405,6 +3414,86 @@ ApplicationWindow {
     // ---- Adding games -------------------------------------------------------
     FirstRunSetup {
         id: firstRunSetup
+    }
+
+    // RecompStation's own updates (appUpdater).
+    UpdateDialog {
+        id: updateDialog
+    }
+    // A new version is offered once it can be shown without getting in the
+    // way: not during first-time setup, a game, a menu or another dialog.
+    Timer {
+        interval: 1500
+        repeat: true
+        running: appUpdater.promptPending && !updateDialog.visible
+        onTriggered: {
+            if (firstRunSetup.visible || window.systemMenuVisible || gameDetailsPopup.visible
+                    || window.activeModalRoot() !== null || uninstallDialog.visible
+                    || Object.keys(window.runningLaunchers).length > 0 || !window.active)
+                return
+            updateDialog.open()
+        }
+    }
+    // A short note after an update choice ("Skipped 0.2.0 · Undo").
+    Rectangle {
+        id: updateNotice
+        property string message: ""
+        property bool canUndo: false
+        z: 90
+        visible: opacity > 0
+        opacity: 0
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 84
+        width: noticeRow.implicitWidth + 36
+        height: 46
+        radius: 12
+        color: theme.elevatedSurface
+        border.color: theme.divider
+        Behavior on opacity {
+            enabled: !settingsManager.reducedMotion
+            NumberAnimation { duration: 160 }
+        }
+        RowLayout {
+            id: noticeRow
+            anchors.centerIn: parent
+            spacing: 18
+            Label {
+                text: updateNotice.message
+                color: theme.textPrimary
+                font.pixelSize: 13 * theme.fontScale
+            }
+            Button {
+                visible: updateNotice.canUndo
+                flat: true
+                text: "Undo"
+                onClicked: {
+                    appUpdater.undoSkip()
+                    updateNotice.opacity = 0
+                }
+                contentItem: Label {
+                    text: parent.text
+                    color: theme.accentHover
+                    font.pixelSize: 13 * theme.fontScale
+                    font.weight: Font.DemiBold
+                }
+                background: Item {}
+            }
+        }
+        Timer {
+            id: updateNoticeTimer
+            interval: 6000
+            onTriggered: updateNotice.opacity = 0
+        }
+        Connections {
+            target: appUpdater
+            function onNotice(message, canUndo) {
+                updateNotice.message = message
+                updateNotice.canUndo = canUndo
+                updateNotice.opacity = 1
+                updateNoticeTimer.restart()
+            }
+        }
     }
 
     Connections {
@@ -6482,7 +6571,7 @@ ApplicationWindow {
                                     Label {
                                         Layout.fillWidth: true
                                         Layout.bottomMargin: 8
-                                        text: "RecompStation itself: version, what it stores, logs, and resetting settings."
+                                        text: "Version and updates, storage, logs, and resetting settings."
                                         color: theme.textSecondary
                                         font.pixelSize: 14 * theme.fontScale
                                         wrapMode: Text.Wrap
@@ -6490,7 +6579,7 @@ ApplicationWindow {
                                     SettingsGroupLabel { text: "ABOUT" }
                                     SettingRow {
                                         title: "RecompStation " + Qt.application.version
-                                        description: "Qt " + qtVersion + " · Linux · " + cpuArchitecture
+                                        description: "A library and launcher for native recompilation ports."
                                         Button {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
@@ -6515,6 +6604,84 @@ ApplicationWindow {
                                             leftPadding: 16
                                             rightPadding: 16
                                             implicitHeight: 38
+                                        }
+                                    }
+
+                                    SettingsGroupLabel { text: "UPDATES" }
+                                    SettingRow {
+                                        id: updateStatusRow
+                                        readonly property string updateState: appUpdater.state
+                                        title: !appUpdater.canInstall && !appUpdater.updateAvailable
+                                                 ? "This copy can't update itself"
+                                            : updateState === "checking" ? "Checking for updates…"
+                                            : updateState === "downloading"
+                                              ? "Downloading " + appUpdater.latestVersion + "…"
+                                            : updateState === "verifying" ? "Checking the download…"
+                                            : updateState === "ready" ? "RecompStation " + appUpdater.latestVersion + " is ready"
+                                            : appUpdater.updateAvailable ? "RecompStation " + appUpdater.latestVersion + " is available"
+                                            : updateState === "checkFailed" ? "Couldn't check for updates"
+                                            : appUpdater.lastChecked.length > 0 ? "You're up to date"
+                                            : "Updates"
+                                        description: !appUpdater.canInstall
+                                                ? "It was built from source. Get new versions from the website."
+                                            : updateState === "checkFailed" ? appUpdater.errorMessage
+                                            : updateState === "failed" ? appUpdater.errorMessage
+                                            : updateState === "ready" ? "Restart RecompStation to start using it."
+                                            : appUpdater.lastChecked.length > 0 ? "Checked " + appUpdater.lastChecked
+                                            : "Not checked yet"
+                                        RowLayout {
+                                            spacing: 8
+                                            SettingsButton {
+                                                visible: appUpdater.canInstall
+                                                    && (appUpdater.updateAvailable || updateStatusRow.updateState === "ready")
+                                                primary: true
+                                                text: updateStatusRow.updateState === "ready" ? "Restart now"
+                                                    : updateStatusRow.updateState === "downloading"
+                                                      || updateStatusRow.updateState === "verifying" ? "Show"
+                                                    : "Update…"
+                                                onClicked: {
+                                                    if (updateStatusRow.updateState === "ready")
+                                                        appUpdater.restartNow()
+                                                    else
+                                                        updateDialog.open()
+                                                }
+                                            }
+                                            SettingsButton {
+                                                visible: !appUpdater.canInstall
+                                                primary: appUpdater.updateAvailable
+                                                text: "Get the latest version"
+                                                onClicked: Qt.openUrlExternally(appUpdater.releaseUrl.length > 0
+                                                    ? appUpdater.releaseUrl
+                                                    : "https://github.com/MetalSJ13/RecompStation/releases/latest")
+                                            }
+                                            SettingsButton {
+                                                text: "Check now"
+                                                enabled: updateStatusRow.updateState !== "checking"
+                                                    && updateStatusRow.updateState !== "downloading"
+                                                    && updateStatusRow.updateState !== "verifying"
+                                                    && updateStatusRow.updateState !== "ready"
+                                                onClicked: appUpdater.checkNow()
+                                            }
+                                        }
+                                    }
+                                    SettingRow {
+                                        title: "Check automatically"
+                                        description: "Once a day when RecompStation starts. It always asks before updating."
+                                        ToggleSwitch {
+                                            activeFocusOnTab: true
+                                            focusPolicy: Qt.StrongFocus
+                                            checked: appUpdater.checkAutomatically
+                                            onToggled: appUpdater.checkAutomatically = checked
+                                            Accessible.name: "Check for updates automatically"
+                                        }
+                                    }
+                                    SettingRow {
+                                        visible: appUpdater.skippedVersion.length > 0
+                                        title: "You skipped " + appUpdater.skippedVersion
+                                        description: "Newer versions are still offered."
+                                        SettingsButton {
+                                            text: "Show it again"
+                                            onClicked: appUpdater.clearSkippedVersion()
                                         }
                                     }
 
@@ -8787,6 +8954,38 @@ ApplicationWindow {
 
                 RowLayout {
                     spacing: 22
+
+                    // Update progress while the dialog is hidden; opens it.
+                    Button {
+                        id: headerUpdateChip
+                        readonly property string updateState: appUpdater.state
+                        visible: (updateState === "downloading" || updateState === "verifying"
+                                  || updateState === "ready") && !updateDialog.visible
+                        Accessible.name: text
+                        text: updateState === "ready" ? "Restart to update"
+                            : updateState === "verifying" ? "Checking update…"
+                            : "Update " + appUpdater.latestVersion + " · "
+                              + (appUpdater.bytesTotal > 0
+                                 ? Math.floor(100 * appUpdater.bytesReceived / appUpdater.bytesTotal) : 0) + "%"
+                        Layout.preferredHeight: 32
+                        leftPadding: 14
+                        rightPadding: 14
+                        onClicked: updateDialog.open()
+                        background: Rectangle {
+                            radius: height / 2
+                            color: headerUpdateChip.updateState === "ready" ? theme.accent
+                                : Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.22)
+                            border.color: theme.textPrimary
+                            border.width: headerUpdateChip.activeFocus ? 2 : 0
+                        }
+                        contentItem: Label {
+                            text: headerUpdateChip.text
+                            color: headerUpdateChip.updateState === "ready" ? theme.accentText : theme.textPrimary
+                            font.pixelSize: 12 * theme.fontScale
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
 
                     Button {
                         id: headerLibraryNavigationButton

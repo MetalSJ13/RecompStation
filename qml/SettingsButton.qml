@@ -9,6 +9,8 @@ Button {
 
     property string glyph: ""
     property bool compact: false
+    // The main action of a dialog or row: filled with the accent.
+    property bool primary: false
 
     activeFocusOnTab: true
     focusPolicy: Qt.StrongFocus
@@ -19,9 +21,10 @@ Button {
 
     background: Rectangle {
         radius: 9
-        color: control.activeFocus ? theme.elevatedSurface
+        color: control.primary ? (control.hovered || control.activeFocus ? theme.accentHover : theme.accent)
+            : control.activeFocus ? theme.elevatedSurface
             : control.hovered ? theme.controlHover : theme.surface
-        border.color: control.activeFocus ? theme.accent : theme.divider
+        border.color: control.activeFocus ? (control.primary ? theme.textPrimary : theme.accent) : theme.divider
         border.width: control.activeFocus ? 2 : 1
         opacity: control.enabled ? 1 : 0.5
     }
@@ -39,7 +42,7 @@ Button {
         Label {
             anchors.verticalCenter: parent.verticalCenter
             text: control.text
-            color: theme.textPrimary
+            color: control.primary ? theme.accentText : theme.textPrimary
             font.pixelSize: 13 * theme.fontScale
             font.weight: Font.DemiBold
         }

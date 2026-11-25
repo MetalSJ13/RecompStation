@@ -23,6 +23,7 @@
 #include "core/PlatformManager.h"
 #include "core/SettingsManager.h"
 #include "core/LauncherDownloadManager.h"
+#include "core/AppUpdater.h"
 #include "core/GameLaunchManager.h"
 #include "core/LibraryScanner.h"
 #include "core/ArtworkManager.h"
@@ -158,7 +159,10 @@ InterfaceScaleStartup prepareInterfaceScale()
     return scale;
 }
 
-void relaunchApplication(const QString &settingsSection, bool automaticScaleRelaunch)
+// program: what to start instead of this program (an updated portable
+// folder, whose files have just been swapped in under the same path).
+void relaunchApplication(const QString &settingsSection, bool automaticScaleRelaunch,
+                         const QString &program = QString())
 {
     QStringList arguments = QCoreApplication::arguments().mid(1);
     arguments.erase(std::remove_if(arguments.begin(), arguments.end(),
@@ -172,9 +176,10 @@ void relaunchApplication(const QString &settingsSection, bool automaticScaleRela
     // Inside an AppImage the program runs from a temporary mount that goes
     // away when this process exits, so restart the AppImage file itself.
     const QString appImage = qEnvironmentVariable("APPIMAGE");
-    const QString program = !appImage.isEmpty() && QFileInfo(appImage).isExecutable()
+    const QString target = !program.isEmpty() ? program
+        : !appImage.isEmpty() && QFileInfo(appImage).isExecutable()
         ? appImage : QCoreApplication::applicationFilePath();
-    const bool started = QProcess::startDetached(program, arguments);
+    const bool started = QProcess::startDetached(target, arguments);
     qunsetenv("RECOMPSTATION_SCALE_RELAUNCHED");
     if (!started)
         qWarning() << "Could not restart RecompStation.";
@@ -228,6 +233,28 @@ int main(int argc, char *argv[])
 
     QElapsedTimer sessionTimer;
     sessionTimer.start();
+
+    // RecompStation's own updates. A portable-zip update staged before an
+    // unexpected exit is put in place now, and this start hands over to it;
+    // otherwise what a finished update left behind is removed.
+    AppUpdater appUpdater(platformManager.dataDirectory() + "/downloads/app-update");
+    const QString portableProgram = appUpdater.installKind() == QStringLiteral("zip")
+        ? QDir(QCoreApplication::applicationDirPath()).canonicalPath() + QStringLiteral("/RecompStationApp")
+        : QString();
+    if (appUpdater.finishAtStartup()) {
+        relaunchApplication(QString(), false, portableProgram);
+        return 0;
+    }
+    QObject::connect(&appUpdater, &AppUpdater::restartRequested, &app,
+                     [&app, &appUpdater, portableProgram]() {
+        qCInfo(lcApplication) << "Restarting into the updated version.";
+        appUpdater.applyStagedUpdate();
+        relaunchApplication(QString(), false, portableProgram);
+        app.quit();
+    });
+    // "Later" on a portable update: it is put in place when RecompStation quits.
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, &appUpdater,
+                     [&appUpdater]() { appUpdater.applyStagedUpdate(); });
 
     SettingsManager settingsManager(platformManager.settingsFilePath());
     if (settingsManager.detailedLogging())
@@ -286,9 +313,11 @@ int main(int argc, char *argv[])
             startupSettingsSection = argument.section(QLatin1Char('='), 1);
     }
     QObject::connect(&settingsManager, &SettingsManager::applicationRestartRequested,
-                     &app, [&app](const QString &section) {
+                     &app, [&app, &appUpdater, portableProgram](const QString &section) {
         qCInfo(lcApplication) << "Restart requested from Settings:" << section;
-        relaunchApplication(section, false);
+        // A staged portable update goes in first, so the restart opens it.
+        const bool updated = appUpdater.applyStagedUpdate();
+        relaunchApplication(section, false, updated ? portableProgram : QString());
         app.quit();
     });
     DatabaseManager databaseManager;
@@ -420,6 +449,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("metadataMatcher", &metadataMatcher);
     engine.rootContext()->setContextProperty("githubManager", &githubManager);
     engine.rootContext()->setContextProperty("launcherDownloadManager", &launcherDownloadManager);
+    engine.rootContext()->setContextProperty("appUpdater", &appUpdater);
     engine.rootContext()->setContextProperty("gameLaunchManager", &gameLaunchManager);
     engine.rootContext()->setContextProperty("controllerManager", &controllerManager);
     engine.rootContext()->setContextProperty("uiSounds", &uiSounds);
@@ -480,5 +510,6 @@ int main(int argc, char *argv[])
         qCInfo(lcApplication) << "Library setup is required before the first scan.";
     else
         qCInfo(lcApplication) << "Startup library scan disabled in Settings.";
+    appUpdater.checkAtStartup();
     return app.exec();
 }

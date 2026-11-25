@@ -36,6 +36,8 @@ struct GitHubRelease
     QString name;
     QString htmlUrl;
     QString publishedAt;
+    // The release description as written on GitHub (Markdown), capped.
+    QString body;
     QList<GitHubReleaseAsset> assets;
 };
 

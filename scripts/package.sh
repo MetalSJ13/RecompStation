@@ -182,7 +182,10 @@ cp "$PROJECT_ROOT/packaging/$APP_ID.desktop" "$PORTABLE/share/applications/"
 cp "$PROJECT_ROOT/packaging/RecompStation" "$PORTABLE/RecompStation"
 cp "$PROJECT_ROOT/packaging/README-portable.txt" "$PORTABLE/README.txt"
 cp -a "$NOTICES/." "$PORTABLE/"
-(cd "$BUILD_DIR" && zip -qry "$DIST_DIR/$ZIP_NAME.zip" "$ZIP_NAME")
+# Links are stored as the files they point to: the in-app updater (like
+# the launcher installer) refuses links in archives.
+(cd "$BUILD_DIR" && zip -qr "$DIST_DIR/$ZIP_NAME.zip" "$ZIP_NAME")
+echo "Links in the portable folder: $(find "$PORTABLE" -type l | wc -l)"
 
 # 5. AppImage.
 cp -a "$NOTICES/." "$APPDIR/"
