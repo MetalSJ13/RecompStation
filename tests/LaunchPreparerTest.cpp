@@ -590,7 +590,7 @@ void LaunchPreparerTest::selectFileChoosesTheGameWithoutStartingIt()
             QVariantMap{{QStringLiteral("folder"), QStringLiteral("userdata")}, {QStringLiteral("appName"), QStringLiteral("test")},
                         {QStringLiteral("file"), QStringLiteral("library.txt")},
                         {QStringLiteral("format"), QStringLiteral("listline")}}}}});
-    const QString disc = QDir(root.path()).filePath(QStringLiteral("library/Test \"Disc\".iso"));
+    const QString disc = QDir(root.path()).filePath(QStringLiteral("library/Test Disc.iso"));
     QVERIFY(writeFile(disc, QByteArray("disc")));
     // The launcher's own settings stay as they were, except the disc line.
     const QString settingsFolder = QDir(opts.dataHome).filePath(QStringLiteral("test"));
@@ -607,8 +607,7 @@ void LaunchPreparerTest::selectFileChoosesTheGameWithoutStartingIt()
     QCOMPARE(readFile(QDir(install).filePath(QStringLiteral("rom.cfg"))), (disc + QLatin1Char('\n')).toUtf8());
     // An AppImage's portable marker isn't seen by the launcher: the SDL folder is used.
     QCOMPARE(readFile(QDir(settingsFolder).filePath(QStringLiteral("launcher.cfg"))),
-             QByteArray("vsync 1\ndisc \"") + QString(disc).replace(QStringLiteral("\""), QStringLiteral("\\\"")).toUtf8()
-                 + QByteArray("\"\nfullscreen 0\n"));
+             QByteArray("vsync 1\ndisc \"") + disc.toUtf8() + QByteArray("\"\nfullscreen 0\n"));
     QCOMPARE(readFile(QDir(settingsFolder).filePath(QStringLiteral("library.txt"))),
              QByteArray("/other.iso\r\n") + disc.toUtf8() + QByteArray("\n"));
     QCOMPARE(plan.steps.size(), 1);
@@ -649,7 +648,9 @@ void LaunchPreparerTest::selectFileWritesWindowsAndWinePaths()
         {QStringLiteral("method"), QStringLiteral("selectfile")},
         {QStringLiteral("selectFiles"), QVariantList{
             QVariantMap{{QStringLiteral("folder"), QStringLiteral("userdata")}, {QStringLiteral("appName"), QStringLiteral("test")},
-                        {QStringLiteral("file"), QStringLiteral("last.txt")}, {QStringLiteral("format"), QStringLiteral("whole")}}}}});
+                        {QStringLiteral("file"), QStringLiteral("last.txt")}, {QStringLiteral("format"), QStringLiteral("whole")}},
+            QVariantMap{{QStringLiteral("folder"), QStringLiteral("launcher")}, {QStringLiteral("file"), QStringLiteral("launcher.cfg")},
+                        {QStringLiteral("format"), QStringLiteral("quotedkey")}, {QStringLiteral("key"), QStringLiteral("disc")}}}}});
     const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test.iso"));
     QVERIFY(writeFile(game, QByteArray("disc")));
     LaunchPreparer preparer;
@@ -662,6 +663,10 @@ void LaunchPreparerTest::selectFileWritesWindowsAndWinePaths()
     preparer.prepare(project, game, install, opts);
     const QString wine = QStringLiteral("Z:") + QString(game).replace(QLatin1Char('/'), QLatin1Char('\\'));
     QCOMPARE(readFile(last), wine.toUtf8());
+    // Backslashes escaped the way the launcher reads them back (std::quoted).
+    QCOMPARE(readFile(QDir(install).filePath(QStringLiteral("launcher.cfg"))),
+             QByteArray("disc \"") + QString(wine).replace(QStringLiteral("\\"), QStringLiteral("\\\\")).toUtf8()
+                 + QByteArray("\"\n"));
     project.insert(QStringLiteral("launch"), QVariantMap{
         {QStringLiteral("method"), QStringLiteral("fileargument")},
         {QStringLiteral("arguments"), QStringList{QStringLiteral("{gamePath}")}}});
