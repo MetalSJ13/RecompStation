@@ -741,6 +741,11 @@ void LibraryMetadataMatcher::finishCurrent(bool matched, const QString &reason)
         ++m_unresolvedCount;
 
     ++m_completedCount;
+    // Find game info on one game: say how it ended (a game already matched
+    // with LaunchBox keeps its match, which otherwise leaves no trace).
+    if (m_singleGameRun && !reason.isEmpty())
+        qCInfo(lcMetadata).noquote() << "Find game info for"
+            << m_currentGame.value(QStringLiteral("title")).toString() << "finished:" << reason;
     m_currentGame.clear();
     emit progressChanged();
     if (!reason.isEmpty())
