@@ -147,7 +147,7 @@ Popup {
         if (!visible || switchAnimating || !window.selectedGame)
             return
 
-        const games = gameGrid.model || []
+        const games = window.libraryGames
         let currentIndex = -1
         for (let i = 0; i < games.length; ++i) {
             if (Number(games[i].id) === Number(window.selectedGame.id)) {
@@ -645,7 +645,7 @@ Popup {
         readonly property real verticalSlack: Math.max(0,
             (height - 76 - 70) - (detailsHero.height + 32 + gameInfoScroll.contentHeight))
         readonly property var gamePosition: {
-            const games = gameGrid.model || []
+            const games = window.libraryGames
             if (!window.selectedGame)
                 return { index: -1, count: games.length }
             for (let i = 0; i < games.length; ++i) {

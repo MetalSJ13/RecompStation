@@ -1964,6 +1964,29 @@ ApplicationWindow {
     }
     onLibraryGamesChanged: syncLibraryOrder()
 
+    // Game Details shows a copy of its game; bring in a new cover, screenshots
+    // or details when the Library has them (Find game info, downloads).
+    onAllLibraryGamesChanged: {
+        const shown = window.selectedGame
+        if (!shown)
+            return
+        const game = window.allLibraryGames.find(entry => Number(entry.id) === Number(shown.id))
+        if (!game)
+            return
+        const fields = ["title", "platform", "path", "artworkPath", "metadataTitle",
+                        "metadataOverview", "metadataReleaseDate", "metadataRating"]
+        const changed = fields.some(field => (shown[field] || "") !== (game[field] || ""))
+            || JSON.stringify(shown.screenshots || []) !== JSON.stringify(game.screenshots || [])
+        if (!changed)
+            return
+        window.selectedGame = {
+            id: game.id, title: game.title, platform: game.platform, path: game.path,
+            artworkPath: game.artworkPath, screenshots: game.screenshots,
+            metadataTitle: game.metadataTitle, metadataOverview: game.metadataOverview,
+            metadataReleaseDate: game.metadataReleaseDate, metadataRating: game.metadataRating
+        }
+    }
+
     // Game counts per platform for the toolbar pills, from one library query.
     readonly property var libraryPlatformCounts: {
         const counts = { "All Platforms": 0 }
@@ -2675,6 +2698,16 @@ ApplicationWindow {
             window.scanMessage = downloaded > 0
                 ? "Screenshots: " + downloaded + " downloaded." + (failed > 0 ? " " + failed + " couldn't be downloaded." : "")
                 : "Screenshots are up to date."
+        }
+    }
+
+    // LaunchBox covers and screenshots are saved after matching has ended
+    // (Find game info included), so the Library looks again when they are.
+    Connections {
+        target: launchBoxArtworkManager
+        function onRefreshFinished(downloaded, skipped, failed) {
+            if (downloaded > 0)
+                window.requestLibraryRefresh()
         }
     }
 
