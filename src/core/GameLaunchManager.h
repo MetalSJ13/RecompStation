@@ -58,6 +58,9 @@ private:
     // A Windows launcher on Linux, started through Wine (not on Windows).
     bool runsThroughWine(const QString &projectId) const;
     QString launcherFolder(const QString &projectId) const;
+    // Through Wine, N64Recomp and HarbourMasters launchers can be given the
+    // game file as on Windows: their folders inside Wine's C: drive.
+    bool wineCanPrepare(const QString &projectId, LaunchPreparer::Options *options) const;
     // The line under Play for a Windows launcher, and why it can't start.
     QVariantMap wineReadiness(const QString &gamePath) const;
 

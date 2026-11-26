@@ -718,6 +718,7 @@ Popup {
                 themeTokens: theme
                 reducedMotion: settingsManager.reducedMotion
                 frameMode: "platform"
+                decodeWidth: 1024
                 frameInset: 0
                 showViewportBackground: false
             }

@@ -46,6 +46,10 @@ Item {
     property bool hovered: false
     property real focusRingGap: 4
     property real focusRingWidth: 3
+    // Covers are decoded at most this wide (in pixels), not at their full
+    // size: LaunchBox covers are often 1,500 px or more, and decoding dozens
+    // of them at full size made the Library stutter.
+    property int decodeWidth: 640
 
     // Outputs
     readonly property bool ready: cover.status === Image.Ready
@@ -80,7 +84,9 @@ Item {
         Image {
             id: backdropImage
             anchors.fill: parent
-            source: root.source
+            // A blurred backdrop needs no detail.
+            source: root.useBlurredBackdrop ? root.source : ""
+            sourceSize.width: 96
             fillMode: Image.PreserveAspectCrop
             horizontalAlignment: Image.AlignHCenter
             verticalAlignment: Image.AlignVCenter
@@ -94,6 +100,7 @@ Item {
             source: backdropImage
             blurEnabled: true
             blur: 0.8
+            blurMax: 16
             autoPaddingEnabled: false
             visible: root.useBlurredBackdrop
         }
@@ -131,6 +138,7 @@ Item {
             id: cover
             anchors.fill: parent
             source: root.source
+            sourceSize.width: root.decodeWidth
             fillMode: root.frameMode === "platform"
                 ? Image.PreserveAspectCrop : Image.PreserveAspectFit
             asynchronous: true

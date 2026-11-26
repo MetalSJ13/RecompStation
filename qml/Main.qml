@@ -47,6 +47,13 @@ ApplicationWindow {
         property string chosenAt: "{}"
     }
 
+    // The Library's system filter, kept between starts (the player's choice).
+    Settings {
+        id: libraryFilterSettings
+        category: "LibraryFilter"
+        property string platform: "All Platforms"
+    }
+
     Settings {
         id: libraryVisualSettings
         category: "LibraryVisuals"
@@ -1490,7 +1497,7 @@ ApplicationWindow {
         }
         return null
     }
-    property string selectedPlatform: "All Platforms"
+    property string selectedPlatform: libraryFilterSettings.platform || "All Platforms"
     property string librarySearchText: ""
     property var selectedGame: null
     property int libraryRevision: 0
@@ -1955,8 +1962,10 @@ ApplicationWindow {
     }
 
     // A filtered system whose last game was removed falls back to All.
+    // (Not while the Library is still empty at startup, so a saved filter
+    // survives until the games have loaded.)
     onLibrarySystemsChanged: {
-        if (window.selectedPlatform !== "All Platforms"
+        if (window.selectedPlatform !== "All Platforms" && window.librarySystems.length > 0
                 && window.librarySystems.indexOf(window.selectedPlatform) < 0)
             window.selectLibraryPlatform("All Platforms", "none")
     }
@@ -1977,6 +1986,7 @@ ApplicationWindow {
         if (sound !== "none")
             uiSounds.play(sound || "switch")
         window.selectedPlatform = platform
+        libraryFilterSettings.platform = platform
         gameGrid.currentIndex = 0
         Qt.callLater(function() {
             gameGrid.positionViewAtBeginning()
@@ -4570,6 +4580,9 @@ ApplicationWindow {
                                             // Same edge fade as the Grid: smoothstep on the
                                             // card center's distance from the viewport edges.
                                             readonly property real contentTop: gridSection.y + y
+                                            readonly property bool nearView: sectionedGrid.visible
+                                                && contentTop + height > sectionedGrid.contentY - sectionedGrid.height
+                                                && contentTop < sectionedGrid.contentY + 2 * sectionedGrid.height
                                             readonly property real scrollEdgeDistance: Math.min(
                                                 contentTop + height / 2 - sectionedGrid.contentY,
                                                 sectionedGrid.contentY + sectionedGrid.height
@@ -4666,7 +4679,11 @@ ApplicationWindow {
                                                 scale: sectionCard.revealScale
                                                 title: sectionCard.game ? sectionCard.game.title : ""
                                                 platform: sectionCard.game ? sectionCard.game.platform : ""
-                                                artworkPath: sectionCard.game ? sectionCard.game.artworkPath : ""
+                                                // Covers load only for cards on screen or close to
+                                                // it, and only while this view shows: every game has a
+                                                // card here, and decoding them all made the Library stutter.
+                                                artworkPath: sectionCard.game && sectionCard.nearView
+                                                    ? sectionCard.game.artworkPath : ""
                                                 metadataTitle: sectionCard.game && sectionCard.game.metadataTitle
                                                     ? sectionCard.game.metadataTitle : ""
                                                 artworkHeight: gridSection.modelData.artworkHeight
@@ -5789,7 +5806,9 @@ ApplicationWindow {
 
                                     GameArtwork {
                                         anchors.fill: parent
-                                        source: carouselCard.game ? carouselCard.game.artworkPath : ""
+                                        // Only cards near the window, and only while the carousel shows.
+                                        source: carouselCard.game && carouselCard.visible && consoleView.visible
+                                            ? carouselCard.game.artworkPath : ""
                                         platform: carouselCard.game ? carouselCard.game.platform : ""
                                         highlighted: carouselCard.isCurrent || carouselCardMouse.containsMouse
                                         focused: carouselCard.isCurrent
