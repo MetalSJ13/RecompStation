@@ -1,4 +1,6 @@
 #include "DatabaseManager.h"
+
+#include <QHash>
 #include "../core/Logging.h"
 
 #include <QDir>
@@ -349,6 +351,23 @@ QVariantList DatabaseManager::games(const QString &platform) const
     }
 
     if (!query.exec()) return result;
+
+    // Every game's screenshots in one query, not one query per game: the
+    // Library reloads this list whenever a game changes.
+    QHash<int, QVariantList> screenshots;
+    {
+        QSqlQuery shots(m_database);
+        if (shots.exec(QStringLiteral(
+                "SELECT game_id, local_path FROM game_screenshots ORDER BY game_id, id"))) {
+            while (shots.next()) {
+                const QString shotPath = shots.value(1).toString();
+                if (QFileInfo::exists(shotPath))
+                    screenshots[shots.value(0).toInt()].append(
+                        QUrl::fromLocalFile(shotPath).toString());
+            }
+        }
+    }
+
     while (query.next()) {
         QVariantMap game;
         const int id = query.value(0).toInt();
@@ -375,7 +394,7 @@ QVariantList DatabaseManager::games(const QString &platform) const
         game.insert("artworkPath", artworkPath.isEmpty()
                     ? QString() : QUrl::fromLocalFile(artworkPath).toString());
         game.insert("metadataArtworkUrl", query.value(12).toString());
-        game.insert("screenshots", gameScreenshots(id));
+        game.insert("screenshots", screenshots.value(id));
         result.append(game);
     }
     return result;

@@ -1,5 +1,7 @@
 #include "SettingsManager.h"
 
+#include <QtGui/qtguiglobal.h>
+
 #include <QSettings>
 #include "Logging.h"
 
@@ -50,6 +52,7 @@ SettingsManager::SettingsManager(const QString &settingsFilePath, QObject *paren
         QStringLiteral("display/interfaceScale"), QStringLiteral("auto")).toString();
     m_interfaceScale = isSupportedInterfaceScale(storedScale)
         ? storedScale : QStringLiteral("auto");
+    m_graphicsRenderer = storedGraphicsRenderer(m_settingsFilePath);
     m_scanOnStartup = settings.value(QStringLiteral("library/scanOnStartup"), true).toBool();
     m_automaticUpdateChecksEnabled = settings.value(
         QStringLiteral("application/automaticUpdateChecksEnabled"), false).toBool();
@@ -773,6 +776,51 @@ QString SettingsManager::storedInterfaceScale(const QString &settingsFilePath)
     const QString value = settings.value(
         QStringLiteral("display/interfaceScale"), QStringLiteral("auto")).toString();
     return isSupportedInterfaceScale(value) ? value : QStringLiteral("auto");
+}
+
+QString SettingsManager::graphicsRenderer() const
+{
+    return m_graphicsRenderer;
+}
+
+void SettingsManager::setGraphicsRenderer(const QString &renderer)
+{
+    if (!graphicsRenderers().contains(renderer)) {
+        qCWarning(lcSettings) << "Rejected unsupported renderer:" << renderer;
+        return;
+    }
+    if (m_graphicsRenderer == renderer)
+        return;
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("display/renderer"), renderer);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        qCCritical(lcSettings) << "Failed to persist renderer:" << renderer;
+        return;
+    }
+    m_graphicsRenderer = renderer;
+    emit graphicsRendererChanged();
+    qCInfo(lcSettings) << "Saved renderer:" << renderer;
+}
+
+QStringList SettingsManager::graphicsRenderers()
+{
+    QStringList renderers{QStringLiteral("auto"), QStringLiteral("opengl")};
+#if QT_CONFIG(vulkan)
+    renderers.append(QStringLiteral("vulkan"));
+#endif
+#ifdef Q_OS_WIN
+    renderers.append({QStringLiteral("direct3d11"), QStringLiteral("direct3d12")});
+#endif
+    return renderers;
+}
+
+QString SettingsManager::storedGraphicsRenderer(const QString &settingsFilePath)
+{
+    QSettings settings(settingsFilePath, QSettings::IniFormat);
+    const QString value = settings.value(
+        QStringLiteral("display/renderer"), QStringLiteral("auto")).toString();
+    return graphicsRenderers().contains(value) ? value : QStringLiteral("auto");
 }
 
 bool SettingsManager::resetPreferences()

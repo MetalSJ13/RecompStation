@@ -93,6 +93,11 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
       m_launchBoxCatalog(launchBoxCatalog),
       m_settings(settings)
 {
+    // A catalog update replaces the file: let go of it first.
+    if (m_launchBoxCatalog) {
+        connect(m_launchBoxCatalog, &LaunchBoxCatalogManager::busyChanged,
+                this, [this]() { m_catalog.reset(); });
+    }
     if (!m_metadata)
         return;
 
@@ -245,6 +250,8 @@ LibraryMetadataMatcher::LibraryMetadataMatcher(DatabaseManager *database,
         finishCurrent(false, QStringLiteral("TheGamesDB unavailable: %1").arg(message));
     });
 }
+
+LibraryMetadataMatcher::~LibraryMetadataMatcher() = default;
 
 bool LibraryMetadataMatcher::isBusy() const { return m_busy; }
 int LibraryMetadataMatcher::completedCount() const { return m_completedCount; }
@@ -464,16 +471,21 @@ LibraryMetadataMatcher::attemptLaunchBoxMatch(QString *message)
         return LaunchBoxOutcome::Matched;
     }
     if (!launchBoxAvailable()) {
+        m_catalog.reset();   // let an update replace the file
         *message = QStringLiteral("LaunchBox is disabled, not installed, or updating.");
         return LaunchBoxOutcome::Unavailable;
     }
 
-    LaunchBoxCatalogDatabase catalog;
-    if (!catalog.openForReading(m_launchBoxCatalog->catalogPath())) {
-        qCWarning(lcMetadata) << "Could not open LaunchBox catalog:" << catalog.lastError();
-        *message = QStringLiteral("LaunchBox catalog could not be opened.");
-        return LaunchBoxOutcome::Failed;
+    if (!m_catalog || !m_catalog->isOpen()) {
+        m_catalog = std::make_unique<LaunchBoxCatalogDatabase>();
+        if (!m_catalog->openForReading(m_launchBoxCatalog->catalogPath())) {
+            qCWarning(lcMetadata) << "Could not open LaunchBox catalog:" << m_catalog->lastError();
+            m_catalog.reset();
+            *message = QStringLiteral("LaunchBox catalog could not be opened.");
+            return LaunchBoxOutcome::Failed;
+        }
     }
+    LaunchBoxCatalogDatabase &catalog = *m_catalog;
 
     const QString localPath = m_currentGame.value(QStringLiteral("path")).toString();
     const QString fileName = localPath.isEmpty() ? title : QFileInfo(localPath).fileName();
@@ -592,6 +604,7 @@ void LibraryMetadataMatcher::processNext()
         return;
 
     if (m_queue.isEmpty()) {
+        m_catalog.reset();
         setBusy(false);
         m_forceArtworkDownload = false;
         setStatus(m_theGamesDbUnavailable
@@ -721,7 +734,14 @@ void LibraryMetadataMatcher::finishCurrent(bool matched, const QString &reason)
     if (!reason.isEmpty())
         setStatus(QStringLiteral("%1 (%2/%3)")
                       .arg(reason).arg(m_completedCount).arg(m_totalCount));
-    processNext();
+    // The next game after a pass through the event loop, so the window keeps
+    // drawing and answering input between games: LaunchBox matches finish
+    // without waiting on the network, and matching the whole library in one
+    // go froze the interface on first start.
+    if (m_queue.isEmpty())
+        processNext();
+    else
+        QTimer::singleShot(0, this, &LibraryMetadataMatcher::processNext);
 }
 
 void LibraryMetadataMatcher::setBusy(bool busy)

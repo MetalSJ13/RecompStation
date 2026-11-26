@@ -110,10 +110,12 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context,
 
 void applyFilterRules()
 {
-    // Qt's own debug output is never wanted here; ours only when detailed.
+    // Qt's own debug output is never wanted here, except the few lines on how
+    // the window is drawn (graphics API, GPU, render loop): the first thing
+    // to know when the interface stutters. Ours only when detailed.
     QLoggingCategory::setFilterRules(g_detailed
-        ? QStringLiteral("*.debug=false\nrecomp.*.debug=true\nqml.debug=true\njs.debug=true")
-        : QStringLiteral("*.debug=false"));
+        ? QStringLiteral("*.debug=false\nqt.scenegraph.general.debug=true\nrecomp.*.debug=true\nqml.debug=true\njs.debug=true")
+        : QStringLiteral("*.debug=false\nqt.scenegraph.general.debug=true"));
 }
 }
 

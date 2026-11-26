@@ -5,7 +5,10 @@
 #include <QVariantList>
 #include <QVariantMap>
 
+#include <memory>
+
 class ArtworkManager;
+class LaunchBoxCatalogDatabase;
 class DatabaseManager;
 class MetadataManager;
 class LaunchBoxCatalogManager;
@@ -26,6 +29,7 @@ public:
                                     LaunchBoxCatalogManager *launchBoxCatalog,
                                     SettingsManager *settings,
                                     QObject *parent = nullptr);
+    ~LibraryMetadataMatcher() override;
 
     bool isBusy() const;
     int completedCount() const;
@@ -70,6 +74,9 @@ private:
     LaunchBoxCatalogManager *m_launchBoxCatalog = nullptr;
     SettingsManager *m_settings = nullptr;
     QQueue<QVariantMap> m_queue;
+    // The LaunchBox catalog, kept open for a whole pass rather than opened
+    // again for every game; closed when the pass ends.
+    std::unique_ptr<LaunchBoxCatalogDatabase> m_catalog;
     QVariantMap m_currentGame;
     int m_completedCount = 0;
     int m_totalCount = 0;

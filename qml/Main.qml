@@ -69,6 +69,7 @@ ApplicationWindow {
         property string wallpaperFit: "fill"
         property int wallpaperDim: 15
         Component.onCompleted: {
+        syncLibraryOrder()
             if (wavePalette !== "migrated") {
                 waveColor = wavePalette === "violet" ? "violet"
                     : wavePalette === "emerald" ? "aurora" : "ocean"
@@ -107,7 +108,7 @@ ApplicationWindow {
             const libraryActive = currentPage === "Library" && !gameDetailsPopup.visible
             const carouselPlays = libraryActive
                 && (settingsManager.libraryView === "carousel" || settingsManager.libraryView === "list")
-                && window.libraryGameInstalled((gameGrid.model || [])[Math.max(0, gameGrid.currentIndex)])
+                && window.libraryGameInstalled((window.libraryGames || [])[Math.max(0, gameGrid.currentIndex)])
             const items = [
                 { icon: "qrc:/icons/dpad.svg", key: "", label: "Navigate", color: "#B8C7D9", round: false },
                 { icon: "", key: selectButton, token: selectToken, label: carouselPlays ? "Play" : "Select", color: selectColor,
@@ -144,7 +145,7 @@ ApplicationWindow {
                 { icon: "", key: "← ↑ ↓ →", label: "Navigate", color: "#A9B7CA", round: false },
                 { icon: "", key: "Enter", label: (settingsManager.libraryView === "carousel"
                     || settingsManager.libraryView === "list")
-                    && window.libraryGameInstalled((gameGrid.model || [])[Math.max(0, gameGrid.currentIndex)])
+                    && window.libraryGameInstalled((window.libraryGames || [])[Math.max(0, gameGrid.currentIndex)])
                     ? "Play" : "Select",
                   color: "#A9B7CA", round: false },
                 { icon: "", key: "I", label: "Details", color: "#A9B7CA", round: false },
@@ -778,7 +779,7 @@ ApplicationWindow {
         if (currentPage === "Library" && gameGrid.count > 0) {
             const index = gameGrid.currentIndex < 0 ? 0 : gameGrid.currentIndex
             if (settingsManager.libraryView === "shelves") {
-                window.openLibraryGameDetails(gameGrid.model[index])
+                window.openLibraryGameDetails(window.libraryGames[index])
                 return
             }
             if (settingsManager.libraryView === "list") {
@@ -786,7 +787,7 @@ ApplicationWindow {
             } else if (settingsManager.libraryView === "carousel") {
                 window.libraryPrimaryAction(index)
             } else if (window.sectionedLibraryGrid) {
-                window.openLibraryGameDetails(gameGrid.model[index])
+                window.openLibraryGameDetails(window.libraryGames[index])
             } else {
                 const tile = gameGrid.itemAtIndex(index)
                 if (tile && tile.openDetails)
@@ -1213,6 +1214,21 @@ ApplicationWindow {
     readonly property bool interfaceScaleRestartPending: !interfaceScaleInfo.external
         && window.interfaceScalePercentFor(settingsManager.interfaceScale) !== interfaceScaleInfo.applied
 
+    function rendererLabel(renderer) {
+        const names = { "auto": "Automatic", "opengl": "OpenGL", "vulkan": "Vulkan",
+                        "direct3d11": "Direct3D 11", "direct3d12": "Direct3D 12" }
+        return names[renderer] || renderer
+    }
+    function graphicsApiName(api) {
+        switch (api) {
+        case GraphicsInfo.OpenGL: return "OpenGL"
+        case GraphicsInfo.Vulkan: return "Vulkan"
+        case GraphicsInfo.Direct3D11: return "Direct3D 11"
+        case GraphicsInfo.Direct3D12: return "Direct3D 12"
+        case GraphicsInfo.Software: return "the software renderer (no GPU)"
+        default: return "your GPU"
+        }
+    }
     function interfaceScalePercentFor(setting) {
         return setting === "auto" ? interfaceScaleInfo.auto : parseInt(setting)
     }
@@ -1360,7 +1376,7 @@ ApplicationWindow {
     // What a screen reader hears in the Library: the selected game and its
     // system, updated as the selection moves.
     readonly property string focusedGameAnnouncement: {
-        const games = gameGrid.model || []
+        const games = window.libraryGames || []
         const game = games[gameGrid.currentIndex]
         if (!game)
             return "Library, no games"
@@ -1912,11 +1928,46 @@ ApplicationWindow {
     readonly property bool sectionedLibraryGrid:
         settingsManager.libraryView === "grid" && selectedPlatform === "All Platforms"
 
+    // The games the Library shows (system filter and search applied), in
+    // order. Every view reads its cards' data from here by index.
+    // Every game in the library, read once per Library change; the counts,
+    // the shown games and the orphaned launchers all come from it.
+    readonly property var allLibraryGames: {
+        window.libraryRevision
+        return databaseManager.games("")
+    }
+    readonly property var libraryGames: {
+        const games = selectedPlatform === "All Platforms"
+            ? window.allLibraryGames
+            : window.allLibraryGames.filter(game => game.platform === selectedPlatform)
+        const query = window.librarySearchText.trim().toLowerCase()
+        return query.length === 0
+            ? games
+            // Match the ROM file name and the metadata title shown
+            // on Grid cards.
+            : games.filter(game => game.title.toLowerCase().includes(query)
+                || (game.metadataTitle || "").toLowerCase().includes(query))
+    }
+    // The views' models: { id, platform } per game. Replaced only when the
+    // games themselves change (added, removed, reordered, filtered), not when
+    // a game's cover or details do, because replacing a model remakes every
+    // card, which is what made the Library stutter while covers came in.
+    property var libraryOrder: []
+    property string libraryOrderKey: ""
+    function syncLibraryOrder() {
+        const games = window.libraryGames
+        const key = games.map(game => game.id + "\t" + game.platform).join("\n")
+        if (key === window.libraryOrderKey)
+            return
+        window.libraryOrderKey = key
+        window.libraryOrder = games.map(game => ({ id: game.id, platform: game.platform }))
+    }
+    onLibraryGamesChanged: syncLibraryOrder()
+
     // Game counts per platform for the toolbar pills, from one library query.
     readonly property var libraryPlatformCounts: {
-        window.libraryRevision
         const counts = { "All Platforms": 0 }
-        for (const game of databaseManager.games("")) {
+        for (const game of window.allLibraryGames) {
             counts["All Platforms"]++
             counts[game.platform] = (counts[game.platform] || 0) + 1
         }
@@ -1927,16 +1978,14 @@ ApplicationWindow {
     // Game Details page to uninstall them from, so Settings > Application
     // lists them.
     readonly property var orphanedLaunchers: {
-        window.libraryRevision
-        window.launcherRevision
         const used = {}
-        for (const game of databaseManager.games("")) {
+        for (const game of window.allLibraryGames) {
             const projects = window.gameProjects(
                 game.metadataTitle ? game.metadataTitle : game.title, game.platform)
             for (const project of projects)
                 used[project.id] = true
         }
-        return launcherDownloadManager.installedLaunchers().filter(function(launcher) {
+        return window.installedLaunchersList.filter(function(launcher) {
             return used[launcher.projectId] !== true
         })
     }
@@ -2129,7 +2178,7 @@ ApplicationWindow {
     // Carousel cover): play
     // when the game's recompilation is installed, otherwise open Game Details.
     function libraryPrimaryAction(index) {
-        const games = gameGrid.model || []
+        const games = window.libraryGames || []
         const game = games[Math.max(0, Math.min(games.length - 1, index))]
         if (!game)
             return
@@ -2144,7 +2193,7 @@ ApplicationWindow {
 
     // Y / I: open Game Details for the selected game in any Library view.
     function openSelectedGameDetails() {
-        const games = gameGrid.model || []
+        const games = window.libraryGames || []
         if (games.length === 0)
             return
         window.openLibraryGameDetails(games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))])
@@ -2156,7 +2205,7 @@ ApplicationWindow {
         Qt.callLater(function() { librarySearchField.forceActiveFocus() })
     }
 
-    // Open Game Details for an entry of the Library model (gameGrid.model).
+    // Open Game Details for an entry of the Library model (window.libraryGames).
     function openLibraryGameDetails(game) {
         if (!game)
             return
@@ -2178,10 +2227,14 @@ ApplicationWindow {
     // Project ids with a managed launcher installation. installedLaunchers()
     // reads the launcher directories from disk, so Library cards share this
     // single lookup instead of querying once per card.
-    readonly property var installedLauncherProjectIds: {
+    // Installed launchers, read from disk once per launcher change.
+    readonly property var installedLaunchersList: {
         launcherRevision
+        return launcherDownloadManager.installedLaunchers()
+    }
+    readonly property var installedLauncherProjectIds: {
         const ids = {}
-        for (const entry of launcherDownloadManager.installedLaunchers())
+        for (const entry of window.installedLaunchersList)
             ids[entry.projectId] = true
         return ids
     }
@@ -4228,31 +4281,25 @@ ApplicationWindow {
                             // Window-level shortcuts own directional movement so
                             // keyboard input cannot be processed twice by the view.
                             keyNavigationEnabled: false
-                            model: {
-                                window.libraryRevision
-                                const games = databaseManager.games(
-                                    selectedPlatform === "All Platforms" ? "" : selectedPlatform)
-                                const query = window.librarySearchText.trim().toLowerCase()
-                                return query.length === 0
-                                    ? games
-                                    // Match the ROM file name and the metadata title shown
-                                    // on Grid cards.
-                                    : games.filter(game => game.title.toLowerCase().includes(query)
-                                        || (game.metadataTitle || "").toLowerCase().includes(query))
-                            }
+                            // One entry per game, replaced only when games are added,
+                            // removed or reordered; the cards read their data from
+                            // window.libraryGames, so a new cover or match updates
+                            // them in place instead of remaking every card.
+                            model: window.libraryOrder
                             delegate: Item {
                                 id: gameTile
-                                required property string title
-                                required property string platform
-                                required property string path
-                                required property string artworkPath
-                                required property string metadataTitle
-                                required property string metadataOverview
-                                required property string metadataReleaseDate
-                                required property string metadataRating
-                                required property var screenshots
-                                required property int id
                                 required property int index
+                                readonly property var game: window.libraryGames[index] || ({})
+                                readonly property string title: game.title || ""
+                                readonly property string platform: game.platform || ""
+                                readonly property string path: game.path || ""
+                                readonly property string artworkPath: game.artworkPath || ""
+                                readonly property string metadataTitle: game.metadataTitle || ""
+                                readonly property string metadataOverview: game.metadataOverview || ""
+                                readonly property string metadataReleaseDate: game.metadataReleaseDate || ""
+                                readonly property string metadataRating: game.metadataRating || ""
+                                readonly property var screenshots: game.screenshots || []
+                                readonly property int id: game.id || 0
                                 property int gameId: id
                                 // Begin the initial Grid presentation hidden so
                                 // delegates cannot flash fully visible before the
@@ -4491,7 +4538,7 @@ ApplicationWindow {
                             readonly property real cellWidth: gameGrid.gridCellWidth
                             readonly property real headerHeight: Math.ceil(44 * theme.fontScale)
                             readonly property var layout: LibraryGridLayout.layoutSections(
-                                LibraryGridLayout.buildSections(gameGrid.model || []), {
+                                LibraryGridLayout.buildSections(window.libraryOrder), {
                                     columns: columns,
                                     cardWidth: cardWidth,
                                     gap: 14,
@@ -4517,9 +4564,9 @@ ApplicationWindow {
                                 contentY, Math.max(0, contentHeight - height)))
 
                             Keys.onReturnPressed: window.openLibraryGameDetails(
-                                gameGrid.model[Math.max(0, gameGrid.currentIndex)])
+                                window.libraryGames[Math.max(0, gameGrid.currentIndex)])
                             Keys.onEnterPressed: window.openLibraryGameDetails(
-                                gameGrid.model[Math.max(0, gameGrid.currentIndex)])
+                                window.libraryGames[Math.max(0, gameGrid.currentIndex)])
 
                             WheelHandler {
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
@@ -4581,8 +4628,8 @@ ApplicationWindow {
                                             required property int index
                                             readonly property int gameIndex:
                                                 gridSection.modelData.start + index
-                                            readonly property var game: gameGrid.model
-                                                ? gameGrid.model[gameIndex] : null
+                                            readonly property var game: window.libraryGames
+                                                ? window.libraryGames[gameIndex] : null
                                             readonly property int row:
                                                 Math.floor(index / sectionedGrid.columns)
                                             readonly property int column:
@@ -4639,6 +4686,10 @@ ApplicationWindow {
                                                 return isFinite(delay) ? Math.max(0, Math.round(delay)) : 0
                                             }
                                             opacity: revealOpacity * scrollEdgeOpacity
+                                            // Cards far off screen aren't drawn at all: this
+                                            // grid has a card for every game, and the window is
+                                            // redrawn every frame while the waves move.
+                                            visible: nearView
                                             transform: Translate { y: sectionCard.revealOffsetY }
 
                                             Timer {
@@ -4755,7 +4806,7 @@ ApplicationWindow {
                             }
 
                             readonly property var sections:
-                                LibraryGridLayout.buildSections(gameGrid.model || [])
+                                LibraryGridLayout.buildSections(window.libraryOrder)
                             // Last focused card per shelf: { platform: localIndex }.
                             property var shelfMemory: ({})
                             readonly property real cardHeight:
@@ -4768,7 +4819,7 @@ ApplicationWindow {
                                 headerHeight + cardHeight + cardPadding * 2
                             readonly property real rowSpacing: 10
                             readonly property var currentGame: {
-                                const games = gameGrid.model || []
+                                const games = window.libraryGames || []
                                 if (games.length === 0)
                                     return null
                                 return games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))]
@@ -5136,8 +5187,8 @@ ApplicationWindow {
                                                     id: shelfCard
                                                     required property int index
                                                     readonly property int gameIndex: shelfRow.modelData.start + index
-                                                    readonly property var game: gameGrid.model
-                                                        ? gameGrid.model[gameIndex] : null
+                                                    readonly property var game: window.libraryGames
+                                                        ? window.libraryGames[gameIndex] : null
                                                     readonly property bool isCurrent: gameGrid.currentIndex === gameIndex
                                                     width: Math.round(shelvesView.cardHeight * shelfRow.cardRatio)
                                                     height: shelfList.height
@@ -5246,7 +5297,7 @@ ApplicationWindow {
                             leftMargin: 18
                             rightMargin: 18
                             spacing: 9
-                            model: settingsManager.libraryView === "list" ? gameGrid.model : []
+                            model: settingsManager.libraryView === "list" ? window.libraryOrder : []
                             currentIndex: -1
                             Component.onCompleted: {
                                 currentIndex = gameGrid.currentIndex >= 0
@@ -5273,17 +5324,18 @@ ApplicationWindow {
                             keyNavigationEnabled: false
                             delegate: Item {
                                 id: listTile
-                                required property string title
-                                required property string platform
-                                required property string artworkPath
-                                required property string metadataTitle
-                                required property string metadataOverview
-                                required property string metadataReleaseDate
-                                required property string metadataRating
-                                required property var screenshots
-                                required property string path
-                                required property int id
                                 required property int index
+                                readonly property var game: window.libraryGames[index] || ({})
+                                readonly property string title: game.title || ""
+                                readonly property string platform: game.platform || ""
+                                readonly property string path: game.path || ""
+                                readonly property string artworkPath: game.artworkPath || ""
+                                readonly property string metadataTitle: game.metadataTitle || ""
+                                readonly property string metadataOverview: game.metadataOverview || ""
+                                readonly property string metadataReleaseDate: game.metadataReleaseDate || ""
+                                readonly property string metadataRating: game.metadataRating || ""
+                                readonly property var screenshots: game.screenshots || []
+                                readonly property int id: game.id || 0
                                 width: gameList.width - gameList.leftMargin - gameList.rightMargin
                                 readonly property int rowHeight: Math.round(thumbHeight
                                     + (settingsManager.libraryListDensity === "compact" ? 20 : 28))
@@ -5448,7 +5500,7 @@ ApplicationWindow {
                             clip: true
 
                             readonly property var game: {
-                                const games = gameGrid.model || []
+                                const games = window.libraryGames || []
                                 return games.length > 0
                                     ? games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))] : null
                             }
@@ -5725,7 +5777,7 @@ ApplicationWindow {
 
                             property int currentIndex: -1
                             readonly property int count: games.length
-                            readonly property var games: gameGrid.model || []
+                            readonly property var games: window.libraryGames || []
                             readonly property var currentGame: count > 0
                                 ? games[Math.max(0, Math.min(count - 1, currentIndex))] : null
 
@@ -6427,6 +6479,56 @@ ApplicationWindow {
                                                 settingsManager.setPreferredPresentationSize(size)
                                                 if (size !== "system")
                                                     window.applyPreferredPresentationSize()
+                                            }
+                                        }
+                                    }
+                                    SettingsGroupLabel { text: "GRAPHICS" }
+                                    SettingRow {
+                                        title: "Renderer"
+                                        description: rendererInUse === "environment"
+                                            ? "Set outside RecompStation (QSG_RHI_BACKEND or QT_QUICK_BACKEND), so it's left as is."
+                                            : "How the interface is drawn. Now using " + window.graphicsApiName(GraphicsInfo.api)
+                                                + ". If the Library stutters, try another one. If one doesn't work, the next start goes back to Automatic."
+                                        ValueCycler {
+                                            id: rendererSelector
+                                            preferredWidth: 250
+                                            enabled: rendererInUse !== "environment"
+                                            options: settingsManager.graphicsRendererOptions().map(function(value) {
+                                                return { label: window.rendererLabel(value), value: value }
+                                            })
+                                            value: settingsManager.graphicsRenderer
+                                            onPicked: (value) => settingsManager.graphicsRenderer = value
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        visible: rendererInUse !== "environment"
+                                            && settingsManager.graphicsRenderer !== rendererInUse
+                                        implicitHeight: rendererRestartRow.implicitHeight + 24
+                                        radius: 12
+                                        color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.12)
+                                        border.color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.45)
+                                        RowLayout {
+                                            id: rendererRestartRow
+                                            anchors.fill: parent
+                                            anchors.margins: 12
+                                            anchors.leftMargin: 18
+                                            spacing: 14
+                                            Label {
+                                                Layout.fillWidth: true
+                                                text: "Restart RecompStation to draw with "
+                                                    + window.rendererLabel(settingsManager.graphicsRenderer)
+                                                    + ". It reopens on this page."
+                                                color: theme.textPrimary
+                                                font.pixelSize: 13 * theme.fontScale
+                                                wrapMode: Text.Wrap
+                                            }
+                                            Button {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                text: "Restart now"
+                                                highlighted: true
+                                                onClicked: settingsManager.requestApplicationRestart("Display")
                                             }
                                         }
                                     }
@@ -8366,7 +8468,7 @@ ApplicationWindow {
                             clip: true
 
                             readonly property var previewGame: {
-                                const games = gameGrid.model || []
+                                const games = window.libraryGames || []
                                 return games.length > 0 ? games[Math.max(0, Math.min(games.length - 1, gameGrid.currentIndex))] : null
                             }
                             readonly property var previewColors: theme.paletteFor(window.previewThemeId)

@@ -17,6 +17,10 @@
 #include <QOffscreenSurface>
 #include <QQuickWindow>
 #include <QSGRendererInterface>
+#include <QtGui/qtguiglobal.h>
+#if QT_CONFIG(vulkan)
+#include <QVulkanInstance>
+#endif
 
 #include "core/Logging.h"
 #include "core/ControllerManager.h"
@@ -153,6 +157,57 @@ QString probeOpenGL()
     return name.contains(QStringLiteral("llvmpipe")) || name.contains(QStringLiteral("softpipe"))
             || name.contains(QStringLiteral("swrast"))
         ? QStringLiteral("software") : QStringLiteral("hardware");
+}
+
+// Applies Settings > Display > Renderer before any window exists and
+// returns the choice in effect ("auto" when the saved one can't be used).
+// A start with a chosen renderer that never drew a frame (it hung or
+// crashed) is remembered, and the next start goes back to Automatic.
+QString applyGraphicsRenderer(const QString &settingsFilePath, const QString &openGL)
+{
+    if (qEnvironmentVariableIsSet("QT_QUICK_BACKEND") || qEnvironmentVariableIsSet("QSG_RHI_BACKEND"))
+        return QStringLiteral("environment");
+    QSettings settings(settingsFilePath, QSettings::IniFormat);
+    QString renderer = SettingsManager::storedGraphicsRenderer(settingsFilePath);
+    if (renderer != QStringLiteral("auto")
+            && settings.value(QStringLiteral("display/rendererStartPending"), false).toBool()) {
+        qCWarning(lcUI).noquote() << "The last start with the" << renderer
+                                  << "renderer never drew the window; using Automatic instead.";
+        settings.setValue(QStringLiteral("display/renderer"), QStringLiteral("auto"));
+        renderer = QStringLiteral("auto");
+    }
+    if (renderer == QStringLiteral("vulkan")) {
+#if QT_CONFIG(vulkan)
+        QVulkanInstance probe;
+        if (!probe.create()) {
+            qCWarning(lcUI) << "Vulkan isn't available on this system; using Automatic instead.";
+            renderer = QStringLiteral("auto");
+        }
+#else
+        renderer = QStringLiteral("auto");
+#endif
+    }
+    if (renderer == QStringLiteral("opengl"))
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
+    else if (renderer == QStringLiteral("vulkan"))
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::Vulkan);
+#ifdef Q_OS_WIN
+    else if (renderer == QStringLiteral("direct3d11"))
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::Direct3D11);
+    else if (renderer == QStringLiteral("direct3d12"))
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::Direct3D12);
+#endif
+    else if (openGL == QStringLiteral("none")) {
+        qCWarning(lcUI) << "No usable OpenGL; drawing with Qt's software renderer"
+                           " (the live background is replaced by a gradient).";
+        QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
+    }
+    settings.setValue(QStringLiteral("display/rendererStartPending"),
+                      renderer != QStringLiteral("auto"));
+    settings.sync();
+    if (renderer != QStringLiteral("auto"))
+        qCInfo(lcUI).noquote() << "Renderer chosen in Settings:" << renderer;
+    return renderer;
 }
 
 // Interface scale is applied with QT_SCALE_FACTOR, which Qt reads while
@@ -490,19 +545,20 @@ int main(int argc, char *argv[])
                                             interfaceScaleInfo, interfaceScale.setting));
 
     const QString openGL = probeOpenGL();
-    if (openGL == QStringLiteral("none")) {
-        qCWarning(lcUI) << "No usable OpenGL; drawing with Qt's software renderer"
-                           " (the live background is replaced by a gradient).";
-        QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
-    } else if (openGL == QStringLiteral("software")) {
+    if (openGL == QStringLiteral("software"))
         qCInfo(lcUI) << "OpenGL is drawn by the CPU; the live background runs at reduced quality.";
-    }
+    const QString rendererInUse = applyGraphicsRenderer(platformManager.settingsFilePath(), openGL);
+    if (rendererInUse == QStringLiteral("auto") && settingsManager.graphicsRenderer() != rendererInUse)
+        settingsManager.setGraphicsRenderer(rendererInUse);   // the saved one couldn't be used
 
     // Before the engine, so it outlives the interface that reads it.
     WineSupport wineSupport;
     wineSupport.refresh();
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("softwareGraphics", openGL != QStringLiteral("hardware"));
+    // The Renderer setting this start uses ("environment" when QSG_RHI_BACKEND
+    // or QT_QUICK_BACKEND decides), to tell when a restart is needed.
+    engine.rootContext()->setContextProperty("rendererInUse", rendererInUse);
     gameLaunchManager.setWineSupport(&wineSupport);
     engine.rootContext()->setContextProperty("wineSupport", &wineSupport);
     engine.rootContext()->setContextProperty("runningUnderWine", runningUnderWine());
@@ -559,6 +615,8 @@ int main(int argc, char *argv[])
             case QSGRendererInterface::OpenGL: api = QStringLiteral("OpenGL"); break;
             case QSGRendererInterface::Vulkan: api = QStringLiteral("Vulkan"); break;
             case QSGRendererInterface::Software: api = QStringLiteral("software"); break;
+            case QSGRendererInterface::Direct3D11: api = QStringLiteral("Direct3D 11"); break;
+            case QSGRendererInterface::Direct3D12: api = QStringLiteral("Direct3D 12"); break;
             default: api = QStringLiteral("other"); break;
             }
             QString driver;
@@ -570,6 +628,13 @@ int main(int argc, char *argv[])
             }
             qCInfo(lcUI).noquote() << "Renderer:" << api + driver;
         }, Qt::DirectConnection);
+        // The first frame drawn: the chosen renderer works, so the next
+        // start keeps it.
+        QObject::connect(window, &QQuickWindow::frameSwapped, window,
+                         [settingsPath = platformManager.settingsFilePath()]() {
+            QSettings settings(settingsPath, QSettings::IniFormat);
+            settings.remove(QStringLiteral("display/rendererStartPending"));
+        }, static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
     }
     // Reconcile after QML is loaded so the library refresh and metadata-scrape
     // connections receive the scan-completed signal.

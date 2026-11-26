@@ -26,6 +26,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(QString restoreDisplayMode READ restoreDisplayMode WRITE setRestoreDisplayMode NOTIFY restoreDisplayModeChanged)
     Q_PROPERTY(QString fontSize READ fontSize WRITE setFontSize NOTIFY fontSizeChanged)
     Q_PROPERTY(QString interfaceScale READ interfaceScale WRITE setInterfaceScale NOTIFY interfaceScaleChanged)
+    Q_PROPERTY(QString graphicsRenderer READ graphicsRenderer WRITE setGraphicsRenderer NOTIFY graphicsRendererChanged)
     Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
     // Interface sounds (Settings > Appearance > Sounds): on by default, 0-100.
     Q_PROPERTY(bool soundsEnabled READ soundsEnabled WRITE setSoundsEnabled NOTIFY soundsEnabledChanged)
@@ -116,6 +117,15 @@ public:
     // Reads the saved setting straight from the settings file. Used by main()
     // before QGuiApplication exists.
     static QString storedInterfaceScale(const QString &settingsFilePath);
+    // How the interface is drawn: "auto" (Qt's choice: OpenGL on Linux,
+    // Direct3D 11 on Windows), "opengl", "vulkan", and on Windows also
+    // "direct3d11" and "direct3d12". Applied when RecompStation starts.
+    QString graphicsRenderer() const;
+    Q_INVOKABLE void setGraphicsRenderer(const QString &renderer);
+    // The choices this build and system offer, in display order.
+    static QStringList graphicsRenderers();
+    Q_INVOKABLE QStringList graphicsRendererOptions() const { return graphicsRenderers(); }
+    static QString storedGraphicsRenderer(const QString &settingsFilePath);
     // Asks main() to restart RecompStation and reopen Settings at a section.
     Q_INVOKABLE void requestApplicationRestart(const QString &settingsSection);
     // Restores appearance, display, library-view, controller and metadata
@@ -183,6 +193,7 @@ signals:
     void restoreDisplayModeChanged();
     void fontSizeChanged();
     void interfaceScaleChanged();
+    void graphicsRendererChanged();
     void applicationRestartRequested(const QString &settingsSection);
     void reducedMotionChanged();
     void soundsEnabledChanged();
@@ -202,6 +213,7 @@ private:
     QString m_restoreDisplayMode = QStringLiteral("windowed");
     QString m_fontSize = QStringLiteral("medium");
     QString m_interfaceScale = QStringLiteral("auto");
+    QString m_graphicsRenderer = QStringLiteral("auto");
     QString m_metadataProviderOrder = QStringLiteral("launchbox");
     bool m_reducedMotion = false;
     bool m_soundsEnabled = true;

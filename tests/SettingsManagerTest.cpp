@@ -64,6 +64,7 @@ private slots:
     void defaultsToAutomaticInterfaceScale();
     void persistsInterfaceScale();
     void rejectsUnsupportedInterfaceScale();
+    void persistsRendererAndRejectsUnknownOnes();
     void autoInterfaceScaleFollowsScreenHeight();
     void defaultsToLaunchBoxFirstProviderOrder();
     void persistsProviderOrderAndRejectsUnknownValues();
@@ -869,6 +870,25 @@ void SettingsManagerTest::persistsInterfaceScale()
     QCOMPARE(changed.count(), 1);
     QCOMPARE(SettingsManager(settingsPath).interfaceScale(), QStringLiteral("150"));
     QCOMPARE(SettingsManager::storedInterfaceScale(settingsPath), QStringLiteral("150"));
+}
+
+void SettingsManagerTest::persistsRendererAndRejectsUnknownOnes()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString settingsPath = QDir(temporaryDirectory.path()).filePath("config/settings.ini");
+    QVERIFY(QDir().mkpath(QFileInfo(settingsPath).absolutePath()));
+
+    SettingsManager manager(settingsPath);
+    QCOMPARE(manager.graphicsRenderer(), QStringLiteral("auto"));
+    QVERIFY(SettingsManager::graphicsRenderers().contains(QStringLiteral("opengl")));
+    QSignalSpy changed(&manager, &SettingsManager::graphicsRendererChanged);
+    manager.setGraphicsRenderer(QStringLiteral("metal"));
+    QCOMPARE(changed.count(), 0);
+    manager.setGraphicsRenderer(QStringLiteral("opengl"));
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(SettingsManager(settingsPath).graphicsRenderer(), QStringLiteral("opengl"));
+    QCOMPARE(SettingsManager::storedGraphicsRenderer(settingsPath), QStringLiteral("opengl"));
 }
 
 void SettingsManagerTest::rejectsUnsupportedInterfaceScale()
