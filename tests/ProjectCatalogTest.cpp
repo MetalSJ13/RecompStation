@@ -24,6 +24,7 @@ private slots:
     void filtersReleaseAssetsForCurrentArchitecture();
     void parsesLaunchRecipes();
     void bundledLaunchRecipesAreComplete();
+    void noGameHasMoreThanTwoProjects();
     void detectsSystemFromKernelType();
     void parsesBuildsPerSystem();
     void acceptsOnlyPortableWindowsBuilds();
@@ -582,6 +583,26 @@ void ProjectCatalogTest::parsesLaunchRecipes()
     const QVariantMap discRecipe = projects.first().toMap().value("launch").toMap();
     QCOMPARE(discRecipe.value("fileExtensions").toStringList(),
              (QStringList{QStringLiteral("iso"), QStringLiteral("rvz")}));
+}
+
+void ProjectCatalogTest::noGameHasMoreThanTwoProjects()
+{
+    // Game Details offers at most two launchers for one game (decided
+    // 2026-11-26), so the catalog never lists a third project for a title.
+    ProjectCatalog catalog;
+    QVERIFY2(catalog.isLoaded(), qPrintable(catalog.errorString()));
+    QHash<QString, QStringList> projectsByTitle;
+    for (const QVariant &entry : catalog.projects()) {
+        const QVariantMap project = entry.toMap();
+        QSet<QString> titles;
+        for (const QString &title : project.value("gameTitles").toStringList())
+            titles.insert(title.toCaseFolded().simplified());
+        for (const QString &title : std::as_const(titles))
+            projectsByTitle[title].append(project.value("id").toString());
+    }
+    for (auto it = projectsByTitle.cbegin(); it != projectsByTitle.cend(); ++it)
+        QVERIFY2(it.value().size() <= 2,
+                 qPrintable(it.key() + QStringLiteral(": ") + it.value().join(QStringLiteral(", "))));
 }
 
 void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
