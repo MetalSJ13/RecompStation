@@ -111,6 +111,9 @@ private slots:
 
     void detectsTheKindOfInstall()
     {
+#ifdef Q_OS_WIN
+        QSKIP("Linux installs (AppImage, portable folder); the Windows version reports \"windows\".");
+#endif
         QTemporaryDir root;
         QVERIFY(root.isValid());
         const QString appImage = QDir(root.path()).filePath(QStringLiteral("RecompStation-0.1.0-x86_64.AppImage"));
@@ -164,6 +167,9 @@ private slots:
 
     void replacesTheAppImageKeepingABackup()
     {
+#ifdef Q_OS_WIN
+        QSKIP("AppImage updates are Linux only.");
+#endif
         QTemporaryDir root;
         QVERIFY(root.isValid());
         const QString current = QDir(root.path()).filePath(QStringLiteral("RecompStation.AppImage"));
@@ -187,6 +193,9 @@ private slots:
 
     void stagesAndSwapsThePortableFolder()
     {
+#ifdef Q_OS_WIN
+        QSKIP("The Linux portable folder; updating the Windows version is not built yet.");
+#endif
         QTemporaryDir root;
         QVERIFY(root.isValid());
         const QString portable = QDir(root.path()).filePath(QStringLiteral("RecompStation-0.1.0-linux-x86_64"));
@@ -240,6 +249,9 @@ private slots:
 
     void finishesAStagedUpdateAtStartup()
     {
+#ifdef Q_OS_WIN
+        QSKIP("The Linux portable folder; updating the Windows version is not built yet.");
+#endif
         QTemporaryDir root;
         QVERIFY(root.isValid());
         const QString portable = QDir(root.path()).filePath(QStringLiteral("RecompStation"));

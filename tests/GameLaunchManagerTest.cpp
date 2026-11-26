@@ -20,10 +20,14 @@ private slots:
     void launchesManagedExecutableAndTracksProcess();
     void launchesShellScriptRelativeToInstallationDirectory();
     void startsWindowsLauncherThroughWine();
+    void startsWindowsLauncherDirectly();
 };
 
 void GameLaunchManagerTest::launchesManagedExecutableAndTracksProcess()
 {
+#ifdef Q_OS_WIN
+    QSKIP("Shell-script launchers are Linux only; see startsWindowsLauncherDirectly.");
+#endif
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -83,6 +87,9 @@ void GameLaunchManagerTest::launchesManagedExecutableAndTracksProcess()
 
 void GameLaunchManagerTest::launchesShellScriptRelativeToInstallationDirectory()
 {
+#ifdef Q_OS_WIN
+    QSKIP("Shell-script launchers are Linux only.");
+#endif
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -140,6 +147,9 @@ void GameLaunchManagerTest::launchesShellScriptRelativeToInstallationDirectory()
 // folder, and only with the Wine switch on and Wine found.
 void GameLaunchManagerTest::startsWindowsLauncherThroughWine()
 {
+#ifdef Q_OS_WIN
+    QSKIP("Wine is part of the Linux version only.");
+#endif
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
     PlatformManager platformManager(temporaryDirectory.path());
@@ -195,6 +205,47 @@ void GameLaunchManagerTest::startsWindowsLauncherThroughWine()
     QVERIFY(lines.size() >= 2);
     QCOMPARE(QString::fromUtf8(lines.at(0)), QFileInfo(installDirectory + "/bin").canonicalFilePath());
     QVERIFY(QString::fromUtf8(lines.at(1)).endsWith(QStringLiteral("/bin/Game.exe")));
+}
+
+
+// The Windows version starts a Windows launcher as it is, from its own
+// folder, with nothing prepared. (A small Windows program stands in for it.)
+void GameLaunchManagerTest::startsWindowsLauncherDirectly()
+{
+#ifndef Q_OS_WIN
+    QSKIP("Runs on Windows only.");
+#else
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("test-windows-native");
+    const QString installDirectory = QDir(platformManager.dataDirectory()).filePath("launchers/" + projectId);
+    QVERIFY(QDir().mkpath(installDirectory + QStringLiteral("/bin")));
+    auto write = [](const QString &path, const QByteArray &data) {
+        QFile file(path);
+        return file.open(QIODevice::WriteOnly) && file.write(data) == data.size();
+    };
+    QVERIFY(write(installDirectory + "/.recompstation-managed", "RecompStation managed launcher installation v1\n"));
+    QVERIFY(write(installDirectory + "/.recompstation-install", "bin/Game.exe\n"));
+    QVERIFY(write(installDirectory + "/.recompstation-release", R"({"tag":"v1","build":"windows-x86_64"})"));
+    const QString system = qEnvironmentVariable("SystemRoot", QStringLiteral("C:/Windows"));
+    QVERIFY(QFile::copy(QDir(system).filePath(QStringLiteral("System32/whoami.exe")),
+                        installDirectory + QStringLiteral("/bin/Game.exe")));
+
+    LauncherDownloadManager downloadManager(&platformManager);
+    GameLaunchManager manager(&downloadManager);
+    QSignalSpy startedSpy(&manager, &GameLaunchManager::launchStarted);
+    QSignalSpy finishedSpy(&manager, &GameLaunchManager::processFinished);
+    QSignalSpy failedSpy(&manager, &GameLaunchManager::launchFailed);
+
+    QVERIFY(manager.launchProject(projectId));
+    QTRY_COMPARE_WITH_TIMEOUT(startedSpy.count(), 1, 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(finishedSpy.count(), 1, 5000);
+    QCOMPARE(finishedSpy.first().at(1).toInt(), 0);
+    QCOMPARE(failedSpy.count(), 0);
+#endif
 }
 
 QTEST_GUILESS_MAIN(GameLaunchManagerTest)

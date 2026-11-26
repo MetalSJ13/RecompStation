@@ -198,7 +198,7 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
 
         const QString outputPath = QDir(extractionRoot).filePath(normalizedPath);
         const QString absoluteOutput = QDir::cleanPath(QFileInfo(outputPath).absoluteFilePath());
-        if (!absoluteOutput.startsWith(extractionRoot + QDir::separator())) {
+        if (!absoluteOutput.startsWith(extractionRoot + QLatin1Char('/'))) {
             failure = QStringLiteral("An archive path resolves outside the extraction directory.");
             break;
         }

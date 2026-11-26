@@ -641,7 +641,7 @@ int LauncherDownloadManager::installDownloadedAsset(
         const QFileInfo installedExecutable(executablePath);
         const QString canonicalExecutable = installedExecutable.canonicalFilePath();
         if (!installedExecutable.isFile() || installedExecutable.isSymLink()
-            || !canonicalExecutable.startsWith(destination + QDir::separator())) {
+            || !canonicalExecutable.startsWith(destination + QLatin1Char('/'))) {
             QDir(destination).removeRecursively();
             emit installationFailed(requestId, QStringLiteral("The installed launcher executable failed its final validation."));
             return;
@@ -738,7 +738,7 @@ QVariantList LauncherDownloadManager::installedLaunchers() const
         const QFileInfo executableInfo(executablePath);
         const QString canonicalExecutable = executableInfo.canonicalFilePath();
         if (!executableInfo.isFile() || executableInfo.isSymLink()
-            || !canonicalExecutable.startsWith(directory + QDir::separator()))
+            || !canonicalExecutable.startsWith(directory + QLatin1Char('/')))
             continue;
 
         QVariantMap entry{
@@ -893,7 +893,7 @@ bool LauncherDownloadManager::replaceInstallation(const QString &projectId, cons
     }
     const QFileInfo executable(QDir(destination).filePath(executableRelative));
     if (!executable.isFile() || executable.isSymLink()
-        || !executable.canonicalFilePath().startsWith(destination + QDir::separator())) {
+        || !executable.canonicalFilePath().startsWith(destination + QLatin1Char('/'))) {
         rollBack();
         *error = QStringLiteral("The new version's launcher failed its final check; the previous version was kept.");
         return false;

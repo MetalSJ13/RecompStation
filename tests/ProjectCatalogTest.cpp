@@ -280,7 +280,8 @@ void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForTenNewProjects()
     ProjectCatalog catalog;
     const auto accepts = [&catalog](const QString &id, const QString &arch,
                                     const QString &asset) {
-        return catalog.isAssetCompatible(id, arch, asset);
+        // These are the Linux packages, whichever system runs the test.
+        return catalog.isAssetCompatible(id, QStringLiteral("linux-") + arch, asset);
     };
     QVERIFY(accepts("yoshis-story-dinotale", "x86_64", "DinoTale-0.1.8-linux.tar.gz"));
     QVERIFY(!accepts("yoshis-story-dinotale", "x86_64", "DinoTale-0.1.8-windows.zip"));
@@ -312,7 +313,8 @@ void ProjectCatalogTest::selectsOnlyPublishedLinuxPackagesForNewProjects()
     ProjectCatalog catalog;
     const auto accepts = [&catalog](const QString &id, const QString &arch,
                                     const QString &asset) {
-        return catalog.isAssetCompatible(id, arch, asset);
+        // These are the Linux packages, whichever system runs the test.
+        return catalog.isAssetCompatible(id, QStringLiteral("linux-") + arch, asset);
     };
 
     QVERIFY(accepts("starfox-64-recompiled", "x86_64",
@@ -360,59 +362,59 @@ void ProjectCatalogTest::selectsOnlyCompatibleLinuxAssets()
 {
     ProjectCatalog catalog;
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("BanjoRecompiled-v1.0.2-Linux-X64.tar.gz")));
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("aarch64"),
+        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("linux-aarch64"),
         QStringLiteral("BanjoRecompiled-v1.0.2-Linux-ARM64.tar.gz")));
     QVERIFY(!catalog.isAssetCompatible(
-        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("BanjoRecompiled-v1.0.2-Windows.zip")));
     QVERIFY(!catalog.isAssetCompatible(
-        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("BanjoRecompiled-v1.0.2-Linux-Flatpak-X64.zip")));
     QVERIFY(!catalog.isAssetCompatible(
         QStringLiteral("banjo-kazooie-recompiled"), QStringLiteral("riscv64"),
         QStringLiteral("BanjoRecompiled-v1.0.2-Linux-X64.tar.gz")));
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("diddy-kong-racing-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("diddy-kong-racing-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("DKR-R-1.0.15-Linux-x86_64.AppImage")));
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("diddy-kong-racing-recompiled"), QStringLiteral("aarch64"),
+        QStringLiteral("diddy-kong-racing-recompiled"), QStringLiteral("linux-aarch64"),
         QStringLiteral("DKR-R-1.0.15-Linux-aarch64.AppImage")));
 
     // Conker's published archive has a versioned filename and a top-level
     // directory containing ConkerRecomp.
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("ConkerRecompiled-V0.1.6-Linux.tar.gz")));
     QVERIFY(!catalog.isAssetCompatible(
-        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("conkers-bad-fur-day-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("ConkerRecompiled-V0.1.6-Linux-Flatpak.tar.gz")));
 
     // Snap64 publishes separate x86_64 and ARM64 Linux archives, alongside
     // Flatpak assets that must never be offered by RecompStation.
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("Snap64Recomp-1.1.7-linux-x86_64.tar.gz")));
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("aarch64"),
+        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("linux-aarch64"),
         QStringLiteral("Snap64Recomp-1.1.7-linux-arm64.tar.gz")));
     QVERIFY(!catalog.isAssetCompatible(
-        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("pokemon-snap-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("Snap64Recomp-1.1.7-linux-x86_64.flatpak")));
 
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("super-mario-64-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("super-mario-64-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("SuperMario64Recompiled-v0.1.13-linux-x64.tar.gz")));
     QVERIFY(!catalog.isAssetCompatible(
-        QStringLiteral("super-mario-64-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("super-mario-64-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("SuperMario64Recompiled-v0.1.13-windows-x64.zip")));
     QVERIFY(catalog.isAssetCompatible(
-        QStringLiteral("perfect-dark-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("perfect-dark-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("PerfectDarkRecompiled-v0.1.14-linux-x64.tar.gz")));
     QVERIFY(!catalog.isAssetCompatible(
-        QStringLiteral("perfect-dark-recompiled"), QStringLiteral("x86_64"),
+        QStringLiteral("perfect-dark-recompiled"), QStringLiteral("linux-x86_64"),
         QStringLiteral("PerfectDarkRecompiled-v0.1.14-windows-x64.zip")));
 }
 
@@ -431,7 +433,8 @@ void ProjectCatalogTest::filtersReleaseAssetsForCurrentArchitecture()
     };
 
     const QVariantList compatible = catalog.compatibleAssets(
-        QStringLiteral("banjo-kazooie-recompiled"), assets);
+        QStringLiteral("banjo-kazooie-recompiled"), assets,
+        QStringLiteral("linux-") + catalog.currentArchitecture());
     const QString architecture = catalog.currentArchitecture();
     if (architecture == QStringLiteral("x86_64")) {
         QCOMPARE(compatible.size(), 1);
@@ -457,7 +460,9 @@ void ProjectCatalogTest::explainsMissingCompatibleAssets()
             assets.append(QVariantMap{{"name", name}, {"downloadUrl", "https://example.test/" + name}});
         return assets;
     };
-    auto explain = [&](const QStringList &list) { return catalog.explainNoCompatibleAsset(project, names(list)); };
+    auto explain = [&](const QStringList &list) {
+        return catalog.explainNoCompatibleAsset(project, names(list), QStringLiteral("linux-x86_64"));
+    };
 
     QVERIFY(explain({}).contains(QStringLiteral("no downloads")));
     QVERIFY(explain({"Game-Windows-x64.zip", "Game-macOS.dmg"}).contains(QStringLiteral("Windows and macOS only")));
@@ -731,7 +736,7 @@ void ProjectCatalogTest::choosesAssetsForTheRequestedBuild()
         QVERIFY(catalog.compatibleAssets(QStringLiteral("windows-only"),
                                          {QVariantMap{{"name", "WindowsOnly.exe"}}}).isEmpty());
         // An architecture alone means that architecture on this system.
-        QVERIFY(catalog.isAssetCompatible(QStringLiteral("both-builds"), QStringLiteral("x86_64"),
+        QVERIFY(catalog.isAssetCompatible(QStringLiteral("both-builds"), QStringLiteral("linux-x86_64"),
                                           QStringLiteral("Both-1.0-Linux-X64.tar.gz")));
     }
 

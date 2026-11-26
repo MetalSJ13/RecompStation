@@ -102,6 +102,7 @@ void LibraryScanner::stopMonitoring()
     if (!watched.isEmpty())
         m_fileWatcher.removePaths(watched);
 
+    m_watchesStarted = false;
     if (m_monitoringActive) {
         m_monitoringActive = false;
         emit monitoringActiveChanged();
@@ -165,7 +166,13 @@ void LibraryScanner::refreshDirectoryWatches()
         const QStringList failed = m_fileWatcher.addPaths(missing);
         if (!failed.isEmpty())
             qCWarning(lcLibrary) << "Could not watch some library directories:" << failed;
+        // Files can land in a new folder before its watch starts (Windows
+        // starts watches on a separate thread): look once more after the
+        // changes settle, so nothing copied in that moment is missed.
+        if (m_watchesStarted && failed.size() < missing.size())
+            m_watchDebounceTimer.start();
     }
+    m_watchesStarted = true;
 }
 
 QStringList LibraryScanner::supportedExtensions(const QString &platform) const

@@ -12,6 +12,12 @@ class WineSupportTest : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase()
+    {
+#ifdef Q_OS_WIN
+        QSKIP("Wine support is part of the Linux version only.");
+#endif
+    }
     void parsesWineVersions();
     void findsWineThatAnswers();
     void fallsBackToWine64();

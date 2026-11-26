@@ -174,11 +174,13 @@ void SettingsManagerTest::persistsScanOnStartupPreference()
     QVERIFY(!manager.scanOnStartup());
     QCOMPARE(changed.count(), 1);
 
-    SettingsManager reloaded;
-    QVERIFY(!reloaded.scanOnStartup());
+    {
+        SettingsManager reloaded;
+        QVERIFY(!reloaded.scanOnStartup());
 
-    reloaded.setScanOnStartup(true);
-    QVERIFY(reloaded.scanOnStartup());
+        reloaded.setScanOnStartup(true);
+        QVERIFY(reloaded.scanOnStartup());
+    } // Written out here (the Windows registry isn't shared until then).
     QCOMPARE(QSettings().value(QStringLiteral("library/scanOnStartup")).toBool(), true);
     QSettings().clear();
 }
@@ -938,9 +940,11 @@ void SettingsManagerTest::savesTheGamesDbKeyPrivately()
     QVERIFY(!QSettings(settingsPath, QSettings::IniFormat).allKeys().join(",").contains("apiKey"));
     const QFileInfo keyFile(manager.theGamesDbKeyFilePath());
     QVERIFY(keyFile.exists());
+#ifndef Q_OS_WIN // Unix permission bits; on Windows the user's own profile folder keeps it private.
     QCOMPARE(keyFile.permissions() & (QFileDevice::ReadGroup | QFileDevice::ReadOther
                                       | QFileDevice::WriteGroup | QFileDevice::WriteOther),
              QFileDevice::Permissions());
+#endif
 
     QVERIFY(manager.clearTheGamesDbApiKey());
     QCOMPARE(manager.theGamesDbKeySource(), QStringLiteral("none"));

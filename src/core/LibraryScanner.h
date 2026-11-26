@@ -68,6 +68,8 @@ private:
     QString m_lastError;
     bool m_scanningAll = false;
     bool m_monitoringActive = false;
+    // Set after the first watches of a monitoring session are in place.
+    bool m_watchesStarted = false;
 
     QStringList supportedExtensions(const QString &platform) const;
     bool isDiscCompanionFile(const QString &filePath) const;
