@@ -1,16 +1,23 @@
 # Builds the Windows version: RecompStation.exe with Qt, SDL2 and libarchive
-# beside it, as a portable zip (x86_64). Run it from the Actions tab, or let
-# changes to the Windows build start it, to get the zip as a workflow
-# artifact for testing.
+# beside it, as a portable zip (x86_64). Runs on every push that changes the
+# program (and from the Actions tab once it is on main), with the zip kept as
+# a workflow artifact for testing.
 name: Windows build
 
 on:
   workflow_dispatch:
   push:
     branches: ['**']
+    # Any change to the program, so the Windows build stays working.
     paths:
       - '.github/workflows/windows.yml'
       - 'packaging/windows/**'
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - 'qml/**'
+      - 'tests/**'
+      - 'data/**'
+      - 'shaders/**'
 
 permissions:
   contents: read
