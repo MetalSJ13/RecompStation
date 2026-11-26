@@ -121,6 +121,11 @@ jobs:
           Copy-Item "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin\*.dll" $dir
           Copy-Item LICENSE "$dir\LICENSE.txt"
           Copy-Item packaging\THIRD_PARTY_NOTICES.md $dir
+          New-Item -ItemType Directory -Force "$dir\licenses" | Out-Null
+          Copy-Item packaging\licenses\* "$dir\licenses"
+          Get-ChildItem "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\share\*\copyright" | ForEach-Object {
+            Copy-Item $_.FullName "$dir\licenses\$($_.Directory.Name).txt"
+          }
           Copy-Item packaging\windows\README.txt $dir
           Compress-Archive -Path $dir -DestinationPath "dist\$name.zip"
           Get-ChildItem $dir -Recurse -File | ForEach-Object { $_.FullName.Substring((Resolve-Path $dir).Path.Length + 1) }

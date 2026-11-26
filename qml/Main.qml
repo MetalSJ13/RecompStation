@@ -2645,7 +2645,7 @@ ApplicationWindow {
             if (path === platformManager.homeDirectory())
                 return "Home"
             const name = path.split("/").filter(part => part.length > 0).pop()
-            return name || "/"
+            return name || (/^[A-Za-z]:/.test(path) ? path.substring(0, 2) : "/")
         }
         // The path as clickable parts, from Home when inside it.
         readonly property var crumbs: {
@@ -2654,10 +2654,16 @@ ApplicationWindow {
             const parts = []
             let base = ""
             let rest = path
+            const drive = /^[A-Za-z]:/.test(path) ? path.substring(0, 2) : ""
             if (path === home || path.startsWith(home + "/")) {
                 parts.push({ name: "Home", path: home })
                 base = home
                 rest = path.substring(home.length)
+            } else if (drive.length > 0) {
+                // Windows: starts at the drive ("D:").
+                parts.push({ name: drive, path: drive + "/" })
+                base = drive
+                rest = path.substring(2)
             } else {
                 parts.push({ name: "/", path: "/" })
             }

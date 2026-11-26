@@ -38,5 +38,16 @@ libarchive, SDL2 and the libraries they and Qt use (compression, XML,
 keyboard and X11 helpers) come from Ubuntu 22.04. Each one's copyright and
 license file is included under `usr/share/doc/<package>/copyright`.
 
+### Windows version
+
+The Windows zip contains the same Qt modules (as `Qt6*.dll` beside
+`RecompStation.exe`, replaceable with your own build of the same Qt version),
+SDL2 and libarchive, plus the compression and encryption libraries libarchive
+uses (bzip2, LZ4, XZ/liblzma, zlib, Zstandard and OpenSSL), all built
+unmodified with vcpkg. Each one's copyright and license file is included in
+`licenses\<library>.txt`. It also contains the Microsoft Visual C++ runtime
+(`vcruntime140*.dll`, `msvcp140*.dll`, `concrt140.dll`), redistributed under
+the Visual Studio license terms.
+
 Each recompilation project installed through RecompStation is a separate
 program under its own license; RecompStation does not include any of them.

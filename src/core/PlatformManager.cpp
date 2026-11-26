@@ -291,13 +291,23 @@ QVariantList PlatformManager::browserPlaces() const
         if (!volume.isValid() || !volume.isReady())
             continue;
         const QString root = volume.rootPath();
+#ifdef Q_OS_WIN
+        // Windows: every drive letter ("C:/", "D:/").
+        const bool underMountRoot = root.size() == 3 && root.at(1) == QLatin1Char(':');
+#else
         const bool underMountRoot = std::any_of(mountRoots.cbegin(), mountRoots.cend(),
             [&root](const QString &prefix) { return root.startsWith(prefix); });
+#endif
         if (!underMountRoot)
             continue;
         const QString name = volume.displayName().isEmpty() || volume.displayName() == root
             ? QFileInfo(root).fileName() : volume.displayName();
+#ifdef Q_OS_WIN
+        add(name.isEmpty() || name == root ? root.left(2) : QStringLiteral("%1 (%2)").arg(name, root.left(2)),
+            root, QStringLiteral("drive"));
+#else
         add(name.isEmpty() ? root : name, root, QStringLiteral("drive"));
+#endif
     }
     return places;
 }
