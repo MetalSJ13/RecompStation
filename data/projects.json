@@ -1714,6 +1714,149 @@
           "packageFormat": "zip"
         }
       }
+    },
+    {
+      "id": "dkc1-recomp",
+      "name": "DKC1Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Donkey Kong Country",
+        "Super Donkey Kong"
+      ],
+      "repositoryOwner": "elliotttate",
+      "repositoryName": "DKC1Recomp",
+      "romRequirements": "Requires your own unmodified, headerless Donkey Kong Country (USA) v1.0 ROM. No game data is included. Windows only: on Linux it runs through Wine. Pick the ROM in its own launcher the first time. An early version.",
+      "romFile": "Donkey Kong Country (USA) v1.0 ROM",
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^DKC1Recomp-v[0-9.]+-Windows-x64\\.zip$",
+          "packageFormat": "zip"
+        }
+      }
+    },
+    {
+      "id": "dkc2-recomp",
+      "name": "DKC2Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Donkey Kong Country 2: Diddy's Kong Quest",
+        "Donkey Kong Country 2",
+        "Super Donkey Kong 2"
+      ],
+      "repositoryOwner": "elliotttate",
+      "repositoryName": "DKC2Recomp",
+      "romRequirements": "Requires your own unmodified Donkey Kong Country 2 (USA) v1.0 ROM. No game data is included. Windows only: on Linux it runs through Wine. Pick the ROM in its own launcher the first time. An early version.",
+      "romFile": "Donkey Kong Country 2 (USA) v1.0 ROM",
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^DKC2Recomp-v[0-9.]+-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DKC2Recomp.exe"
+        }
+      }
+    },
+    {
+      "id": "dkc3-recomp",
+      "name": "DKC3Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Donkey Kong Country 3: Dixie Kong's Double Trouble!",
+        "Donkey Kong Country 3",
+        "Super Donkey Kong 3"
+      ],
+      "repositoryOwner": "elliotttate",
+      "repositoryName": "DKC3Recomp",
+      "romRequirements": "Requires your own unmodified Donkey Kong Country 3 (USA) ROM. No game data is included. Windows only: on Linux it runs through Wine. Pick the ROM in its own launcher the first time. An early version.",
+      "romFile": "Donkey Kong Country 3 (USA) ROM",
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^DKC3Recomp-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
+        }
+      }
+    },
+    {
+      "id": "paper-cut-ttyd",
+      "name": "Paper Cut",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Paper Mario: The Thousand-Year Door",
+        "Paper Mario: The Thousand Year Door",
+        "Paper Mario 2"
+      ],
+      "repositoryOwner": "LLCOOLT",
+      "repositoryName": "paper-cut",
+      "romRequirements": "Requires your own Paper Mario: The Thousand-Year Door disc image (USA, Japan or Europe). No game data is included. Add the disc in Paper Cut's own launcher the first time.",
+      "romFile": "Paper Mario: The Thousand-Year Door disc image",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Paper_Cut-[0-9.]+-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "PaperCut.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^papercut-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
+        }
+      }
+    },
+    {
+      "id": "melee-pc",
+      "name": "melee-pc",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Super Smash Bros. Melee",
+        "Super Smash Bros Melee",
+        "Dairantou Smash Brothers DX"
+      ],
+      "repositoryOwner": "999sian",
+      "repositoryName": "melee-pc",
+      "romRequirements": "Requires your own Super Smash Bros. Melee disc image (USA, version 1.02). No game data is included. Choose the disc in melee-pc the first time.",
+      "romFile": "Super Smash Bros. Melee (USA 1.02) disc image",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Melee-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Melee.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Melee-Windows-x86_64\\.zip$",
+          "packageFormat": "zip"
+        }
+      }
+    },
+    {
+      "id": "bluewake-wind-waker",
+      "name": "BlueWake",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "The Legend of Zelda: The Wind Waker",
+        "Zelda: The Wind Waker",
+        "The Wind Waker",
+        "Wind Waker"
+      ],
+      "repositoryOwner": "chrissotraidis",
+      "repositoryName": "bluewake",
+      "romRequirements": "Requires your own The Legend of Zelda: The Wind Waker disc image (USA GameCube release, .iso or .gcm; convert an .rvz first). No game data is included. Choose the disc when BlueWake first starts. Based on Wind Waker Recomp.",
+      "romFile": "The Wind Waker (USA) disc image",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^BlueWake-v[0-9.]+-linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "BlueWake.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BlueWake-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BlueWake.exe"
+        }
+      }
     }
   ]
 }
