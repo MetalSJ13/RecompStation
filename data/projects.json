@@ -1605,6 +1605,115 @@
           "packageFormat": "zip"
         }
       }
+    },
+    {
+      "id": "duke-nukem-zero-hour-recompiled",
+      "name": "Duke Nukem: Zero Hour Recompiled",
+      "platform": "N64",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Duke Nukem: Zero Hour",
+        "Duke Nukem - Zero Hour",
+        "Duke Nukem Zero Hour",
+        "DNZHRecompiled"
+      ],
+      "repositoryOwner": "sonicdcer",
+      "repositoryName": "DNZHRecomp",
+      "romRequirements": "Requires the North American Duke Nukem: Zero Hour ROM. The project does not include game assets and accepts only that version; other ROM formats of it are converted automatically. A very early version.",
+      "romFile": "Duke Nukem: Zero Hour (USA) ROM",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^DNZHRecompiled-[0-9.]+-Linux-X64-Release\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DNZHRecompiled"
+        },
+        "linux-aarch64": {
+          "assetNameRegex": "^DNZHRecompiled-[0-9.]+-Linux-ARM64-Release\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DNZHRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^DNZHRecompiled-[0-9.]+-Windows(-[A-Za-z]+)?\\.zip$",
+          "packageFormat": "zip"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "DNZHRecompiled",
+        "romFileName": "dnzh.us.z64",
+        "romName": "DUKE NUKEM ZERO HOUR",
+        "romXxh3": "AFC33DA7101FEC88",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "dr-mario-64-recomp-plus",
+      "name": "Dr. Mario 64 Recomp Plus",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Dr. Mario 64",
+        "Dr Mario 64",
+        "Dr. Mario 64 Recompiled"
+      ],
+      "repositoryOwner": "theboy181",
+      "repositoryName": "drmario64_recomp_plus",
+      "romRequirements": "Requires a clean, unmodified North American Dr. Mario 64 ROM. The project does not include game assets. Its launcher keeps its settings in the same folder as Mario Kart 64: Recompiled's (MarioKart64Recompiled).",
+      "romFile": "Dr. Mario 64 (USA) ROM",
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^Dr\\.Mario\\.64\\.Recompiled-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MarioKart64Recompiled",
+        "romFileName": "drmario64.us.z64",
+        "romName": "DR.MARIO 64",
+        "romXxh3": "960E3703F29D996D",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "super-mario-world-recompiled",
+      "name": "Super Mario World Recomp",
+      "platform": "SNES",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Super Mario World",
+        "Super Mario World: Super Mario Bros. 4"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "SuperMarioWorldRecomp",
+      "romRequirements": "Requires your own unmodified Super Mario World (USA) ROM (.sfc or .smc). RecompStation selects it in the launcher for you. An in-development preview.",
+      "romFile": "Super Mario World (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--launcher",
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings and mods before pressing Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^SuperMarioWorldRecomp-linux-[0-9.]+-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "SuperMarioWorldRecomp.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SuperMarioWorldRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip"
+        }
+      }
     }
   ]
 }
