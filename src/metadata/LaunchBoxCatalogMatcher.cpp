@@ -44,6 +44,46 @@ LaunchBoxMatchResult resultForCandidates(const QList<int> &matches,
     return {LaunchBoxMatchResult::Status::Matched, matches.first(), {}};
 }
 
+// LaunchBox sometimes has the same game twice under one name on one
+// platform: the real entry and a stub (a re-release, a duplicate someone
+// added). Same name and platform, so it is the same game, and the entry
+// people actually use is picked when it clearly stands out: the only one
+// marked Released, or the one with far more community ratings (at least 10,
+// and three times as many as the next). Otherwise it stays ambiguous.
+LaunchBoxMatchResult resultForSameNameCandidates(const QList<int> &matches,
+                                                 const QList<LaunchBoxGameRecord> &games,
+                                                 const QString &description)
+{
+    if (matches.size() < 2)
+        return resultForCandidates(matches, description);
+
+    QList<int> released;
+    for (int index : matches) {
+        if (games.at(index).releaseType.compare(QStringLiteral("Released"), Qt::CaseInsensitive) == 0)
+            released.append(index);
+    }
+    if (released.size() == 1)
+        return {LaunchBoxMatchResult::Status::Matched, released.first(), {}};
+    const QList<int> &pool = released.size() > 1 ? released : matches;
+
+    int best = -1;
+    int bestCount = -1;
+    int secondCount = -1;
+    for (int index : pool) {
+        const int count = games.at(index).communityRatingCount.toInt();
+        if (count > bestCount) {
+            secondCount = bestCount;
+            bestCount = count;
+            best = index;
+        } else if (count > secondCount) {
+            secondCount = count;
+        }
+    }
+    if (best >= 0 && bestCount >= 10 && bestCount >= 3 * qMax(0, secondCount))
+        return {LaunchBoxMatchResult::Status::Matched, best, {}};
+    return resultForCandidates(matches, description);
+}
+
 } // namespace
 
 QString LaunchBoxCatalogMatcher::canonicalPlatformForInternalName(
@@ -209,6 +249,10 @@ LaunchBoxMatchResult LaunchBoxCatalogMatcher::matchByFileAssociation(
             metadataMatches.append(i);
     }
 
+    if (!metadataMatches.isEmpty())
+        return resultForSameNameCandidates(metadataMatches, games,
+                                           QStringLiteral("platform-specific metadata"));
+
     // Some LaunchBox Files.xml GameName values retain a ROM revision suffix
     // while Metadata.xml Name stores only the canonical title. Use a
     // revision-insensitive association only as a secondary fallback, and
@@ -259,7 +303,8 @@ LaunchBoxMatchResult LaunchBoxCatalogMatcher::matchByTitle(
     // revision/version suffixes be ignored, and then only one platform-specific
     // candidate is safe to associate.
     if (!matches.isEmpty())
-        return resultForCandidates(matches, QStringLiteral("exact platform-and-title"));
+        return resultForSameNameCandidates(matches, games,
+                                           QStringLiteral("exact platform-and-title"));
 
     const QString wantedWithoutRevision =
         normalizedTitleWithoutRevision(localTitle);

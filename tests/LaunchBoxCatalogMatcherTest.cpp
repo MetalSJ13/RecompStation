@@ -253,6 +253,34 @@ private slots:
             "N64", "Game (Rev 1) (USA)", games);
         QCOMPARE(result.status, LaunchBoxMatchResult::Status::Ambiguous);
     }
+
+    void sameNameDuplicatePicksTheEntryThatClearlyStandsOut()
+    {
+        LaunchBoxGameRecord main = game(1, "Super Mario World", "Super Nintendo Entertainment System");
+        main.communityRatingCount = QStringLiteral("412");
+        LaunchBoxGameRecord stub = game(2, "Super Mario World", "Super Nintendo Entertainment System");
+        stub.communityRatingCount = QStringLiteral("3");
+        auto result = LaunchBoxCatalogMatcher::matchByTitle(
+            "SNES", "Super Mario World (USA)", {stub, main});
+        QVERIFY(result.isMatch());
+        QCOMPARE(result.index, 1);
+
+        // Released beats an unreleased entry, whatever the ratings.
+        stub.releaseType = QStringLiteral("Released");
+        main.releaseType = QStringLiteral("Unreleased");
+        result = LaunchBoxCatalogMatcher::matchByTitle(
+            "SNES", "Super Mario World (USA)", {stub, main});
+        QVERIFY(result.isMatch());
+        QCOMPARE(result.index, 0);
+
+        // Close in ratings: still ambiguous.
+        LaunchBoxGameRecord other = game(3, "Super Mario World", "Super Nintendo Entertainment System");
+        other.communityRatingCount = QStringLiteral("200");
+        main.releaseType.clear();
+        result = LaunchBoxCatalogMatcher::matchByTitle(
+            "SNES", "Super Mario World (USA)", {main, other});
+        QCOMPARE(result.status, LaunchBoxMatchResult::Status::Ambiguous);
+    }
 };
 
 QTEST_GUILESS_MAIN(LaunchBoxCatalogMatcherTest)

@@ -520,6 +520,18 @@ LibraryMetadataMatcher::attemptLaunchBoxMatch(QString *message)
     if (!result.isMatch()) {
         qCInfo(lcMetadata) << "LaunchBox did not produce a unique match for"
                            << title << "reason:" << result.reason;
+        // Which entries competed, so a wrong or missing match can be traced.
+        for (const LaunchBoxGameRecord &candidate : std::as_const(candidates)) {
+            qCInfo(lcMetadata).noquote()
+                << "  candidate" << candidate.databaseId << candidate.name
+                << "·" << candidate.platform
+                << "· released" << (candidate.releaseDate.isValid()
+                                        ? candidate.releaseDate.toString(Qt::ISODate)
+                                        : QString::number(candidate.releaseYear))
+                << "·" << (candidate.releaseType.isEmpty() ? QStringLiteral("no release type")
+                                                            : candidate.releaseType)
+                << "·" << candidate.communityRatingCount.toInt() << "ratings";
+        }
         const bool ambiguous = result.status == LaunchBoxMatchResult::Status::Ambiguous;
         *message = ambiguous
             ? QStringLiteral("LaunchBox found ambiguous candidates.")
