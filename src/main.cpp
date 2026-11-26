@@ -498,10 +498,11 @@ int main(int argc, char *argv[])
         qCInfo(lcUI) << "OpenGL is drawn by the CPU; the live background runs at reduced quality.";
     }
 
-    QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("softwareGraphics", openGL != QStringLiteral("hardware"));
+    // Before the engine, so it outlives the interface that reads it.
     WineSupport wineSupport;
     wineSupport.refresh();
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("softwareGraphics", openGL != QStringLiteral("hardware"));
     gameLaunchManager.setWineSupport(&wineSupport);
     engine.rootContext()->setContextProperty("wineSupport", &wineSupport);
     engine.rootContext()->setContextProperty("runningUnderWine", runningUnderWine());

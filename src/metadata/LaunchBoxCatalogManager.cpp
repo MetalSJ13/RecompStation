@@ -3,6 +3,7 @@
 #include "LaunchBoxArchiveExtractor.h"
 #include "LaunchBoxCatalogDatabase.h"
 #include "LaunchBoxCatalogMatcher.h"
+#include "../core/Logging.h"
 
 #include <QDir>
 #include <QFile>
@@ -143,6 +144,8 @@ int LaunchBoxCatalogManager::updateCatalog()
     }
 
     setBusy(true);
+    m_updateTimer.start();
+    qCInfo(lcMetadata) << "LaunchBox catalog download started.";
     emit updateProgress(QStringLiteral("Downloading LaunchBox metadata"), 0);
 
     QNetworkRequest request(MetadataArchiveUrl);
@@ -210,6 +213,9 @@ void LaunchBoxCatalogManager::finishDownload()
     const auto networkError = reply->error();
     const QString networkMessage = reply->errorString();
     reply->deleteLater();
+    qCInfo(lcMetadata).noquote() << "LaunchBox catalog download finished: HTTP" << status
+                                 << m_downloadFile.size() / (1024 * 1024) << "MB in"
+                                 << m_updateTimer.elapsed() / 1000 << "s";
 
     if (m_cancelRequested) {
         failUpdate(QStringLiteral("LaunchBox catalog update cancelled."));
@@ -308,6 +314,8 @@ void LaunchBoxCatalogManager::finishBackgroundBuild()
     emit updateProgress(QStringLiteral("LaunchBox catalog ready"), 100);
     emit catalogAvailableChanged();
     refreshMissingSystems();
+    qCInfo(lcMetadata) << "LaunchBox catalog ready:" << result.gameCount << "games after"
+                       << m_updateTimer.elapsed() / 1000 << "s";
     emit updateCompleted(result.platformCount, result.fileCount, result.gameCount);
 }
 
@@ -371,6 +379,7 @@ void LaunchBoxCatalogManager::failUpdate(const QString &message)
     if (cancelled)
         emit updateCancelled();
     else
+        qCWarning(lcMetadata).noquote() << "LaunchBox catalog update failed:" << message;
         emit updateFailed(message);
 }
 

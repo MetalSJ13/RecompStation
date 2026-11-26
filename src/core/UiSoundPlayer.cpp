@@ -176,7 +176,7 @@ void UiSoundPlayer::loadSounds()
             ++loaded;
         }
     }
-    qCInfo(lcApplication) << "Interface sounds loaded:" << loaded << "of 12.";
+    qCInfo(lcApplication) << "Interface sounds loaded:" << loaded << "of 13.";
 #endif
 }
 

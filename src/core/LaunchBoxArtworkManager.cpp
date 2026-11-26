@@ -256,6 +256,8 @@ void LaunchBoxArtworkManager::processNext()
     request.setRawHeader("Accept", "image/*");
     request.setRawHeader("User-Agent", "RecompStation");
     request.setTransferTimeout(20000);
+    // HTTP/1.1: on Windows, image bodies over HTTP/2 came back empty.
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     QNetworkReply *reply = m_network.get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply, pending]() {
         const int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -271,8 +273,18 @@ void LaunchBoxArtworkManager::processNext()
         reply->deleteLater();
 
         bool saved = false;
-        if (networkOk && !bytes.isEmpty() && bytes.size() <= 20 * 1024 * 1024
-            && !extension.isEmpty()) {
+        QString reason; // why it failed, for the log
+        if (!networkOk)
+            reason = QStringLiteral("network: %1").arg(networkError);
+        else if (bytes.isEmpty())
+            reason = QStringLiteral("empty response");
+        else if (bytes.size() > 20 * 1024 * 1024)
+            reason = QStringLiteral("larger than 20 MB");
+        else if (extension.isEmpty())
+            reason = QStringLiteral("not an image (%1, %2 bytes, starts %3)")
+                         .arg(QString::fromLatin1(reply->header(QNetworkRequest::ContentTypeHeader).toByteArray()))
+                         .arg(bytes.size()).arg(QString::fromLatin1(bytes.left(8).toHex()));
+        if (reason.isEmpty()) {
             const QString destination = QDir(m_artworkDirectory)
                 .filePath(QString::number(pending.gameId) + QLatin1Char('/')
                           + pending.destination);
@@ -280,26 +292,31 @@ void LaunchBoxArtworkManager::processNext()
                 QSaveFile file(destination);
                 saved = file.open(QIODevice::WriteOnly)
                     && file.write(bytes) == bytes.size() && file.commit();
+                if (!saved)
+                    reason = QStringLiteral("could not save it: %1").arg(file.errorString());
                 if (saved && pending.type == QStringLiteral("Box - Front")) {
                     if (!m_database->setArtworkPath(pending.gameId, destination)) {
                         QFile::remove(destination);
                         saved = false;
+                        reason = QStringLiteral("library database: %1").arg(m_database->lastError());
                     }
                 } else if (saved && pending.type == QStringLiteral("Screenshot - Gameplay")) {
                     if (!m_database->addGameScreenshot(pending.gameId, destination)) {
                         QFile::remove(destination);
                         saved = false;
+                        reason = QStringLiteral("library database: %1").arg(m_database->lastError());
                     }
                 }
+            } else {
+                reason = QStringLiteral("could not create its folder");
             }
         }
         if (saved) {
             ++m_downloaded;
         } else {
             ++m_failed;
-            qCWarning(lcArtwork) << "LaunchBox image failed for library game"
-                                 << pending.gameId << "HTTP" << statusCode
-                                 << networkError;
+            qCWarning(lcArtwork).noquote() << "LaunchBox image failed for library game"
+                                           << pending.gameId << "HTTP" << statusCode << "-" << reason;
         }
         ++m_batchRequests;
         setStatus(QStringLiteral("LaunchBox artwork: %1/%2 processed, %3 skipped, %4 failed.")

@@ -4,6 +4,7 @@
 #include <QNetworkAccessManager>
 #include <QObject>
 #include <QPointer>
+#include <QElapsedTimer>
 #include <QSaveFile>
 
 #include <atomic>
@@ -67,6 +68,7 @@ private:
     QNetworkAccessManager m_network;
     QPointer<QNetworkReply> m_reply;
     QSaveFile m_downloadFile;
+    QElapsedTimer m_updateTimer; // for the log: how long each stage took
     QFutureWatcher<LaunchBoxCatalogBuildResult> m_buildWatcher;
     std::shared_ptr<std::atomic_bool> m_cancelFlag;
     QString m_dataDirectory;

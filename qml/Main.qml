@@ -3066,8 +3066,11 @@ ApplicationWindow {
                                         border.color: theme.accent
                                     }
                                     onClicked: {
-                                        libraryFolderDialog.navigateTo(modelData.path)
-                                        libraryFolderDialog.focusFirstFolder()
+                                        // Opening the folder replaces this button, so keep
+                                        // the dialog at hand for the second call.
+                                        const dialog = libraryFolderDialog
+                                        dialog.navigateTo(modelData.path)
+                                        dialog.focusFirstFolder()
                                     }
                                     MouseArea {
                                         anchors.fill: parent
