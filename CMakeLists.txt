@@ -276,6 +276,8 @@ if(BUILD_TESTING)
     # One executable per test file, linked against the shared core library.
     function(recompstation_add_test name)
         qt_add_executable(${name} ${ARGN})
+        # Console programs on Windows, so their output reaches ctest.
+        set_target_properties(${name} PROPERTIES WIN32_EXECUTABLE FALSE)
         target_link_libraries(${name} PRIVATE recompstation_core Qt6::Test)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
            AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "16")
@@ -315,6 +317,7 @@ if(BUILD_TESTING)
     qt_add_executable(ArtworkLayoutTests
         tests/qml/ArtworkLayoutTestMain.cpp
     )
+    set_target_properties(ArtworkLayoutTests PROPERTIES WIN32_EXECUTABLE FALSE)
     target_compile_definitions(ArtworkLayoutTests PRIVATE
         QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml"
     )
