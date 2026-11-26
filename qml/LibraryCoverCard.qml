@@ -32,7 +32,7 @@ Item {
     // The game's default launcher when several support it (Main.qml).
     readonly property var supportedProject: {
         root.installedProjectIds
-        return window.defaultLauncherProject(projectCatalog.projectsForGame(
+        return window.defaultLauncherProject(window.gameProjects(
             root.metadataTitle.length > 0 ? root.metadataTitle : root.title,
             root.platform))
     }

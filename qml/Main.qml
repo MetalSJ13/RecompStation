@@ -1501,6 +1501,29 @@ ApplicationWindow {
     property string librarySearchText: ""
     property var selectedGame: null
     property int libraryRevision: 0
+    // Library changes (artwork saved, a game matched, a scan finished) come
+    // in bursts; each rebuild re-reads every game and remakes every card, so
+    // a burst becomes one rebuild a moment later.
+    function requestLibraryRefresh() {
+        libraryRefreshTimer.restart()
+    }
+    Timer {
+        id: libraryRefreshTimer
+        interval: 400
+        onTriggered: window.libraryRevision++
+    }
+    // Which catalog projects support a game, kept per title and system: the
+    // catalog doesn't change while RecompStation runs, and every card asks.
+    property var gameProjectsCache: ({})
+    function gameProjects(title, platform) {
+        const key = (platform || "") + "\n" + (title || "")
+        let projects = window.gameProjectsCache[key]
+        if (projects === undefined) {
+            projects = projectCatalog.projectsForGame(title, platform)
+            window.gameProjectsCache[key] = projects
+        }
+        return projects
+    }
     // Triggers the card reveal on first library load, Grid View entry, and Library re-entry.
     property int gridRevealToken: 0
     property bool initialGridRevealPending: true
@@ -1908,7 +1931,7 @@ ApplicationWindow {
         window.launcherRevision
         const used = {}
         for (const game of databaseManager.games("")) {
-            const projects = projectCatalog.projectsForGame(
+            const projects = window.gameProjects(
                 game.metadataTitle ? game.metadataTitle : game.title, game.platform)
             for (const project of projects)
                 used[project.id] = true
@@ -2049,7 +2072,7 @@ ApplicationWindow {
     function libraryGameProject(game) {
         if (!game)
             return null
-        return window.defaultLauncherProject(projectCatalog.projectsForGame(
+        return window.defaultLauncherProject(window.gameProjects(
             game.metadataTitle ? game.metadataTitle : game.title, game.platform))
     }
 
@@ -2412,7 +2435,7 @@ ApplicationWindow {
     Connections {
         target: artworkManager
         function onArtworkSaved(gameId, localPath) {
-            window.libraryRevision++
+            window.requestLibraryRefresh()
             window.artworkMessage = "Artwork saved to the local cache."
         }
         function onArtworkFailed(gameId, message) {
@@ -2576,7 +2599,7 @@ ApplicationWindow {
             window.scanMessage = "Scanned " + platform + "."
         }
         function onScanCompleted(gamesFound) {
-            window.libraryRevision++
+            window.requestLibraryRefresh()
             if (settingsManager.automaticMetadataMatchingEnabled) {
                 window.scanMessage = libraryScanner.lastError.length > 0
                     ? libraryScanner.lastError + "\nLooking up game info…"
@@ -2595,7 +2618,7 @@ ApplicationWindow {
     Connections {
         target: screenshotManager
         function onRefreshFinished(downloaded, skipped, withoutScreenshots, failed) {
-            window.libraryRevision++
+            window.requestLibraryRefresh()
             window.scanMessage = downloaded > 0
                 ? "Screenshots: " + downloaded + " downloaded." + (failed > 0 ? " " + failed + " couldn't be downloaded." : "")
                 : "Screenshots are up to date."
@@ -2606,10 +2629,10 @@ ApplicationWindow {
         target: metadataMatcher
         function onStatusChanged() {
             window.scanMessage = metadataMatcher.status
-            window.libraryRevision++
+            window.requestLibraryRefresh()
         }
         function onScrapeFinished(matched, unresolved) {
-            window.libraryRevision++
+            window.requestLibraryRefresh()
             window.scanMessage = matched + unresolved === 0 ? "Every game has been looked up."
                 : "Game info found for " + matched + (matched === 1 ? " game" : " games")
                   + (unresolved > 0 ? "; " + unresolved + " without a match." : ".")
@@ -4519,7 +4542,8 @@ ApplicationWindow {
                             }
 
                             Repeater {
-                                model: sectionedGrid.layout.sections
+                                // Cards exist only while this view shows.
+                                model: window.sectionedLibraryGrid ? sectionedGrid.layout.sections : []
                                 delegate: Item {
                                     id: gridSection
                                     required property var modelData
@@ -4635,7 +4659,8 @@ ApplicationWindow {
                                                 function onGridRevealTokenChanged() {
                                                     if (!window.sectionedLibraryGrid)
                                                         return
-                                                    if (settingsManager.reducedMotion) {
+                                                    // Only cards on or near the screen play it.
+                                                    if (settingsManager.reducedMotion || !sectionCard.nearView) {
                                                         sectionRevealFailsafe.stop()
                                                         sectionCard.revealOpacity = 1
                                                         sectionCard.revealScale = 1
@@ -4819,7 +4844,7 @@ ApplicationWindow {
                                 readonly property var project: {
                                     if (!game)
                                         return null
-                                    const projects = projectCatalog.projectsForGame(
+                                    const projects = window.gameProjects(
                                         game.metadataTitle ? game.metadataTitle : game.title,
                                         game.platform)
                                     return projects.length > 0 ? projects[0] : null
@@ -5056,7 +5081,7 @@ ApplicationWindow {
 
                                     Repeater {
                                         id: shelfRepeater
-                                        model: shelvesView.sections
+                                        model: settingsManager.libraryView === "shelves" ? shelvesView.sections : []
                                         delegate: Item {
                                             id: shelfRow
                                             required property var modelData
@@ -5221,20 +5246,27 @@ ApplicationWindow {
                             leftMargin: 18
                             rightMargin: 18
                             spacing: 9
-                            model: gameGrid.model
+                            model: settingsManager.libraryView === "list" ? gameGrid.model : []
                             currentIndex: -1
                             Component.onCompleted: {
                                 currentIndex = gameGrid.currentIndex >= 0
                                     ? gameGrid.currentIndex : (count > 0 ? 0 : -1)
                             }
                             onCurrentIndexChanged: {
-                                if (currentIndex !== gameGrid.currentIndex)
+                                // Only while the list shows: emptying its model when
+                                // another view takes over must not clear the selection.
+                                if (count > 0 && settingsManager.libraryView === "list"
+                                        && currentIndex !== gameGrid.currentIndex)
                                     gameGrid.currentIndex = currentIndex
+                            }
+                            onCountChanged: {
+                                if (count > 0 && currentIndex !== gameGrid.currentIndex)
+                                    currentIndex = Math.min(Math.max(0, gameGrid.currentIndex), count - 1)
                             }
                             Connections {
                                 target: gameGrid
                                 function onCurrentIndexChanged() {
-                                    if (gameList.currentIndex !== gameGrid.currentIndex)
+                                    if (gameList.count > 0 && gameList.currentIndex !== gameGrid.currentIndex)
                                         gameList.currentIndex = gameGrid.currentIndex
                                 }
                             }
@@ -5771,7 +5803,7 @@ ApplicationWindow {
                             }
 
                             Repeater {
-                                model: consoleView.count
+                                model: settingsManager.libraryView === "carousel" ? consoleView.count : 0
                                 delegate: Item {
                                     id: carouselCard
                                     required property int index
