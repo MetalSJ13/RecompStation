@@ -88,6 +88,23 @@ bool LaunchBoxCatalogDatabase::open(const QString &databasePath)
     return true;
 }
 
+bool LaunchBoxCatalogDatabase::openForReading(const QString &databasePath)
+{
+    close();
+    const QFileInfo info(databasePath);
+    if (!info.isFile() || info.size() == 0)
+        return setError(QStringLiteral("The LaunchBox catalog hasn't been downloaded yet."));
+    m_database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), m_connectionName);
+    m_database.setDatabaseName(databasePath);
+    // Not opened read-only: the catalog uses WAL, which a read-only
+    // connection can't always open. Existence is checked above and no
+    // tables are created, so nothing new appears on disk.
+    if (!m_database.open())
+        return setError(m_database.lastError().text());
+    m_lastError.clear();
+    return true;
+}
+
 void LaunchBoxCatalogDatabase::close()
 {
     if (!m_database.isValid())

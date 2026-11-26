@@ -19,6 +19,10 @@ public:
     LaunchBoxCatalogDatabase &operator=(const LaunchBoxCatalogDatabase &) = delete;
 
     bool open(const QString &databasePath);
+    // For reading only: never creates the file or its tables, so looking a
+    // game up before the catalog is downloaded can't make an empty one
+    // that counts as "downloaded".
+    bool openForReading(const QString &databasePath);
     void close();
     bool isOpen() const;
     QString lastError() const;

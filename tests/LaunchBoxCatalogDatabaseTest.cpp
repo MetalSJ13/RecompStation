@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <QFileInfo>
 
 #include "metadata/LaunchBoxCatalogDatabase.h"
 #include "metadata/LaunchBoxCatalogMatcher.h"
@@ -70,6 +71,24 @@ private:
     }
 
 private slots:
+    // Looking a game up before the catalog is downloaded must not create an
+    // empty catalog that then counts as downloaded.
+    void readingNeverCreatesTheCatalog()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString path = directory.path() + "/metadata/launchbox/catalog.sqlite";
+        LaunchBoxCatalogDatabase reader;
+        QVERIFY(!reader.openForReading(path));
+        QVERIFY(!QFileInfo::exists(path));
+
+        {
+            LaunchBoxCatalogDatabase writer;
+            QVERIFY(writer.open(path));
+        }
+        QVERIFY(reader.openForReading(path));
+        QVERIFY(reader.isOpen());
+    }
     void buildsIndexedCatalogAndSupportsIndexedLookups()
     {
         QTemporaryDir directory;

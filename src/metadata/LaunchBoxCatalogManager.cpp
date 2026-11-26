@@ -31,6 +31,22 @@ LaunchBoxCatalogManager::LaunchBoxCatalogManager(
 {
     connect(&m_buildWatcher, &QFutureWatcher<LaunchBoxCatalogBuildResult>::finished,
             this, &LaunchBoxCatalogManager::finishBackgroundBuild);
+
+    // Earlier versions made an empty catalog (just its tables) when a game
+    // was looked up before the download, which then counted as downloaded.
+    // Remove one, so Download appears again.
+    if (catalogAvailable()) {
+        bool empty = false;
+        {
+            LaunchBoxCatalogDatabase catalog;
+            empty = catalog.openForReading(m_catalogPath) && catalog.gameCount() == 0;
+        }
+        if (empty) {
+            for (const QString &suffix : {QString(), QStringLiteral("-wal"), QStringLiteral("-shm")})
+                QFile::remove(m_catalogPath + suffix);
+            qCInfo(lcMetadata) << "Removed an empty LaunchBox catalog left by an earlier version.";
+        }
+    }
 }
 
 LaunchBoxCatalogManager::~LaunchBoxCatalogManager()
@@ -68,7 +84,7 @@ void LaunchBoxCatalogManager::refreshMissingSystems()
     QStringList missing;
     if (catalogAvailable() && !m_busy) {
         LaunchBoxCatalogDatabase catalog;
-        if (catalog.open(m_catalogPath)) {
+        if (catalog.openForReading(m_catalogPath)) {
             const QStringList covered = catalog.platformsWithGames();
             // An empty catalog says nothing about any one system.
             if (!covered.isEmpty()) {

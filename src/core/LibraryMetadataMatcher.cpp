@@ -469,7 +469,7 @@ LibraryMetadataMatcher::attemptLaunchBoxMatch(QString *message)
     }
 
     LaunchBoxCatalogDatabase catalog;
-    if (!catalog.open(m_launchBoxCatalog->catalogPath())) {
+    if (!catalog.openForReading(m_launchBoxCatalog->catalogPath())) {
         qCWarning(lcMetadata) << "Could not open LaunchBox catalog:" << catalog.lastError();
         *message = QStringLiteral("LaunchBox catalog could not be opened.");
         return LaunchBoxOutcome::Failed;

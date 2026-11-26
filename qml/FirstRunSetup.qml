@@ -342,9 +342,11 @@ Popup {
                                 text: launchBoxCatalogManager.catalogAvailable && settingsManager.launchBoxEnabled ? "✓ Ready"
                                     : launchBoxCatalogManager.catalogAvailable ? "Turn on" : "Download"
                                 onClicked: {
-                                    settingsManager.setLaunchBoxEnabled(true)
+                                    // Start the download first: switching LaunchBox on
+                                    // starts a lookup straight away.
                                     if (!launchBoxCatalogManager.catalogAvailable)
                                         launchBoxCatalogManager.updateCatalog()
+                                    settingsManager.setLaunchBoxEnabled(true)
                                 }
                             }
                         }

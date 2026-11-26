@@ -149,7 +149,7 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
     m_downloaded = m_skipped = m_failed = m_batchRequests = m_totalRequests = 0;
 
     LaunchBoxCatalogDatabase catalog;
-    if (!catalog.open(m_catalogPath)) {
+    if (!catalog.openForReading(m_catalogPath)) {
         setStatus(QStringLiteral("LaunchBox artwork skipped: catalog could not be opened."));
         emit refreshFinished(0, 0, 0);
         return;
