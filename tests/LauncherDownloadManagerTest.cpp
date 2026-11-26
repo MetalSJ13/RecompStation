@@ -12,6 +12,13 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+// Unix execute permission; Windows has none (programs are .exe files).
+#ifdef Q_OS_WIN
+#define QVERIFY_UNIX_EXECUTABLE(path) do { } while (false)
+#else
+#define QVERIFY_UNIX_EXECUTABLE(path) QVERIFY(QFileInfo(path).isExecutable())
+#endif
+
 class LauncherDownloadManagerTest : public QObject
 {
     Q_OBJECT
@@ -248,7 +255,7 @@ void LauncherDownloadManagerTest::installsAndUninstallsManagedLauncher()
     const QString executablePath =
         installation.value(QStringLiteral("executablePath")).toString();
     QVERIFY(QFileInfo(executablePath).isFile());
-    QVERIFY(QFileInfo(executablePath).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(executablePath);
 
     LauncherDownloadManager restartedManager(&platformManager);
     QCOMPARE(restartedManager.installedLaunchers().size(), 1);
@@ -675,7 +682,7 @@ void LauncherDownloadManagerTest::installsLauncherFromNestedArchiveDirectory()
 
     const QString expectedExecutable = QDir(platformManager.dataDirectory()).filePath(
         "launchers/" + projectId + "/NestedLauncher/ConkerRecomp");
-    QVERIFY(QFileInfo(expectedExecutable).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(expectedExecutable);
 
     const QVariantList installed = manager.installedLaunchers();
     QCOMPARE(installed.size(), 1);
@@ -733,7 +740,7 @@ void LauncherDownloadManagerTest::installsZipLauncherWithCompanionFiles()
 
     const QString installRoot = QDir(platformManager.dataDirectory())
                                     .filePath("launchers/" + projectId);
-    QVERIFY(QFileInfo(QDir(installRoot).filePath("SampleProject.AppImage")).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(QDir(installRoot).filePath("SampleProject.AppImage"));
     QFile companion(QDir(installRoot).filePath("resources/data.bin"));
     QVERIFY(companion.open(QIODevice::ReadOnly));
     QCOMPARE(companion.readAll(), QByteArray("companion-data"));
@@ -768,7 +775,7 @@ void LauncherDownloadManagerTest::installsStandaloneAppImage()
 
     const QString installedPath = QDir(platformManager.dataDirectory())
         .filePath("launchers/" + projectId + "/" + assetName);
-    QVERIFY(QFileInfo(installedPath).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(installedPath);
     QFile installed(installedPath);
     QVERIFY(installed.open(QIODevice::ReadOnly));
     QCOMPARE(installed.readAll(), content);

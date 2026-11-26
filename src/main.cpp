@@ -174,6 +174,10 @@ InterfaceScaleStartup prepareInterfaceScale()
     scale.external = qEnvironmentVariableIsSet("QT_SCALE_FACTOR");
 
     // Same location PlatformManager uses: <AppData>/config/settings.ini.
+#ifdef Q_OS_WIN
+    // Settings in files on Windows too (not the registry), like on Linux.
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+#endif
     QCoreApplication::setOrganizationName(QStringLiteral("RecompStation"));
     QCoreApplication::setApplicationName(QStringLiteral("RecompStation"));
     scale.settingsFilePath = QDir(PlatformManager::defaultDataDirectory())

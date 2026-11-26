@@ -12,6 +12,13 @@
 
 #include <sys/stat.h>
 
+// Unix execute permission; Windows has none (programs are .exe files).
+#ifdef Q_OS_WIN
+#define QVERIFY_UNIX_EXECUTABLE(path) do { } while (false)
+#else
+#define QVERIFY_UNIX_EXECUTABLE(path) QVERIFY(QFileInfo(path).isExecutable())
+#endif
+
 class ArchiveExtractorTest : public QObject
 {
     Q_OBJECT
@@ -153,7 +160,9 @@ void ArchiveExtractorTest::extractsTarGzAndPreservesStructure()
     QVERIFY(QFileInfo(result.extractedDirectory).isDir());
     QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
         QStringLiteral("BanjoRecompiled/libsupport.so"))).isFile());
+#ifndef Q_OS_WIN
     QVERIFY(QFile::permissions(result.executablePath) & QFile::ExeOwner);
+#endif
 }
 
 
@@ -177,7 +186,7 @@ void ArchiveExtractorTest::extractsZipAndPreservesStructure()
         archivePath, destination,
         QStringLiteral("SpaghettiKart/SpaghettiKart.AppImage"));
     QVERIFY2(result.success, qPrintable(result.error));
-    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(result.executablePath);
     QFile companion(QDir(result.extractedDirectory).filePath(
         QStringLiteral("SpaghettiKart/resources/data.bin")));
     QVERIFY(companion.open(QIODevice::ReadOnly));
@@ -217,7 +226,7 @@ void ArchiveExtractorTest::extractsZipContainingNestedTarGz()
         outerArchivePath, destination, QStringLiteral("Starfox64Recompiled"));
     QVERIFY2(result.success, qPrintable(result.error));
     QCOMPARE(QFileInfo(result.executablePath).fileName(), QStringLiteral("Starfox64Recompiled"));
-    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(result.executablePath);
     QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
         QStringLiteral("assets/launcher.rml"))).isFile());
     QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
@@ -247,7 +256,7 @@ void ArchiveExtractorTest::findsExecutableInsideSingleTopLevelDirectory()
     QVERIFY2(result.success, qPrintable(result.error));
     QCOMPARE(QDir(result.extractedDirectory).relativeFilePath(result.executablePath),
              QStringLiteral("ConkerRecompiled/ConkerRecomp"));
-    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(result.executablePath);
     QVERIFY(QFileInfo(QDir(result.extractedDirectory).filePath(
         QStringLiteral("ConkerRecompiled/assets/thumbnail.png"))).isFile());
 }
@@ -267,7 +276,7 @@ void ArchiveExtractorTest::stagesStandaloneAppImage()
         sourcePath, destination, QStringLiteral("Standalone.AppImage"));
     QVERIFY2(result.success, qPrintable(result.error));
     QVERIFY(QFileInfo(result.executablePath).isFile());
-    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(result.executablePath);
     QFile installed(result.executablePath);
     QVERIFY(installed.open(QIODevice::ReadOnly));
     QCOMPARE(installed.readAll(), QByteArray("appimage-content"));
@@ -517,7 +526,7 @@ void ArchiveExtractorTest::dropsSetuidAndWorldWritableModes()
         QCOMPARE(int(info.st_mode & (S_IWGRP | S_IWOTH)), 0);
     }
 #endif
-    QVERIFY(QFileInfo(result.executablePath).isExecutable());
+    QVERIFY_UNIX_EXECUTABLE(result.executablePath);
 }
 
 void ArchiveExtractorTest::unwrapsOnlyOneNestingLevel()

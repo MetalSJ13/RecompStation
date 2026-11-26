@@ -15,6 +15,13 @@ class SettingsManagerTest : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase()
+    {
+#ifdef Q_OS_WIN
+        // As in the app: settings files, not the registry.
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+#endif
+    }
     void init();
     void defaultsToScanningOnStartup();
     void defaultsToSystemPresentationSize();

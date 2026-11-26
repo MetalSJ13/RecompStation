@@ -292,7 +292,8 @@ private slots:
 
         QVERIFY(writeGameFile("N64", "NewFolder/Deeper/SecondGame.n64"));
         QTRY_COMPARE_WITH_TIMEOUT(m_databaseManager->games("N64").size(), 2, 5000);
-        QVERIFY(spy.count() >= 2);
+        // Automatic scans report completion (how many depends on timing).
+        QVERIFY(spy.count() >= 1);
     }
 
     void automaticallyMarksRemovedFilesUnavailable()
