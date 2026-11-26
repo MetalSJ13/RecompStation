@@ -1,4 +1,6 @@
 #include <QtTest>
+#include <QHash>
+#include <QSet>
 
 #include "projects/ProjectCatalog.h"
 
