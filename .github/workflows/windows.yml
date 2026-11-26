@@ -93,7 +93,7 @@ jobs:
             $failed = Get-Content build\Testing\Temporary\LastTestsFailed.log | ForEach-Object { ($_ -split ':')[1] }
             foreach ($test in $failed) {
               Write-Host "===== $test"
-              $log = "build\$test-results.txt"
+              $log = Join-Path (Resolve-Path build) "$test-results.txt"
               $p = Start-Process -FilePath "build\$test.exe" -ArgumentList "-o", "$log,txt" `
                      -WorkingDirectory build -NoNewWindow -PassThru
               if (-not $p.WaitForExit(60000)) { $p.Kill(); Write-Host "(stopped after 60 s)" }
