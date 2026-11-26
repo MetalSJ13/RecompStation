@@ -149,7 +149,7 @@ LaunchBoxArchiveExtractor::Result LaunchBoxArchiveExtractor::extractMetadataArch
             failure = QStringLiteral("The LaunchBox archive contains an unsafe path.");
             break;
         }
-        const mode_t type = archive_entry_filetype(entry);
+        const auto type = archive_entry_filetype(entry);
         if (archive_entry_symlink(entry) || archive_entry_hardlink(entry)
             || (type != AE_IFREG && type != AE_IFDIR)) {
             failure = QStringLiteral("The LaunchBox archive contains a link or unsupported filesystem entry.");

@@ -201,6 +201,10 @@ Two release files, both with Qt included, built by GitHub Actions on Ubuntu 22.0
 
 ### 8. Windows support — Wine on Linux done (2026-11-25); the Windows version is next, after Linux packaging
 Decided 2026-11-24: Windows becomes a supported system, with `.exe` builds once the AppImage and portable zip work well. Work to plan when it starts:
+- Building the Windows version, step by step (started 2026-11-26, branch `feature/windows-build`):
+  - [ ] W1. Windows build in CI: a `windows-latest` job (MSVC, Qt from install-qt-action, libarchive and SDL2 from vcpkg) that compiles, runs the tests and packages a portable zip with `windeployqt` as a workflow artifact.
+  - [ ] W2. Windows behaviour, following the approved mockups ("Windows version of RecompStation"): Windows launchers are started directly from their folder with nothing prepared ("Opens to its own menu, where you pick the game"; Show file / Copy path); Linux-only projects say "No Windows launcher yet"; no Wine switch, Launcher choice or Linux wording; running under Wine on Linux says so and points to the Linux version; the updater says this copy can't update itself until Windows updating is built.
+  - [ ] W3. Release: the tag workflow drafts the Windows zip with the Linux files.
 - [ ] Builds: a GitHub Actions `windows-latest` runner with MSVC and Qt from aqtinstall, packaged with `windeployqt`. No Windows PC is needed to build; a Windows VM is useful for testing. Cross-compiling from Linux (MinGW/MXE) is possible but harder to keep working with Qt 6 and SDL2.
 - [ ] Code: the catalog needs Windows asset matching (`.zip`/`.exe`) alongside Linux (done in step 1); Linux-specific parts need Windows versions: paths (XDG folders → `%LOCALAPPDATA%`), launching (AppImage, `./run.sh`), file permissions (the owner-only key file), `xdg-open`, and the build scripts.
 - [ ] Release: a portable zip first, an installer later; unsigned builds trigger SmartScreen warnings until code signing is set up.

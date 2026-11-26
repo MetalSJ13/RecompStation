@@ -509,12 +509,14 @@ void ArchiveExtractorTest::dropsSetuidAndWorldWritableModes()
     const auto result = ArchiveExtractor::extractArchive(
         archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("launcher"));
     QVERIFY2(result.success, qPrintable(result.error));
+#ifndef Q_OS_WIN // Unix permission bits; Windows files have none.
     for (const QString &name : {QStringLiteral("launcher"), QStringLiteral("data.bin")}) {
         struct stat info {};
         QCOMPARE(::stat(QFile::encodeName(QDir(result.extractedDirectory).filePath(name)).constData(), &info), 0);
         QCOMPARE(int(info.st_mode & (S_ISUID | S_ISGID | S_ISVTX)), 0);
         QCOMPARE(int(info.st_mode & (S_IWGRP | S_IWOTH)), 0);
     }
+#endif
     QVERIFY(QFileInfo(result.executablePath).isExecutable());
 }
 

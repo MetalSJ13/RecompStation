@@ -28,8 +28,22 @@ PlatformManager::PlatformManager(const QString &dataDirectory, QObject *parent)
     };
 
     m_dataDirectory = dataDirectory.isEmpty()
-        ? QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+        ? defaultDataDirectory()
         : QDir(dataDirectory).absolutePath();
+}
+
+// Where settings, the library database, covers and launchers live. Linux:
+// Qt's application data folder (unchanged since 0.1.0). Windows: the local
+// (not roaming) application data folder, %LOCALAPPDATA%\RecompStation,
+// since installed launchers and covers are large and per machine.
+QString PlatformManager::defaultDataDirectory()
+{
+#ifdef Q_OS_WIN
+    return QDir(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation))
+        .filePath(QStringLiteral("RecompStation"));
+#else
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+#endif
 }
 
 bool PlatformManager::initialize()

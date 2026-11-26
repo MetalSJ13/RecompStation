@@ -77,4 +77,5 @@ private:
 
     bool createDirectory(const QString &path);
     static bool isValidProjectId(const QString &projectId);
+    static QString defaultDataDirectory();
 };

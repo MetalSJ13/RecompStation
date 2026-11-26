@@ -37,7 +37,7 @@ if(NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
 endif()
 
 option(RECOMPSTATION_FAST_LINKER "Link with mold or lld when available" ON)
-if(RECOMPSTATION_FAST_LINKER)
+if(RECOMPSTATION_FAST_LINKER AND NOT MSVC)
     include(CheckLinkerFlag)
     check_linker_flag(CXX "-fuse-ld=mold" RECOMPSTATION_HAVE_MOLD)
     if(RECOMPSTATION_HAVE_MOLD)
@@ -220,6 +220,18 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "16")
     target_compile_options(recompstation_core PRIVATE -Wno-sfinae-incomplete)
     target_compile_options(RecompStationApp PRIVATE -Wno-sfinae-incomplete)
+endif()
+
+# Windows: a window program (no console), named RecompStation.exe, with the
+# icon and version details Explorer shows.
+if(WIN32)
+    set(RECOMPSTATION_ICO "${CMAKE_CURRENT_SOURCE_DIR}/packaging/windows/recompstation.ico")
+    configure_file(packaging/windows/recompstation.rc.in
+                   "${CMAKE_CURRENT_BINARY_DIR}/recompstation.rc" @ONLY)
+    target_sources(RecompStationApp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/recompstation.rc")
+    set_target_properties(RecompStationApp PROPERTIES
+        WIN32_EXECUTABLE TRUE
+        OUTPUT_NAME RecompStation)
 endif()
 
 target_compile_definitions(RecompStationApp PRIVATE

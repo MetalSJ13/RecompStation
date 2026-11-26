@@ -182,7 +182,7 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
             archive_read_data_skip(reader);
             continue;
         }
-        const mode_t fileType = archive_entry_filetype(entry);
+        const auto fileType = archive_entry_filetype(entry);
         if (archive_entry_symlink(entry) || archive_entry_hardlink(entry)
             || (fileType != AE_IFREG && fileType != AE_IFDIR)) {
             failure = QStringLiteral("The archive contains a link or unsupported filesystem entry: %1")
@@ -256,12 +256,14 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
         // Do not preserve setuid/setgid/sticky bits or world-writable mode.
         QFile::Permissions permissions = QFile::ReadOwner | QFile::WriteOwner
             | QFile::ReadGroup | QFile::ReadOther;
-        const mode_t archiveMode = archive_entry_perm(entry);
-        if (archiveMode & S_IXUSR)
+        // Execute bits as stored in the archive (0100 owner, 0010 group,
+        // 0001 others); Windows has no names for them.
+        const auto archiveMode = archive_entry_perm(entry);
+        if (archiveMode & 0100)
             permissions |= QFile::ExeOwner;
-        if (archiveMode & S_IXGRP)
+        if (archiveMode & 0010)
             permissions |= QFile::ExeGroup;
-        if (archiveMode & S_IXOTH)
+        if (archiveMode & 0001)
             permissions |= QFile::ExeOther;
         QFile::setPermissions(outputPath, permissions);
     }

@@ -170,8 +170,8 @@ InterfaceScaleStartup prepareInterfaceScale()
     // Same location PlatformManager uses: <AppData>/config/settings.ini.
     QCoreApplication::setOrganizationName(QStringLiteral("RecompStation"));
     QCoreApplication::setApplicationName(QStringLiteral("RecompStation"));
-    scale.settingsFilePath = QDir(QStandardPaths::writableLocation(
-        QStandardPaths::AppDataLocation)).filePath(QStringLiteral("config/settings.ini"));
+    scale.settingsFilePath = QDir(PlatformManager::defaultDataDirectory())
+        .filePath(QStringLiteral("config/settings.ini"));
     scale.setting = SettingsManager::storedInterfaceScale(scale.settingsFilePath);
     scale.cachedAutoPercent = QSettings(scale.settingsFilePath, QSettings::IniFormat)
         .value(QStringLiteral("display/autoScalePercent"), 0).toInt();
