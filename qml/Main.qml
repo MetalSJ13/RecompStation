@@ -2032,6 +2032,12 @@ ApplicationWindow {
         return text
     }
 
+    // A local path as a file URL: "/home/…" on Linux, "C:/…" on Windows.
+    function fileUrl(path) {
+        const value = String(path || "").replace(/\\/g, "/")
+        return value.startsWith("/") ? "file://" + value : "file:///" + value
+    }
+
     // Supported recompilation project for a Library model entry, or null.
     function libraryGameProject(game) {
         if (!game)
@@ -2189,6 +2195,12 @@ ApplicationWindow {
             return false
         const both = projectHasBuild(project, projectCatalog.currentBuild) && projectHasBuild(project, windowsBuildKey)
         return both && (windowsLaunchersAllowed() || launcherBuild(project) === windowsBuildKey)
+    }
+    // The Windows version: a project with no Windows launcher (yet).
+    function noLauncherForThisSystem(project) {
+        return !!project && projectCatalog.currentSystem === "windows"
+            && !projectHasBuild(project, projectCatalog.currentBuild)
+            && !installedLauncher(project.id)
     }
     // A Windows-only project that can't be installed yet.
     function needsWindowsSwitch(project) {
@@ -3585,6 +3597,29 @@ ApplicationWindow {
             color: theme.textPrimary
         }
         onAccepted: window.uninstallProjectLauncher(window.pendingUninstallProjectId)
+    }
+
+    // The Windows version started under Wine on Linux: once per start, point
+    // to the Linux version, which runs natively.
+    Dialog {
+        id: underWineDialog
+        title: "Running under Wine"
+        modal: true
+        anchors.centerIn: parent
+        width: 460
+        standardButtons: Dialog.Ok | Dialog.Close
+        Label {
+            width: 400
+            wrapMode: Text.Wrap
+            text: "This is the Windows version of RecompStation, running under Wine. On Linux, the Linux version is the better fit: it runs natively, installs Linux launchers, and can still use Windows launchers through Wine when you choose."
+            color: theme.textPrimary
+        }
+        onAboutToShow: {
+            standardButton(Dialog.Ok).text = "Get the Linux version"
+            standardButton(Dialog.Close).text = "Continue here"
+        }
+        onAccepted: Qt.openUrlExternally("https://github.com/MetalSJ13/RecompStation/releases/latest")
+        Component.onCompleted: if (runningUnderWine) Qt.callLater(open)
     }
 
     // Switching an installed game between its Linux and Windows launcher.
@@ -6841,7 +6876,9 @@ ApplicationWindow {
                                             : appUpdater.lastChecked.length > 0 ? "You're up to date"
                                             : "Updates"
                                         description: !appUpdater.canInstall
-                                                ? "It was built from source. Get new versions from the website."
+                                                ? (appUpdater.installKind === "windows"
+                                                   ? "The Windows version can't update itself yet. Get new versions from the website."
+                                                   : "It was built from source. Get new versions from the website.")
                                             : updateState === "checkFailed" ? appUpdater.errorMessage
                                             : updateState === "failed" ? appUpdater.errorMessage
                                             : updateState === "ready" ? "Restart RecompStation to start using it."
@@ -7013,7 +7050,7 @@ ApplicationWindow {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             text: "Open folder"
-                                            onClicked: Qt.openUrlExternally("file://" + platformManager.dataDirectory)
+                                            onClicked: Qt.openUrlExternally(window.fileUrl(platformManager.dataDirectory))
                                             background: Rectangle {
                                                 radius: 9
                                                 color: parent.activeFocus ? theme.elevatedSurface
@@ -7088,7 +7125,7 @@ ApplicationWindow {
                                             activeFocusOnTab: true
                                             focusPolicy: Qt.StrongFocus
                                             text: "Open log folder"
-                                            onClicked: Qt.openUrlExternally("file://" + platformManager.dataDirectory + "/logs")
+                                            onClicked: Qt.openUrlExternally(window.fileUrl(platformManager.dataDirectory + "/logs"))
                                             background: Rectangle {
                                                 radius: 9
                                                 color: parent.activeFocus ? theme.elevatedSurface

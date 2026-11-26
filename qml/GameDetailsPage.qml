@@ -1152,7 +1152,7 @@ Popup {
                                     enabled: !!detailsMoreMenu.installation && !!detailsMoreMenu.installation.directory
                                     onClicked: {
                                         detailsMoreMenu.close()
-                                        Qt.openUrlExternally("file://" + detailsMoreMenu.installation.directory)
+                                        Qt.openUrlExternally(window.fileUrl(detailsMoreMenu.installation.directory))
                                     }
                                 }
                                 MoreMenuItem {
@@ -1163,8 +1163,8 @@ Popup {
                                     onClicked: {
                                         detailsMoreMenu.close()
                                         const path = detailsMoreMenu.logPath
-                                        Qt.openUrlExternally("file://" + (platformManager.pathExists(path)
-                                            ? path : platformManager.dataDirectory + "/logs"))
+                                        Qt.openUrlExternally(window.fileUrl((platformManager.pathExists(path)
+                                            ? path : platformManager.dataDirectory + "/logs")))
                                     }
                                 }
                                 Rectangle {
@@ -1319,7 +1319,7 @@ Popup {
                                 visible: detailsLaunchStatus.stateName === "manual" || detailsLaunchStatus.stateName === "disabled"
                                 text: "Show file"
                                 implicitHeight: 38
-                                onClicked: Qt.openUrlExternally("file://" + gameDetailsPopup.folderOf(gameDetailsPopup.launchState.gameFile || ""))
+                                onClicked: Qt.openUrlExternally(window.fileUrl(gameDetailsPopup.folderOf(gameDetailsPopup.launchState.gameFile || "")))
                             }
                             Button {
                                 visible: detailsShowFileButton.visible
@@ -1351,6 +1351,8 @@ Popup {
                     readonly property string errorText: launchError || downloadError || releaseError
                     text: errorText.length > 0 ? errorText
                         : !gameDetailsPopup.selectedProject ? ""
+                        // Said by the "No Windows launcher yet" notice instead.
+                        : window.noLauncherForThisSystem(gameDetailsPopup.selectedProject) ? ""
                         : gameDetailsPopup.installedProject !== null
                             ? (gameDetailsPopup.updateAvailable
                                 ? "Update available: " + gameDetailsPopup.releaseTag
@@ -1756,6 +1758,7 @@ Popup {
                                 Layout.fillWidth: true
                                 text: gameDetailsPopup.installedProject !== null ? "Installed"
                                     : (gameDetailsPopup.downloadState.loading || gameDetailsPopup.downloadState.installing) ? "Installing"
+                                    : window.noLauncherForThisSystem(gameDetailsPopup.selectedProject) ? "Not available for Windows"
                                     : gameDetailsPopup.releaseState.loading ? "Checking for releases…"
                                     : "Not installed"
                                 color: gameDetailsPopup.installedProject !== null ? theme.success : theme.accentHover
@@ -1828,6 +1831,28 @@ Popup {
                                 }
                             }
                         }
+                        // The Windows version: a project that only has Linux launchers.
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 6
+                            visible: window.noLauncherForThisSystem(gameDetailsPopup.selectedProject)
+                            radius: 10
+                            color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.08)
+                            border.color: Qt.rgba(theme.accent.r, theme.accent.g, theme.accent.b, 0.3)
+                            implicitHeight: detailsNoWindowsText.implicitHeight + 22
+                            Label {
+                                id: detailsNoWindowsText
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.margins: 12
+                                wrapMode: Text.Wrap
+                                textFormat: Text.StyledText
+                                color: theme.textSecondary
+                                font.pixelSize: 13 * theme.fontScale
+                                text: "<b>No Windows launcher yet</b><br>This project only publishes launchers for Linux so far. When it adds a Windows one, Install appears here."
+                            }
+                        }
                         // A Windows-only project while Windows launchers aren't available.
                         Rectangle {
                             Layout.fillWidth: true
@@ -1862,6 +1887,8 @@ Popup {
                             visible: gameDetailsPopup.installedProject !== null
                                 && (gameDetailsPopup.launchState.state || "").length > 0
                             readonly property string method: gameDetailsPopup.launchState.method || ""
+                            // Windows launchers (through Wine, or on Windows) pick the file themselves.
+                            readonly property bool picksOwnFile: method === "wine" || method === "windows"
 
                             Label {
                                 text: "LAUNCH"
@@ -1887,16 +1914,16 @@ Popup {
                                     font.pixelSize: 13 * theme.fontScale
                                     elide: Text.ElideMiddle
                                 }
-                                Item { implicitWidth: 1; implicitHeight: 1; visible: detailsLaunchSection.method !== "wine" }
+                                Item { implicitWidth: 1; implicitHeight: 1; visible: !detailsLaunchSection.picksOwnFile }
                                 // Windows launchers pick the file themselves.
                                 RowLayout {
-                                    visible: detailsLaunchSection.method === "wine"
+                                    visible: detailsLaunchSection.picksOwnFile
                                         && (gameDetailsPopup.launchState.gameFile || "").length > 0
                                     spacing: 6
                                     Button {
                                         text: "Show file"
                                         implicitHeight: 34
-                                        onClicked: Qt.openUrlExternally("file://" + gameDetailsPopup.folderOf(gameDetailsPopup.launchState.gameFile || ""))
+                                        onClicked: Qt.openUrlExternally(window.fileUrl(gameDetailsPopup.folderOf(gameDetailsPopup.launchState.gameFile || "")))
                                     }
                                     Button {
                                         text: "Copy path"
@@ -1906,7 +1933,7 @@ Popup {
                                 }
                                 Item {
                                     implicitWidth: 1; implicitHeight: 1
-                                    visible: detailsLaunchSection.method === "wine"
+                                    visible: detailsLaunchSection.picksOwnFile
                                         && (gameDetailsPopup.launchState.gameFile || "").length === 0
                                 }
 
@@ -1932,7 +1959,7 @@ Popup {
                                     enabled: platformManager.pathExists(gameDetailsPopup.launchState.wineDrive || "")
                                     text: "Open Wine's C: drive"
                                     implicitHeight: 34
-                                    onClicked: Qt.openUrlExternally("file://" + gameDetailsPopup.launchState.wineDrive)
+                                    onClicked: Qt.openUrlExternally(window.fileUrl(gameDetailsPopup.launchState.wineDrive))
                                 }
 
                                 Label {
@@ -1980,14 +2007,14 @@ Popup {
                                     onClicked: {
                                         const saves = gameDetailsPopup.launchState.savesFolder
                                         // Before the first start the saves folder may not exist yet.
-                                        Qt.openUrlExternally("file://" + (platformManager.pathExists(saves)
-                                            ? saves : gameDetailsPopup.launchState.dataFolder))
+                                        Qt.openUrlExternally(window.fileUrl((platformManager.pathExists(saves)
+                                            ? saves : gameDetailsPopup.launchState.dataFolder)))
                                     }
                                 }
                             }
                             Label {
                                 Layout.fillWidth: true
-                                visible: detailsLaunchSection.method === "wine"
+                                visible: detailsLaunchSection.picksOwnFile
                                 text: "Window and display settings are made in the launcher itself."
                                 color: theme.textMuted
                                 font.pixelSize: 11.5 * theme.fontScale

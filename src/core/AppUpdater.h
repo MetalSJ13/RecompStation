@@ -46,7 +46,7 @@ class AppUpdater : public QObject
 public:
     struct Install
     {
-        QString kind;   // "appimage", "zip" or "source"
+        QString kind;   // "appimage", "zip", "windows" (not yet updatable) or "source"
         QString path;   // the AppImage file, or the portable folder
     };
 
@@ -54,7 +54,10 @@ public:
 
     QString currentVersion() const;
     QString installKind() const { return m_install.kind; }
-    bool canInstall() const { return m_install.kind != QStringLiteral("source"); }
+    bool canInstall() const
+    {
+        return m_install.kind == QStringLiteral("appimage") || m_install.kind == QStringLiteral("zip");
+    }
     QString state() const { return m_state; }
     QString latestVersion() const { return m_latestVersion; }
     QString releaseNotes() const { return m_releaseNotes; }

@@ -42,6 +42,12 @@
 #include "github/GitHubManager.h"
 #include "projects/ProjectCatalog.h"
 
+#ifdef Q_OS_WIN
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 namespace {
 #ifndef RECOMPSTATION_BUILD_ID
 #define RECOMPSTATION_BUILD_ID "unknown"
@@ -211,6 +217,18 @@ void relaunchApplication(const QString &settingsSection, bool automaticScaleRela
     if (!started)
         qWarning() << "Could not restart RecompStation.";
 }
+}
+
+// The Windows version running under Wine on Linux: Wine's ntdll has
+// wine_get_version, Windows' doesn't. The Linux version is the better fit.
+static bool runningUnderWine()
+{
+#ifdef Q_OS_WIN
+    const HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    return ntdll && GetProcAddress(ntdll, "wine_get_version") != nullptr;
+#else
+    return false;
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -478,6 +496,7 @@ int main(int argc, char *argv[])
     wineSupport.refresh();
     gameLaunchManager.setWineSupport(&wineSupport);
     engine.rootContext()->setContextProperty("wineSupport", &wineSupport);
+    engine.rootContext()->setContextProperty("runningUnderWine", runningUnderWine());
     engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
     engine.rootContext()->setContextProperty("platformManager", &platformManager);
     engine.rootContext()->setContextProperty("databaseManager", &databaseManager);

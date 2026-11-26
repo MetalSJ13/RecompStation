@@ -497,6 +497,11 @@ bool AppUpdater::finishAtStartup()
 AppUpdater::Install AppUpdater::detectInstall(const QString &appImageEnvironment,
                                               const QString &applicationFilePath)
 {
+#ifdef Q_OS_WIN
+    // Updating the Windows version isn't built yet: it points to the website.
+    Q_UNUSED(appImageEnvironment);
+    return {QStringLiteral("windows"), QFileInfo(applicationFilePath).absolutePath()};
+#endif
     if (!appImageEnvironment.isEmpty()) {
         const QFileInfo appImage(appImageEnvironment);
         if (appImage.isFile() && !appImage.isSymLink())
