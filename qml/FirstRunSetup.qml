@@ -202,8 +202,11 @@ Popup {
                         text: "Use this folder"
                         highlighted: true
                         onClicked: {
-                            if (platformManager.useLibraryLocation(setup.suggested.path))
+                            if (platformManager.useLibraryLocation(setup.suggested.path)) {
+                                // Windows: easy to find again in File Explorer.
+                                platformManager.pinToQuickAccess(setup.suggested.path)
                                 window.firstRunStep = 1
+                            }
                             else
                                 setupMessage.text = "Could not create that folder. Choose another one."
                         }
@@ -470,6 +473,21 @@ Popup {
                     color: theme.textSecondary
                     font.pixelSize: 15 * theme.fontScale
                     wrapMode: Text.Wrap
+                }
+                // Where the library is, and a way to open it.
+                Label {
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "Your library: " + platformManager.displayPath(platformManager.libraryDirectory)
+                        + (Qt.platform.os === "windows" ? " (pinned to Quick access in File Explorer)" : "")
+                    color: theme.textMuted
+                    font.pixelSize: 13 * theme.fontScale
+                    wrapMode: Text.Wrap
+                }
+                SetupButton {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: Qt.platform.os === "windows" ? "Open in File Explorer" : "Open folder"
+                    onClicked: Qt.openUrlExternally(window.fileUrl(platformManager.libraryDirectory))
                 }
                 SetupButton {
                     id: finishButton

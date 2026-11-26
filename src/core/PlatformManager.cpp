@@ -1,6 +1,7 @@
 #include "PlatformManager.h"
 
 #include <QDir>
+#include <QProcess>
 #include <algorithm>
 #include <QRegularExpression>
 #include <QFileInfo>
@@ -47,6 +48,28 @@ QString PlatformManager::displayPath(const QString &path) const
     if (path.startsWith(home + QLatin1Char('/')))
         return QStringLiteral("~") + path.mid(home.size());
     return path;
+#endif
+}
+
+void PlatformManager::pinToQuickAccess(const QString &directoryPath) const
+{
+#ifdef Q_OS_WIN
+    const QFileInfo info(directoryPath);
+    if (!info.isDir())
+        return;
+    // Explorer's own "Pin to Quick access" command, through the Shell
+    // object; the path goes in as a single-quoted PowerShell string.
+    QString path = QDir::toNativeSeparators(info.absoluteFilePath());
+    path.replace(QLatin1Char('\''), QStringLiteral("''"));
+    const QString script = QStringLiteral(
+        "(New-Object -ComObject Shell.Application).Namespace('%1').Self.InvokeVerb('pintohome')").arg(path);
+    if (!QProcess::startDetached(QStringLiteral("powershell.exe"),
+                                 {QStringLiteral("-NoProfile"), QStringLiteral("-NonInteractive"),
+                                  QStringLiteral("-WindowStyle"), QStringLiteral("Hidden"),
+                                  QStringLiteral("-Command"), script}))
+        qWarning() << "Could not pin the library folder to Quick access.";
+#else
+    Q_UNUSED(directoryPath);
 #endif
 }
 

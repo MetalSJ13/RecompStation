@@ -35,6 +35,9 @@ public:
     // A path as people see it: Windows "C:\\Users\\Sam\\RecompStation",
     // Linux "~/RecompStation".
     Q_INVOKABLE QString displayPath(const QString &path) const;
+    // Windows: pins a folder to File Explorer's Quick access sidebar, so a
+    // new library folder is easy to find. Does nothing elsewhere.
+    Q_INVOKABLE void pinToQuickAccess(const QString &directoryPath) const;
 
     QString dataDirectory() const;
     QString settingsFilePath() const;

@@ -6671,33 +6671,60 @@ ApplicationWindow {
                                     SettingRow {
                                         title: "Library folder"
                                         description: platformManager.libraryConfigured
-                                            ? platformManager.libraryDirectory
+                                            ? platformManager.displayPath(platformManager.libraryDirectory)
                                             : "No library folder selected yet."
-                                        Button {
-                                            activeFocusOnTab: true
-                                            focusPolicy: Qt.StrongFocus
-                                            text: "Change folder"
-                                            enabled: platformManager.libraryConfigured
-                                            onClicked: window.openLibraryFolderBrowser()
-                                        background: Rectangle {
-                                            radius: 9
-                                            color: parent.activeFocus ? theme.elevatedSurface
-                                                : (parent.highlighted ? theme.accent : theme.surface)
-                                            border.color: theme.accent
-                                            border.width: parent.activeFocus ? 2 : 0
-                                        }
-                                        contentItem: Label {
-                                            text: parent.text
-                                            color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
-                                            opacity: parent.enabled ? 1 : 0.5
-                                            font.pixelSize: 13 * theme.fontScale
-                                            font.weight: Font.DemiBold
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        leftPadding: 16
-                                        rightPadding: 16
-                                        implicitHeight: 38
+                                        RowLayout {
+                                            spacing: 8
+                                            Button {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                visible: platformManager.libraryConfigured
+                                                text: Qt.platform.os === "windows" ? "Open in File Explorer" : "Open folder"
+                                                onClicked: Qt.openUrlExternally(window.fileUrl(platformManager.libraryDirectory))
+                                                background: Rectangle {
+                                                    radius: 9
+                                                    color: parent.activeFocus ? theme.elevatedSurface : theme.surface
+                                                    border.color: theme.accent
+                                                    border.width: parent.activeFocus ? 2 : 0
+                                                }
+                                                contentItem: Label {
+                                                    text: parent.text
+                                                    color: theme.textPrimary
+                                                    font.pixelSize: 13 * theme.fontScale
+                                                    font.weight: Font.DemiBold
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    verticalAlignment: Text.AlignVCenter
+                                                }
+                                                leftPadding: 16
+                                                rightPadding: 16
+                                                implicitHeight: 38
+                                            }
+                                            Button {
+                                                activeFocusOnTab: true
+                                                focusPolicy: Qt.StrongFocus
+                                                text: "Change folder"
+                                                enabled: platformManager.libraryConfigured
+                                                onClicked: window.openLibraryFolderBrowser()
+                                            background: Rectangle {
+                                                radius: 9
+                                                color: parent.activeFocus ? theme.elevatedSurface
+                                                    : (parent.highlighted ? theme.accent : theme.surface)
+                                                border.color: theme.accent
+                                                border.width: parent.activeFocus ? 2 : 0
+                                            }
+                                            contentItem: Label {
+                                                text: parent.text
+                                                color: parent.highlighted && !parent.activeFocus ? theme.accentText : theme.textPrimary
+                                                opacity: parent.enabled ? 1 : 0.5
+                                                font.pixelSize: 13 * theme.fontScale
+                                                font.weight: Font.DemiBold
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                            leftPadding: 16
+                                            rightPadding: 16
+                                            implicitHeight: 38
+                                            }
                                         }
                                     }
                                     Label {
