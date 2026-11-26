@@ -1,7 +1,8 @@
 # Builds the Windows version: RecompStation.exe with Qt, SDL2 and libarchive
-# beside it, as a portable zip (x86_64). Runs on every push that changes the
-# program (and from the Actions tab once it is on main), with the zip kept as
-# a workflow artifact for testing.
+# beside it, as a portable zip (x86_64), kept as a workflow artifact for
+# testing. It takes a while, so on a working branch it runs only when the
+# commit message says [windows]; pushes to ui/interface-redesign and main
+# (merges) always run it, and so does the Actions tab once it is on main.
 name: Windows build
 
 on:
@@ -24,6 +25,11 @@ permissions:
 
 jobs:
   windows-x86_64:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/ui/interface-redesign' ||
+      contains(github.event.head_commit.message, '[windows]')
     runs-on: windows-2022
     env:
       QT_VERSION: '6.10.*'
@@ -36,12 +42,22 @@ jobs:
         with:
           fetch-depth: 0   # the build id in the log comes from git describe
 
+      # The runner's vcpkg changes now and then, and packages built by an
+      # older one aren't reused, so its version is part of the cache name;
+      # otherwise an old cache keeps matching and every run builds them all
+      # again (13 minutes).
+      - name: Find the vcpkg version
+        id: vcpkg-version
+        run: |
+          "commit=$(git -C "$env:VCPKG_INSTALLATION_ROOT" rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+
       - name: Restore vcpkg packages
         id: vcpkg-cache
         uses: actions/cache/restore@v4
         with:
           path: vcpkg-cache
-          key: vcpkg-x64-windows-libarchive-sdl2-v1
+          key: vcpkg-x64-windows-libarchive-sdl2-${{ steps.vcpkg-version.outputs.commit }}
+          restore-keys: vcpkg-x64-windows-libarchive-sdl2-
 
       - name: Install libarchive and SDL2 (vcpkg)
         run: |
@@ -55,7 +71,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: vcpkg-cache
-          key: vcpkg-x64-windows-libarchive-sdl2-v1
+          key: vcpkg-x64-windows-libarchive-sdl2-${{ steps.vcpkg-version.outputs.commit }}
 
       - name: Install Qt ${{ env.QT_VERSION }}
         uses: jurplel/install-qt-action@v4
