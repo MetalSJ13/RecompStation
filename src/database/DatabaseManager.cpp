@@ -1,6 +1,7 @@
 #include "DatabaseManager.h"
 
 #include <QHash>
+#include <QSet>
 #include "../core/Logging.h"
 
 #include <QDir>
@@ -177,7 +178,8 @@ bool DatabaseManager::registerGame(const QString &title,
         return false;
     }
 
-    if (!m_database.transaction()) {
+    const bool ownTransaction = !m_batchActive;
+    if (ownTransaction && !m_database.transaction()) {
         m_lastError = m_database.lastError().text();
         return false;
     }
@@ -190,7 +192,7 @@ bool DatabaseManager::registerGame(const QString &title,
         if (m_lastError.isEmpty())
             m_lastError = "Platform is not registered: " + platform;
         platformQuery.finish();
-        m_database.rollback();
+        if (ownTransaction) m_database.rollback();
         return false;
     }
     const int platformId = platformQuery.value(0).toInt();
@@ -202,7 +204,7 @@ bool DatabaseManager::registerGame(const QString &title,
     existingQuery.bindValue(":game_path", gamePath);
     if (!existingQuery.exec()) {
         m_lastError = existingQuery.lastError().text();
-        m_database.rollback();
+        if (ownTransaction) m_database.rollback();
         return false;
     }
     const bool isReappearing = existingQuery.next()
@@ -227,7 +229,7 @@ bool DatabaseManager::registerGame(const QString &title,
     insertQuery.bindValue(":game_path", gamePath);
     if (!insertQuery.exec()) {
         m_lastError = insertQuery.lastError().text();
-        m_database.rollback();
+        if (ownTransaction) m_database.rollback();
         return false;
     }
     const bool changed = insertQuery.numRowsAffected() > 0;
@@ -249,17 +251,45 @@ bool DatabaseManager::registerGame(const QString &title,
         resetLookup.bindValue(":game_id", existingGameId);
         if (!resetLookup.exec()) {
             m_lastError = resetLookup.lastError().text();
-            m_database.rollback();
+            if (ownTransaction) m_database.rollback();
             return false;
         }
     }
 
-    if (!m_database.commit()) {
+    if (ownTransaction && !m_database.commit()) {
         m_lastError = m_database.lastError().text();
         return false;
     }
     m_lastError.clear();
     return changed;
+}
+
+bool DatabaseManager::beginBatch()
+{
+    if (m_batchActive)
+        return true;
+    if (!m_database.isOpen() || !m_database.transaction()) {
+        m_lastError = m_database.isOpen() ? m_database.lastError().text()
+                                          : QStringLiteral("Database is not open.");
+        return false;
+    }
+    m_batchActive = true;
+    return true;
+}
+
+bool DatabaseManager::endBatch()
+{
+    if (!m_batchActive)
+        return true;
+    m_batchActive = false;
+    // A failed statement inside the batch changed nothing (SQLite undoes
+    // the statement), so the others are still saved.
+    if (!m_database.commit()) {
+        m_lastError = m_database.lastError().text();
+        m_database.rollback();
+        return false;
+    }
+    return true;
 }
 
 bool DatabaseManager::reconcilePlatformGames(
@@ -280,38 +310,48 @@ bool DatabaseManager::reconcilePlatformGames(
         return false;
     }
     const int platformId = platformQuery.value(0).toInt();
+    platformQuery.finish();
 
-    if (!m_database.transaction()) {
+    // Only the games whose availability actually changes are written, so a
+    // scan that finds the same files as last time writes nothing.
+    const QSet<QString> discovered(discoveredPaths.cbegin(), discoveredPaths.cend());
+    QList<QPair<int, int>> changes;   // game id, new is_available
+    QSqlQuery current(m_database);
+    current.prepare("SELECT id, game_path, is_available FROM games WHERE platform_id = :platform_id");
+    current.bindValue(":platform_id", platformId);
+    if (!current.exec()) {
+        m_lastError = current.lastError().text();
+        return false;
+    }
+    while (current.next()) {
+        const int available = discovered.contains(current.value(1).toString()) ? 1 : 0;
+        if (current.value(2).toInt() != available)
+            changes.append({current.value(0).toInt(), available});
+    }
+    current.finish();
+    if (changes.isEmpty()) {
+        m_lastError.clear();
+        return true;
+    }
+
+    const bool ownTransaction = !m_batchActive;
+    if (ownTransaction && !m_database.transaction()) {
         m_lastError = m_database.lastError().text();
         return false;
     }
-
-    QSqlQuery markMissing(m_database);
-    markMissing.prepare(
-        "UPDATE games SET is_available = 0 "
-        "WHERE platform_id = :platform_id");
-    markMissing.bindValue(":platform_id", platformId);
-    if (!markMissing.exec()) {
-        m_lastError = markMissing.lastError().text();
-        m_database.rollback();
-        return false;
-    }
-
-    QSqlQuery markFound(m_database);
-    markFound.prepare(
-        "UPDATE games SET is_available = 1 "
-        "WHERE platform_id = :platform_id AND game_path = :game_path");
-    for (const QString &path : discoveredPaths) {
-        markFound.bindValue(":platform_id", platformId);
-        markFound.bindValue(":game_path", path);
-        if (!markFound.exec()) {
-            m_lastError = markFound.lastError().text();
-            m_database.rollback();
+    QSqlQuery update(m_database);
+    update.prepare("UPDATE games SET is_available = :available WHERE id = :id");
+    for (const auto &change : std::as_const(changes)) {
+        update.bindValue(":available", change.second);
+        update.bindValue(":id", change.first);
+        if (!update.exec()) {
+            m_lastError = update.lastError().text();
+            if (ownTransaction)
+                m_database.rollback();
             return false;
         }
     }
-
-    if (!m_database.commit()) {
+    if (ownTransaction && !m_database.commit()) {
         m_lastError = m_database.lastError().text();
         return false;
     }

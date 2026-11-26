@@ -4,6 +4,7 @@
 #include <QString>
 #include <QStringList>
 #include <QFileSystemWatcher>
+#include <QFutureWatcher>
 #include <QTimer>
 
 class PlatformManager;
@@ -48,9 +49,30 @@ signals:
     void scanStateChanged();
     void monitoringActiveChanged();
 
+public:
+    // What a system's folder holds, found without touching the database, so
+    // it can run on a worker thread (unpacking .zip/.7z ROMs included).
+    struct FoundFiles {
+        QString platform;
+        QStringList titles;
+        QStringList paths;
+        int unsupported = 0;
+        qint64 elapsedMs = 0;
+    };
+    static FoundFiles findGameFiles(const QString &platform, const QString &directoryPath,
+                                    const QStringList &extensions);
+
 private:
-    void unpackArchivedRoms(const QString &platform, const QString &directoryPath,
-                            const QStringList &extensions);
+    static void unpackArchivedRoms(const QString &platform, const QString &directoryPath,
+                                   const QStringList &extensions);
+    static bool isDiscCompanionFile(const QString &filePath);
+    // The checks before a system is scanned; false (with m_lastError) when
+    // its folder can't be scanned.
+    bool preparePlatformScan(const QString &platform, QString *directoryPath,
+                             QStringList *extensions);
+    // Saves what findGameFiles found, as one database transaction.
+    int registerFoundFiles(const FoundFiles &found);
+    void finishPlatformAsync(const QString &platform, int found);
     static constexpr int WatchDebounceMs = 750;
 
     PlatformManager *m_platformManager;
@@ -72,7 +94,7 @@ private:
     bool m_watchesStarted = false;
 
     QStringList supportedExtensions(const QString &platform) const;
-    bool isDiscCompanionFile(const QString &filePath) const;
+    QFutureWatcher<FoundFiles> m_findWatcher;
     void scheduleAutomaticScan(const QString &changedPath);
     void refreshDirectoryWatches();
     void scanNextPlatformAsync();

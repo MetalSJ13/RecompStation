@@ -13,6 +13,32 @@ class DatabaseManagerTest : public QObject
     Q_OBJECT
 
 private slots:
+    void batchSavesSeveralGamesAndReconcilesOnlyChanges()
+    {
+        QTemporaryDir temporaryDirectory;
+        QVERIFY(temporaryDirectory.isValid());
+        DatabaseManager database;
+        QVERIFY2(database.initialize(temporaryDirectory.path() + "/database/library.sqlite"),
+                 qPrintable(database.lastError()));
+        const QString a = temporaryDirectory.path() + "/games/N64/A.z64";
+        const QString b = temporaryDirectory.path() + "/games/N64/B.z64";
+
+        QVERIFY(database.beginBatch());
+        QVERIFY(database.registerGame(QStringLiteral("A"), QStringLiteral("N64"), a));
+        QVERIFY(database.registerGame(QStringLiteral("B"), QStringLiteral("N64"), b));
+        QVERIFY(database.reconcilePlatformGames(QStringLiteral("N64"), {a, b}));
+        QVERIFY(database.endBatch());
+        QCOMPARE(database.games(QStringLiteral("N64")).size(), 2);
+
+        // Nothing changed: still both. B gone: only A. B back: both again.
+        QVERIFY(database.reconcilePlatformGames(QStringLiteral("N64"), {a, b}));
+        QCOMPARE(database.games(QStringLiteral("N64")).size(), 2);
+        QVERIFY(database.reconcilePlatformGames(QStringLiteral("N64"), {a}));
+        QCOMPARE(database.games(QStringLiteral("N64")).size(), 1);
+        QVERIFY(database.reconcilePlatformGames(QStringLiteral("N64"), {a, b}));
+        QCOMPARE(database.games(QStringLiteral("N64")).size(), 2);
+    }
+
     void associatesMetadataWithSpecificLocalGame()
     {
         QTemporaryDir temporaryDirectory;

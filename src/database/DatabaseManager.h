@@ -20,6 +20,11 @@ public:
 
     bool reconcilePlatformGames(const QString &platform,
                                 const QStringList &discoveredPaths);
+    // Several changes saved as one transaction: one write to disk instead
+    // of one per call (each waits for the disk). registerGame and
+    // reconcilePlatformGames called in between join it.
+    bool beginBatch();
+    bool endBatch();
     Q_INVOKABLE bool registerGame(const QString &title,
                                   const QString &platform,
                                   const QString &gamePath);
@@ -60,6 +65,7 @@ signals:
 private:
     QSqlDatabase m_database;
     QString m_lastError;
+    bool m_batchActive = false;
     bool createTables();
     bool associateMetadataInternal(int gameId,
                                    const QString &provider,

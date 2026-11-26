@@ -7,8 +7,10 @@
 
 #include <QDir>
 #include <QDirIterator>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QSet>
+#include <QtConcurrent/QtConcurrentRun>
 
 LibraryScanner::LibraryScanner(PlatformManager *platformManager,
                                DatabaseManager *databaseManager,
@@ -19,6 +21,18 @@ LibraryScanner::LibraryScanner(PlatformManager *platformManager,
 {
     m_watchDebounceTimer.setSingleShot(true);
     m_watchDebounceTimer.setInterval(WatchDebounceMs);
+
+    // A system's files have been found on the worker thread: save them here.
+    connect(&m_findWatcher, &QFutureWatcher<FoundFiles>::finished, this, [this]() {
+        if (!m_asyncScanActive)
+            return;
+        const FoundFiles found = m_findWatcher.result();
+        m_lastScanCount = 0;
+        m_lastUnsupportedCount = found.unsupported;
+        m_lastError.clear();
+        const int registered = registerFoundFiles(found);
+        finishPlatformAsync(found.platform, registered);
+    });
 
     connect(&m_fileWatcher, &QFileSystemWatcher::directoryChanged,
             this, [this](const QString &path) {
@@ -205,7 +219,7 @@ QStringList LibraryScanner::supportedExtensions(const QString &platform) const
     return {};
 }
 
-bool LibraryScanner::isDiscCompanionFile(const QString &filePath) const
+bool LibraryScanner::isDiscCompanionFile(const QString &filePath)
 {
     const QFileInfo info(filePath);
     const QString extension = info.suffix().toLower();
@@ -260,6 +274,91 @@ int LibraryScanner::scanAll()
     return m_lastScanCount;
 }
 
+bool LibraryScanner::preparePlatformScan(const QString &platform, QString *directoryPath,
+                                         QStringList *extensions)
+{
+    *directoryPath = m_platformManager->platformDirectory(platform);
+    *extensions = supportedExtensions(platform);
+    if (directoryPath->isEmpty() || extensions->isEmpty()) {
+        m_lastError = "Unknown platform: " + platform;
+        qCWarning(lcLibrary) << m_lastError;
+        return false;
+    }
+    if (!QDir(*directoryPath).exists()) {
+        m_lastError = "Game directory does not exist: " + *directoryPath;
+        qCWarning(lcLibrary) << m_lastError;
+        return false;
+    }
+    return true;
+}
+
+LibraryScanner::FoundFiles LibraryScanner::findGameFiles(const QString &platform,
+                                                          const QString &directoryPath,
+                                                          const QStringList &extensions)
+{
+    QElapsedTimer timer;
+    timer.start();
+    FoundFiles found;
+    found.platform = platform;
+
+    const QSet<QString> acceptedExtensions(extensions.cbegin(), extensions.cend());
+    unpackArchivedRoms(platform, directoryPath, extensions);
+
+    QDirIterator iterator(
+        directoryPath,
+        QDir::Files | QDir::Readable | QDir::NoSymLinks,
+        QDirIterator::Subdirectories
+    );
+    while (iterator.hasNext()) {
+        const QString filePath = iterator.next();
+        const QFileInfo info(filePath);
+        if (!acceptedExtensions.contains(info.suffix().toLower())) {
+            ++found.unsupported;
+            continue;
+        }
+        if (isDiscCompanionFile(filePath))
+            continue;
+        const QString title = info.completeBaseName().trimmed();
+        if (title.isEmpty())
+            continue;
+        found.titles.append(title);
+        found.paths.append(info.absoluteFilePath());
+    }
+    found.elapsedMs = timer.elapsed();
+    return found;
+}
+
+int LibraryScanner::registerFoundFiles(const FoundFiles &found)
+{
+    QElapsedTimer timer;
+    timer.start();
+    // One transaction for the whole system: each separate save waits for
+    // the disk, and on Windows far longer than on Linux.
+    const bool batched = m_databaseManager->beginBatch();
+    for (int i = 0; i < found.paths.size(); ++i) {
+        if (m_databaseManager->registerGame(found.titles.at(i), found.platform, found.paths.at(i))) {
+            ++m_lastScanCount;
+        } else if (!m_databaseManager->lastError().isEmpty()) {
+            m_lastError = m_databaseManager->lastError();
+        }
+    }
+    // Reconcile only after a complete scan without database errors.
+    if (m_lastError.isEmpty()
+        && !m_databaseManager->reconcilePlatformGames(found.platform, found.paths)) {
+        m_lastError = m_databaseManager->lastError();
+    }
+    if (batched && !m_databaseManager->endBatch() && m_lastError.isEmpty())
+        m_lastError = m_databaseManager->lastError();
+
+    qCDebug(lcLibrary) << "Platform scan finished:" << found.platform
+                      << "registered:" << m_lastScanCount
+                      << "discovered:" << found.paths.size()
+                      << "files:" << found.elapsedMs << "ms database:" << timer.elapsed() << "ms";
+    if (!m_lastError.isEmpty())
+        qCWarning(lcLibrary) << "Platform scan error:" << found.platform << m_lastError;
+    return m_lastScanCount;
+}
+
 int LibraryScanner::scanPlatform(const QString &platform)
 {
     qCDebug(lcLibrary) << "Scanning platform:" << platform;
@@ -267,81 +366,19 @@ int LibraryScanner::scanPlatform(const QString &platform)
     m_lastUnsupportedCount = 0;
     m_lastError.clear();
 
-    const QString directoryPath =
-        m_platformManager->platformDirectory(platform);
-    const QStringList extensions = supportedExtensions(platform);
-
-    if (directoryPath.isEmpty() || extensions.isEmpty()) {
-        m_lastError = "Unknown platform: " + platform;
-        qCWarning(lcLibrary) << m_lastError;
+    QString directoryPath;
+    QStringList extensions;
+    if (!preparePlatformScan(platform, &directoryPath, &extensions)) {
         if (!m_scanningAll)
             emit scanCompleted(m_lastScanCount);
         return m_lastScanCount;
     }
 
-    if (!QDir(directoryPath).exists()) {
-        m_lastError = "Game directory does not exist: " + directoryPath;
-        qCWarning(lcLibrary) << m_lastError;
-        if (!m_scanningAll)
-            emit scanCompleted(m_lastScanCount);
-        return m_lastScanCount;
-    }
-
-    QSet<QString> acceptedExtensions;
-    for (const QString &extension : extensions)
-        acceptedExtensions.insert(extension);
-
-    unpackArchivedRoms(platform, directoryPath, extensions);
-
-    QStringList discoveredPaths;
-
-    QDirIterator iterator(
-        directoryPath,
-        QDir::Files | QDir::Readable | QDir::NoSymLinks,
-        QDirIterator::Subdirectories
-    );
-
-    while (iterator.hasNext()) {
-        const QString filePath = iterator.next();
-        const QFileInfo info(filePath);
-        const QString extension = info.suffix().toLower();
-
-        if (!acceptedExtensions.contains(extension)) {
-            ++m_lastUnsupportedCount;
-            continue;
-        }
-        if (isDiscCompanionFile(filePath))
-            continue;
-
-        const QString title = info.completeBaseName().trimmed();
-        if (title.isEmpty())
-            continue;
-
-        const QString absolutePath = info.absoluteFilePath();
-        discoveredPaths.append(absolutePath);
-
-        if (m_databaseManager->registerGame(
-                title, platform, absolutePath)) {
-            ++m_lastScanCount;
-        } else if (!m_databaseManager->lastError().isEmpty()) {
-            m_lastError = m_databaseManager->lastError();
-        }
-    }
-
-    // Reconcile only after a complete scan without database errors.
-    if (m_lastError.isEmpty()
-        && !m_databaseManager->reconcilePlatformGames(platform, discoveredPaths)) {
-        m_lastError = m_databaseManager->lastError();
-    }
-
-    qCDebug(lcLibrary) << "Platform scan finished:" << platform
-                      << "registered:" << m_lastScanCount
-                      << "discovered:" << discoveredPaths.size();
-    if (!m_lastError.isEmpty())
-        qCWarning(lcLibrary) << "Platform scan error:" << platform << m_lastError;
+    const FoundFiles found = findGameFiles(platform, directoryPath, extensions);
+    m_lastUnsupportedCount = found.unsupported;
+    registerFoundFiles(found);
     if (!m_scanningAll)
         emit scanCompleted(m_lastScanCount);
-
     return m_lastScanCount;
 }
 
@@ -444,19 +481,31 @@ void LibraryScanner::scanNextPlatformAsync()
     const int platformCount = m_asyncPlatforms.size();
     const int platformIndex = m_asyncPlatformIndex + 1;
     emit platformScanStarted(platform, platformIndex, platformCount);
+    qCDebug(lcLibrary) << "Scanning platform:" << platform;
 
-    m_scanningAll = true;
-    const int found = scanPlatform(platform);
-    const int unsupported = m_lastUnsupportedCount;
-    const QString error = m_lastError;
-    m_scanningAll = false;
+    m_lastScanCount = 0;
+    m_lastUnsupportedCount = 0;
+    m_lastError.clear();
+    QString directoryPath;
+    QStringList extensions;
+    if (!preparePlatformScan(platform, &directoryPath, &extensions)) {
+        finishPlatformAsync(platform, 0);
+        return;
+    }
+    // The folder is read (and archives unpacked) on a worker thread, so the
+    // window keeps drawing; the results are saved when it finishes.
+    m_findWatcher.setFuture(QtConcurrent::run(&LibraryScanner::findGameFiles,
+                                              platform, directoryPath, extensions));
+}
 
+void LibraryScanner::finishPlatformAsync(const QString &platform, int found)
+{
     m_asyncTotalFound += found;
-    m_asyncUnsupportedCount += unsupported;
-    if (!error.isEmpty())
-        m_asyncErrors.append(platform + ": " + error);
+    m_asyncUnsupportedCount += m_lastUnsupportedCount;
+    if (!m_lastError.isEmpty())
+        m_asyncErrors.append(platform + ": " + m_lastError);
 
-    emit platformScanCompleted(platform, found, unsupported);
+    emit platformScanCompleted(platform, found, m_lastUnsupportedCount);
     ++m_asyncPlatformIndex;
     QTimer::singleShot(0, this, &LibraryScanner::scanNextPlatformAsync);
 }
