@@ -56,6 +56,12 @@ public:
         // or "windows"; tests set it).
         QString system;
         QString localAppData;   // Windows: empty means %LOCALAPPDATA%
+        QString appData;        // Windows: empty means %APPDATA% (roaming)
+        // The launcher's program file. Its folder is where "launcher"
+        // folder rules point (an AppImage's own folder, not its mount).
+        QString executablePath;
+        // Through Wine: paths written for the launcher become Z:\... paths.
+        bool winePaths = false;
     };
 
     struct Plan

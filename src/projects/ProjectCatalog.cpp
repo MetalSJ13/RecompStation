@@ -130,6 +130,67 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         };
         return true;
     }
+    // selectfile: the game file is written into the launcher's own settings
+    // file(s), so its launcher opens with the game chosen but not started.
+    // Only names are given: the folder is the launcher's own, or the one SDL
+    // gives the app name (SDL_GetPrefPath), or a portable copy's subfolder.
+    if (method == QStringLiteral("selectfile")) {
+        QStringList arguments;
+        if (!parseArguments(object.value(QStringLiteral("arguments")), {}, &arguments))
+            return false;
+        static const QRegularExpression extension(QStringLiteral("^[a-z0-9]{1,5}$"));
+        static const QRegularExpression key(QStringLiteral("^[a-z][a-z0-9_]{0,30}$"));
+        static const QRegularExpression variable(QStringLiteral("^[A-Z][A-Z0-9_]{1,40}_DIR$"));
+        QStringList extensions;
+        for (const QJsonValue &entry : object.value(QStringLiteral("fileExtensions")).toArray()) {
+            const QString value = entry.toString().toLower();
+            if (!extension.match(value).hasMatch())
+                return false;
+            extensions.append(value);
+        }
+        const QJsonArray files = object.value(QStringLiteral("selectFiles")).toArray();
+        if (files.isEmpty() || files.size() > 3)
+            return false;
+        QVariantList selectFiles;
+        for (const QJsonValue &value : files) {
+            const QJsonObject entry = value.toObject();
+            const QString folder = entry.value(QStringLiteral("folder")).toString();
+            const QString format = entry.value(QStringLiteral("format")).toString();
+            const QString file = entry.value(QStringLiteral("file")).toString();
+            const QString appName = entry.value(QStringLiteral("appName")).toString();
+            const QString marker = entry.value(QStringLiteral("portableMarker")).toString();
+            const QString subfolder = entry.value(QStringLiteral("portableSubfolder")).toString();
+            const QString keyName = entry.value(QStringLiteral("key")).toString();
+            const QString folderVariable = entry.value(QStringLiteral("folderVariable")).toString();
+            if ((folder != QStringLiteral("launcher") && folder != QStringLiteral("userdata"))
+                || !QStringList{QStringLiteral("whole"), QStringLiteral("firstline"), QStringLiteral("listline"),
+                                QStringLiteral("quotedkey")}.contains(format)
+                || !validFileName(file)
+                || (folder == QStringLiteral("userdata") ? !validFileName(appName) : !appName.isEmpty())
+                || (!marker.isEmpty() && (!validFileName(marker) || !validFileName(subfolder)))
+                || (marker.isEmpty() && !subfolder.isEmpty())
+                || ((format == QStringLiteral("quotedkey")) != !keyName.isEmpty())
+                || (!keyName.isEmpty() && !key.match(keyName).hasMatch())
+                || (!folderVariable.isEmpty() && !variable.match(folderVariable).hasMatch()))
+                return false;
+            selectFiles.append(QVariantMap{
+                {QStringLiteral("folder"), folder}, {QStringLiteral("format"), format},
+                {QStringLiteral("file"), file}, {QStringLiteral("appName"), appName},
+                {QStringLiteral("portableMarker"), marker}, {QStringLiteral("portableSubfolder"), subfolder},
+                {QStringLiteral("key"), keyName}, {QStringLiteral("folderVariable"), folderVariable}});
+        }
+        const QString note = object.value(QStringLiteral("firstStartNote")).toString().trimmed();
+        if (note.size() > 200)
+            return false;
+        *recipe = QVariantMap{
+            {QStringLiteral("method"), method},
+            {QStringLiteral("arguments"), arguments},
+            {QStringLiteral("fileExtensions"), extensions},
+            {QStringLiteral("selectFiles"), selectFiles},
+            {QStringLiteral("firstStartNote"), note}
+        };
+        return true;
+    }
     if (method != QStringLiteral("n64recomp") && method != QStringLiteral("harbourmasters")
         && method != QStringLiteral("romfolder"))
         return false;

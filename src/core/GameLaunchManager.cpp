@@ -163,6 +163,15 @@ static QString wineLocalAppData(const WineSupport *wine)
     return QFileInfo(path).isDir() ? path : QString();
 }
 
+static QString wineRoamingAppData(const WineSupport *wine)
+{
+    const QString local = wineLocalAppData(wine);
+    if (local.isEmpty())
+        return {};
+    const QString path = QDir(local).filePath(QStringLiteral("../Roaming"));
+    return QFileInfo(path).isDir() ? QDir::cleanPath(path) : QString();
+}
+
 bool GameLaunchManager::wineCanPrepare(const QString &projectId, LaunchPreparer::Options *options) const
 {
     if (!m_projectCatalog)
@@ -175,8 +184,19 @@ bool GameLaunchManager::wineCanPrepare(const QString &projectId, LaunchPreparer:
         result.localAppData = wineLocalAppData(m_wine);
         if (result.localAppData.isEmpty())
             return false; // Wine hasn't made its folders yet: the launcher asks this once.
+    } else if (method == QStringLiteral("selectfile") || method == QStringLiteral("fileargument")
+               || method == QStringLiteral("discargument")) {
+        // The game file's path as Wine shows it to the launcher (Z:\...).
+        result.winePaths = true;
+        result.appData = wineRoamingAppData(m_wine);
+        bool needsAppData = false;
+        for (const QVariant &entry : m_projectCatalog->project(projectId).value(QStringLiteral("launch")).toMap()
+                                         .value(QStringLiteral("selectFiles")).toList())
+            needsAppData = needsAppData || entry.toMap().value(QStringLiteral("folder")).toString() == QStringLiteral("userdata");
+        if (needsAppData && result.appData.isEmpty())
+            return false; // Wine hasn't made its folders yet: the launcher asks this once.
     } else if (method != QStringLiteral("harbourmasters")) {
-        return false; // file arguments and folders set by variables stay as they are
+        return false; // folders set by variables stay as they are
     }
     if (options)
         *options = result;
@@ -261,6 +281,7 @@ LaunchPreparer::Options GameLaunchManager::preparationOptions(const QString &pro
     LaunchPreparer::Options options;
     options.homeDirectory = m_homeDirectory;
     options.dataHome = m_dataHome;
+    (void)installDirectory(projectId, &options.executablePath);
     if (m_settingsManager) {
         options.prepareFiles = m_settingsManager->prepareGameFiles();
         options.fullscreen = m_settingsManager->startGamesFullscreen();
@@ -355,7 +376,8 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
     LaunchPreparer::Plan plan;
     // Windows launchers get their game file like on Linux, on Windows and
     // through Wine (N64Recomp and HarbourMasters ones, in Wine's C: drive or
-    // their own folder); other Windows launchers through Wine pick it themselves.
+    // their own folder; file arguments and selected files as Z:\ paths);
+    // other Windows launchers through Wine pick it themselves.
     LaunchPreparer::Options wineOptions;
     const bool prepareThroughWine = throughWine && wineCanPrepare(projectId, &wineOptions);
     if (m_projectCatalog && (!throughWine || prepareThroughWine)) {

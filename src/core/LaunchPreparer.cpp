@@ -124,6 +124,132 @@ QStringList filledArguments(const QVariantMap &recipe, const QHash<QString, QStr
     return arguments;
 }
 
+// A path as the launcher will read it: backslashes on Windows, and Wine's
+// Z: drive (the whole Linux file system) for a launcher running through Wine.
+QString launcherPath(const QString &path, const LaunchPreparer::Options &options)
+{
+    if (options.winePaths)
+        return QStringLiteral("Z:") + QString(path).replace(QLatin1Char('/'), QLatin1Char('\\'));
+    return onWindows(options) ? QDir::toNativeSeparators(path) : path;
+}
+
+// %APPDATA%, where SDL keeps a Windows program's settings (SDL_GetPrefPath).
+QString roamingAppData(const LaunchPreparer::Options &options)
+{
+    if (!options.appData.isEmpty())
+        return options.appData;
+    const QString value = qEnvironmentVariable("APPDATA");
+    if (!value.isEmpty())
+        return QDir::fromNativeSeparators(value);
+    return QDir(homeDirectory(options)).filePath(QStringLiteral("AppData/Roaming"));
+}
+
+QString launcherFolderOf(const QString &installDirectory, const LaunchPreparer::Options &options)
+{
+    return options.executablePath.isEmpty() ? installDirectory
+                                            : QFileInfo(options.executablePath).absolutePath();
+}
+
+// The folder a "selectfile" entry's file is in, the way the launcher finds it.
+QString selectFileFolder(const QVariantMap &entry, const QString &installDirectory,
+                         const LaunchPreparer::Options &options)
+{
+    const QString launcherFolder = launcherFolderOf(installDirectory, options);
+    const QString variable = entry.value(QStringLiteral("folderVariable")).toString();
+    if (!variable.isEmpty() && !options.winePaths) {
+        const QString value = qEnvironmentVariable(variable.toUtf8().constData());
+        if (!value.isEmpty() && QDir::isAbsolutePath(value))
+            return QDir::fromNativeSeparators(value);
+    }
+    if (entry.value(QStringLiteral("folder")).toString() == QStringLiteral("launcher"))
+        return launcherFolder;
+    // Portable copies keep it beside the program. An AppImage's program runs
+    // from its mount, where no marker can be, so the marker is not looked for.
+    const QString marker = entry.value(QStringLiteral("portableMarker")).toString();
+    if (!marker.isEmpty() && !launcherFolder.isEmpty()
+        && !options.executablePath.endsWith(QStringLiteral(".AppImage"), Qt::CaseInsensitive)
+        && QFileInfo(QDir(launcherFolder).filePath(marker)).isFile())
+        return QDir(launcherFolder).filePath(entry.value(QStringLiteral("portableSubfolder")).toString());
+    const QString app = entry.value(QStringLiteral("appName")).toString();
+    return QDir(onWindows(options) ? roamingAppData(options) : dataHome(options)).filePath(app);
+}
+
+// std::quoted's way of writing a value: in double quotes, with " and \ escaped.
+QString quoted(const QString &value)
+{
+    QString text = value;
+    text.replace(QLatin1Char('\\'), QStringLiteral("\\\\")).replace(QLatin1Char('"'), QStringLiteral("\\\""));
+    return QLatin1Char('"') + text + QLatin1Char('"');
+}
+
+// Puts the game file in one of the launcher's own files, in its format:
+// whole (the file is the path), firstline (the path and a line break),
+// listline (one path per line, added when missing) or quotedkey (a
+// `key "value"` line replaced, other lines kept). False when it can't be
+// written; *changed says whether the file changed.
+bool writeSelectFile(const QString &path, const QString &format, const QString &key,
+                     const QString &value, bool *changed)
+{
+    QString existing;
+    {
+        QFile file(path);
+        if (file.exists()) {
+            if (!file.open(QIODevice::ReadOnly) || file.size() > 1024 * 1024)
+                return false;
+            existing = QString::fromUtf8(file.readAll());
+        }
+    }
+    QString text;
+    if (format == QStringLiteral("whole")) {
+        text = value;
+    } else if (format == QStringLiteral("firstline")) {
+        text = value + QLatin1Char('\n');
+    } else {
+        QStringList lines = existing.split(QLatin1Char('\n'));
+        if (!lines.isEmpty() && lines.last().isEmpty())
+            lines.removeLast();
+        if (format == QStringLiteral("listline")) {
+            bool listed = false;
+            for (const QString &line : std::as_const(lines)) {
+                QString trimmed = line;
+                while (trimmed.endsWith(QLatin1Char('\r')) || trimmed.endsWith(QLatin1Char(' ')))
+                    trimmed.chop(1);
+                listed = listed || trimmed == value;
+            }
+            if (!listed)
+                lines.append(value);
+        } else { // quotedkey
+            const QString entry = key + QLatin1Char(' ') + quoted(value);
+            bool placed = false;
+            QStringList kept;
+            for (const QString &line : std::as_const(lines)) {
+                const QString first = line.trimmed().section(QLatin1Char(' '), 0, 0);
+                if (first == key) {
+                    if (!placed)
+                        kept.append(entry);
+                    placed = true;
+                } else {
+                    kept.append(line);
+                }
+            }
+            if (!placed)
+                kept.append(entry);
+            lines = kept;
+        }
+        text = lines.join(QLatin1Char('\n')) + QLatin1Char('\n');
+    }
+    *changed = text != existing;
+    if (!*changed)
+        return true;
+    if (!QDir().mkpath(QFileInfo(path).absolutePath()))
+        return false;
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+        return false;
+    file.write(text.toUtf8());
+    return file.commit();
+}
+
 bool usesRomChecksum(const QString &method)
 {
     return method == QStringLiteral("n64recomp") || method == QStringLiteral("romfolder");
@@ -274,7 +400,8 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
     const QString folder = result.value(QStringLiteral("dataFolder")).toString();
     const QString romName = recipe.value(QStringLiteral("romName")).toString();
 
-    if (method == QStringLiteral("discargument") || method == QStringLiteral("fileargument")) {
+    if (method == QStringLiteral("discargument") || method == QStringLiteral("fileargument")
+        || method == QStringLiteral("selectfile")) {
         if (!hasGame)
             return noGame();
         const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
@@ -288,7 +415,9 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
         }
         const QString note = recipe.value(QStringLiteral("firstStartNote")).toString();
         return set(QStringLiteral("ready"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
-                   QStringLiteral("Play starts %1 with your copy.").arg(name)
+                   (method == QStringLiteral("selectfile")
+                        ? QStringLiteral("Play opens %1 with your copy already selected. Start the game from there.")
+                        : QStringLiteral("Play starts %1 with your copy.")).arg(name)
                        + (note.isEmpty() ? QString() : QLatin1Char(' ') + note));
     }
 
@@ -455,8 +584,37 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
         if (!options.prepareFiles || gamePath.isEmpty() || !game.isFile()
             || (!extensions.isEmpty() && !extensions.contains(game.suffix().toLower())))
             return plan;
-        plan.arguments = filledArguments(recipe, {{QStringLiteral("gamePath"), game.absoluteFilePath()}});
+        plan.arguments = filledArguments(recipe, {{QStringLiteral("gamePath"), launcherPath(game.absoluteFilePath(), options)}});
         plan.steps.append(step(QStringLiteral("Starting with your copy"), game.fileName()));
+        return plan;
+    }
+    if (method == QStringLiteral("selectfile")) {
+        // The launcher opens with the game already chosen, and starts it
+        // only when the player presses its own Play.
+        const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
+        const QFileInfo game(gamePath);
+        plan.arguments = filledArguments(recipe, {});
+        if (!options.prepareFiles || gamePath.isEmpty() || !game.isFile()
+            || (!extensions.isEmpty() && !extensions.contains(game.suffix().toLower())))
+            return plan;
+        const QString value = launcherPath(game.absoluteFilePath(), options);
+        bool written = true;
+        for (const QVariant &item : recipe.value(QStringLiteral("selectFiles")).toList()) {
+            const QVariantMap entry = item.toMap();
+            const QString file = QDir(selectFileFolder(entry, installDirectory, options))
+                                     .filePath(entry.value(QStringLiteral("file")).toString());
+            bool changed = false;
+            if (!writeSelectFile(file, entry.value(QStringLiteral("format")).toString(),
+                                 entry.value(QStringLiteral("key")).toString(), value, &changed)) {
+                qCWarning(lcGameLaunch) << "Could not select the game in the launcher's file" << file;
+                written = false;
+            }
+        }
+        if (written)
+            plan.steps.append(step(QStringLiteral("Selected your copy in the launcher"), game.fileName()));
+        else
+            plan.steps.append(step(QStringLiteral("Couldn't select your copy in the launcher"),
+                                   QStringLiteral("Pick it in the launcher instead"), true));
         return plan;
     }
     // Pointing a launcher at a folder outside its install folder is about

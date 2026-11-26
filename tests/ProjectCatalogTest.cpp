@@ -543,7 +543,17 @@ void ProjectCatalogTest::parsesLaunchRecipes()
         R"({"method": "discargument", "arguments": ["--disc", "{gamePath}"], "fileExtensions": ["is o"]})",
         // Only HarbourMasters launchers pick the file themselves.
         R"({"method": "n64recomp", "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C", "picksGameFile": true})",
-        R"({"method": "harbourmasters", "dataFolder": "ok", "romName": "A"})"
+        R"({"method": "harbourmasters", "dataFolder": "ok", "romName": "A"})",
+        // selectfile: names only, never a path or the game on the command line.
+        R"({"method": "selectfile"})",
+        R"({"method": "selectfile", "arguments": ["{gamePath}"], "selectFiles": [{"folder": "launcher", "file": "rom.cfg", "format": "firstline"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "../rom.cfg", "format": "firstline"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "/etc", "file": "rom.cfg", "format": "firstline"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "file": "rom.cfg", "format": "firstline"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "rom.cfg", "format": "script"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.cfg", "format": "quotedkey"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "file": "a.cfg", "format": "whole", "folderVariable": "PATH"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "file": "a.cfg", "format": "whole", "portableMarker": "p.txt", "portableSubfolder": ".."}]})"
     };
     for (const QByteArray &launchJson : invalid)
         QVERIFY2(!ProjectCatalog::parseCatalog(catalogWithLaunch(launchJson), &projects, &error),
@@ -608,6 +618,17 @@ void ProjectCatalogTest::bundledLaunchRecipesAreComplete()
         QCOMPARE(launch.value("arguments").toStringList(),
                  (QStringList{QStringLiteral("--launcher"), QStringLiteral("--rom"), QStringLiteral("{gamePath}")}));
     }
+    // Launchers that open with the game chosen but not started: the game
+    // goes into their own settings file, never onto the command line.
+    for (const QString &id : {QStringLiteral("super-mario-world-recompiled"), QStringLiteral("dkc2-recomp"),
+                              QStringLiteral("dkc3-recomp"), QStringLiteral("paper-cut-ttyd"), QStringLiteral("melee-pc")}) {
+        const QVariantMap launch = catalog.project(id).value("launch").toMap();
+        QVERIFY2(launch.value("method").toString() == QStringLiteral("selectfile"), qPrintable(id));
+        QVERIFY(!launch.value("selectFiles").toList().isEmpty());
+        QVERIFY(!launch.value("arguments").toStringList().contains(QStringLiteral("{gamePath}")));
+    }
+    QCOMPARE(catalog.project(QStringLiteral("melee-pc")).value("launch").toMap().value("selectFiles").toList()
+                 .first().toMap().value("key").toString(), QStringLiteral("disc"));
     QCOMPARE(catalog.project(QStringLiteral("banjo-kazooie-recompiled"))
                  .value("launch").toMap().value("romFileName").toString(),
              QStringLiteral("bk.n64.us.1.0.z64"));

@@ -1691,15 +1691,20 @@
       "romRequirements": "Requires your own unmodified Super Mario World (USA) ROM (.sfc or .smc). RecompStation selects it in the launcher for you. An in-development preview.",
       "romFile": "Super Mario World (USA) ROM",
       "launch": {
-        "method": "fileargument",
+        "method": "selectfile",
         "arguments": [
-          "--launcher",
-          "--rom",
-          "{gamePath}"
+          "--launcher"
         ],
         "fileExtensions": [
           "sfc",
           "smc"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
         ],
         "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings and mods before pressing Play."
       },
@@ -1726,12 +1731,24 @@
       ],
       "repositoryOwner": "elliotttate",
       "repositoryName": "DKC1Recomp",
-      "romRequirements": "Requires your own unmodified, headerless Donkey Kong Country (USA) v1.0 ROM. No game data is included. Windows only: on Linux it runs through Wine. Pick the ROM in its own launcher the first time. An early version.",
+      "romRequirements": "Requires your own unmodified, headerless Donkey Kong Country (USA) v1.0 ROM. No game data is included. Windows only: on Linux it runs through Wine. RecompStation starts it with your ROM. An early version.",
       "romFile": "Donkey Kong Country (USA) v1.0 ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "It has no launcher screen of its own, so Play starts the game straight away."
+      },
       "builds": {
         "windows-x86_64": {
           "assetNameRegex": "^DKC1Recomp-v[0-9.]+-Windows-x64\\.zip$",
-          "packageFormat": "zip"
+          "packageFormat": "zip",
+          "executablePath": "DKC1Recomp.exe"
         }
       }
     },
@@ -1747,8 +1764,26 @@
       ],
       "repositoryOwner": "elliotttate",
       "repositoryName": "DKC2Recomp",
-      "romRequirements": "Requires your own unmodified Donkey Kong Country 2 (USA) v1.0 ROM. No game data is included. Windows only: on Linux it runs through Wine. Pick the ROM in its own launcher the first time. An early version.",
+      "romRequirements": "Requires your own unmodified Donkey Kong Country 2 (USA) v1.0 ROM. No game data is included. Windows only: on Linux it runs through Wine. RecompStation selects it in the launcher for you. An early version.",
       "romFile": "Donkey Kong Country 2 (USA) v1.0 ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
       "builds": {
         "windows-x86_64": {
           "assetNameRegex": "^DKC2Recomp-v[0-9.]+-Windows-x64\\.zip$",
@@ -1769,12 +1804,31 @@
       ],
       "repositoryOwner": "elliotttate",
       "repositoryName": "DKC3Recomp",
-      "romRequirements": "Requires your own unmodified Donkey Kong Country 3 (USA) ROM. No game data is included. Windows only: on Linux it runs through Wine. Pick the ROM in its own launcher the first time. An early version.",
+      "romRequirements": "Requires your own unmodified Donkey Kong Country 3 (USA) ROM. No game data is included. Windows only: on Linux it runs through Wine. RecompStation selects it in the launcher for you. An early version.",
       "romFile": "Donkey Kong Country 3 (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
       "builds": {
         "windows-x86_64": {
           "assetNameRegex": "^DKC3Recomp-v[0-9.]+-windows-x64\\.zip$",
-          "packageFormat": "zip"
+          "packageFormat": "zip",
+          "executablePath": "DKC3Recomp.exe"
         }
       }
     },
@@ -1790,8 +1844,43 @@
       ],
       "repositoryOwner": "LLCOOLT",
       "repositoryName": "paper-cut",
-      "romRequirements": "Requires your own Paper Mario: The Thousand-Year Door disc image (USA, Japan or Europe). No game data is included. Add the disc in Paper Cut's own launcher the first time.",
+      "romRequirements": "Requires your own Paper Mario: The Thousand-Year Door disc image (USA, Japan or Europe). No game data is included. RecompStation adds it to Paper Cut's launcher for you.",
       "romFile": "Paper Mario: The Thousand-Year Door disc image",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "iso",
+          "gcm",
+          "ciso",
+          "gcz",
+          "rvz",
+          "wia",
+          "wbfs",
+          "nfs",
+          "tgc"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "ttyd",
+            "portableMarker": "portable.txt",
+            "portableSubfolder": "User",
+            "folderVariable": "TTYD_USER_DIR",
+            "file": "library.txt",
+            "format": "listline"
+          },
+          {
+            "folder": "userdata",
+            "appName": "ttyd",
+            "portableMarker": "portable.txt",
+            "portableSubfolder": "User",
+            "folderVariable": "TTYD_USER_DIR",
+            "file": "last_disc.txt",
+            "format": "whole"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your disc in its list and selected, so you can change settings before pressing Play."
+      },
       "builds": {
         "linux-x86_64": {
           "assetNameRegex": "^Paper_Cut-[0-9.]+-x86_64\\.AppImage$",
@@ -1816,8 +1905,31 @@
       ],
       "repositoryOwner": "999sian",
       "repositoryName": "melee-pc",
-      "romRequirements": "Requires your own Super Smash Bros. Melee disc image (USA, version 1.02). No game data is included. Choose the disc in melee-pc the first time.",
+      "romRequirements": "Requires your own Super Smash Bros. Melee disc image (USA, version 1.02). No game data is included. RecompStation selects it in melee-pc's launcher for you.",
       "romFile": "Super Smash Bros. Melee (USA 1.02) disc image",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "iso",
+          "gcm",
+          "ciso",
+          "rvz",
+          "gcz",
+          "wia"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "melee-pc",
+            "portableMarker": "portable.txt",
+            "portableSubfolder": "user",
+            "file": "launcher.cfg",
+            "format": "quotedkey",
+            "key": "disc"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your disc already selected, so you can change settings before pressing Play."
+      },
       "builds": {
         "linux-x86_64": {
           "assetNameRegex": "^Melee-x86_64\\.AppImage$",
