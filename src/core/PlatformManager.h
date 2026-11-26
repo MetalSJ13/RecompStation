@@ -30,6 +30,8 @@ public:
 
     bool initialize();
     bool initialize(const QStringList &supportedPlatforms);
+    // Linux: Qt's application data folder; Windows: %LOCALAPPDATA%\RecompStation.
+    static QString defaultDataDirectory();
 
     QString dataDirectory() const;
     QString settingsFilePath() const;
@@ -77,5 +79,4 @@ private:
 
     bool createDirectory(const QString &path);
     static bool isValidProjectId(const QString &projectId);
-    static QString defaultDataDirectory();
 };

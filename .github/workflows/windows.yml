@@ -29,17 +29,26 @@ jobs:
         with:
           fetch-depth: 0   # the build id in the log comes from git describe
 
-      - name: Cache vcpkg packages
-        uses: actions/cache@v4
+      - name: Restore vcpkg packages
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
         with:
           path: vcpkg-cache
-          key: vcpkg-x64-windows-${{ hashFiles('.github/workflows/windows.yml') }}
-          restore-keys: vcpkg-x64-windows-
+          key: vcpkg-x64-windows-libarchive-sdl2-v1
 
       - name: Install libarchive and SDL2 (vcpkg)
         run: |
           New-Item -ItemType Directory -Force vcpkg-cache | Out-Null
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install libarchive:x64-windows sdl2:x64-windows
+
+      # Saved right away, so a later failing step doesn't throw the
+      # (slow) library builds away.
+      - name: Save vcpkg packages
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: vcpkg-cache
+          key: vcpkg-x64-windows-libarchive-sdl2-v1
 
       - name: Install Qt ${{ env.QT_VERSION }}
         uses: jurplel/install-qt-action@v4
