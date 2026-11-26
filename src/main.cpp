@@ -18,9 +18,7 @@
 #include <QQuickWindow>
 #include <QSGRendererInterface>
 #include <QtGui/qtguiglobal.h>
-#if QT_CONFIG(vulkan)
-#include <QVulkanInstance>
-#endif
+#include <QLibrary>
 
 #include "core/Logging.h"
 #include "core/ControllerManager.h"
@@ -177,15 +175,16 @@ QString applyGraphicsRenderer(const QString &settingsFilePath, const QString &op
         renderer = QStringLiteral("auto");
     }
     if (renderer == QStringLiteral("vulkan")) {
-#if QT_CONFIG(vulkan)
-        QVulkanInstance probe;
-        if (!probe.create()) {
+        // The Vulkan loader, which every Vulkan driver needs.
+#ifdef Q_OS_WIN
+        QLibrary loader(QStringLiteral("vulkan-1"));
+#else
+        QLibrary loader(QStringLiteral("vulkan"), 1);
+#endif
+        if (!loader.load()) {
             qCWarning(lcUI) << "Vulkan isn't available on this system; using Automatic instead.";
             renderer = QStringLiteral("auto");
         }
-#else
-        renderer = QStringLiteral("auto");
-#endif
     }
     if (renderer == QStringLiteral("opengl"))
         QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
@@ -628,6 +627,20 @@ int main(int argc, char *argv[])
             }
             qCInfo(lcUI).noquote() << "Renderer:" << api + driver;
         }, Qt::DirectConnection);
+        // A chosen renderer that can't draw at all: back to Automatic, and
+        // start again with it (without a handler Qt would just quit).
+        QObject::connect(window, &QQuickWindow::sceneGraphError, window,
+                         [rendererInUse, &settingsManager](QQuickWindow::SceneGraphError, const QString &message) {
+            qCCritical(lcUI).noquote() << "The window couldn't be drawn:" << message;
+            if (rendererInUse == QStringLiteral("auto") || rendererInUse == QStringLiteral("environment")) {
+                QCoreApplication::exit(1);
+                return;
+            }
+            qCWarning(lcUI).noquote() << "Going back to the Automatic renderer and starting again.";
+            settingsManager.setGraphicsRenderer(QStringLiteral("auto"));
+            relaunchApplication(QString(), false);
+            QCoreApplication::exit(0);
+        });
         // The first frame drawn: the chosen renderer works, so the next
         // start keeps it.
         QObject::connect(window, &QQuickWindow::frameSwapped, window,
