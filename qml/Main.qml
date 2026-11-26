@@ -1920,12 +1920,9 @@ ApplicationWindow {
         return names[platform] || platform
     }
 
-    // A path with the home folder written as ~.
+    // A path as people see it: ~/… on Linux, C:\… on Windows.
     function compactHomePath(path) {
-        const home = platformManager.homeDirectory()
-        if (path === home)
-            return "~"
-        return path.startsWith(home + "/") ? "~" + path.substring(home.length) : path
+        return platformManager.displayPath(path || "")
     }
 
     // Short label for the system picker.
@@ -3791,7 +3788,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.bottomMargin: 10
                 text: "RecompStation finds games in these folders, works out each one's system and " + (window.importMoves ? "moves" : "copies")
-                    + " them into " + platformManager.libraryDirectory.replace(platformManager.homeDirectory(), "~")
+                    + " them into " + platformManager.displayPath(platformManager.libraryDirectory)
                     + ". Files already in your library are never overwritten."
                 color: theme.textSecondary
                 font.pixelSize: 13.5 * theme.fontScale

@@ -8,6 +8,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSaveFile>
+#include <QStandardPaths>
+#include <QSysInfo>
 
 namespace {
 QString homeDirectory(const LaunchPreparer::Options &options)
@@ -25,8 +27,26 @@ QString dataHome(const LaunchPreparer::Options &options)
     return QDir(homeDirectory(options)).filePath(QStringLiteral(".local/share"));
 }
 
+bool onWindows(const LaunchPreparer::Options &options)
+{
+    if (!options.system.isEmpty())
+        return options.system == QStringLiteral("windows");
+    return QSysInfo::kernelType() == QStringLiteral("winnt");
+}
+
+// %LOCALAPPDATA%, where Windows launchers keep their settings and saves.
+QString localAppData(const LaunchPreparer::Options &options)
+{
+    if (!options.localAppData.isEmpty())
+        return options.localAppData;
+    return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+}
+
 QString shortPath(const QString &path, const LaunchPreparer::Options &options)
 {
+    // Windows: the full path with backslashes, as File Explorer shows it.
+    if (onWindows(options))
+        return QDir::toNativeSeparators(path);
     const QString home = homeDirectory(options);
     if (path == home)
         return QStringLiteral("~");
@@ -129,11 +149,18 @@ QString LaunchPreparer::dataFolder(const QVariantMap &recipe,
         if (!installDirectory.isEmpty()
             && QFileInfo::exists(QDir(installDirectory).filePath(QStringLiteral("portable.txt"))))
             return installDirectory;
+        // Windows: %LOCALAPPDATA%\<program id>; Linux: ~/.config/<program id>.
+        if (onWindows(options))
+            return QDir(localAppData(options)).filePath(folder);
         return QDir(homeDirectory(options)).filePath(QStringLiteral(".config/") + folder);
     }
     if (method == QStringLiteral("romfolder"))
-        return QDir(dataHome(options)).filePath(folder);
+        return QDir(onWindows(options) ? localAppData(options) : dataHome(options)).filePath(folder);
     if (method == QStringLiteral("harbourmasters")) {
+        // On Windows, HarbourMasters launchers keep everything in the folder
+        // they start from (their own); SHIP_HOME is read only on Linux.
+        if (onWindows(options))
+            return installDirectory;
         const QString shipHome = qEnvironmentVariable("SHIP_HOME");
         if (!shipHome.isEmpty() && QDir::isAbsolutePath(shipHome))
             return shipHome;
@@ -455,7 +482,8 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
 
     if (method == QStringLiteral("harbourmasters") || method == QStringLiteral("romfolder")) {
         if (method == QStringLiteral("harbourmasters")) {
-            plan.environment.insert(QStringLiteral("SHIP_HOME"), folder);
+            if (!onWindows(options))
+                plan.environment.insert(QStringLiteral("SHIP_HOME"), folder);
         } else {
             const QVariantMap environment = recipe.value(QStringLiteral("environment")).toMap();
             for (auto it = environment.cbegin(); it != environment.cend(); ++it)
@@ -463,7 +491,7 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
         }
         // Earlier starts kept saves and settings in the install folder. Copy
         // them over the first time, so nothing is lost when switching.
-        if (newFolder && !installDirectory.isEmpty()) {
+        if (newFolder && !installDirectory.isEmpty() && QDir(folder) != QDir(installDirectory)) {
             int copied = 0;
             const QStringList patterns = recipe.value(QStringLiteral("dataFiles")).toStringList();
             for (const QString &pattern : patterns) {

@@ -155,31 +155,6 @@ bool GameLaunchManager::runsThroughWine(const QString &projectId) const
         && ProjectCatalog::systemForKernelType(QSysInfo::kernelType()) != QStringLiteral("windows");
 }
 
-// The Windows version: launchers are started as they are, from their own
-// folder, and open to their own menu; nothing is prepared for them yet.
-QVariantMap GameLaunchManager::windowsReadiness(const QString &gamePath) const
-{
-    const bool hasGame = !gamePath.isEmpty() && QFileInfo(gamePath).isFile();
-    QVariantMap result{
-        {QStringLiteral("method"), QStringLiteral("windows")},
-        {QStringLiteral("gameFile"), hasGame ? gamePath : QString()},
-        {QStringLiteral("dataFolder"), QString()},
-        {QStringLiteral("savesFolder"), QString()}
-    };
-    if (!hasGame) {
-        result.insert(QStringLiteral("state"), QStringLiteral("no_game"));
-        result.insert(QStringLiteral("tone"), QStringLiteral("warn"));
-        result.insert(QStringLiteral("title"), QStringLiteral("Add your copy of the game"));
-        result.insert(QStringLiteral("detail"), QStringLiteral("RecompStation doesn't supply games. Add the file from your own copy."));
-        return result;
-    }
-    result.insert(QStringLiteral("state"), QStringLiteral("windows"));
-    result.insert(QStringLiteral("tone"), QStringLiteral("ok"));
-    result.insert(QStringLiteral("title"), QStringLiteral("Ready to play"));
-    result.insert(QStringLiteral("detail"), QStringLiteral("Opens to its own menu, where you pick the game. Your game file is shown on this page so it's easy to find."));
-    return result;
-}
-
 QVariantMap GameLaunchManager::wineReadiness(const QString &gamePath) const
 {
     const bool hasGame = !gamePath.isEmpty() && QFileInfo(gamePath).isFile();
@@ -221,6 +196,17 @@ void GameLaunchManager::setPreparationRoots(const QString &homeDirectory, const 
     m_dataHome = dataHome;
 }
 
+// The folder a launcher starts in: its install folder, or on Windows the
+// folder of its .exe (a zip can keep it in a subfolder).
+QString GameLaunchManager::launcherFolder(const QString &projectId) const
+{
+    QString executablePath;
+    const QString directory = installDirectory(projectId, &executablePath);
+    if (!runsThroughWine(projectId) && isWindowsLauncher(projectId) && !executablePath.isEmpty())
+        return QFileInfo(executablePath).absolutePath();
+    return directory;
+}
+
 QString GameLaunchManager::installDirectory(const QString &projectId, QString *executablePath) const
 {
     if (!m_launcherDownloadManager)
@@ -259,9 +245,7 @@ QVariantMap GameLaunchManager::launchReadiness(const QString &projectId, const Q
         return {};
     if (runsThroughWine(projectId))
         return wineReadiness(gamePath);
-    if (isWindowsLauncher(projectId))
-        return windowsReadiness(gamePath);
-    const QVariantMap readiness = m_preparer.readiness(project, gamePath, installDirectory(projectId),
+    const QVariantMap readiness = m_preparer.readiness(project, gamePath, launcherFolder(projectId),
                                                        preparationOptions(projectId));
     // Read new game files off the UI thread (up to 64 MB each); the answer
     // arrives through launchReadinessChanged().
@@ -326,11 +310,14 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
     }
 
     LaunchPreparer::Plan plan;
-    // Windows launchers pick the game themselves; nothing is prepared.
-    if (m_projectCatalog && !throughWine && !nativeWindows) {
+    // Windows launchers through Wine pick the game themselves; nothing is
+    // prepared. On Windows, they get their game file like on Linux.
+    if (m_projectCatalog && !throughWine) {
         const QVariantMap project = m_projectCatalog->project(projectId);
         if (!project.isEmpty())
-            plan = m_preparer.prepare(project, gamePath, workingDirectory, preparationOptions(projectId));
+            plan = m_preparer.prepare(project, gamePath,
+                                      nativeWindows ? executableInfo.absolutePath() : workingDirectory,
+                                      preparationOptions(projectId));
         if (plan.defaultFullscreenApplied && m_settingsManager)
             m_settingsManager->markDefaultFullscreenApplied(projectId);
     }

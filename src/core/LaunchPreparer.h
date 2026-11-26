@@ -52,6 +52,10 @@ public:
         bool defaultFullscreenApplied = false; // "Start in fullscreen" already set once
         QString homeDirectory;  // empty: the user's home
         QString dataHome;       // empty: $XDG_DATA_HOME or ~/.local/share
+        // Which system's folder rules apply: empty means this one ("linux"
+        // or "windows"; tests set it).
+        QString system;
+        QString localAppData;   // Windows: empty means %LOCALAPPDATA%
     };
 
     struct Plan

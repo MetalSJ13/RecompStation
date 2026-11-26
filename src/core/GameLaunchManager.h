@@ -57,7 +57,7 @@ private:
     bool isWindowsLauncher(const QString &projectId) const;
     // A Windows launcher on Linux, started through Wine (not on Windows).
     bool runsThroughWine(const QString &projectId) const;
-    QVariantMap windowsReadiness(const QString &gamePath) const;
+    QString launcherFolder(const QString &projectId) const;
     // The line under Play for a Windows launcher, and why it can't start.
     QVariantMap wineReadiness(const QString &gamePath) const;
 

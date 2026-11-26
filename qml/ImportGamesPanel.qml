@@ -30,10 +30,9 @@ Item {
         }
         return counts
     }
-    readonly property string downloadsFolder: platformManager.homeDirectory() + "/Downloads"
 
     function focusFirst() {
-        (gameImporter.sources.length === 0 ? lookInDownloadsButton : addFolderButton).forceActiveFocus()
+        addFolderButton.forceActiveFocus()
     }
 
     component PanelButton: Button {
@@ -89,7 +88,7 @@ Item {
                         anchors.rightMargin: 6
                         Label {
                             Layout.fillWidth: true
-                            text: modelData.replace(platformManager.homeDirectory(), "~")
+                            text: platformManager.displayPath(modelData)
                             color: theme.textPrimary
                             font.pixelSize: 13 * theme.fontScale
                             font.weight: Font.DemiBold
@@ -109,17 +108,11 @@ Item {
                 }
             }
             PanelButton {
-                id: lookInDownloadsButton
-                Layout.fillWidth: true
-                visible: gameImporter.sources.indexOf(panel.downloadsFolder) < 0
-                enabled: !gameImporter.importing
-                text: "Look in Downloads"
-                onClicked: gameImporter.addSource(panel.downloadsFolder)
-            }
-            PanelButton {
                 id: addFolderButton
                 Layout.fillWidth: true
                 enabled: !gameImporter.importing
+                // The first step here until a folder is added.
+                highlighted: gameImporter.sources.length === 0
                 text: "+ Add a folder…"
                 onClicked: window.openSourceFolderBrowser()
             }

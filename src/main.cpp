@@ -177,6 +177,10 @@ InterfaceScaleStartup prepareInterfaceScale()
 #ifdef Q_OS_WIN
     // Settings in files on Windows too (not the registry), like on Linux.
     QSettings::setDefaultFormat(QSettings::IniFormat);
+    // The controls look the same as on Linux, where Qt uses Fusion; Qt's
+    // own Windows style draws text fields as white boxes on the dark theme.
+    if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE"))
+        qputenv("QT_QUICK_CONTROLS_STYLE", "Fusion");
 #endif
     QCoreApplication::setOrganizationName(QStringLiteral("RecompStation"));
     QCoreApplication::setApplicationName(QStringLiteral("RecompStation"));

@@ -32,6 +32,9 @@ public:
     bool initialize(const QStringList &supportedPlatforms);
     // Linux: Qt's application data folder; Windows: %LOCALAPPDATA%\RecompStation.
     static QString defaultDataDirectory();
+    // A path as people see it: Windows "C:\\Users\\Sam\\RecompStation",
+    // Linux "~/RecompStation".
+    Q_INVOKABLE QString displayPath(const QString &path) const;
 
     QString dataDirectory() const;
     QString settingsFilePath() const;

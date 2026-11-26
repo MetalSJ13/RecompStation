@@ -151,6 +151,7 @@ private slots:
     void romFolderPassesThePlacedRomOnlyWhenItMatches();
     void discArgumentPassesTheGameFile();
     void backgroundReadsNeverReadOnTheCallersThread();
+    void windowsFolderRules();
 
 private:
     LaunchPreparer::Options options(const QTemporaryDir &root) const
@@ -158,6 +159,8 @@ private:
         LaunchPreparer::Options result;
         result.homeDirectory = QDir(root.path()).filePath(QStringLiteral("home"));
         result.dataHome = QDir(root.path()).filePath(QStringLiteral("home/.local/share"));
+        // Linux folder rules on every system; windowsFolderRules checks Windows'.
+        result.system = QStringLiteral("linux");
         return result;
     }
 };
@@ -594,6 +597,37 @@ void LaunchPreparerTest::backgroundReadsNeverReadOnTheCallersThread()
     touched.close();
     QCOMPARE(preparer.readiness(project, game, QString(), opts).value("state").toString(),
              QStringLiteral("checking"));
+}
+
+
+// On Windows: N64Recomp launchers and ROM-folder launchers use
+// %LOCALAPPDATA%\<folder>; HarbourMasters launchers keep everything in their
+// own folder (no SHIP_HOME), and get the copy there.
+void LaunchPreparerTest::windowsFolderRules()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    LaunchPreparer::Options opts = options(root);
+    opts.system = QStringLiteral("windows");
+    opts.localAppData = QDir(root.path()).filePath(QStringLiteral("LocalAppData"));
+    const QByteArray rom = makeRom("TEST GAME", 'E');
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test (USA).z64"));
+    QVERIFY(writeFile(game, rom));
+    LaunchPreparer preparer;
+
+    const QVariantMap n64 = n64Project(RomInspector::inspectN64(rom).xxh3Hex());
+    QCOMPARE(LaunchPreparer::dataFolder(n64.value("launch").toMap(), QString(), opts),
+             QDir(opts.localAppData).filePath(QStringLiteral("TestRecompiled")));
+    QVERIFY(preparer.prepare(n64, game, QString(), opts).ok);
+    QCOMPARE(readFile(QDir(opts.localAppData).filePath(QStringLiteral("TestRecompiled/test.n64.us.1.0.z64"))), rom);
+
+    const QString program = QDir(root.path()).filePath(QStringLiteral("launchers/test-ship/Ship"));
+    QVERIFY(writeFile(QDir(program).filePath(QStringLiteral("Ship.exe")), QByteArray("MZ")));
+    const LaunchPreparer::Plan plan = preparer.prepare(shipProject(), game, program, opts);
+    QVERIFY(plan.ok);
+    QVERIFY(!plan.environment.contains(QStringLiteral("SHIP_HOME")));
+    QCOMPARE(readFile(QDir(program).filePath(QStringLiteral("baserom.us.z64"))), rom);
+    QCOMPARE(preparer.readiness(shipProject(), game, program, opts).value("dataFolder").toString(), program);
 }
 
 QTEST_GUILESS_MAIN(LaunchPreparerTest)

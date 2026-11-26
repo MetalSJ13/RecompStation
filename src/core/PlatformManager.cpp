@@ -36,6 +36,20 @@ PlatformManager::PlatformManager(const QString &dataDirectory, QObject *parent)
 // Qt's application data folder (unchanged since 0.1.0). Windows: the local
 // (not roaming) application data folder, %LOCALAPPDATA%\RecompStation,
 // since installed launchers and covers are large and per machine.
+QString PlatformManager::displayPath(const QString &path) const
+{
+#ifdef Q_OS_WIN
+    return QDir::toNativeSeparators(path);
+#else
+    const QString home = QDir::homePath();
+    if (path == home)
+        return QStringLiteral("~");
+    if (path.startsWith(home + QLatin1Char('/')))
+        return QStringLiteral("~") + path.mid(home.size());
+    return path;
+#endif
+}
+
 QString PlatformManager::defaultDataDirectory()
 {
 #ifdef Q_OS_WIN

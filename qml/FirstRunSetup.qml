@@ -193,7 +193,7 @@ Popup {
                     wrapMode: Text.Wrap
                 }
                 SettingRow {
-                    title: setup.suggested.path.replace(platformManager.homeDirectory(), "~")
+                    title: platformManager.displayPath(setup.suggested.path)
                     description: "Suggested · " + window.formatBytes(setup.suggested.freeBytes) + " free on this drive · "
                         + (setup.suggested.exists ? "already exists; nothing in it is changed or removed"
                                                   : "a new folder will be created")

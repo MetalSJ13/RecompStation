@@ -123,8 +123,7 @@ Popup {
         return slash > 0 ? path.substring(0, slash) : path
     }
     function shortPath(path) {
-        const home = platformManager.homeDirectory()
-        return path && path.indexOf(home + "/") === 0 ? "~" + path.substring(home.length) : (path || "")
+        return platformManager.displayPath(path || "")
     }
     function copyText(text) {
         clipboardHelper.text = text
