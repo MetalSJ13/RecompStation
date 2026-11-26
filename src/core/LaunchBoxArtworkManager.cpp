@@ -180,9 +180,17 @@ void LaunchBoxArtworkManager::refreshLibraryArtwork()
                 ++m_skipped;
                 continue;
             }
-            const QString destination = QDir(m_artworkDirectory)
-                                            .filePath(QString::number(localId) + QLatin1Char('/')
-                                                      + request.destination);
+            QString destination = QDir(m_artworkDirectory)
+                                      .filePath(QString::number(localId) + QLatin1Char('/')
+                                                + request.destination);
+            // Before 0.1.2 the full path was joined onto the folder a second
+            // time, so on Linux earlier downloads sit under
+            // <folder>/<id>/<the full path>; keep using those instead of
+            // downloading (and listing) them again.
+            const QString earlierPath = QDir(m_artworkDirectory)
+                                            .filePath(QString::number(localId) + QLatin1Char('/') + destination);
+            if (!QFileInfo(destination).isFile() && QFileInfo(earlierPath).isFile())
+                destination = earlierPath;
             if (QFileInfo(destination).isFile()) {
                 bool linked = true;
                 if (request.type == QStringLiteral("Box - Front"))
@@ -285,9 +293,8 @@ void LaunchBoxArtworkManager::processNext()
                          .arg(QString::fromLatin1(reply->header(QNetworkRequest::ContentTypeHeader).toByteArray()))
                          .arg(bytes.size()).arg(QString::fromLatin1(bytes.left(8).toHex()));
         if (reason.isEmpty()) {
-            const QString destination = QDir(m_artworkDirectory)
-                .filePath(QString::number(pending.gameId) + QLatin1Char('/')
-                          + pending.destination);
+            // Already the full path (see refreshLibraryArtwork).
+            const QString destination = pending.destination;
             if (QDir().mkpath(QFileInfo(destination).absolutePath())) {
                 QSaveFile file(destination);
                 saved = file.open(QIODevice::WriteOnly)
@@ -308,7 +315,8 @@ void LaunchBoxArtworkManager::processNext()
                     }
                 }
             } else {
-                reason = QStringLiteral("could not create its folder");
+                reason = QStringLiteral("could not create its folder %1")
+                             .arg(QDir::toNativeSeparators(QFileInfo(destination).absolutePath()));
             }
         }
         if (saved) {
