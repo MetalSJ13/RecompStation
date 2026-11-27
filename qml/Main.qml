@@ -68,6 +68,9 @@ ApplicationWindow {
         // over a blurred copy), and how much to darken it (percent).
         property string wallpaperFit: "fill"
         property int wallpaperDim: 15
+        // Still background: "gradient" or a retro pattern from
+        // window.stillPatterns (drawn by RetroBackground.qml).
+        property string stillPattern: "gradient"
         Component.onCompleted: {
         syncLibraryOrder()
             if (wavePalette !== "migrated") {
@@ -1269,7 +1272,7 @@ ApplicationWindow {
                 return "Waves · " + window.wavePreset(libraryVisualSettings.waveColor).label
             if (type === "custom")
                 return settingsManager.customLibraryBackground.length > 0 ? "Image" : "Image · none chosen"
-            return "Gradient"
+            return "Still · " + window.stillPattern(libraryVisualSettings.stillPattern).label
         }
         case "Library": {
             if (!platformManager.libraryConfigured)
@@ -1292,6 +1295,22 @@ ApplicationWindow {
                    : appUpdater.state === "upToDate" ? " · Up to date" : "")
         }
         return ""
+    }
+    // The Still background's choices: the theme gradient and four retro
+    // patterns (approved 2026-11-27, design option B).
+    readonly property var stillPatterns: [
+        { label: "Gradient", value: "gradient" },
+        { label: "CRT glow", value: "crt" },
+        { label: "Dithered sunset", value: "sunset" },
+        { label: "Pixel starfield", value: "stars" },
+        { label: "Circuit board", value: "circuit" }
+    ]
+    function stillPattern(value) {
+        for (let i = 0; i < stillPatterns.length; ++i) {
+            if (stillPatterns[i].value === value)
+                return stillPatterns[i]
+        }
+        return stillPatterns[0]
     }
     readonly property var waveColorPresets: [
         { label: "Ocean", value: "ocean", color: "#3d8bff" },
@@ -4035,6 +4054,19 @@ ApplicationWindow {
                 }
             }
 
+            // Still background with a retro pattern: drawn once at the
+            // window's size and kept (RetroBackground.qml).
+            RetroBackground {
+                anchors.fill: parent
+                visible: currentPage === "Library"
+                    && settingsManager.libraryBackgroundType === "static"
+                    && libraryVisualSettings.stillPattern !== "gradient"
+                pattern: visible ? libraryVisualSettings.stillPattern : "gradient"
+                accent: theme.accent
+                topColor: theme.backgroundTop
+                bottomColor: theme.backgroundBottom
+            }
+
             // Custom wallpaper, loaded at the window's size (Fill crops to
             // cover; Fit shows the whole image over a blurred copy) and dimmed
             // by the user's chosen amount.
@@ -6619,7 +6651,7 @@ ApplicationWindow {
                                         rowSpacing: 10
                                         Repeater {
                                             model: [
-                                                { value: "static", title: "Gradient", description: "Static, follows the theme" },
+                                                { value: "static", title: "Still", description: window.stillPattern(libraryVisualSettings.stillPattern).label },
                                                 { value: "animated", title: "Waves", description: "Animated ribbons" },
                                                 { value: "custom", title: "Image", description: "Your own wallpaper" }
                                             ]
@@ -6633,7 +6665,37 @@ ApplicationWindow {
                                                 current: settingsManager.libraryBackgroundType === modelData.value
                                                 wallpaper: settingsManager.customLibraryBackground
                                                 waveColor: window.waveColorValue
+                                                pattern: libraryVisualSettings.stillPattern
                                                 onClicked: settingsManager.libraryBackgroundType = modelData.value
+                                            }
+                                        }
+                                    }
+
+                                    // Still's patterns, shown while Still is chosen (as
+                                    // the Waves settings are for Waves).
+                                    SettingsGroupLabel {
+                                        visible: settingsManager.libraryBackgroundType === "static"
+                                        text: "PATTERN"
+                                    }
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        visible: settingsManager.libraryBackgroundType === "static"
+                                        columns: width >= 520 ? 5 : 2
+                                        columnSpacing: 8
+                                        rowSpacing: 8
+                                        Repeater {
+                                            model: window.stillPatterns
+                                            delegate: BackgroundStyleTile {
+                                                required property var modelData
+                                                Layout.fillWidth: true
+                                                Layout.preferredWidth: 1
+                                                implicitHeight: 104
+                                                styleValue: "static"
+                                                pattern: modelData.value
+                                                title: modelData.label
+                                                compact: true
+                                                current: libraryVisualSettings.stillPattern === modelData.value
+                                                onClicked: libraryVisualSettings.stillPattern = modelData.value
                                             }
                                         }
                                     }
@@ -8809,6 +8871,15 @@ ApplicationWindow {
                                         GradientStop { position: 0.0; color: theme.backgroundTop }
                                         GradientStop { position: 1.0; color: theme.backgroundBottom }
                                     }
+                                        RetroBackground {
+                                            anchors.fill: parent
+                                            visible: settingsManager.libraryBackgroundType === "static"
+                                                && libraryVisualSettings.stillPattern !== "gradient"
+                                            pattern: visible ? libraryVisualSettings.stillPattern : "gradient"
+                                            accent: theme.accent
+                                            topColor: theme.backgroundTop
+                                            bottomColor: theme.backgroundBottom
+                                        }
                                         WaveBackground {
                                             anchors.fill: parent
                                             visible: settingsManager.libraryBackgroundType === "animated"
@@ -8857,7 +8928,9 @@ ApplicationWindow {
                                         ? "Your image is loaded at your screen's size. Fill crops the edges; Fit keeps the whole image."
                                         : settingsManager.libraryBackgroundType === "animated"
                                             ? "Drawn live by your graphics card. It pauses while a game is running and under Reduced motion."
-                                            : "A quiet gradient in your theme's colors."
+                                            : libraryVisualSettings.stillPattern === "gradient"
+                                                ? "A quiet gradient in your theme's colors."
+                                                : "Drawn once and kept, so it costs nothing while you browse."
                                     color: theme.textSecondary
                                     font.pixelSize: 12.5 * theme.fontScale
                                     wrapMode: Text.Wrap

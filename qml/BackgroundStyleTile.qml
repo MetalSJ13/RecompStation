@@ -3,7 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // A background style choice in Settings > Background: a small preview of the
-// style, its name and a short description.
+// style, its name and a short description. Also used, compact (no
+// description), for the Still background's patterns.
 Button {
     id: tile
 
@@ -13,10 +14,13 @@ Button {
     property bool current: false
     property url wallpaper
     property color waveColor: "#3d8bff"
+    // The Still pattern shown in the preview ("gradient", "crt", ...).
+    property string pattern: "gradient"
+    property bool compact: false
 
     activeFocusOnTab: true
     focusPolicy: Qt.StrongFocus
-    implicitHeight: 150
+    implicitHeight: compact ? 104 : 150
     padding: 8
     Accessible.name: title + (current ? ", selected" : "")
 
@@ -40,6 +44,14 @@ Button {
             gradient: Gradient {
                 GradientStop { position: 0.0; color: theme.backgroundTop }
                 GradientStop { position: 1.0; color: theme.backgroundBottom }
+            }
+            RetroBackground {
+                anchors.fill: parent
+                visible: tile.styleValue === "static" && tile.pattern !== "gradient"
+                pattern: visible ? tile.pattern : "gradient"
+                accent: theme.accent
+                topColor: theme.backgroundTop
+                bottomColor: theme.backgroundBottom
             }
             // A still frame of the waves in the chosen color.
             WaveBackground {
@@ -72,13 +84,14 @@ Button {
             Layout.leftMargin: 4
             text: tile.title
             color: theme.textPrimary
-            font.pixelSize: 13.5 * theme.fontScale
+            font.pixelSize: (tile.compact ? 12.5 : 13.5) * theme.fontScale
             font.weight: Font.DemiBold
             elide: Text.ElideRight
         }
         Label {
             Layout.fillWidth: true
             Layout.leftMargin: 4
+            visible: !tile.compact
             text: tile.description
             color: theme.textMuted
             font.pixelSize: 11 * theme.fontScale
