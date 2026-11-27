@@ -14,6 +14,7 @@ struct N64RomInfo
     QChar regionCode;       // last character of the game code, e.g. 'E'
     int revision = 0;       // header 0x3F
     quint64 xxh3 = 0;       // of the padded big-endian ROM bytes
+    QString sha1;           // of the same bytes, 40 lower-case hex digits
     QString error;
 
     QString regionName() const;          // "North America", "Europe", ...

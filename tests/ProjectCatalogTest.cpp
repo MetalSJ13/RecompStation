@@ -556,7 +556,13 @@ void ProjectCatalogTest::parsesLaunchRecipes()
         R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "rom.cfg", "format": "script"}]})",
         R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.cfg", "format": "quotedkey"}]})",
         R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "file": "a.cfg", "format": "whole", "folderVariable": "PATH"}]})",
-        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "file": "a.cfg", "format": "whole", "portableMarker": "p.txt", "portableSubfolder": ".."}]})"
+        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "file": "a.cfg", "format": "whole", "portableMarker": "p.txt", "portableSubfolder": ".."}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "appOrg": "o", "file": "a.cfg", "format": "whole"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "file": "a.ini", "format": "keyvalue"}]})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romSha1": "XYZ"})",
+        R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "romSha1": "abe01e4aeb033b6c0836819f549c791b26cfde83"})",
+        R"({"method": "romfolder", "installFolder": true, "dataFolder": "Ok", "romFileName": "a.z64", "romSha1": "abe01e4aeb033b6c0836819f549c791b26cfde83"})",
+        R"({"method": "n64recomp", "installFolder": true, "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C"})"
     };
     for (const QByteArray &launchJson : invalid)
         QVERIFY2(!ProjectCatalog::parseCatalog(catalogWithLaunch(launchJson), &projects, &error),

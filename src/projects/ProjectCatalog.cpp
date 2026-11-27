@@ -162,14 +162,16 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
             const QString subfolder = entry.value(QStringLiteral("portableSubfolder")).toString();
             const QString keyName = entry.value(QStringLiteral("key")).toString();
             const QString folderVariable = entry.value(QStringLiteral("folderVariable")).toString();
+            const QString appOrg = entry.value(QStringLiteral("appOrg")).toString();
             if ((folder != QStringLiteral("launcher") && folder != QStringLiteral("userdata"))
                 || !QStringList{QStringLiteral("whole"), QStringLiteral("firstline"), QStringLiteral("listline"),
-                                QStringLiteral("quotedkey")}.contains(format)
+                                QStringLiteral("quotedkey"), QStringLiteral("keyvalue")}.contains(format)
                 || !validFileName(file)
                 || (folder == QStringLiteral("userdata") ? !validFileName(appName) : !appName.isEmpty())
-                || (!marker.isEmpty() && (!validFileName(marker) || !validFileName(subfolder)))
+                || (!marker.isEmpty() && (!validFileName(marker) || (!subfolder.isEmpty() && !validFileName(subfolder))))
+                || (!appOrg.isEmpty() && (folder != QStringLiteral("userdata") || !validFileName(appOrg)))
                 || (marker.isEmpty() && !subfolder.isEmpty())
-                || ((format == QStringLiteral("quotedkey")) != !keyName.isEmpty())
+                || ((format == QStringLiteral("quotedkey") || format == QStringLiteral("keyvalue")) != !keyName.isEmpty())
                 || (!keyName.isEmpty() && !key.match(keyName).hasMatch())
                 || (!folderVariable.isEmpty() && !variable.match(folderVariable).hasMatch()))
                 return false;
@@ -177,7 +179,9 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
                 {QStringLiteral("folder"), folder}, {QStringLiteral("format"), format},
                 {QStringLiteral("file"), file}, {QStringLiteral("appName"), appName},
                 {QStringLiteral("portableMarker"), marker}, {QStringLiteral("portableSubfolder"), subfolder},
-                {QStringLiteral("key"), keyName}, {QStringLiteral("folderVariable"), folderVariable}});
+                {QStringLiteral("key"), keyName}, {QStringLiteral("folderVariable"), folderVariable},
+                {QStringLiteral("appOrg"), appOrg},
+                {QStringLiteral("markerBesideAppImage"), entry.value(QStringLiteral("markerBesideAppImage")).toBool()}});
         }
         const QString note = object.value(QStringLiteral("firstStartNote")).toString().trimmed();
         if (note.size() > 200)
@@ -206,22 +210,31 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
     const QString romFileName = object.value(QStringLiteral("romFileName")).toString();
     const QString romName = object.value(QStringLiteral("romName")).toString().trimmed();
     const QString romXxh3 = object.value(QStringLiteral("romXxh3")).toString().toUpper();
+    const QString romSha1 = object.value(QStringLiteral("romSha1")).toString().toLower();
+    // romfolder launchers that read the ROM from their own folder (no setting
+    // or argument points them elsewhere): the ROM is placed in the install folder.
+    const bool installFolder = romFolder && object.value(QStringLiteral("installFolder")).toBool();
+    if (object.contains(QStringLiteral("installFolder")) && !romFolder)
+        return false;
     const QString romVersion = object.value(QStringLiteral("romVersion")).toString().trimmed();
     const QString graphicsFile = object.value(QStringLiteral("graphicsFile")).toString();
     static const QRegularExpression hashPattern(QStringLiteral("^[0-9A-F]{16}$"));
+    static const QRegularExpression sha1Pattern(QStringLiteral("^[0-9a-f]{40}$"));
     // romfolder launchers may keep the ROM one folder down ("rom/game.z64"),
     // and may read the name from the ROM themselves (no romName).
-    if (!validFileName(dataFolder)
+    if ((installFolder ? !dataFolder.isEmpty() : !validFileName(dataFolder))
         || (!(picksGameFile && romFileName.isEmpty())
             && (!(romFolder ? validRelativePath(romFileName) : validFileName(romFileName))
                 || !romFileName.endsWith(QStringLiteral(".z64"))))
         || (romName.isEmpty() && !romFolder) || romName.size() > 20
         || (!romXxh3.isEmpty() && !hashPattern.match(romXxh3).hasMatch())
+        || (!romSha1.isEmpty() && (!sha1Pattern.match(romSha1).hasMatch() || !romXxh3.isEmpty()))
+        || (installFolder && !object.value(QStringLiteral("environment")).toObject().isEmpty())
         || (!graphicsFile.isEmpty()
             && (!validFileName(graphicsFile) || !graphicsFile.endsWith(QStringLiteral(".json"))))) {
         return false;
     }
-    if ((method == QStringLiteral("n64recomp") || romFolder) && romXxh3.isEmpty())
+    if ((method == QStringLiteral("n64recomp") || romFolder) && romXxh3.isEmpty() && romSha1.isEmpty())
         return false;
 
     QStringList arguments;
@@ -251,12 +264,15 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         {QStringLiteral("romFileName"), romFileName},
         {QStringLiteral("romName"), romName},
         {QStringLiteral("romXxh3"), romXxh3},
+        {QStringLiteral("romSha1"), romSha1},
         {QStringLiteral("romVersion"), romVersion},
         {QStringLiteral("graphicsFile"), graphicsFile},
         {QStringLiteral("dataFiles"), dataFiles}
     };
     if (picksGameFile)
         recipe->insert(QStringLiteral("picksGameFile"), true);
+    if (installFolder)
+        recipe->insert(QStringLiteral("installFolder"), true);
     if (romFolder) {
         recipe->insert(QStringLiteral("arguments"), arguments);
         recipe->insert(QStringLiteral("environment"), environment);

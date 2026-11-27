@@ -1969,6 +1969,511 @@
           "executablePath": "BlueWake.exe"
         }
       }
+    },
+    {
+      "id": "btga-recompiled",
+      "name": "BattleTanx: Global Assault Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "BattleTanx: Global Assault",
+        "BattleTanx Global Assault"
+      ],
+      "repositoryOwner": "wootbeer",
+      "repositoryName": "btgarecomp",
+      "romRequirements": "Requires your own BattleTanx: Global Assault (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "BattleTanx: Global Assault (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Start."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^BattleTanxGARecompiled-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "BattleTanxGARecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BattleTanxGARecompiled-[0-9.]+-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BattleTanxGARecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "power-dozer-blast-corps",
+      "name": "Power Dozer",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Blast Corps",
+        "Blastdozer"
+      ],
+      "repositoryOwner": "djultra64",
+      "repositoryName": "Power-Dozer",
+      "romRequirements": "Requires your own Blast Corps (USA, Rev 1) ROM (.z64, .v64, .n64 or a zip holding one). No game data is included. Play starts the game with it.",
+      "romFile": "Blast Corps (USA, Rev 1) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64",
+          "zip"
+        ],
+        "firstStartNote": "It has no launcher screen of its own, so Play starts the game straight away."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^power-dozer-v[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "power-dozer"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^power-dozer-v[0-9.]+-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "power-dozer.exe"
+        }
+      }
+    },
+    {
+      "id": "dozerencore-blast-corps",
+      "name": "DozerEncore",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Blast Corps",
+        "Blastdozer"
+      ],
+      "repositoryOwner": "Doridian",
+      "repositoryName": "DozerEncore",
+      "romRequirements": "Requires your own Blast Corps (USA, Rev 1) ROM. No game data is included. Play starts the game with it.",
+      "romFile": "Blast Corps (USA, Rev 1) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "It has no launcher screen of its own, so Play starts the game straight away."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^dozerencore-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "DozerEncore.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^dozerencore-windows-x86_64\\.exe$",
+          "packageFormat": "executable",
+          "executablePath": "DozerEncore.exe"
+        }
+      }
+    },
+    {
+      "id": "adams-ant-farm-body-harvest",
+      "name": "Adam's Ant Farm",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Body Harvest"
+      ],
+      "repositoryOwner": "LunarLaurus",
+      "repositoryName": "adams-ant-farm-recomp",
+      "romRequirements": "Requires your own Body Harvest ROM (USA, or the European preview). No game data is included. Choose the ROM in its launcher (bh-launcher) the first time.",
+      "romFile": "Body Harvest (USA) ROM",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^adams-ant-farm-linux-x86_64-v[0-9.]+\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "bh-launcher"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^adams-ant-farm-windows-x86_64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "bh-launcher.exe"
+        }
+      }
+    },
+    {
+      "id": "body-harvest-recompiled",
+      "name": "Body Harvest: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Body Harvest"
+      ],
+      "repositoryOwner": "mcsoderh",
+      "repositoryName": "BodyHarvestRecomp",
+      "romRequirements": "Requires your own Body Harvest (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Body Harvest (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "BodyHarvestRecompiled",
+        "romFileName": "bh.us.z64",
+        "romName": "BODY HARVEST",
+        "romXxh3": "9949AA9BC66F33CB",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^BodyHarvestRecompiled-v[0-9.]+-Linux-X64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "BodyHarvestRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BodyHarvestRecompiled-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BodyHarvestRecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "conker-bfd-reloaded",
+      "name": "Conker's Bad Fur Day Reloaded",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Conker's Bad Fur Day",
+        "Conkers Bad Fur Day"
+      ],
+      "repositoryOwner": "DahSidiAbdallah",
+      "repositoryName": "ConkerBFDReloaded",
+      "romRequirements": "Requires your own Conker's Bad Fur Day (USA) ROM, or a hack of it that keeps its code (uncensored, translations). No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Conker's Bad Fur Day (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Start."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^ConkerBFDReloaded-v[0-9.]+-Linux\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "ConkerBFDReloaded"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^ConkerBFDReloaded-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "ConkerBFDReloaded.exe"
+        }
+      }
+    },
+    {
+      "id": "golden-balloon-diddy-kong-racing",
+      "name": "Golden Balloon",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Diddy Kong Racing"
+      ],
+      "repositoryOwner": "akratch",
+      "repositoryName": "goldenballoon",
+      "romRequirements": "Requires your own Diddy Kong Racing ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Diddy Kong Racing ROM",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "mdkr64",
+            "appOrg": "mdkr64",
+            "portableMarker": "portable.txt",
+            "markerBesideAppImage": true,
+            "file": "mdkr64_app.ini",
+            "format": "keyvalue",
+            "key": "rom_path"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Golden-Balloon-[0-9.]+-linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "GoldenBalloon.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Golden-Balloon-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "GoldenBalloon.exe"
+        }
+      }
+    },
+    {
+      "id": "g-diffuser-f-zero-x",
+      "name": "G-Diffuser",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "F-Zero X"
+      ],
+      "repositoryOwner": "Zorkats",
+      "repositoryName": "G-Diffuser",
+      "romRequirements": "Requires your own F-Zero X (USA) ROM, plus the 64DD Expansion Kit disk image and the 64DD IPL ROM, all from your own copies. No game data is included. Choose the files in its setup screen the first time.",
+      "romFile": "F-Zero X (USA) ROM, Expansion Kit disk and IPL",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^G-Diffuser-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "G-Diffuser"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^G-Diffuser-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "G-Diffuser.exe"
+        }
+      }
+    },
+    {
+      "id": "project-midas-goldeneye",
+      "name": "Project Midas",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "GoldenEye 007",
+        "GoldenEye"
+      ],
+      "repositoryOwner": "murkantor",
+      "repositoryName": "Project-Midas",
+      "romRequirements": "Requires your own GoldenEye 007 (USA) ROM. No game data is included. Play starts the game with it.",
+      "romFile": "GoldenEye 007 (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom-file",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "It has no launcher screen of its own, so Play starts the game straight away."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^ProjectMidas-v[0-9.]+[a-z]?-linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "ProjectMidas"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^ProjectMidas-v[0-9.]+[a-z]?-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "ProjectMidas.exe"
+        }
+      }
+    },
+    {
+      "id": "goldeneye-pc-port",
+      "name": "GoldenEye PC Port",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "GoldenEye 007",
+        "GoldenEye"
+      ],
+      "repositoryOwner": "jkdansereau",
+      "repositoryName": "goldeneye-pc-port",
+      "romRequirements": "Requires your own GoldenEye 007 (USA) ROM (SHA-1 abe01e4aeb033b6c0836819f549c791b26cfde83). No game data is included. RecompStation puts it in the port's data folder for you.",
+      "romFile": "GoldenEye 007 (USA) ROM",
+      "launch": {
+        "method": "romfolder",
+        "installFolder": true,
+        "dataFolder": "",
+        "romFileName": "data/ge007.ntsc-final.z64",
+        "romName": "GOLDENEYE",
+        "romSha1": "abe01e4aeb033b6c0836819f549c791b26cfde83",
+        "romVersion": "North America"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^goldeneye-pc-port-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "ge007.x86_64"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^goldeneye-pc-port-[0-9.]+-win64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "ge007.x86_64.exe"
+        }
+      }
+    },
+    {
+      "id": "jet-force-gemini-recompiled",
+      "name": "Jet Force Gemini: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Jet Force Gemini"
+      ],
+      "repositoryOwner": "VibinToast",
+      "repositoryName": "JetForceGemini-Recompiled",
+      "romRequirements": "Requires your own Jet Force Gemini (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Jet Force Gemini (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Start."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^JFG-[0-9.]+-linux-x86_64-portable\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "JetForceGeminiRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^JFG-[0-9.]+-windows-x64-portable\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "JetForceGeminiRecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "paper-mario-recompiled-n64hub",
+      "name": "Paper Mario: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Paper Mario"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "paper-mario-recomp",
+      "romRequirements": "Requires your own Paper Mario (USA, 1.0) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Paper Mario (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "PaperMarioRecompiled",
+        "romFileName": "papermario.n64.us.1.0.z64",
+        "romName": "PAPER MARIO",
+        "romXxh3": "1A478F060D5194CF",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^PaperMarioRecompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "PaperMarioRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^PaperMarioRecompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "PaperMarioRecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "quest64tale-recompiled",
+      "name": "Quest64tale: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Quest 64"
+      ],
+      "repositoryOwner": "boricuapab",
+      "repositoryName": "quest64tale-recompiled",
+      "romRequirements": "Requires your own Quest 64 (USA) ROM. No game data is included. RecompStation gives it to the launcher for you. It shares its settings and saves folder with Quest 64: Recompiled.",
+      "romFile": "Quest 64 (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "Quest64Recompiled",
+        "romFileName": "quest64_us.z64",
+        "romName": "QUEST 64",
+        "romXxh3": "35335BF69FC6515C",
+        "romVersion": "North America 1.0",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^quest64tale-recompiled-linux_v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Quest64Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^quest64tale-recompiled-win_v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Quest64Recompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "battleship-super-smash-bros",
+      "name": "BattleShip",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Super Smash Bros.",
+        "Super Smash Bros"
+      ],
+      "repositoryOwner": "JRickey",
+      "repositoryName": "BattleShip",
+      "romRequirements": "Requires your own Super Smash Bros. (USA) ROM. No game data is included. RecompStation gives it to BattleShip, which builds its game files from it on the first start.",
+      "romFile": "Super Smash Bros. (USA) ROM",
+      "launch": {
+        "method": "harbourmasters",
+        "dataFolder": "BattleShip",
+        "romFileName": "baserom.us.z64",
+        "romName": "SMASH BROTHERS",
+        "dataFiles": [
+          "BattleShip.o2r",
+          "ssb64_save.bin",
+          "*.cfg.json",
+          "logs",
+          "imgui.ini"
+        ]
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^BattleShip-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "BattleShip.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BattleShip-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BattleShip.exe"
+        }
+      }
     }
   ]
 }

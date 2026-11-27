@@ -2,6 +2,7 @@
 
 #include "metadata/N64RomHash.h"
 
+#include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
 
@@ -74,6 +75,7 @@ N64RomInfo RomInspector::inspectN64(const QByteArray &romData)
     info.regionCode = QChar::fromLatin1(canonical.at(0x3E));
     info.revision = static_cast<unsigned char>(canonical.at(0x3F));
     info.xxh3 = XXH3_64bits(canonical.constData(), static_cast<size_t>(canonical.size()));
+    info.sha1 = QString::fromLatin1(QCryptographicHash::hash(canonical, QCryptographicHash::Sha1).toHex());
     info.valid = true;
     return info;
 }

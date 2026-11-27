@@ -163,15 +163,26 @@ QString selectFileFolder(const QVariantMap &entry, const QString &installDirecto
     }
     if (entry.value(QStringLiteral("folder")).toString() == QStringLiteral("launcher"))
         return launcherFolder;
-    // Portable copies keep it beside the program. An AppImage's program runs
-    // from its mount, where no marker can be, so the marker is not looked for.
+    // Portable copies keep it beside the program (in a subfolder, or right
+    // there). Most launchers look for the marker beside their own program,
+    // which for an AppImage is inside its mount, so there it is looked for
+    // only when the launcher checks beside the AppImage file itself.
     const QString marker = entry.value(QStringLiteral("portableMarker")).toString();
+    const bool appImage = options.executablePath.endsWith(QStringLiteral(".AppImage"), Qt::CaseInsensitive);
     if (!marker.isEmpty() && !launcherFolder.isEmpty()
-        && !options.executablePath.endsWith(QStringLiteral(".AppImage"), Qt::CaseInsensitive)
-        && QFileInfo(QDir(launcherFolder).filePath(marker)).isFile())
-        return QDir(launcherFolder).filePath(entry.value(QStringLiteral("portableSubfolder")).toString());
+        && (!appImage || entry.value(QStringLiteral("markerBesideAppImage")).toBool())
+        && QFileInfo(QDir(launcherFolder).filePath(marker)).isFile()) {
+        const QString subfolder = entry.value(QStringLiteral("portableSubfolder")).toString();
+        return subfolder.isEmpty() ? launcherFolder : QDir(launcherFolder).filePath(subfolder);
+    }
     const QString app = entry.value(QStringLiteral("appName")).toString();
-    return QDir(onWindows(options) ? roamingAppData(options) : dataHome(options)).filePath(app);
+    // SDL_GetPrefPath: <data home>/<app> on Linux (the organization is left
+    // out there), %APPDATA%\<organization>\<app> on Windows.
+    if (onWindows(options)) {
+        const QString organization = entry.value(QStringLiteral("appOrg")).toString();
+        return QDir(roamingAppData(options)).filePath(organization.isEmpty() ? app : organization + QLatin1Char('/') + app);
+    }
+    return QDir(dataHome(options)).filePath(app);
 }
 
 // std::quoted's way of writing a value: in double quotes, with " and \ escaped.
@@ -184,8 +195,9 @@ QString quoted(const QString &value)
 
 // Puts the game file in one of the launcher's own files, in its format:
 // whole (the file is the path), firstline (the path and a line break),
-// listline (one path per line, added when missing) or quotedkey (a
-// `key "value"` line replaced, other lines kept). False when it can't be
+// listline (one path per line, added when missing), quotedkey (a
+// `key "value"` line replaced, other lines kept) or keyvalue (a `key=value`
+// line with \\, \n and \r escaped, replaced, other lines kept). False when it can't be
 // written; *changed says whether the file changed.
 bool writeSelectFile(const QString &path, const QString &format, const QString &key,
                      const QString &value, bool *changed)
@@ -218,12 +230,17 @@ bool writeSelectFile(const QString &path, const QString &format, const QString &
             }
             if (!listed)
                 lines.append(value);
-        } else { // quotedkey
-            const QString entry = key + QLatin1Char(' ') + quoted(value);
+        } else { // quotedkey, keyvalue
+            const bool keyValue = format == QStringLiteral("keyvalue");
+            QString escaped = value;
+            escaped.replace(QLatin1Char('\\'), QStringLiteral("\\\\"))
+                .replace(QLatin1Char('\n'), QStringLiteral("\\n")).replace(QLatin1Char('\r'), QStringLiteral("\\r"));
+            const QString entry = keyValue ? key + QLatin1Char('=') + escaped : key + QLatin1Char(' ') + quoted(value);
             bool placed = false;
             QStringList kept;
             for (const QString &line : std::as_const(lines)) {
-                const QString first = line.trimmed().section(QLatin1Char(' '), 0, 0);
+                const QString first = keyValue ? line.section(QLatin1Char('='), 0, 0)
+                                               : line.trimmed().section(QLatin1Char(' '), 0, 0);
                 if (first == key) {
                     if (!placed)
                         kept.append(entry);
@@ -248,6 +265,17 @@ bool writeSelectFile(const QString &path, const QString &format, const QString &
         return false;
     file.write(text.toUtf8());
     return file.commit();
+}
+
+// The launcher's own checksum: XXH3-64 (N64Recomp launchers) or, for ports
+// that publish only a SHA-1 of the ROM, that.
+bool romMatches(const N64RomInfo &info, const QVariantMap &recipe)
+{
+    const QString xxh3 = recipe.value(QStringLiteral("romXxh3")).toString();
+    if (!xxh3.isEmpty())
+        return info.xxh3Hex() == xxh3;
+    const QString sha1 = recipe.value(QStringLiteral("romSha1")).toString();
+    return !sha1.isEmpty() && info.sha1 == sha1;
 }
 
 bool usesRomChecksum(const QString &method)
@@ -280,8 +308,11 @@ QString LaunchPreparer::dataFolder(const QVariantMap &recipe,
             return QDir(localAppData(options)).filePath(folder);
         return QDir(homeDirectory(options)).filePath(QStringLiteral(".config/") + folder);
     }
-    if (method == QStringLiteral("romfolder"))
+    if (method == QStringLiteral("romfolder")) {
+        if (recipe.value(QStringLiteral("installFolder")).toBool())
+            return installDirectory;
         return QDir(onWindows(options) ? localAppData(options) : dataHome(options)).filePath(folder);
+    }
     if (method == QStringLiteral("harbourmasters")) {
         // On Windows, HarbourMasters launchers keep everything in the folder
         // they start from (their own); SHIP_HOME is read only on Linux.
@@ -441,7 +472,7 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
                        QStringLiteral("This file isn't an N64 ROM"),
                        info.error + QStringLiteral(" Choose another file."));
         }
-        if (info.xxh3Hex() == recipe.value(QStringLiteral("romXxh3")).toString()) {
+        if (romMatches(info, recipe)) {
             return set(QStringLiteral("ready"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
                        method == QStringLiteral("n64recomp")
                            // N64Recomp launchers open their own menu (settings,
@@ -684,7 +715,7 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
             const QByteArray canonical = RomInspector::canonicalN64(source.readAll(), &error);
             const N64RomInfo info = RomInspector::inspectN64(canonical);
             const bool matches = usesRomChecksum(method)
-                ? info.valid && info.xxh3Hex() == recipe.value(QStringLiteral("romXxh3")).toString()
+                ? info.valid && romMatches(info, recipe)
                 : info.valid && info.internalName.compare(romName, Qt::CaseInsensitive) == 0;
             if (matches) {
                 plan.steps.append(step(QStringLiteral("Checked your copy"),

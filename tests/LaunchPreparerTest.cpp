@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <QCryptographicHash>
 
 #include "core/LaunchPreparer.h"
 #include "core/RomInspector.h"
@@ -151,6 +152,8 @@ private slots:
     void harbourMastersPortThatPicksItsOwnFile();
     void romFolderPointsTheLauncherAtItsDataFolder();
     void romFolderPassesThePlacedRomOnlyWhenItMatches();
+    void romFolderInTheInstallFolderBySha1();
+    void selectFileKeyValueInSdlFolders();
     void discArgumentPassesTheGameFile();
     void backgroundReadsNeverReadOnTheCallersThread();
     void windowsFolderRules();
@@ -514,6 +517,86 @@ void LaunchPreparerTest::romFolderPassesThePlacedRomOnlyWhenItMatches()
     QCOMPARE(plan.arguments, QStringList{placed});
     QCOMPARE(LaunchPreparer::savesFolder(project.value("launch").toMap(), QString(), opts),
              QDir(folder).filePath(QStringLiteral("userdata/saves")));
+}
+
+void LaunchPreparerTest::romFolderInTheInstallFolderBySha1()
+{
+    // goldeneye-pc-port-like: the ROM goes into data/ beside the program, and
+    // the port publishes only a SHA-1 of the ROM.
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QByteArray rom = makeRom("TEST GAME", 'E');
+    const QString sha1 = QString::fromLatin1(QCryptographicHash::hash(rom, QCryptographicHash::Sha1).toHex());
+    QCOMPARE(RomInspector::inspectN64(rom).sha1, sha1);
+    QVariantMap project = snapProject(QString());
+    QVariantMap launch = project.value("launch").toMap();
+    launch.remove(QStringLiteral("environment"));
+    launch.remove(QStringLiteral("romXxh3"));
+    launch.insert(QStringLiteral("dataFolder"), QString());
+    launch.insert(QStringLiteral("installFolder"), true);
+    launch.insert(QStringLiteral("romFileName"), QStringLiteral("data/test.ntsc-final.z64"));
+    launch.insert(QStringLiteral("romSha1"), sha1);
+    project.insert(QStringLiteral("launch"), launch);
+    const QString install = QDir(root.path()).filePath(QStringLiteral("launchers/test"));
+    QVERIFY(QDir().mkpath(install));
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test (USA).z64"));
+    QVERIFY(writeFile(game, rom));
+    LaunchPreparer preparer;
+    LaunchPreparer::Options opts = options(root);
+    QCOMPARE(preparer.readiness(project, game, install, opts).value("state").toString(), QStringLiteral("ready"));
+    preparer.prepare(project, game, install, opts);
+    QCOMPARE(readFile(QDir(install).filePath(QStringLiteral("data/test.ntsc-final.z64"))), rom);
+
+    // Another ROM is not copied.
+    QVERIFY(QFile::remove(QDir(install).filePath(QStringLiteral("data/test.ntsc-final.z64"))));
+    QVERIFY(writeFile(game, makeRom("TEST GAME", 'E', 1)));
+    preparer.prepare(project, game, install, opts);
+    QVERIFY(!QFileInfo::exists(QDir(install).filePath(QStringLiteral("data/test.ntsc-final.z64"))));
+}
+
+void LaunchPreparerTest::selectFileKeyValueInSdlFolders()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    QVariantMap project = discProject();
+    project.insert(QStringLiteral("launch"), QVariantMap{
+        {QStringLiteral("method"), QStringLiteral("selectfile")},
+        {QStringLiteral("selectFiles"), QVariantList{
+            QVariantMap{{QStringLiteral("folder"), QStringLiteral("userdata")}, {QStringLiteral("appName"), QStringLiteral("game")},
+                        {QStringLiteral("appOrg"), QStringLiteral("org")},
+                        {QStringLiteral("portableMarker"), QStringLiteral("portable.txt")},
+                        {QStringLiteral("markerBesideAppImage"), true},
+                        {QStringLiteral("file"), QStringLiteral("app.ini")},
+                        {QStringLiteral("format"), QStringLiteral("keyvalue")}, {QStringLiteral("key"), QStringLiteral("rom_path")}}}}});
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test.iso"));
+    QVERIFY(writeFile(game, QByteArray("disc")));
+    const QString install = QDir(root.path()).filePath(QStringLiteral("launchers/test"));
+    QVERIFY(QDir().mkpath(install));
+    LaunchPreparer preparer;
+
+    // Linux: SDL leaves the organization out. Other lines stay.
+    LaunchPreparer::Options opts = options(root);
+    opts.executablePath = QDir(install).filePath(QStringLiteral("Test.AppImage"));
+    const QString linuxFile = QDir(opts.dataHome).filePath(QStringLiteral("game/app.ini"));
+    QVERIFY(writeFile(linuxFile, QByteArray("volume=5\nrom_path=/old.iso\n")));
+    preparer.prepare(project, game, install, opts);
+    QCOMPARE(readFile(linuxFile), QByteArray("volume=5\nrom_path=") + game.toUtf8() + QByteArray("\n"));
+
+    // This launcher looks for portable.txt beside the AppImage file too.
+    QVERIFY(writeFile(QDir(install).filePath(QStringLiteral("portable.txt")), QByteArray()));
+    preparer.prepare(project, game, install, opts);
+    QCOMPARE(readFile(QDir(install).filePath(QStringLiteral("app.ini"))), QByteArray("rom_path=") + game.toUtf8() + QByteArray("\n"));
+    QVERIFY(QFile::remove(QDir(install).filePath(QStringLiteral("portable.txt"))));
+
+    // Windows: %APPDATA%\org\game, with backslashes escaped.
+    opts.system = QStringLiteral("windows");
+    opts.appData = QDir(root.path()).filePath(QStringLiteral("AppData/Roaming"));
+    opts.executablePath = QDir(install).filePath(QStringLiteral("Test.exe"));
+    opts.winePaths = true;
+    preparer.prepare(project, game, install, opts);
+    const QString wine = QStringLiteral("Z:") + QString(game).replace(QLatin1Char('/'), QLatin1Char('\\'));
+    QCOMPARE(readFile(QDir(opts.appData).filePath(QStringLiteral("org/game/app.ini"))),
+             QByteArray("rom_path=") + QString(wine).replace(QStringLiteral("\\"), QStringLiteral("\\\\")).toUtf8() + QByteArray("\n"));
 }
 
 void LaunchPreparerTest::discArgumentPassesTheGameFile()
