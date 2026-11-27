@@ -44,6 +44,13 @@ This document is the current development status and implementation order for Rec
 - Curated catalog of 42 projects (30 N64, 4 GameCube, 2 each for PS1, Xbox, Xbox 360 and SNES) queried through the GitHub API; Linux x86_64/arm64 AppImage, ZIP and TAR.GZ assets (including a ZIP wrapping a TAR.GZ); projects that publish only pre-releases (`includePrereleases`, with an automatic fallback when there is no full release); staged download, extraction, install, launch, uninstall, rediscovery. Game input ownership while a launcher runs. The launcher file inside an archive is matched by name without case (it must still be the only match).
 
 **Seamless play** (`LaunchPreparer`, `RomInspector`, the `launch` recipe in `data/projects.json`)
+- How Play hands over the game (user's rule, 2026-11-26), for every launcher:
+  - A cartridge ROM, and the launcher has its own settings screen: the ROM is attached (selected) and the launcher opens; the player starts the game there (`selectfile`, `--launcher --rom`, or a placed ROM for N64Recomp/HarbourMasters launchers).
+  - A cartridge ROM, and the launcher has no settings of its own: the game starts straight away (`fileargument`).
+  - A disc image (GameCube, Wii), and the launcher has settings: the disc is attached, not started (`selectfile`).
+  - A disc image, and the launcher has no settings: the disc starts straight away (`discargument`).
+  - A launcher that already finds and starts the game by itself (BlueWake): left alone (`manual`).
+  - A launcher that builds the game from your copy first: the game is attached so the build starts by itself.
 - Play hands the library's game file to the launcher, so it opens straight to the game. Catalog-driven methods, no per-project code:
   - `n64recomp` (22 projects): the ROM is checked against the launcher's own XXH3-64 checksum (read from each project's source, `.rom_hash`) and copied, padded and converted to big-endian, to `~/.config/<program_id>/<game_id>.z64` — where N64ModernRuntime keeps it after its first start. A `portable.txt` in the install folder means the install folder instead.
   - `harbourmasters` (Shipwright, Ghostship, PaperBoat): `SHIP_HOME` is set to `~/.local/share/<name>`, so saves live outside the managed install folder (Ghostship and PaperBoat previously saved into it, because libultraship falls back to the working directory). Existing saves and settings are copied there once; the ROM is placed there for the port's own extraction prompt.
