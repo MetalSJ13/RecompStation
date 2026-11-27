@@ -1,5 +1,7 @@
 #include "LaunchPreparer.h"
 
+#include <filesystem>
+
 #include "Logging.h"
 
 #include <QDir>
@@ -25,6 +27,17 @@ QString dataHome(const LaunchPreparer::Options &options)
     if (!xdg.isEmpty() && QDir::isAbsolutePath(xdg))
         return xdg;
     return QDir(homeDirectory(options)).filePath(QStringLiteral(".local/share"));
+}
+
+// $XDG_CONFIG_HOME or ~/.config.
+QString configHome(const LaunchPreparer::Options &options)
+{
+    if (!options.configHome.isEmpty())
+        return options.configHome;
+    const QString xdg = qEnvironmentVariable("XDG_CONFIG_HOME");
+    if (options.homeDirectory.isEmpty() && !xdg.isEmpty() && QDir::isAbsolutePath(xdg))
+        return xdg;
+    return QDir(homeDirectory(options)).filePath(QStringLiteral(".config"));
 }
 
 bool onWindows(const LaunchPreparer::Options &options)
@@ -177,11 +190,18 @@ QString selectFileFolder(const QVariantMap &entry, const QString &installDirecto
     }
     const QString app = entry.value(QStringLiteral("appName")).toString();
     // SDL_GetPrefPath: <data home>/<app> on Linux (the organization is left
-    // out there), %APPDATA%\<organization>\<app> on Windows.
+    // out there), %APPDATA%\<organization>\<app> on Windows. Some launchers
+    // use ~/.config on Linux, or %LOCALAPPDATA% or their own folder on Windows.
     if (onWindows(options)) {
+        const QString base = entry.value(QStringLiteral("windowsBase")).toString();
+        if (base == QStringLiteral("launcher"))
+            return launcherFolder;
         const QString organization = entry.value(QStringLiteral("appOrg")).toString();
-        return QDir(roamingAppData(options)).filePath(organization.isEmpty() ? app : organization + QLatin1Char('/') + app);
+        return QDir(base == QStringLiteral("local") ? localAppData(options) : roamingAppData(options))
+            .filePath(organization.isEmpty() ? app : organization + QLatin1Char('/') + app);
     }
+    if (entry.value(QStringLiteral("linuxBase")).toString() == QStringLiteral("config"))
+        return QDir(configHome(options)).filePath(app);
     return QDir(dataHome(options)).filePath(app);
 }
 
@@ -196,11 +216,13 @@ QString quoted(const QString &value)
 // Puts the game file in one of the launcher's own files, in its format:
 // whole (the file is the path), firstline (the path and a line break),
 // listline (one path per line, added when missing), quotedkey (a
-// `key "value"` line replaced, other lines kept) or keyvalue (a `key=value`
-// line with \\, \n and \r escaped, replaced, other lines kept). False when it can't be
-// written; *changed says whether the file changed.
+// `key "value"` line replaced, other lines kept), keyvalue (a `key=value`
+// line with \\, \n and \r escaped, replaced, other lines kept), inikey (a
+// `key=value` line as it is, in [section] when one is given, other lines
+// kept) or jsonkey (a top-level "key" of a JSON object, other keys kept).
+// False when it can't be written; *changed says whether the file changed.
 bool writeSelectFile(const QString &path, const QString &format, const QString &key,
-                     const QString &value, bool *changed)
+                     const QString &section, const QString &value, bool *changed)
 {
     QString existing;
     {
@@ -214,6 +236,70 @@ bool writeSelectFile(const QString &path, const QString &format, const QString &
     QString text;
     if (format == QStringLiteral("whole")) {
         text = value;
+    } else if (format == QStringLiteral("jsonkey")) {
+        // A file that isn't a plain JSON object (comments, say) is left alone.
+        QJsonObject object;
+        if (!existing.trimmed().isEmpty()) {
+            QJsonParseError error;
+            const QJsonDocument document = QJsonDocument::fromJson(existing.toUtf8(), &error);
+            if (error.error != QJsonParseError::NoError || !document.isObject())
+                return false;
+            object = document.object();
+        }
+        if (object.value(key).toString() == value && object.value(key).isString()) {
+            *changed = false;
+            return true;
+        }
+        object.insert(key, value);
+        text = QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Indented));
+    } else if (format == QStringLiteral("inikey")) {
+        QStringList lines = existing.split(QLatin1Char('\n'));
+        if (!lines.isEmpty() && lines.last().isEmpty())
+            lines.removeLast();
+        const QString entry = key + QLatin1Char('=') + value;
+        // Where the section's lines are: [first, end). Without a section,
+        // the lines before the first section.
+        int first = 0, end = lines.size();
+        bool found = section.isEmpty();
+        for (int i = 0; i < lines.size(); ++i) {
+            const QString trimmed = lines.at(i).trimmed();
+            if (!trimmed.startsWith(QLatin1Char('[')) || !trimmed.endsWith(QLatin1Char(']')))
+                continue;
+            if (found) {
+                if (i >= first) {
+                    end = i;
+                    break;
+                }
+            } else if (trimmed.mid(1, trimmed.size() - 2).trimmed() == section) {
+                found = true;
+                first = i + 1;
+            }
+        }
+        if (!found) {
+            if (!lines.isEmpty() && !lines.last().trimmed().isEmpty())
+                lines.append(QString());
+            lines.append(QLatin1Char('[') + section + QLatin1Char(']'));
+            lines.append(entry);
+        } else {
+            int placed = -1;
+            for (int i = end - 1; i >= first; --i) {
+                const QString line = lines.at(i);
+                if (line.contains(QLatin1Char('=')) && line.section(QLatin1Char('='), 0, 0).trimmed() == key) {
+                    if (placed >= 0)
+                        lines.removeAt(placed);
+                    lines[i] = entry;
+                    placed = i;
+                }
+            }
+            if (placed < 0) {
+                // After the section's last line that isn't blank.
+                int at = end;
+                while (at > first && lines.at(at - 1).trimmed().isEmpty())
+                    --at;
+                lines.insert(at, entry);
+            }
+        }
+        text = lines.join(QLatin1Char('\n')) + QLatin1Char('\n');
     } else if (format == QStringLiteral("firstline")) {
         text = value + QLatin1Char('\n');
     } else {
@@ -265,6 +351,46 @@ bool writeSelectFile(const QString &path, const QString &format, const QString &
         return false;
     file.write(text.toUtf8());
     return file.commit();
+}
+
+// Puts the game file at target: a hard link where the file system allows
+// one (no second copy of a disc image), else a copy. A file already there
+// with the same size is taken to be the same and left as it is; a
+// different file under that name is replaced, nothing else is touched.
+bool placeGameFile(const QString &source, const QString &target, QString *detail)
+{
+    const QFileInfo existing(target);
+    if (existing.isSymLink() || existing.isDir()) {
+        *detail = QStringLiteral("Something else is already there");
+        return false;
+    }
+    if (existing.isFile() && existing.size() == QFileInfo(source).size())
+        return true;
+    if (!QDir().mkpath(existing.absolutePath())) {
+        *detail = QStringLiteral("Its folder can't be created");
+        return false;
+    }
+    const QString partial = target + QStringLiteral(".part");
+    QFile::remove(partial);
+    std::error_code error;
+    std::filesystem::create_hard_link(std::filesystem::path(source.toStdU16String()),
+                                      std::filesystem::path(partial.toStdU16String()), error);
+    if (error && !QFile::copy(source, partial)) {
+        QFile::remove(partial);
+        *detail = QStringLiteral("There may not be enough free space");
+        return false;
+    }
+    if (existing.isFile() && !QFile::remove(target)) {
+        QFile::remove(partial);
+        *detail = QStringLiteral("The file already there can't be replaced");
+        return false;
+    }
+    if (!QFile::rename(partial, target)) {
+        QFile::remove(partial);
+        *detail = QStringLiteral("It can't be written there");
+        return false;
+    }
+    return true;
 }
 
 // The launcher's own checksum: XXH3-64 (N64Recomp launchers) or, for ports
@@ -432,7 +558,7 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
     const QString romName = recipe.value(QStringLiteral("romName")).toString();
 
     if (method == QStringLiteral("discargument") || method == QStringLiteral("fileargument")
-        || method == QStringLiteral("selectfile")) {
+        || method == QStringLiteral("selectfile") || method == QStringLiteral("placefile")) {
         if (!hasGame)
             return noGame();
         const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
@@ -448,6 +574,8 @@ QVariantMap LaunchPreparer::readiness(const QVariantMap &project,
         return set(QStringLiteral("ready"), QStringLiteral("ok"), QStringLiteral("Ready to play"),
                    (method == QStringLiteral("selectfile")
                         ? QStringLiteral("Play opens %1 with your copy already selected. Start the game from there.")
+                        : method == QStringLiteral("placefile")
+                        ? QStringLiteral("Play puts your copy where %1 looks for it, then starts it.")
                         : QStringLiteral("Play starts %1 with your copy.")).arg(name)
                        + (note.isEmpty() ? QString() : QLatin1Char(' ') + note));
     }
@@ -615,8 +743,39 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
         if (!options.prepareFiles || gamePath.isEmpty() || !game.isFile()
             || (!extensions.isEmpty() && !extensions.contains(game.suffix().toLower())))
             return plan;
-        plan.arguments = filledArguments(recipe, {{QStringLiteral("gamePath"), launcherPath(game.absoluteFilePath(), options)}});
+        const QString path = launcherPath(game.absoluteFilePath(), options);
+        plan.arguments = filledArguments(recipe, {{QStringLiteral("gamePath"), path}});
+        const QString variable = recipe.value(QStringLiteral("gameVariable")).toString();
+        if (!variable.isEmpty())
+            plan.environment.insert(variable, path);
         plan.steps.append(step(QStringLiteral("Starting with your copy"), game.fileName()));
+        return plan;
+    }
+    if (method == QStringLiteral("placefile")) {
+        // The launcher finds the game where it looks for it: a link to the
+        // file in the library (or a copy, where a link can't be made).
+        const QStringList extensions = recipe.value(QStringLiteral("fileExtensions")).toStringList();
+        const QFileInfo game(gamePath);
+        if (!options.prepareFiles || gamePath.isEmpty() || !game.isFile()
+            || !extensions.contains(game.suffix().toLower()))
+            return plan;
+        const QVariantMap entry = recipe.value(QStringLiteral("placeFile")).toMap();
+        QString name = entry.value(QStringLiteral("file")).toString();
+        name.replace(QStringLiteral("{name}"), game.fileName())
+            .replace(QStringLiteral("{ext}"), game.suffix().toLower());
+        const QString target = QDir(selectFileFolder(entry, installDirectory, options)).filePath(name);
+        QString detail;
+        if (placeGameFile(game.absoluteFilePath(), target, &detail)) {
+            plan.steps.append(step(QStringLiteral("Gave your copy to the launcher"), shortPath(target, options)));
+            const bool windowsLauncher = onWindows(options) && recipe.contains(QStringLiteral("windowsArguments"));
+            plan.arguments.clear();
+            for (const QVariant &argument : recipe.value(windowsLauncher ? QStringLiteral("windowsArguments")
+                                                                          : QStringLiteral("arguments")).toList())
+                plan.arguments << fillIn(argument.toString(), {{QStringLiteral("placedPath"), launcherPath(target, options)}});
+        } else {
+            qCWarning(lcGameLaunch) << "Could not place the game file at" << target << detail;
+            plan.steps.append(step(QStringLiteral("Couldn't give your copy to the launcher"), detail, true));
+        }
         return plan;
     }
     if (method == QStringLiteral("selectfile")) {
@@ -636,7 +795,8 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
                                      .filePath(entry.value(QStringLiteral("file")).toString());
             bool changed = false;
             if (!writeSelectFile(file, entry.value(QStringLiteral("format")).toString(),
-                                 entry.value(QStringLiteral("key")).toString(), value, &changed)) {
+                                 entry.value(QStringLiteral("key")).toString(),
+                                 entry.value(QStringLiteral("section")).toString(), value, &changed)) {
                 qCWarning(lcGameLaunch) << "Could not select the game in the launcher's file" << file;
                 written = false;
             }

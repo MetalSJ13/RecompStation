@@ -2853,6 +2853,1185 @@
           "executablePath": "Shadows of the Empire.exe"
         }
       }
+    },
+    {
+      "id": "dk1-snes-recomp",
+      "name": "Donkey Kong Country SNES Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Donkey Kong Country"
+      ],
+      "repositoryOwner": "mpolizel",
+      "repositoryName": "DK1SNESRecomp",
+      "romRequirements": "Requires your own Donkey Kong Country (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Donkey Kong Country (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--launcher",
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^donkeykongcountry-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DonkeyKongCountrySNESRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "smw2-yoshis-island-recomp",
+      "name": "Yoshi's Island SNES Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Super Mario World 2: Yoshi's Island",
+        "Yoshi's Island"
+      ],
+      "repositoryOwner": "mpolizel",
+      "repositoryName": "SMW2Recomp",
+      "romRequirements": "Requires your own Super Mario World 2: Yoshi's Island (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Super Mario World 2: Yoshi's Island (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--launcher",
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^yoshisisland-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SuperMarioWorld2YoshisIslandSNESRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "yo-island-snes-recomp",
+      "name": "Yoshi's Island Recomp (Easy Setup)",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Super Mario World 2: Yoshi's Island",
+        "Yoshi's Island"
+      ],
+      "repositoryOwner": "guimaraf",
+      "repositoryName": "yo-Island-snes-recomp",
+      "romRequirements": "Requires your own Super Mario World 2: Yoshi's Island (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Super Mario World 2: Yoshi's Island (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "It builds the game from your ROM first (it downloads a build toolchain of about 800 MB once)."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^islandSnesRecomp-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Yoshi's Island recomp.exe"
+        }
+      }
+    },
+    {
+      "id": "mega-man-x3-recompiled",
+      "name": "Mega Man X3 SNES Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Mega Man X3",
+        "Rockman X3"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "MegamanX3SNESRecomp",
+      "romRequirements": "Requires your own Mega Man X3 (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Mega Man X3 (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--launcher",
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^MegaManX3SNESRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MegaManX3SNESRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "lufia-ii-recompiled",
+      "name": "Lufia II Recompiled",
+      "platform": "SNES",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Lufia II: Rise of the Sinistrals",
+        "Lufia II"
+      ],
+      "repositoryOwner": "aitorcachero",
+      "repositoryName": "Lufia-II-Recomp",
+      "romRequirements": "Requires your own Lufia II: Rise of the Sinistrals (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Lufia II: Rise of the Sinistrals (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--launcher",
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^Lufia_II_Recompiled_v[0-9.]+_Windows_x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "LufiaIiSNESRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "lufia2-snes-recomp",
+      "name": "Lufia 2 Recomp",
+      "platform": "SNES",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Lufia II: Rise of the Sinistrals",
+        "Lufia II"
+      ],
+      "repositoryOwner": "Cellenseres",
+      "repositoryName": "Lufia2SNESRecomp",
+      "romRequirements": "Requires your own Lufia II: Rise of the Sinistrals (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Lufia II: Rise of the Sinistrals (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Lufia2Recomp-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Lufia2Recomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Lufia2Recomp-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Lufia2Recomp.exe"
+        }
+      },
+      "includePrereleases": true
+    },
+    {
+      "id": "trio-mega-man-x",
+      "name": "trio",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Mega Man X",
+        "Mega Man X2",
+        "Mega Man X3",
+        "Rockman X",
+        "Rockman X2",
+        "Rockman X3"
+      ],
+      "repositoryOwner": "y4my4my4m",
+      "repositoryName": "trio",
+      "romRequirements": "Requires your own USA ROM of Mega Man X, X2 or X3. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "Mega Man X, X2 or X3 (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "rom/{name}"
+        },
+        "arguments": [],
+        "firstStartNote": "It finds your ROM in its rom folder, where Play puts it."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^trio-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "trio.exe"
+        }
+      }
+    },
+    {
+      "id": "alttp-dx",
+      "name": "alttp-dx",
+      "platform": "SNES",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "The Legend of Zelda: A Link to the Past",
+        "Zelda: A Link to the Past",
+        "A Link to the Past"
+      ],
+      "repositoryOwner": "YeOldPress",
+      "repositoryName": "alttp-dx",
+      "romRequirements": "Requires your own The Legend of Zelda: A Link to the Past (USA) ROM. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "The Legend of Zelda: A Link to the Past (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "sfc"
+        ],
+        "placeFile": {
+          "folder": "userdata",
+          "appName": "alttp-dx",
+          "windowsBase": "launcher",
+          "file": "zelda3.sfc"
+        },
+        "arguments": [],
+        "firstStartNote": "Its start menu finds your ROM and builds its assets from it once when you press Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^alttp-dx-v[0-9.]+-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "alttp-dx.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^alttp-dx-v[0-9.]+-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "zelda3.exe"
+        }
+      }
+    },
+    {
+      "id": "stunt-race-fx-decomp",
+      "name": "Stunt Race FX - DECOMP",
+      "platform": "SNES",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Stunt Race FX",
+        "Wild Trax"
+      ],
+      "repositoryOwner": "Mabec-games",
+      "repositoryName": "Stunt-Race-FX-DECOMP",
+      "romRequirements": "Requires your own Stunt Race FX (USA, Rev 1) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Stunt Race FX (USA, Rev 1) ROM",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "stuntracefx",
+            "linuxBase": "config",
+            "windowsBase": "launcher",
+            "file": "launcher.cfg",
+            "format": "inikey",
+            "key": "rom"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^StuntRaceFX-DECOMP-.*-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "StuntRaceFX-DECOMP.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^StuntRaceFX-DECOMP-.*-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Stunt Race FX - DECOMP.exe"
+        }
+      }
+    },
+    {
+      "id": "stunt-race-fx-builder",
+      "name": "Stunt Race FX Builder",
+      "platform": "SNES",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Stunt Race FX",
+        "Wild Trax"
+      ],
+      "repositoryOwner": "jeff-strutb",
+      "repositoryName": "stuntracefx",
+      "romRequirements": "Requires your own Stunt Race FX (USA, Rev 1) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Stunt Race FX (USA, Rev 1) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "The builder opens with your ROM already chosen; press Build to make the game from it."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^StuntRaceFXBuilder-[0-9.]+-Linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "StuntRaceFXBuilder"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^StuntRaceFXBuilder-[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "StuntRaceFXBuilder.exe"
+        }
+      }
+    },
+    {
+      "id": "star-fox-enhanced",
+      "name": "Star Fox Enhanced",
+      "platform": "SNES",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Star Fox",
+        "Starwing"
+      ],
+      "repositoryOwner": "kandowontu2",
+      "repositoryName": "starfox-enhanced",
+      "romRequirements": "Requires your own unmodified Star Fox ROM. No game data is included. Play starts the game with it.",
+      "romFile": "Star Fox (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [],
+        "gameVariable": "STARFOX_RETAIL_ROM",
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "The first start builds its asset file from your ROM, then opens the game's menu."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^StarFoxEnhanced-[0-9.]+-linux-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "starfox_pc"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^StarFoxEnhanced-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "starfox_pc.exe"
+        }
+      }
+    },
+    {
+      "id": "earthbound-native",
+      "name": "EarthBound Native",
+      "platform": "SNES",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "EarthBound",
+        "Earthbound"
+      ],
+      "repositoryOwner": "seanstaggsQU",
+      "repositoryName": "EarthboundNativePublic",
+      "romRequirements": "Requires your own EarthBound (USA) ROM. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "EarthBound (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "{name}"
+        },
+        "arguments": [],
+        "firstStartNote": "The first start builds its game data from your ROM (under a minute)."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^EarthBound-Linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "earthbound-linux"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^EarthBound-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "earthbound-windows.exe"
+        }
+      }
+    },
+    {
+      "id": "phase-distorter",
+      "name": "Phase Distorter",
+      "platform": "SNES",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "EarthBound",
+        "Earthbound",
+        "Mother 2"
+      ],
+      "repositoryOwner": "TheRunaway5",
+      "repositoryName": "Phase-Distorter",
+      "romRequirements": "Requires your own EarthBound (USA) or Mother 2 (Japan) ROM. No game data is included. Play starts the game with it.",
+      "romFile": "EarthBound (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--import-rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "It imports the game's assets from your ROM, then starts the game."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Phase-Distorter-[0-9.]+-linux-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Phase Distorter"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Phase-Distorter-[0-9.]+-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Phase Distorter.exe"
+        }
+      }
+    },
+    {
+      "id": "mzm-recompiled",
+      "name": "MZM Recompiled",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Metroid: Zero Mission",
+        "Metroid Zero Mission"
+      ],
+      "repositoryOwner": "HikariLucy",
+      "repositoryName": "MZM-Recomp",
+      "romRequirements": "Requires your own Metroid: Zero Mission (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Metroid: Zero Mission (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "MZMRecompiled",
+            "linuxBase": "config",
+            "file": "launcher.ini",
+            "format": "inikey",
+            "key": "rom"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^MZMRecompiled-.*-Linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "MZMRecomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MZMRecompiled-.*-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MZMRecomp.exe"
+        }
+      },
+      "includePrereleases": true
+    },
+    {
+      "id": "sacred-stones-recomp",
+      "name": "Sacred Stones Recomp",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Fire Emblem: The Sacred Stones",
+        "Fire Emblem The Sacred Stones"
+      ],
+      "repositoryOwner": "Lordingard",
+      "repositoryName": "SacredStonesRecomp",
+      "romRequirements": "Requires your own Fire Emblem: The Sacred Stones (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Fire Emblem: The Sacred Stones (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "sacredstonesrecomp-rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^SacredStonesRecomp-[0-9.]+-win64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SacredStonesRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "fe8-pc-port",
+      "name": "Fire Emblem: The Sacred Stones PC Port",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Fire Emblem: The Sacred Stones",
+        "Fire Emblem The Sacred Stones"
+      ],
+      "repositoryOwner": "FT775",
+      "repositoryName": "fe8-pc-port",
+      "romRequirements": "Requires your own Fire Emblem: The Sacred Stones (USA) ROM. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "Fire Emblem: The Sacred Stones (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "gba"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "roms/{name}"
+        },
+        "arguments": [],
+        "firstStartNote": "It finds your ROM in its roms folder, where Play puts it."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^fe8-pc-port-v[0-9.]+-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "fe8pc-sdl.exe"
+        }
+      }
+    },
+    {
+      "id": "minish-cap-recomp",
+      "name": "Minish Cap Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "The Legend of Zelda: The Minish Cap",
+        "Zelda: The Minish Cap",
+        "The Minish Cap"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "MinishCapRecomp",
+      "romRequirements": "Requires your own The Legend of Zelda: The Minish Cap (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "The Legend of Zelda: The Minish Cap (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^MinishCapRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MinishCapRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "buus-fury-recomp",
+      "name": "Buu's Fury Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Dragon Ball Z: Buu's Fury",
+        "Dragon Ball Z Buu's Fury"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "DragonBallZBuusFuryRecomp",
+      "romRequirements": "Requires your own Dragon Ball Z: Buu's Fury (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Dragon Ball Z: Buu's Fury (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^DragonBallZBuusFuryRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DragonBallZBuusFuryRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "ffta-recomp",
+      "name": "FFTA Recomp",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Final Fantasy Tactics Advance"
+      ],
+      "repositoryOwner": "james2doyle",
+      "repositoryName": "ffta-recomp",
+      "romRequirements": "Requires your own Final Fantasy Tactics Advance (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Final Fantasy Tactics Advance (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^FFTARecomp-v[0-9.]+-linux-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "FFTARecomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^FFTARecomp-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "FFTARecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "melee-unlocked",
+      "name": "Melee Unlocked",
+      "platform": "GameCube",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Super Smash Bros. Melee",
+        "Super Smash Bros Melee"
+      ],
+      "repositoryOwner": "Hero88go",
+      "repositoryName": "melee-unlocked",
+      "romRequirements": "Requires your own uncompressed Super Smash Bros. Melee (USA, 1.02) disc image. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Super Smash Bros. Melee (USA, 1.02) disc image",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "iso",
+          "gcm"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "launcher.ini",
+            "format": "inikey",
+            "key": "iso"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^MeleeUnlocked-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "MeleeUnlocked"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MeleeUnlocked-[0-9.]+-win64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MeleeUnlockedLauncher.exe"
+        }
+      }
+    },
+    {
+      "id": "nookery",
+      "name": "Nookery",
+      "platform": "GameCube",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Animal Crossing"
+      ],
+      "repositoryOwner": "flyngmt",
+      "repositoryName": "Nookery",
+      "romRequirements": "Requires your own Animal Crossing (USA) disc image. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Animal Crossing (USA) disc image",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "rvz",
+          "iso",
+          "ciso",
+          "gcm"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "Nookery",
+            "windowsBase": "launcher",
+            "file": "config.json",
+            "format": "jsonkey",
+            "key": "backend.discPath"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Nookery-v[0-9.]+-linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Nookery.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Nookery-v[0-9.]+-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Nookery.exe"
+        }
+      }
+    },
+    {
+      "id": "pikmin-recomp",
+      "name": "Pikmin Recomp",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Pikmin"
+      ],
+      "repositoryOwner": "noalexan",
+      "repositoryName": "PikminRecomp",
+      "romRequirements": "Requires your own Pikmin (USA) disc image. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Pikmin (USA) disc image",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "iso",
+          "gcm"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "pikminrecomp-launcher",
+            "windowsBase": "local",
+            "file": "launcher.json",
+            "format": "jsonkey",
+            "key": "iso"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your disc selected; it builds the game from it before the first start."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^PikminRecompLauncher-[0-9.]+-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "PikminRecompLauncher.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^PikminRecompLauncher-[0-9.]+-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "PikminRecompLauncher.exe"
+        }
+      }
+    },
+    {
+      "id": "switchwaker-wind-waker",
+      "name": "SwitchWaker",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "The Legend of Zelda: The Wind Waker",
+        "Zelda: The Wind Waker",
+        "The Wind Waker"
+      ],
+      "repositoryOwner": "MaskeZenY",
+      "repositoryName": "WindowWaker",
+      "romRequirements": "Requires your own uncompressed The Legend of Zelda: The Wind Waker (USA, GZLE01) disc image. No game data is included. Play starts the game with it.",
+      "romFile": "The Wind Waker (USA) disc image",
+      "launch": {
+        "method": "discargument",
+        "arguments": [],
+        "gameVariable": "COS_DISC",
+        "fileExtensions": [
+          "iso"
+        ],
+        "firstStartNote": "It has no launcher screen of its own, so Play starts the game straight away."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^SwitchWaker-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "switchwaker.exe"
+        }
+      }
+    },
+    {
+      "id": "frightworks",
+      "name": "FrightWorks",
+      "platform": "GameCube",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Scooby-Doo! Night of 100 Frights",
+        "Scooby-Doo Night of 100 Frights"
+      ],
+      "repositoryOwner": "FrightWorks",
+      "repositoryName": "FrightWorks-no100f",
+      "romRequirements": "Requires your own Scooby-Doo! Night of 100 Frights (USA, Rev 1) disc image. No game data is included. Choose it once in the launcher.",
+      "romFile": "Night of 100 Frights (USA, Rev 1) disc image",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^FrightWorks-[0-9.]+-Linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "FrightWorks"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^FrightWorks-[0-9.]+-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "FrightWorks.exe"
+        }
+      }
+    },
+    {
+      "id": "partyboard-mario-party-4",
+      "name": "partyboard",
+      "platform": "GameCube",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Mario Party 4"
+      ],
+      "repositoryOwner": "mariopartyrd",
+      "repositoryName": "marioparty4",
+      "romRequirements": "Requires your own Mario Party 4 (USA) disc image. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "Mario Party 4 (USA) disc image",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "iso",
+          "rvz"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "GMPE01_00.{ext}"
+        },
+        "arguments": [],
+        "firstStartNote": "It reads your disc from its own folder, where Play puts it."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^partyboard_alpha_[0-9.]+_x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "partyboard.exe"
+        }
+      },
+      "includePrereleases": true
+    },
+    {
+      "id": "eternal-darkness-recomp",
+      "name": "Eternal Darkness Recomp",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Eternal Darkness: Sanity's Requiem",
+        "Eternal Darkness"
+      ],
+      "repositoryOwner": "griches",
+      "repositoryName": "EternalDarknessRecomp",
+      "romRequirements": "Requires your own Eternal Darkness (Europe, GEDP01) disc image as .iso or .gcm; the USA disc isn't supported. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "Eternal Darkness (Europe) disc image",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "iso",
+          "gcm"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "{name}"
+        },
+        "arguments": [],
+        "windowsArguments": [
+          "generated/main.dol",
+          "--iso",
+          "{placedPath}",
+          "--max-blocks",
+          "1000000000000000"
+        ],
+        "firstStartNote": "The first start builds the game from your disc, which takes a few minutes."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^EternalDarkness-linux-x86_64-.*\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "play.sh"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^EternalDarkness-windows-x64-.*\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "EternalDarkness.exe"
+        }
+      }
+    },
+    {
+      "id": "recharged",
+      "name": "Recharged",
+      "platform": "Wii",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mario Strikers Charged",
+        "Mario Strikers Charged Football"
+      ],
+      "repositoryOwner": "previouslevelgames",
+      "repositoryName": "recharged",
+      "romRequirements": "Requires your own Mario Strikers Charged disc image (USA, Europe, Japan or Korea). No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Mario Strikers Charged disc image",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "iso",
+          "wbfs",
+          "rvz"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "recharged.ini",
+            "format": "inikey",
+            "section": "game",
+            "key": "disc"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^recharged-[0-9.]+\\+g[0-9a-f]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "recharged"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^recharged-[0-9.]+\\+g[0-9a-f]+-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "recharged.exe"
+        }
+      }
+    },
+    {
+      "id": "nsmb-wii-recompilation",
+      "name": "NSMB Wii Recompilation",
+      "platform": "Wii",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "New Super Mario Bros. Wii",
+        "New Super Mario Bros Wii"
+      ],
+      "repositoryOwner": "WitherBlitz",
+      "repositoryName": "NSMB-Wii-Recompilation",
+      "romRequirements": "Requires your own New Super Mario Bros. Wii (USA, SMNE01, revision 1) disc image or extracted disc. No game data is included. Choose it once in the game.",
+      "romFile": "New Super Mario Bros. Wii (USA, Rev 1) disc",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^NSMBW-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "NSMBW"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^NSMBW-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "NSMBW.exe"
+        }
+      }
+    },
+    {
+      "id": "reuc-recomp",
+      "name": "RE:UC Recomp",
+      "platform": "Wii",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Resident Evil: The Umbrella Chronicles",
+        "Resident Evil The Umbrella Chronicles"
+      ],
+      "repositoryOwner": "solleo95",
+      "repositoryName": "reuc-recomp",
+      "romRequirements": "Requires your own Resident Evil: The Umbrella Chronicles (USA, RBUE08) disc image. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Umbrella Chronicles (USA) disc image",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "iso",
+          "wbfs"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "config.json",
+            "format": "jsonkey",
+            "key": "game"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your disc selected; it unpacks the disc the first time you press Singleplayer."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^UC-Linux-[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "uc_launcher"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^UC-Windows-[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "uc_launcher.exe"
+        }
+      }
+    },
+    {
+      "id": "umbrella-chronicles-recomp",
+      "name": "Umbrella Chronicles Recomp",
+      "platform": "Wii",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Resident Evil: The Umbrella Chronicles",
+        "Resident Evil The Umbrella Chronicles"
+      ],
+      "repositoryOwner": "darkuni",
+      "repositoryName": "resident-evil-umbrella-chronicles-recomp",
+      "romRequirements": "Requires your own Resident Evil: The Umbrella Chronicles (USA, RBUE08) disc image. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "Umbrella Chronicles (USA) disc image",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "iso",
+          "ciso",
+          "wbfs"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "{name}"
+        },
+        "arguments": [],
+        "firstStartNote": "The first start builds the game folder from your disc (a minute or two)."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^UmbrellaChronicles-[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "umbrellachronicles"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^UmbrellaChronicles-[0-9.]+-win64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "umbrellachronicles.exe"
+        }
+      }
+    },
+    {
+      "id": "new-super-paper-bros",
+      "name": "New Super Paper Bros.",
+      "platform": "Wii",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Super Paper Mario"
+      ],
+      "repositoryOwner": "josiahg2502-glitch",
+      "repositoryName": "NewSuperPaperBros",
+      "romRequirements": "Requires your own Super Paper Mario (USA R8PE01 or Europe R8PP01) disc image. No game data is included. Choose it once in the launcher.",
+      "romFile": "Super Paper Mario (USA or Europe) disc image",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^NewSuperPaperBros-linux\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "New Super Paper Bros"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^NewSuperPaperBros\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "New Super Paper Bros.exe"
+        }
+      }
     }
   ]
 }

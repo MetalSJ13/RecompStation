@@ -60,11 +60,15 @@ bool validRelativePath(const QString &value, int maximumParts = 2)
 bool parseArguments(const QJsonValue &value, const QStringList &placeholders, QStringList *arguments)
 {
     static const QRegularExpression flag(QStringLiteral("^--?[a-z][a-z0-9-]{0,40}$"));
+    // A plain value a launcher needs beside its flags: a number, or a file
+    // in its own folder ("generated/main.dol"). No "..", no absolute paths.
+    static const QRegularExpression number(QStringLiteral("^[0-9]{1,20}$"));
     if (!value.isUndefined() && !value.isArray())
         return false;
     for (const QJsonValue &entry : value.toArray()) {
         const QString argument = entry.toString();
-        if (!placeholders.contains(argument) && !flag.match(argument).hasMatch())
+        if (!placeholders.contains(argument) && !flag.match(argument).hasMatch()
+            && !number.match(argument).hasMatch() && !validRelativePath(argument))
             return false;
         arguments->append(argument);
     }
@@ -74,25 +78,80 @@ bool parseArguments(const QJsonValue &value, const QStringList &placeholders, QS
 // Environment for the launcher: only folder settings it reads, set to the
 // folder RecompStation prepared. Variables that change how programs load or
 // where the system looks for things are refused.
-bool parseEnvironment(const QJsonValue &value, QVariantMap *environment)
+// A variable a launcher reads for a path. Variables that change how programs
+// load or where the system looks for things are refused.
+bool allowedVariableName(const QString &key)
 {
     static const QRegularExpression name(QStringLiteral("^[A-Z][A-Z0-9_]{1,40}$"));
+    return name.match(key).hasMatch() && !key.startsWith(QStringLiteral("LD_"))
+        && !key.startsWith(QStringLiteral("XDG_")) && !key.startsWith(QStringLiteral("QT_"))
+        && !key.startsWith(QStringLiteral("SDL_")) && !key.startsWith(QStringLiteral("WINE"))
+        && !QStringList{QStringLiteral("PATH"), QStringLiteral("HOME"), QStringLiteral("SHELL"),
+                        QStringLiteral("USER"), QStringLiteral("DISPLAY"),
+                        QStringLiteral("WAYLAND_DISPLAY")}.contains(key);
+}
+
+bool parseEnvironment(const QJsonValue &value, QVariantMap *environment)
+{
     if (!value.isUndefined() && !value.isObject())
         return false;
     const QJsonObject object = value.toObject();
     for (auto it = object.begin(); it != object.end(); ++it) {
         const QString key = it.key();
-        if (!name.match(key).hasMatch() || key.startsWith(QStringLiteral("LD_"))
-            || key.startsWith(QStringLiteral("XDG_")) || key.startsWith(QStringLiteral("QT_"))
-            || key.startsWith(QStringLiteral("SDL_"))
-            || QStringList{QStringLiteral("PATH"), QStringLiteral("HOME"), QStringLiteral("SHELL"),
-                           QStringLiteral("USER"), QStringLiteral("DISPLAY"),
-                           QStringLiteral("WAYLAND_DISPLAY")}.contains(key)
-            || it.value().toString() != QStringLiteral("{dataFolder}"))
+        if (!allowedVariableName(key) || it.value().toString() != QStringLiteral("{dataFolder}"))
             return false;
         environment->insert(key, it.value().toString());
     }
     return environment->size() <= 4;
+}
+
+// "fileExtensions": lower-case extensions the launcher reads.
+bool parseExtensions(const QJsonObject &object, QStringList *extensions)
+{
+    static const QRegularExpression extension(QStringLiteral("^[a-z0-9]{1,5}$"));
+    for (const QJsonValue &entry : object.value(QStringLiteral("fileExtensions")).toArray()) {
+        const QString value = entry.toString().toLower();
+        if (!extension.match(value).hasMatch())
+            return false;
+        extensions->append(value);
+    }
+    return true;
+}
+
+// Which folder a launcher keeps a file in. Only names are given: the folder
+// is the launcher's own ("launcher"), or its user folder ("userdata"): the
+// one SDL gives the app name (SDL_GetPrefPath), unless "linuxBase" (data,
+// config) or "windowsBase" (roaming, local, launcher) say otherwise, or a
+// portable copy's subfolder.
+bool parseFolderEntry(const QJsonObject &entry, QVariantMap *parsed)
+{
+    static const QRegularExpression variable(QStringLiteral("^[A-Z][A-Z0-9_]{1,40}_DIR$"));
+    const QString folder = entry.value(QStringLiteral("folder")).toString();
+    const QString appName = entry.value(QStringLiteral("appName")).toString();
+    const QString marker = entry.value(QStringLiteral("portableMarker")).toString();
+    const QString subfolder = entry.value(QStringLiteral("portableSubfolder")).toString();
+    const QString folderVariable = entry.value(QStringLiteral("folderVariable")).toString();
+    const QString appOrg = entry.value(QStringLiteral("appOrg")).toString();
+    const QString linuxBase = entry.value(QStringLiteral("linuxBase")).toString();
+    const QString windowsBase = entry.value(QStringLiteral("windowsBase")).toString();
+    const bool userdata = folder == QStringLiteral("userdata");
+    if ((folder != QStringLiteral("launcher") && !userdata)
+        || (userdata ? !validFileName(appName) : !appName.isEmpty())
+        || (!marker.isEmpty() && (!validFileName(marker) || (!subfolder.isEmpty() && !validFileName(subfolder))))
+        || (!appOrg.isEmpty() && (!userdata || !validFileName(appOrg)))
+        || (marker.isEmpty() && !subfolder.isEmpty())
+        || (!linuxBase.isEmpty() && (!userdata || !QStringList{QStringLiteral("data"), QStringLiteral("config")}.contains(linuxBase)))
+        || (!windowsBase.isEmpty() && (!userdata || !QStringList{QStringLiteral("roaming"), QStringLiteral("local"),
+                                                                 QStringLiteral("launcher")}.contains(windowsBase)))
+        || (!folderVariable.isEmpty() && !variable.match(folderVariable).hasMatch()))
+        return false;
+    *parsed = QVariantMap{
+        {QStringLiteral("folder"), folder}, {QStringLiteral("appName"), appName},
+        {QStringLiteral("portableMarker"), marker}, {QStringLiteral("portableSubfolder"), subfolder},
+        {QStringLiteral("folderVariable"), folderVariable}, {QStringLiteral("appOrg"), appOrg},
+        {QStringLiteral("linuxBase"), linuxBase}, {QStringLiteral("windowsBase"), windowsBase},
+        {QStringLiteral("markerBesideAppImage"), entry.value(QStringLiteral("markerBesideAppImage")).toBool()}};
+    return true;
 }
 
 // The optional "launch" recipe: how RecompStation hands the player's game
@@ -107,9 +166,13 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
     // discargument (disc images) and fileargument (cartridge ROMs) work the
     // same way: the game file itself is passed as an argument.
     if (method == QStringLiteral("discargument") || method == QStringLiteral("fileargument")) {
+        // The game file goes in the arguments, or in a variable the launcher
+        // reads ("gameVariable"), or both.
         QStringList arguments;
+        const QString gameVariable = object.value(QStringLiteral("gameVariable")).toString();
         if (!parseArguments(object.value(QStringLiteral("arguments")), {QStringLiteral("{gamePath}")}, &arguments)
-            || !arguments.contains(QStringLiteral("{gamePath}")))
+            || (!gameVariable.isEmpty() && !allowedVariableName(gameVariable))
+            || (gameVariable.isEmpty() && !arguments.contains(QStringLiteral("{gamePath}"))))
             return false;
         static const QRegularExpression extension(QStringLiteral("^[a-z0-9]{1,5}$"));
         QStringList extensions;
@@ -128,6 +191,8 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
             {QStringLiteral("fileExtensions"), extensions},
             {QStringLiteral("firstStartNote"), note}
         };
+        if (!gameVariable.isEmpty())
+            recipe->insert(QStringLiteral("gameVariable"), gameVariable);
         return true;
     }
     // selectfile: the game file is written into the launcher's own settings
@@ -138,50 +203,38 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         QStringList arguments;
         if (!parseArguments(object.value(QStringLiteral("arguments")), {}, &arguments))
             return false;
-        static const QRegularExpression extension(QStringLiteral("^[a-z0-9]{1,5}$"));
-        static const QRegularExpression key(QStringLiteral("^[a-z][a-z0-9_]{0,30}$"));
-        static const QRegularExpression variable(QStringLiteral("^[A-Z][A-Z0-9_]{1,40}_DIR$"));
         QStringList extensions;
-        for (const QJsonValue &entry : object.value(QStringLiteral("fileExtensions")).toArray()) {
-            const QString value = entry.toString().toLower();
-            if (!extension.match(value).hasMatch())
-                return false;
-            extensions.append(value);
-        }
+        if (!parseExtensions(object, &extensions))
+            return false;
+        static const QRegularExpression key(QStringLiteral("^[A-Za-z][A-Za-z0-9_.]{0,40}$"));
+        static const QRegularExpression section(QStringLiteral("^[A-Za-z][A-Za-z0-9_ .]{0,30}$"));
+        static const QStringList keyed{QStringLiteral("quotedkey"), QStringLiteral("keyvalue"),
+                                       QStringLiteral("inikey"), QStringLiteral("jsonkey")};
         const QJsonArray files = object.value(QStringLiteral("selectFiles")).toArray();
         if (files.isEmpty() || files.size() > 3)
             return false;
         QVariantList selectFiles;
         for (const QJsonValue &value : files) {
             const QJsonObject entry = value.toObject();
-            const QString folder = entry.value(QStringLiteral("folder")).toString();
+            QVariantMap parsed;
+            if (!parseFolderEntry(entry, &parsed))
+                return false;
             const QString format = entry.value(QStringLiteral("format")).toString();
             const QString file = entry.value(QStringLiteral("file")).toString();
-            const QString appName = entry.value(QStringLiteral("appName")).toString();
-            const QString marker = entry.value(QStringLiteral("portableMarker")).toString();
-            const QString subfolder = entry.value(QStringLiteral("portableSubfolder")).toString();
             const QString keyName = entry.value(QStringLiteral("key")).toString();
-            const QString folderVariable = entry.value(QStringLiteral("folderVariable")).toString();
-            const QString appOrg = entry.value(QStringLiteral("appOrg")).toString();
-            if ((folder != QStringLiteral("launcher") && folder != QStringLiteral("userdata"))
-                || !QStringList{QStringLiteral("whole"), QStringLiteral("firstline"), QStringLiteral("listline"),
-                                QStringLiteral("quotedkey"), QStringLiteral("keyvalue")}.contains(format)
+            const QString sectionName = entry.value(QStringLiteral("section")).toString();
+            if (!(QStringList{QStringLiteral("whole"), QStringLiteral("firstline"), QStringLiteral("listline")}
+                      .contains(format) || keyed.contains(format))
                 || !validFileName(file)
-                || (folder == QStringLiteral("userdata") ? !validFileName(appName) : !appName.isEmpty())
-                || (!marker.isEmpty() && (!validFileName(marker) || (!subfolder.isEmpty() && !validFileName(subfolder))))
-                || (!appOrg.isEmpty() && (folder != QStringLiteral("userdata") || !validFileName(appOrg)))
-                || (marker.isEmpty() && !subfolder.isEmpty())
-                || ((format == QStringLiteral("quotedkey") || format == QStringLiteral("keyvalue")) != !keyName.isEmpty())
+                || keyed.contains(format) == keyName.isEmpty()
                 || (!keyName.isEmpty() && !key.match(keyName).hasMatch())
-                || (!folderVariable.isEmpty() && !variable.match(folderVariable).hasMatch()))
+                || (!sectionName.isEmpty() && (format != QStringLiteral("inikey") || !section.match(sectionName).hasMatch())))
                 return false;
-            selectFiles.append(QVariantMap{
-                {QStringLiteral("folder"), folder}, {QStringLiteral("format"), format},
-                {QStringLiteral("file"), file}, {QStringLiteral("appName"), appName},
-                {QStringLiteral("portableMarker"), marker}, {QStringLiteral("portableSubfolder"), subfolder},
-                {QStringLiteral("key"), keyName}, {QStringLiteral("folderVariable"), folderVariable},
-                {QStringLiteral("appOrg"), appOrg},
-                {QStringLiteral("markerBesideAppImage"), entry.value(QStringLiteral("markerBesideAppImage")).toBool()}});
+            parsed.insert(QStringLiteral("format"), format);
+            parsed.insert(QStringLiteral("file"), file);
+            parsed.insert(QStringLiteral("key"), keyName);
+            parsed.insert(QStringLiteral("section"), sectionName);
+            selectFiles.append(parsed);
         }
         const QString note = object.value(QStringLiteral("firstStartNote")).toString().trimmed();
         if (note.size() > 200)
@@ -193,6 +246,45 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
             {QStringLiteral("selectFiles"), selectFiles},
             {QStringLiteral("firstStartNote"), note}
         };
+        return true;
+    }
+    // placefile: the game file itself is put where the launcher looks for it
+    // (beside its program, or in its own folder), under a name it looks for.
+    // A launcher that finds the game there and builds or starts from it.
+    if (method == QStringLiteral("placefile")) {
+        QStringList arguments, windowsArguments;
+        const QStringList placeholders{QStringLiteral("{placedPath}")};
+        QStringList extensions;
+        const QJsonObject entry = object.value(QStringLiteral("placeFile")).toObject();
+        QVariantMap parsed;
+        // The name it gets: fixed, or the file's own ({name}), or a fixed
+        // name with the file's extension ("GMPE01_00.{ext}"); in up to one
+        // subfolder ("roms/{name}").
+        const QString file = entry.value(QStringLiteral("file")).toString();
+        QString checked = file;
+        checked.replace(QStringLiteral("{name}"), QStringLiteral("game.iso"))
+            .replace(QStringLiteral("{ext}"), QStringLiteral("iso"));
+        if (!parseArguments(object.value(QStringLiteral("arguments")), placeholders, &arguments)
+            || !parseArguments(object.value(QStringLiteral("windowsArguments")), placeholders, &windowsArguments)
+            || !parseExtensions(object, &extensions) || extensions.isEmpty()
+            || !parseFolderEntry(entry, &parsed)
+            || file.count(QStringLiteral("{name}")) > 1 || file.count(QStringLiteral("{ext}")) > 1
+            || (file.contains(QStringLiteral("{name}")) && !file.endsWith(QStringLiteral("{name}")))
+            || !validRelativePath(checked))
+            return false;
+        parsed.insert(QStringLiteral("file"), file);
+        const QString note = object.value(QStringLiteral("firstStartNote")).toString().trimmed();
+        if (note.size() > 200)
+            return false;
+        *recipe = QVariantMap{
+            {QStringLiteral("method"), method},
+            {QStringLiteral("arguments"), arguments},
+            {QStringLiteral("fileExtensions"), extensions},
+            {QStringLiteral("placeFile"), parsed},
+            {QStringLiteral("firstStartNote"), note}
+        };
+        if (object.contains(QStringLiteral("windowsArguments")))
+            recipe->insert(QStringLiteral("windowsArguments"), windowsArguments);
         return true;
     }
     if (method != QStringLiteral("n64recomp") && method != QStringLiteral("harbourmasters")

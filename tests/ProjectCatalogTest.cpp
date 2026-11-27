@@ -568,7 +568,30 @@ void ProjectCatalogTest::parsesLaunchRecipes()
         R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romSha1": "XYZ"})",
         R"({"method": "romfolder", "dataFolder": "Ok", "romFileName": "a.z64", "romXxh3": "1B67585D56E07F8C", "romSha1": "abe01e4aeb033b6c0836819f549c791b26cfde83"})",
         R"({"method": "romfolder", "installFolder": true, "dataFolder": "Ok", "romFileName": "a.z64", "romSha1": "abe01e4aeb033b6c0836819f549c791b26cfde83"})",
-        R"({"method": "n64recomp", "installFolder": true, "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C"})"
+        R"({"method": "n64recomp", "installFolder": true, "dataFolder": "Ok", "romFileName": "a.z64", "romName": "A", "romXxh3": "1B67585D56E07F8C"})",
+        // Plain values: a number or a file in the launcher's folder, nothing more.
+        R"({"method": "discargument", "arguments": ["{gamePath}", "../outside.dol"]})",
+        R"({"method": "discargument", "arguments": ["{gamePath}", "/bin/sh"]})",
+        // gameVariable: a path variable only, and without it the game goes in the arguments.
+        R"({"method": "fileargument", "arguments": [], "gameVariable": "PATH"})",
+        R"({"method": "fileargument", "arguments": [], "gameVariable": "LD_PRELOAD"})",
+        R"({"method": "fileargument", "arguments": [], "gameVariable": "WINEDLLOVERRIDES"})",
+        // inikey sections, jsonkey keys and folder bases.
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.ini", "format": "inikey"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.ini", "format": "keyvalue", "key": "a", "section": "game"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.ini", "format": "inikey", "key": "a", "section": "[x]"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.json", "format": "jsonkey", "key": "a\"b"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "linuxBase": "config", "file": "a.cfg", "format": "whole"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "windowsBase": "system32", "file": "a.cfg", "format": "whole"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "linuxBase": "cache", "file": "a.cfg", "format": "whole"}]})",
+        // placefile: extensions, a name in at most one subfolder, {name} last.
+        R"({"method": "placefile", "placeFile": {"folder": "launcher", "file": "{name}"}})",
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "../{name}"}})",
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "a/b/{name}"}})",
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "{name}.bak"}})",
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher"}})",
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "/tmp", "file": "{name}"}})",
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "{name}"}, "arguments": ["{gamePath}"]})"
     };
     for (const QByteArray &launchJson : invalid)
         QVERIFY2(!ProjectCatalog::parseCatalog(catalogWithLaunch(launchJson), &projects, &error),
@@ -597,6 +620,29 @@ void ProjectCatalogTest::parsesLaunchRecipes()
     const QVariantMap discRecipe = projects.first().toMap().value("launch").toMap();
     QCOMPARE(discRecipe.value("fileExtensions").toStringList(),
              (QStringList{QStringLiteral("iso"), QStringLiteral("rvz")}));
+
+    const QByteArray variable = R"({"method": "fileargument", "arguments": [], "gameVariable": "GAME_RETAIL_ROM",
+        "fileExtensions": ["sfc"]})";
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(variable), &projects, &error), qPrintable(error));
+    QCOMPARE(projects.first().toMap().value("launch").toMap().value("gameVariable").toString(),
+             QStringLiteral("GAME_RETAIL_ROM"));
+
+    const QByteArray ini = R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "Game",
+        "linuxBase": "config", "windowsBase": "local", "file": "game.ini", "format": "inikey", "key": "disc",
+        "section": "game"}, {"folder": "launcher", "file": "config.json", "format": "jsonkey", "key": "backend.discPath"}]})";
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(ini), &projects, &error), qPrintable(error));
+    const QVariantList files = projects.first().toMap().value("launch").toMap().value("selectFiles").toList();
+    QCOMPARE(files.first().toMap().value("section").toString(), QStringLiteral("game"));
+    QCOMPARE(files.first().toMap().value("windowsBase").toString(), QStringLiteral("local"));
+    QCOMPARE(files.last().toMap().value("key").toString(), QStringLiteral("backend.discPath"));
+
+    const QByteArray place = R"({"method": "placefile", "fileExtensions": ["iso", "gcm"],
+        "placeFile": {"folder": "launcher", "file": "roms/{name}"}, "arguments": [],
+        "windowsArguments": ["generated/main.dol", "--iso", "{placedPath}", "--max-blocks", "1000000"]})";
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(place), &projects, &error), qPrintable(error));
+    const QVariantMap placeRecipe = projects.first().toMap().value("launch").toMap();
+    QCOMPARE(placeRecipe.value("placeFile").toMap().value("file").toString(), QStringLiteral("roms/{name}"));
+    QCOMPARE(placeRecipe.value("windowsArguments").toStringList().at(2), QStringLiteral("{placedPath}"));
 }
 
 void ProjectCatalogTest::noGameHasMoreThanTwoProjects()

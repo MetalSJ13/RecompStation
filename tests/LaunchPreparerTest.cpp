@@ -155,6 +155,10 @@ private slots:
     void romFolderInTheInstallFolderBySha1();
     void selectFileKeyValueInSdlFolders();
     void discArgumentPassesTheGameFile();
+    void selectFileIniAndJsonKeys();
+    void selectFileFolderBases();
+    void gameVariableCarriesTheGameFile();
+    void placeFilePutsTheGameWhereTheLauncherLooks();
     void backgroundReadsNeverReadOnTheCallersThread();
     void windowsFolderRules();
 
@@ -754,6 +758,190 @@ void LaunchPreparerTest::selectFileWritesWindowsAndWinePaths()
         {QStringLiteral("method"), QStringLiteral("fileargument")},
         {QStringLiteral("arguments"), QStringList{QStringLiteral("{gamePath}")}}});
     QCOMPARE(preparer.prepare(project, game, install, opts).arguments, QStringList{wine});
+}
+
+void LaunchPreparerTest::selectFileIniAndJsonKeys()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test.iso"));
+    QVERIFY(writeFile(game, QByteArray("disc")));
+    const QString install = QDir(root.path()).filePath(QStringLiteral("launchers/test"));
+    QVERIFY(QDir().mkpath(install));
+    LaunchPreparer::Options opts = options(root);
+    opts.executablePath = QDir(install).filePath(QStringLiteral("test"));
+    LaunchPreparer preparer;
+    auto project = [](const QVariantMap &entry) {
+        QVariantMap result = discProject();
+        QVariantMap file = entry;
+        file.insert(QStringLiteral("folder"), QStringLiteral("launcher"));
+        result.insert(QStringLiteral("launch"), QVariantMap{
+            {QStringLiteral("method"), QStringLiteral("selectfile")},
+            {QStringLiteral("selectFiles"), QVariantList{file}}});
+        return result;
+    };
+
+    // inikey in a section: the key's line is replaced (spaces around = or
+    // not), other sections and lines stay.
+    const QVariantMap ini = project({{QStringLiteral("file"), QStringLiteral("game.ini")},
+                                     {QStringLiteral("format"), QStringLiteral("inikey")},
+                                     {QStringLiteral("key"), QStringLiteral("disc")},
+                                     {QStringLiteral("section"), QStringLiteral("game")}});
+    const QString iniFile = QDir(install).filePath(QStringLiteral("game.ini"));
+    QVERIFY(writeFile(iniFile, QByteArray("# settings\n[display]\ndisc = keep\n\n[game]\nlanguage = auto\ndisc = old.iso\n\n[audio]\nvolume=3\n")));
+    preparer.prepare(ini, game, install, opts);
+    QCOMPARE(readFile(iniFile), QByteArray("# settings\n[display]\ndisc = keep\n\n[game]\nlanguage = auto\ndisc=")
+                                    + game.toUtf8() + QByteArray("\n\n[audio]\nvolume=3\n"));
+    // A missing section is added; a missing file is made.
+    QVERIFY(writeFile(iniFile, QByteArray("[audio]\nvolume=3\n")));
+    preparer.prepare(ini, game, install, opts);
+    QCOMPARE(readFile(iniFile), QByteArray("[audio]\nvolume=3\n\n[game]\ndisc=") + game.toUtf8() + QByteArray("\n"));
+    QVERIFY(QFile::remove(iniFile));
+    preparer.prepare(ini, game, install, opts);
+    QCOMPARE(readFile(iniFile), QByteArray("[game]\ndisc=") + game.toUtf8() + QByteArray("\n"));
+
+    // inikey with no section: before the first section, the path as it is.
+    const QVariantMap plain = project({{QStringLiteral("file"), QStringLiteral("launcher.ini")},
+                                       {QStringLiteral("format"), QStringLiteral("inikey")},
+                                       {QStringLiteral("key"), QStringLiteral("iso")}});
+    const QString plainFile = QDir(install).filePath(QStringLiteral("launcher.ini"));
+    QVERIFY(writeFile(plainFile, QByteArray("language=en\niso=C:\\old.iso\n")));
+    preparer.prepare(plain, game, install, opts);
+    QCOMPARE(readFile(plainFile), QByteArray("language=en\niso=") + game.toUtf8() + QByteArray("\n"));
+
+    // jsonkey: a top-level key, other keys kept.
+    const QVariantMap json = project({{QStringLiteral("file"), QStringLiteral("config.json")},
+                                      {QStringLiteral("format"), QStringLiteral("jsonkey")},
+                                      {QStringLiteral("key"), QStringLiteral("backend.discPath")}});
+    const QString jsonFile = QDir(install).filePath(QStringLiteral("config.json"));
+    QVERIFY(writeFile(jsonFile, QByteArray("{\"version\": 2, \"backend.discPath\": \"game.rvz\"}")));
+    preparer.prepare(json, game, install, opts);
+    QJsonObject object = QJsonDocument::fromJson(readFile(jsonFile)).object();
+    QCOMPARE(object.value(QStringLiteral("backend.discPath")).toString(), game);
+    QCOMPARE(object.value(QStringLiteral("version")).toInt(), 2);
+    // A file that isn't plain JSON is left alone, and the step says so.
+    const QByteArray commented("// mine\n{\"version\": 2}\n");
+    QVERIFY(writeFile(jsonFile, commented));
+    const LaunchPreparer::Plan plan = preparer.prepare(json, game, install, opts);
+    QCOMPARE(readFile(jsonFile), commented);
+    QVERIFY(plan.steps.last().toMap().value(QStringLiteral("warning")).toBool());
+}
+
+void LaunchPreparerTest::selectFileFolderBases()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QString game = QDir(root.path()).filePath(QStringLiteral("library/Test.gba"));
+    QVERIFY(writeFile(game, QByteArray("rom")));
+    const QString install = QDir(root.path()).filePath(QStringLiteral("launchers/test"));
+    QVERIFY(QDir().mkpath(install));
+    QVariantMap project = discProject();
+    project.insert(QStringLiteral("launch"), QVariantMap{
+        {QStringLiteral("method"), QStringLiteral("selectfile")},
+        {QStringLiteral("selectFiles"), QVariantList{QVariantMap{
+            {QStringLiteral("folder"), QStringLiteral("userdata")}, {QStringLiteral("appName"), QStringLiteral("Game")},
+            {QStringLiteral("linuxBase"), QStringLiteral("config")}, {QStringLiteral("windowsBase"), QStringLiteral("local")},
+            {QStringLiteral("file"), QStringLiteral("launcher.ini")},
+            {QStringLiteral("format"), QStringLiteral("inikey")}, {QStringLiteral("key"), QStringLiteral("rom")}}}}});
+    LaunchPreparer preparer;
+    LaunchPreparer::Options opts = options(root);
+    opts.executablePath = QDir(install).filePath(QStringLiteral("test"));
+
+    // Linux: ~/.config/<app>.
+    preparer.prepare(project, game, install, opts);
+    QCOMPARE(readFile(QDir(opts.homeDirectory).filePath(QStringLiteral(".config/Game/launcher.ini"))),
+             QByteArray("rom=") + game.toUtf8() + QByteArray("\n"));
+
+    // Windows: %LOCALAPPDATA%\<app>, or the launcher's own folder.
+    opts.system = QStringLiteral("windows");
+    opts.localAppData = QDir(root.path()).filePath(QStringLiteral("AppData/Local"));
+    opts.executablePath = QDir(install).filePath(QStringLiteral("Test.exe"));
+    preparer.prepare(project, game, install, opts);
+    QCOMPARE(readFile(QDir(opts.localAppData).filePath(QStringLiteral("Game/launcher.ini"))),
+             QByteArray("rom=") + QDir::toNativeSeparators(game).toUtf8() + QByteArray("\n"));
+    QVariantMap launch = project.value(QStringLiteral("launch")).toMap();
+    QVariantMap entry = launch.value(QStringLiteral("selectFiles")).toList().first().toMap();
+    entry.insert(QStringLiteral("windowsBase"), QStringLiteral("launcher"));
+    launch.insert(QStringLiteral("selectFiles"), QVariantList{entry});
+    project.insert(QStringLiteral("launch"), launch);
+    preparer.prepare(project, game, install, opts);
+    QCOMPARE(readFile(QDir(install).filePath(QStringLiteral("launcher.ini"))),
+             QByteArray("rom=") + QDir::toNativeSeparators(game).toUtf8() + QByteArray("\n"));
+}
+
+void LaunchPreparerTest::gameVariableCarriesTheGameFile()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QString rom = QDir(root.path()).filePath(QStringLiteral("library/Star Test.sfc"));
+    QVERIFY(writeFile(rom, QByteArray("rom")));
+    QVariantMap project = discProject();
+    project.insert(QStringLiteral("launch"), QVariantMap{
+        {QStringLiteral("method"), QStringLiteral("fileargument")},
+        {QStringLiteral("arguments"), QStringList{}},
+        {QStringLiteral("gameVariable"), QStringLiteral("TEST_RETAIL_ROM")},
+        {QStringLiteral("fileExtensions"), QStringList{QStringLiteral("sfc")}}});
+    LaunchPreparer preparer;
+    const LaunchPreparer::Plan plan = preparer.prepare(project, rom, QString(), options(root));
+    QVERIFY(plan.arguments.isEmpty());
+    QCOMPARE(plan.environment.value(QStringLiteral("TEST_RETAIL_ROM")), rom);
+}
+
+void LaunchPreparerTest::placeFilePutsTheGameWhereTheLauncherLooks()
+{
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QString disc = QDir(root.path()).filePath(QStringLiteral("library/Party (USA).rvz"));
+    QVERIFY(writeFile(disc, QByteArray("disc image")));
+    const QString install = QDir(root.path()).filePath(QStringLiteral("launchers/test"));
+    QVERIFY(QDir().mkpath(install));
+    QVariantMap project = discProject();
+    project.insert(QStringLiteral("launch"), QVariantMap{
+        {QStringLiteral("method"), QStringLiteral("placefile")},
+        {QStringLiteral("fileExtensions"), QStringList{QStringLiteral("iso"), QStringLiteral("rvz")}},
+        {QStringLiteral("placeFile"), QVariantMap{{QStringLiteral("folder"), QStringLiteral("launcher")},
+                                                  {QStringLiteral("file"), QStringLiteral("GAME01.{ext}")}}},
+        {QStringLiteral("arguments"), QStringList{}},
+        {QStringLiteral("windowsArguments"), QStringList{QStringLiteral("generated/main.dol"),
+                                                        QStringLiteral("--iso"), QStringLiteral("{placedPath}")}}});
+    LaunchPreparer preparer;
+    LaunchPreparer::Options opts = options(root);
+    opts.executablePath = QDir(install).filePath(QStringLiteral("test"));
+
+    QCOMPARE(preparer.readiness(project, disc, install, opts).value("state").toString(), QStringLiteral("ready"));
+    LaunchPreparer::Plan plan = preparer.prepare(project, disc, install, opts);
+    const QString placed = QDir(install).filePath(QStringLiteral("GAME01.rvz"));
+    QCOMPARE(readFile(placed), QByteArray("disc image"));
+    QVERIFY(plan.arguments.isEmpty());
+    QVERIFY(!QFileInfo::exists(placed + QStringLiteral(".part")));
+    QCOMPARE(readFile(disc), QByteArray("disc image")); // the library's file is untouched
+
+    // The same file again: left as it is. Another one: replaced.
+    QVERIFY(!plan.steps.last().toMap().value(QStringLiteral("warning")).toBool());
+    const QString other = QDir(root.path()).filePath(QStringLiteral("library/Other.rvz"));
+    QVERIFY(writeFile(other, QByteArray("another disc")));
+    preparer.prepare(project, other, install, opts);
+    QCOMPARE(readFile(placed), QByteArray("another disc"));
+
+    // Windows launchers get their own arguments, with the placed file.
+    opts.system = QStringLiteral("windows");
+    opts.executablePath = QDir(install).filePath(QStringLiteral("Test.exe"));
+    plan = preparer.prepare(project, disc, install, opts);
+    QCOMPARE(plan.arguments, (QStringList{QStringLiteral("generated/main.dol"), QStringLiteral("--iso"),
+                                          QDir::toNativeSeparators(placed)}));
+
+    // Its own name, in a subfolder; a file it doesn't read is not placed.
+    QVariantMap launch = project.value(QStringLiteral("launch")).toMap();
+    launch.insert(QStringLiteral("placeFile"), QVariantMap{{QStringLiteral("folder"), QStringLiteral("launcher")},
+                                                           {QStringLiteral("file"), QStringLiteral("roms/{name}")}});
+    project.insert(QStringLiteral("launch"), launch);
+    opts.system = QStringLiteral("linux");
+    preparer.prepare(project, disc, install, opts);
+    QCOMPARE(readFile(QDir(install).filePath(QStringLiteral("roms/Party (USA).rvz"))), QByteArray("disc image"));
+    const QString zip = QDir(root.path()).filePath(QStringLiteral("library/Party.zip"));
+    QVERIFY(writeFile(zip, QByteArray("zip")));
+    QVERIFY(preparer.prepare(project, zip, install, opts).steps.isEmpty());
+    QVERIFY(!QFileInfo::exists(QDir(install).filePath(QStringLiteral("roms/Party.zip"))));
 }
 
 void LaunchPreparerTest::backgroundReadsNeverReadOnTheCallersThread()

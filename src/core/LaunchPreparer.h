@@ -37,6 +37,14 @@
 //   fileargument    The same for cartridge ROMs. Super Metroid and Mega Man
 //                   X get --launcher --rom <file>: their launcher opens with
 //                   the ROM selected, so settings and mods stay reachable.
+//                   "gameVariable" also (or instead) puts the path in a
+//                   variable the launcher reads (Star Fox Enhanced).
+//   selectfile      Writes the game file's path into the launcher's own
+//                   settings file(s), so it opens with the game selected.
+//   placefile       Puts the game file (a hard link, or a copy) where the
+//                   launcher looks for it, under the name it looks for:
+//                   beside its program or in its user folder. For launchers
+//                   that build or start from a file they find themselves.
 //   manual          The launcher asks for the file itself.
 //
 // Existing files in a launcher's folder are never replaced, and the game
@@ -52,6 +60,7 @@ public:
         bool defaultFullscreenApplied = false; // "Start in fullscreen" already set once
         QString homeDirectory;  // empty: the user's home
         QString dataHome;       // empty: $XDG_DATA_HOME or ~/.local/share
+        QString configHome;     // empty: $XDG_CONFIG_HOME or ~/.config
         // Which system's folder rules apply: empty means this one ("linux"
         // or "windows"; tests set it).
         QString system;

@@ -185,15 +185,25 @@ bool GameLaunchManager::wineCanPrepare(const QString &projectId, LaunchPreparer:
         if (result.localAppData.isEmpty())
             return false; // Wine hasn't made its folders yet: the launcher asks this once.
     } else if (method == QStringLiteral("selectfile") || method == QStringLiteral("fileargument")
-               || method == QStringLiteral("discargument")) {
+               || method == QStringLiteral("discargument") || method == QStringLiteral("placefile")) {
         // The game file's path as Wine shows it to the launcher (Z:\...).
         result.winePaths = true;
         result.appData = wineRoamingAppData(m_wine);
+        result.localAppData = wineLocalAppData(m_wine);
+        const QVariantMap recipe = m_projectCatalog->project(projectId).value(QStringLiteral("launch")).toMap();
+        QVariantList entries = recipe.value(QStringLiteral("selectFiles")).toList();
+        if (recipe.contains(QStringLiteral("placeFile")))
+            entries.append(recipe.value(QStringLiteral("placeFile")));
         bool needsAppData = false;
-        for (const QVariant &entry : m_projectCatalog->project(projectId).value(QStringLiteral("launch")).toMap()
-                                         .value(QStringLiteral("selectFiles")).toList())
-            needsAppData = needsAppData || entry.toMap().value(QStringLiteral("folder")).toString() == QStringLiteral("userdata");
-        if (needsAppData && result.appData.isEmpty())
+        for (const QVariant &item : std::as_const(entries)) {
+            const QVariantMap entry = item.toMap();
+            if (entry.value(QStringLiteral("folder")).toString() == QStringLiteral("userdata")
+                && entry.value(QStringLiteral("windowsBase")).toString() != QStringLiteral("launcher")) {
+                const bool local = entry.value(QStringLiteral("windowsBase")).toString() == QStringLiteral("local");
+                needsAppData = needsAppData || (local ? result.localAppData.isEmpty() : result.appData.isEmpty());
+            }
+        }
+        if (needsAppData)
             return false; // Wine hasn't made its folders yet: the launcher asks this once.
     } else if (method != QStringLiteral("harbourmasters")) {
         return false; // folders set by variables stay as they are
