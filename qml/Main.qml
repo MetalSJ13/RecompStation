@@ -69,7 +69,8 @@ ApplicationWindow {
         property string wallpaperFit: "fill"
         property int wallpaperDim: 15
         // Still background: "gradient" or a retro pattern from
-        // window.stillPatterns (drawn by RetroBackground.qml).
+        // window.stillPatterns (drawn by RetroBackground.qml). New installs
+        // switch to "crt" in first-time setup (Component.onCompleted).
         property string stillPattern: "gradient"
         Component.onCompleted: {
         syncLibraryOrder()
@@ -1197,8 +1198,15 @@ ApplicationWindow {
     // After a restart from Settings (for example to apply a new interface
     // scale), reopen Settings at the section the user was on.
     Component.onCompleted: {
-        if (!platformManager.libraryConfigured)
+        if (!platformManager.libraryConfigured) {
             window.firstRunStep = 0
+            // New installs start on CRT glow (decided 2026-11-27). It is
+            // saved here, so copies that were already set up keep the
+            // gradient until their owner picks a pattern.
+            if (settingsManager.libraryBackgroundType === "static"
+                    && libraryVisualSettings.stillPattern === "gradient")
+                libraryVisualSettings.stillPattern = "crt"
+        }
         if (startupSettingsSection.length > 0
                 && window.settingsSections.indexOf(startupSettingsSection) >= 0) {
             window.currentPage = "Settings"
