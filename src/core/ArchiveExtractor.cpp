@@ -438,23 +438,51 @@ ArchiveExtractor::Result ArchiveExtractor::extractTarArchive(
     return extractArchive(archivePath, destinationDirectory, expectedExecutable);
 }
 
+ArchiveExtractor::Result ArchiveExtractor::stageExecutable(
+    const QString &programPath,
+    const QString &destinationDirectory,
+    const QString &expectedExecutable
+)
+{
+    Result result;
+    const QFileInfo sourceInfo(programPath);
+    // The name it gets keeps the download's kind: a .exe stays a .exe.
+    const bool windowsProgram = expectedExecutable.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive);
+    if (!sourceInfo.isFile() || !sourceInfo.isReadable()
+        || windowsProgram != sourceInfo.fileName().endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)) {
+        result.error = QStringLiteral("The downloaded program is missing, unreadable, or not the kind of program the catalog names.");
+        return result;
+    }
+    return stageAppImage(programPath, destinationDirectory, expectedExecutable, false);
+}
+
 ArchiveExtractor::Result ArchiveExtractor::stageAppImage(
     const QString &appImagePath,
     const QString &destinationDirectory,
     const QString &expectedExecutable
 )
 {
+    return stageAppImage(appImagePath, destinationDirectory, expectedExecutable, true);
+}
+
+ArchiveExtractor::Result ArchiveExtractor::stageAppImage(
+    const QString &appImagePath,
+    const QString &destinationDirectory,
+    const QString &expectedExecutable,
+    bool appImage
+)
+{
     Result result;
     const QFileInfo sourceInfo(appImagePath);
     if (!sourceInfo.isFile() || !sourceInfo.isReadable()
-        || sourceInfo.suffix().compare(QStringLiteral("AppImage"), Qt::CaseInsensitive) != 0) {
+        || (appImage && sourceInfo.suffix().compare(QStringLiteral("AppImage"), Qt::CaseInsensitive) != 0)) {
         result.error = QStringLiteral("The staged AppImage is missing, unreadable, or does not have an .AppImage extension.");
         return result;
     }
 
     if (!isSafeRelativePath(expectedExecutable)
         || QFileInfo(expectedExecutable).fileName() != expectedExecutable) {
-        result.error = QStringLiteral("A standalone AppImage must use a safe filename without directory components.");
+        result.error = QStringLiteral("A standalone program must use a safe filename without directory components.");
         return result;
     }
 

@@ -41,6 +41,7 @@ private slots:
     void installsLauncherFromNestedArchiveDirectory();
     void installsZipLauncherWithCompanionFiles();
     void installsStandaloneAppImage();
+    void installsSingleProgramDownload();
     void installsWindowsBuildAndKeepsItsFilesApart();
 };
 
@@ -781,6 +782,45 @@ void LauncherDownloadManagerTest::installsStandaloneAppImage()
     QCOMPARE(installed.readAll(), content);
 }
 
+
+// A single .exe download (a portable Windows program) is installed under
+// the catalog's name for it; a file of another kind under that name isn't.
+void LauncherDownloadManagerTest::installsSingleProgramDownload()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    PlatformManager platformManager(temporaryDirectory.path());
+    QVERIFY(platformManager.initialize());
+
+    const QString projectId = QStringLiteral("single-program-project");
+    const QString assetName = QStringLiteral("Tool-1.0-Windows-x64.exe");
+    const QString stagingDirectory = QDir(platformManager.stagingDirectory()).filePath(projectId);
+    QVERIFY(QDir().mkpath(stagingDirectory));
+    QFile program(QDir(stagingDirectory).filePath(assetName));
+    QVERIFY(program.open(QIODevice::WriteOnly));
+    const QByteArray content("MZ portable program");
+    QCOMPARE(program.write(content), qint64(content.size()));
+    program.close();
+
+    LauncherDownloadManager manager(&platformManager);
+    QSignalSpy completedSpy(&manager, &LauncherDownloadManager::installationCompleted);
+    QSignalSpy failedSpy(&manager, &LauncherDownloadManager::installationFailed);
+    manager.installDownloadedAsset(projectId, assetName, QStringLiteral("executable"),
+                                   QStringLiteral("Tool.exe"), QString(), false,
+                                   QStringLiteral("windows-x86_64"));
+    QTRY_COMPARE_WITH_TIMEOUT(completedSpy.count(), 1, 10000);
+    QCOMPARE(failedSpy.count(), 0);
+    QFile installed(QDir(platformManager.dataDirectory()).filePath("launchers/" + projectId + "/Tool.exe"));
+    QVERIFY(installed.open(QIODevice::ReadOnly));
+    QCOMPARE(installed.readAll(), content);
+
+    // A name in a folder is refused before anything is copied.
+    QSignalSpy rejected(&manager, &LauncherDownloadManager::installationFailed);
+    manager.installDownloadedAsset(QStringLiteral("other-program-project"), assetName,
+                                   QStringLiteral("executable"), QStringLiteral("bin/Tool.exe"),
+                                   QString(), false, QStringLiteral("windows-x86_64"));
+    QTRY_COMPARE(rejected.count(), 1);
+}
 
 // A Windows build: the program is picked from the zip, the build is
 // recorded, and files the launcher made are kept apart from the Linux

@@ -30,6 +30,22 @@ public:
         const QString &expectedExecutable
     );
 
+    // The same for any single-file program (a portable .exe, a Linux
+    // binary): copied under the catalog's name for it, which keeps the
+    // download's extension (".exe" stays ".exe", none stays none).
+    static Result stageExecutable(
+        const QString &programPath,
+        const QString &destinationDirectory,
+        const QString &expectedExecutable
+    );
+
+    static Result stageAppImage(
+        const QString &appImagePath,
+        const QString &destinationDirectory,
+        const QString &expectedExecutable,
+        bool appImage
+    );
+
     // Kept as a compatibility wrapper for existing callers and tests.
     static Result extractTarArchive(
         const QString &archivePath,

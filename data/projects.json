@@ -3407,45 +3407,6 @@
       }
     },
     {
-      "id": "minish-cap-recomp",
-      "name": "Minish Cap Recomp",
-      "platform": "GBA",
-      "developmentStatus": "alpha",
-      "gameTitles": [
-        "The Legend of Zelda: The Minish Cap",
-        "Zelda: The Minish Cap",
-        "The Minish Cap"
-      ],
-      "repositoryOwner": "mstan",
-      "repositoryName": "MinishCapRecomp",
-      "romRequirements": "Requires your own The Legend of Zelda: The Minish Cap (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
-      "romFile": "The Legend of Zelda: The Minish Cap (USA) ROM",
-      "launch": {
-        "method": "selectfile",
-        "arguments": [
-          "--launcher"
-        ],
-        "fileExtensions": [
-          "gba"
-        ],
-        "selectFiles": [
-          {
-            "folder": "launcher",
-            "file": "rom.cfg",
-            "format": "firstline"
-          }
-        ],
-        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting. Its launcher also asks once for your own GBA BIOS file."
-      },
-      "builds": {
-        "windows-x86_64": {
-          "assetNameRegex": "^MinishCapRecomp-windows-x64-v[0-9.]+\\.zip$",
-          "packageFormat": "zip",
-          "executablePath": "MinishCapRecomp.exe"
-        }
-      }
-    },
-    {
       "id": "buus-fury-recomp",
       "name": "Buu's Fury Recomp",
       "platform": "GBA",
@@ -3932,6 +3893,436 @@
           "assetNameRegex": "^NewSuperPaperBros\\.zip$",
           "packageFormat": "zip",
           "executablePath": "New Super Paper Bros.exe"
+        }
+      }
+    },
+    {
+      "id": "knid",
+      "name": "KNID",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Kirby: Nightmare in Dream Land",
+        "Kirby Nightmare in Dream Land"
+      ],
+      "repositoryOwner": "sweatyeggs69",
+      "repositoryName": "KNID",
+      "romRequirements": "Requires your own Kirby: Nightmare in Dream Land (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Kirby: Nightmare in Dream Land (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--select-rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^KNID-[0-9.]+-Linux-x64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "KNID.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^KNID-[0-9.]+-Windows-x64\\.exe$",
+          "packageFormat": "executable",
+          "executablePath": "KNID.exe"
+        }
+      }
+    },
+    {
+      "id": "metrofuse",
+      "name": "MetroFuse",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Metroid Fusion"
+      ],
+      "repositoryOwner": "sweatyeggs69",
+      "repositoryName": "MetroFuse",
+      "romRequirements": "Requires your own Metroid Fusion (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Metroid Fusion (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--select-rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^MetroFuse-[0-9.]+-Linux-x64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "MetroFuse.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MetroFuse-[0-9.]+-Windows-x64\\.exe$",
+          "packageFormat": "executable",
+          "executablePath": "MetroFuse.exe"
+        }
+      }
+    },
+    {
+      "id": "supersaga",
+      "name": "SuperSaga",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Mario & Luigi: Superstar Saga",
+        "Mario and Luigi: Superstar Saga"
+      ],
+      "repositoryOwner": "sweatyeggs69",
+      "repositoryName": "SuperSaga",
+      "romRequirements": "Requires your own Mario & Luigi: Superstar Saga (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Mario & Luigi: Superstar Saga (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--select-rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^SuperSaga-[0-9.]+-Linux-x64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "SuperSaga.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SuperSaga-[0-9.]+-Windows-x64\\.exe$",
+          "packageFormat": "executable",
+          "executablePath": "SuperSaga.exe"
+        }
+      }
+    },
+    {
+      "id": "metrozero",
+      "name": "MetroZero",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Metroid: Zero Mission",
+        "Metroid Zero Mission"
+      ],
+      "repositoryOwner": "sweatyeggs69",
+      "repositoryName": "MetroZero",
+      "romRequirements": "Requires your own Metroid: Zero Mission (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Metroid: Zero Mission (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--select-rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^MetroZero-[0-9.]+-Linux-x64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "MetroZero.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^MetroZero-[0-9.]+-Windows-x64\\.exe$",
+          "packageFormat": "executable",
+          "executablePath": "MetroZero.exe"
+        }
+      }
+    },
+    {
+      "id": "re-zoids-saga",
+      "name": "RE: Zoids Saga",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Zoids Saga"
+      ],
+      "repositoryOwner": "serivt",
+      "repositoryName": "re-zoids-saga",
+      "romRequirements": "Requires your own Zoids Saga (Japan) ROM; English and Spanish translations download from its launcher. No game data is included. RecompStation selects it in the launcher for you. Its saves are kept beside the ROM.",
+      "romFile": "Zoids Saga (Japan) ROM",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "userdata",
+            "appName": "re-zoids-saga",
+            "file": "launcher/launcher.cfg",
+            "format": "inikey",
+            "key": "rom"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^re-zoids-saga-v[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "re-zoids-saga"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^re-zoids-saga-v[0-9.]+-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "re-zoids-saga.exe"
+        }
+      }
+    },
+    {
+      "id": "n-larged-xs",
+      "name": "N. Larged XS",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Crash Bandicoot: The Huge Adventure",
+        "Crash Bandicoot XS",
+        "Crash Bandicoot - The Huge Adventure"
+      ],
+      "repositoryOwner": "NitorikoSkye",
+      "repositoryName": "N-Larged-XS",
+      "romRequirements": "Requires your own Crash Bandicoot XS (Europe) ROM, or a .zip with it. No game data is included. Play builds the game from it the first time, then starts it.",
+      "romFile": "Crash Bandicoot XS (Europe) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--game",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "gba",
+          "zip"
+        ],
+        "firstStartNote": "The first start makes the game from your ROM, then starts it."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^N-Larged-XS-v[0-9.]+-Linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "NLargedXSLauncher"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^N-Larged-XS-v[0-9.]+-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "NLargedXSLauncher.exe"
+        }
+      }
+    },
+    {
+      "id": "knight-of-lodis-recomp",
+      "name": "Knight of Lodis Recomp",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Tactics Ogre: The Knight of Lodis",
+        "Tactics Ogre - The Knight of Lodis"
+      ],
+      "repositoryOwner": "lucdubois",
+      "repositoryName": "KnightOfLodisRecomp",
+      "romRequirements": "Requires your own Tactics Ogre: The Knight of Lodis (USA) ROM; a GBA BIOS is optional. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "Tactics Ogre: The Knight of Lodis (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "gba"
+        ],
+        "placeFile": {
+          "folder": "userdata",
+          "appName": "KnightOfLodisRecomp",
+          "file": "totkol.gba"
+        },
+        "arguments": [
+          "--setup"
+        ],
+        "firstStartNote": "Its setup screen opens with your ROM in place; choose a BIOS or mod there if you like, then press Play."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^KnightOfLodisRecomp-[0-9.]+-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "KnightOfLodisRecomp.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^KnightOfLodisRecomp-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "KnightOfLodisRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "sms-launcher",
+      "name": "SMS Launcher",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Super Mario Sunshine"
+      ],
+      "repositoryOwner": "chasem-dev",
+      "repositoryName": "sms-launcher",
+      "romRequirements": "Requires your own Super Mario Sunshine disc image. No game data is included. Choose it in the launcher, which downloads its build tools and builds the game the first time.",
+      "romFile": "Super Mario Sunshine (USA) disc image",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^SMS-Launcher\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "SMS-Launcher.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SMS-Launcher-[0-9.]+-win-portable\\.exe$",
+          "packageFormat": "executable",
+          "executablePath": "SMS-Launcher.exe"
+        }
+      }
+    },
+    {
+      "id": "legacy-of-goku-ii-recomp",
+      "name": "Legacy of Goku II Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Dragon Ball Z: The Legacy of Goku II",
+        "Dragon Ball Z - The Legacy of Goku II"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "DragonBallZLegacyofGokuIIRecomp",
+      "romRequirements": "Requires your own Dragon Ball Z: The Legacy of Goku II (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Dragon Ball Z: The Legacy of Goku II (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^DragonBallZLegacyofGokuIIRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DragonBallZLegacyofGokuIIRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "wario-land-4-pc-port",
+      "name": "Wario Land 4 Native PC Port",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Wario Land 4"
+      ],
+      "repositoryOwner": "BioRhythmicStudios",
+      "repositoryName": "warioland4",
+      "romRequirements": "Requires your own unmodified Wario Land 4 (USA) ROM. No game data is included. Choose it once in its launcher, which remembers it.",
+      "romFile": "Wario Land 4 (USA) ROM",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^WarioLand4-Native-PC-Port-v[0-9.]+(-beta)?-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "wl4-launcher.exe"
+        }
+      }
+    },
+    {
+      "id": "tmc-pc-port",
+      "name": "The Minish Cap PC Port (tmc)",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "The Legend of Zelda: The Minish Cap",
+        "Zelda: The Minish Cap",
+        "The Minish Cap"
+      ],
+      "repositoryOwner": "999sian",
+      "repositoryName": "tmc",
+      "romRequirements": "Requires your own The Legend of Zelda: The Minish Cap (USA) ROM. No game data is included. RecompStation puts it where the launcher looks for it.",
+      "romFile": "The Minish Cap (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "gba"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "baserom.gba"
+        },
+        "arguments": [],
+        "firstStartNote": "It finds your ROM beside its program and unpacks the game's files from it the first time (a few seconds)."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^tmc-multi-linux-x86_64-v[0-9.]+\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "tmc_pc"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^tmc-multi-windows-x86_64-v[0-9.]+\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "tmc_pc.exe"
+        }
+      }
+    },
+    {
+      "id": "kirby-super-star-snes-recomp",
+      "name": "Kirby Super Star SNES Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Kirby Super Star",
+        "Kirby's Fun Pak"
+      ],
+      "repositoryOwner": "mpolizel",
+      "repositoryName": "KSSSNESRecomp",
+      "romRequirements": "Requires your own Kirby Super Star (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Kirby Super Star (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--launcher",
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^kirbysuperstar-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "KirbySuperStarSNESRecomp.exe"
         }
       }
     }

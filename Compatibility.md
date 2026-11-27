@@ -103,6 +103,7 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Mario Party 4
 - [ ] Scooby-Doo! Night of 100 Frights
 - [ ] Super Mario Strikers
+- [ ] Super Mario Sunshine
 
 #### Wii
 
@@ -112,16 +113,25 @@ These have a launcher in the catalog; they move up once one has been tried.
 
 #### Super Nintendo (SNES)
 
+- [ ] Kirby Super Star
 - [ ] Star Fox
 - [ ] Super Mario World 2: Yoshi's Island
 
 #### Game Boy Advance
 
+- [ ] Crash Bandicoot: The Huge Adventure
 - [ ] Dragon Ball Z: Buu's Fury
+- [ ] Dragon Ball Z: The Legacy of Goku II
 - [ ] Final Fantasy Tactics Advance
 - [ ] Fire Emblem: The Sacred Stones
+- [ ] Kirby: Nightmare in Dream Land
 - [ ] The Legend of Zelda: The Minish Cap
+- [ ] Mario & Luigi: Superstar Saga
+- [ ] Metroid Fusion
 - [ ] Metroid: Zero Mission
+- [ ] Tactics Ogre: The Knight of Lodis
+- [ ] Wario Land 4
+- [ ] Zoids Saga
 
 #### PlayStation
 
@@ -166,7 +176,6 @@ No PC port or recompilation was found, the one there is has no regular release f
 - [ ] Sonic Riders
 - [ ] Star Fox Adventures
 - [ ] Star Wars Rogue Squadron II
-- [ ] Super Mario Sunshine
 - [ ] Wario World
 
 #### Wii
@@ -196,7 +205,6 @@ No PC port or recompilation was found, the one there is has no regular release f
 - [ ] Final Fantasy II
 - [ ] Final Fantasy III
 - [ ] Final Fantasy: Mystic Quest
-- [ ] Kirby Super Star
 - [ ] Kirby's Dream Land 3
 - [ ] Mega Man 7
 - [ ] Super Mario All-Stars
@@ -210,14 +218,11 @@ No PC port or recompilation was found, the one there is has no regular release f
 - [ ] Final Fantasy VI Advance
 - [ ] Hamtaro: Ham-Ham Heartbreak
 - [ ] Kirby & The Amazing Mirror
-- [ ] Kirby: Nightmare in Dream Land
 - [ ] The Legend of Zelda: A Link to the Past & Four Swords
-- [ ] Mario & Luigi: Superstar Saga
 - [ ] Mario Golf: Advance Tour
 - [ ] Mario Kart: Super Circuit
 - [ ] Mario Tennis: Power Tour
 - [ ] Mario vs. Donkey Kong
-- [ ] Metroid Fusion
 - [ ] Pokémon Emerald Version
 - [ ] Pokémon FireRed Version
 - [ ] Pokémon LeafGreen Version
@@ -229,7 +234,6 @@ No PC port or recompilation was found, the one there is has no regular release f
 - [ ] Sonic Advance 3
 - [ ] Sonic Battle
 - [ ] Super Mario Advance 4: Super Mario Bros. 3
-- [ ] Wario Land 4
 
 #### PlayStation
 

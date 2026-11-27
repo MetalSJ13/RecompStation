@@ -751,13 +751,19 @@ bool ProjectCatalog::parseCatalog(const QByteArray &json,
                 || executablePath.contains(QLatin1Char('\\'))
                 || executablePathParts.contains(QStringLiteral(".."));
             const QRegularExpression regex(regexText, QRegularExpression::CaseInsensitiveOption);
-            // Windows builds: portable downloads only (a .zip, or a single
-            // .exe that runs from its folder); installers are never run.
+            // Windows builds: portable downloads only (a .zip, .tar.gz or
+            // .tar.xz, or a single .exe that runs from its folder);
+            // installers are never run.
             const bool windowsBuild = system == QStringLiteral("windows");
             // A Windows build may leave executablePath out: the installer then
             // picks the download's one main .exe.
+            // A .tar.gz or .tar.xz is as portable as a zip, but the program
+            // in it must be named.
+            const bool windowsArchive = packageFormat == QStringLiteral("tar.gz")
+                || packageFormat == QStringLiteral("tar.xz");
             const bool formatAllowed = windowsBuild
-                ? (packageFormat == QStringLiteral("zip") || packageFormat == QStringLiteral("executable"))
+                ? (packageFormat == QStringLiteral("zip")
+                   || ((packageFormat == QStringLiteral("executable") || windowsArchive) && !executablePath.isEmpty()))
                     && (executablePath.isEmpty()
                         || executablePath.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive))
                 : (packageFormat == QStringLiteral("tar.gz")
