@@ -5,7 +5,10 @@
 # below: a commit that changes only DEVELOPMENT.md starts nothing); pushes to
 # ui/interface-redesign and main (merges) always run it, and so does the
 # Actions tab once it is on main. A tag such as v0.2.0 adds the zip to the
-# release the Linux workflow drafts for that tag.
+# release the Linux workflow drafts for that tag, but only once the repository
+# variable WINDOWS_RELEASES is set to true (Settings > Secrets and variables >
+# Actions > Variables): releases are Linux-only until the Windows version is
+# signed and has an installer (decided 2026-11-27, v0.1.2).
 name: Windows build
 
 on:
@@ -31,7 +34,7 @@ jobs:
   windows-x86_64:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.ref_type == 'tag' ||
+      (github.ref_type == 'tag' && vars.WINDOWS_RELEASES == 'true') ||
       github.ref == 'refs/heads/main' ||
       github.ref == 'refs/heads/ui/interface-redesign' ||
       contains(github.event.head_commit.message, '[windows]')
