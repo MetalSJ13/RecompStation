@@ -353,10 +353,31 @@ bool writeSelectFile(const QString &path, const QString &format, const QString &
     return file.commit();
 }
 
+// Whether two files hold the same game: the same file (a hard link), or
+// the same size with the same first and last megabyte. Disc images of one
+// system all have one size, so size alone can't tell them apart.
+bool sameGameFile(const QString &first, const QString &second)
+{
+    if (QFileInfo(first).size() != QFileInfo(second).size())
+        return false;
+    std::error_code error;
+    if (std::filesystem::equivalent(std::filesystem::path(first.toStdU16String()),
+                                    std::filesystem::path(second.toStdU16String()), error))
+        return true;
+    QFile a(first), b(second);
+    if (!a.open(QIODevice::ReadOnly) || !b.open(QIODevice::ReadOnly))
+        return false;
+    constexpr qint64 chunk = 1024 * 1024;
+    if (a.read(chunk) != b.read(chunk))
+        return false;
+    const qint64 tail = qMax<qint64>(0, a.size() - chunk);
+    return a.seek(tail) && b.seek(tail) && a.read(chunk) == b.read(chunk);
+}
+
 // Puts the game file at target: a hard link where the file system allows
-// one (no second copy of a disc image), else a copy. A file already there
-// with the same size is taken to be the same and left as it is; a
-// different file under that name is replaced, nothing else is touched.
+// one (no second copy of a disc image), else a copy. The same game already
+// there is left as it is; a different file under that name is replaced,
+// nothing else is touched.
 bool placeGameFile(const QString &source, const QString &target, QString *detail)
 {
     const QFileInfo existing(target);
@@ -364,7 +385,7 @@ bool placeGameFile(const QString &source, const QString &target, QString *detail
         *detail = QStringLiteral("Something else is already there");
         return false;
     }
-    if (existing.isFile() && existing.size() == QFileInfo(source).size())
+    if (existing.isFile() && sameGameFile(source, target))
         return true;
     if (!QDir().mkpath(existing.absolutePath())) {
         *detail = QStringLiteral("Its folder can't be created");
@@ -425,7 +446,7 @@ QString LaunchPreparer::dataFolder(const QVariantMap &recipe,
     const QString folder = recipe.value(QStringLiteral("dataFolder")).toString();
     if (method == QStringLiteral("n64recomp")) {
         // A launcher in portable mode keeps everything next to its executable
-        // (it checks its working directory, which is the install folder).
+        // (it checks its working directory: the folder it starts in).
         if (!installDirectory.isEmpty()
             && QFileInfo::exists(QDir(installDirectory).filePath(QStringLiteral("portable.txt"))))
             return installDirectory;

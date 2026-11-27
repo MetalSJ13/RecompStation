@@ -916,9 +916,13 @@ void LaunchPreparerTest::placeFilePutsTheGameWhereTheLauncherLooks()
     QVERIFY(!QFileInfo::exists(placed + QStringLiteral(".part")));
     QCOMPARE(readFile(disc), QByteArray("disc image")); // the library's file is untouched
 
-    // The same file again: left as it is. Another one: replaced.
+    // The same file again: left as it is. Another one, even of the same
+    // size (disc images of one system all have one size): replaced.
     QVERIFY(!plan.steps.last().toMap().value(QStringLiteral("warning")).toBool());
     const QString other = QDir(root.path()).filePath(QStringLiteral("library/Other.rvz"));
+    QVERIFY(writeFile(other, QByteArray("disc imagf")));
+    preparer.prepare(project, other, install, opts);
+    QCOMPARE(readFile(placed), QByteArray("disc imagf"));
     QVERIFY(writeFile(other, QByteArray("another disc")));
     preparer.prepare(project, other, install, opts);
     QCOMPARE(readFile(placed), QByteArray("another disc"));

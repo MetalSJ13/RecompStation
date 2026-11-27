@@ -260,15 +260,17 @@ void GameLaunchManager::setPreparationRoots(const QString &homeDirectory, const 
     m_dataHome = dataHome;
 }
 
-// The folder a launcher starts in: its install folder, or on Windows the
-// folder of its .exe (a zip can keep it in a subfolder).
+// The folder a launcher starts in: the folder of its program (an archive
+// can keep it in a subfolder), or its install folder for a start script.
 QString GameLaunchManager::launcherFolder(const QString &projectId) const
 {
     QString executablePath;
     const QString directory = installDirectory(projectId, &executablePath);
-    if (isWindowsLauncher(projectId) && !executablePath.isEmpty())
-        return QFileInfo(executablePath).absolutePath();
-    return directory;
+    if (executablePath.isEmpty()
+        || (!isWindowsLauncher(projectId)
+            && QFileInfo(executablePath).suffix().compare(QStringLiteral("sh"), Qt::CaseInsensitive) == 0))
+        return directory;
+    return QFileInfo(executablePath).absolutePath();
 }
 
 QString GameLaunchManager::installDirectory(const QString &projectId, QString *executablePath) const
@@ -393,8 +395,7 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
     if (m_projectCatalog && (!throughWine || prepareThroughWine)) {
         const QVariantMap project = m_projectCatalog->project(projectId);
         if (!project.isEmpty())
-            plan = m_preparer.prepare(project, gamePath,
-                                      (nativeWindows || throughWine) ? executableInfo.absolutePath() : workingDirectory,
+            plan = m_preparer.prepare(project, gamePath, launcherFolder(projectId),
                                       throughWine ? wineOptions : preparationOptions(projectId));
         if (plan.defaultFullscreenApplied && m_settingsManager)
             m_settingsManager->markDefaultFullscreenApplied(projectId);
@@ -448,6 +449,9 @@ bool GameLaunchManager::launchGame(const QString &projectId, const QString &game
         }
         process->setProgram(QStringLiteral("./") + relativePath);
     } else {
+        // A program from its own folder, like on Windows: an archive often
+        // keeps it in a subfolder, beside the files it looks for.
+        process->setWorkingDirectory(executableInfo.absolutePath());
         process->setProgram(executableInfo.absoluteFilePath());
     }
     process->setArguments(plan.arguments);
