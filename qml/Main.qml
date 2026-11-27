@@ -1304,13 +1304,14 @@ ApplicationWindow {
         }
         return ""
     }
-    // The Still background's choices: the theme gradient and four retro
-    // patterns (approved 2026-11-27, design option B).
+    // The Still background's choices: the theme gradient and three retro
+    // patterns (approved 2026-11-27, design option B). Pixel starfield was
+    // taken out the same day: a twinkling version will be an animated
+    // background instead.
     readonly property var stillPatterns: [
         { label: "Gradient", value: "gradient" },
         { label: "CRT glow", value: "crt" },
         { label: "Dithered sunset", value: "sunset" },
-        { label: "Pixel starfield", value: "stars" },
         { label: "Circuit board", value: "circuit" }
     ]
     function stillPattern(value) {
@@ -4069,7 +4070,7 @@ ApplicationWindow {
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "static"
                     && libraryVisualSettings.stillPattern !== "gradient"
-                pattern: visible ? libraryVisualSettings.stillPattern : "gradient"
+                pattern: visible ? window.stillPattern(libraryVisualSettings.stillPattern).value : "gradient"
                 accent: theme.accent
                 topColor: theme.backgroundTop
                 bottomColor: theme.backgroundBottom
@@ -6673,7 +6674,7 @@ ApplicationWindow {
                                                 current: settingsManager.libraryBackgroundType === modelData.value
                                                 wallpaper: settingsManager.customLibraryBackground
                                                 waveColor: window.waveColorValue
-                                                pattern: libraryVisualSettings.stillPattern
+                                                pattern: window.stillPattern(libraryVisualSettings.stillPattern).value
                                                 onClicked: settingsManager.libraryBackgroundType = modelData.value
                                             }
                                         }
@@ -8883,7 +8884,7 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             visible: settingsManager.libraryBackgroundType === "static"
                                                 && libraryVisualSettings.stillPattern !== "gradient"
-                                            pattern: visible ? libraryVisualSettings.stillPattern : "gradient"
+                                            pattern: visible ? window.stillPattern(libraryVisualSettings.stillPattern).value : "gradient"
                                             accent: theme.accent
                                             topColor: theme.backgroundTop
                                             bottomColor: theme.backgroundBottom
