@@ -2474,6 +2474,385 @@
           "executablePath": "BattleShip.exe"
         }
       }
+    },
+    {
+      "id": "no-mercy-recompiled",
+      "name": "WWF No Mercy: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "WWF No Mercy"
+      ],
+      "repositoryOwner": "Gadge64",
+      "repositoryName": "WWFNoMercyRecomp",
+      "romRequirements": "Requires your own WWF No Mercy (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "WWF No Mercy (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "NoMercyRecompiled",
+        "romFileName": "wwf.nomercy.us.z64",
+        "romName": "WWF No Mercy",
+        "romXxh3": "0455F72A0F9FF778",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^NoMercyRecompiled-[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "NoMercyRecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "snowboard-kids-recompiled-cdlewis",
+      "name": "Snowboard Kids: Recompiled (cdlewis)",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Snowboard Kids"
+      ],
+      "repositoryOwner": "cdlewis",
+      "repositoryName": "snowboardkids-recomp",
+      "romRequirements": "Requires your own Snowboard Kids (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Snowboard Kids (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "SnowboardKidsRecompiled",
+        "romFileName": "snowboardkids.n64.us.z64",
+        "romName": "SNOWBOARD KIDS",
+        "romXxh3": "F384619787B78D4B",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^SnowboardKidsRecompiled-Linux-X64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "SnowboardKidsRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SnowboardKidsRecompiled-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SnowboardKidsRecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "turok-2-recompiled",
+      "name": "Turok 2: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Turok 2: Seeds of Evil",
+        "Turok 2 Seeds of Evil",
+        "Turok 2"
+      ],
+      "repositoryOwner": "n64hub",
+      "repositoryName": "turok-2-recomp",
+      "romRequirements": "Requires your own Turok 2: Seeds of Evil (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Turok 2: Seeds of Evil (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "Turok2Recompiled",
+        "romFileName": "turok2.n64.us.1.0.z64",
+        "romName": "Turok 2: Seeds of Ev",
+        "romXxh3": "C8A153E0C80403AA",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Turok2Recompiled-v[0-9.]+-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Turok2Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Turok2Recompiled-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Turok2Recompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "mission-impossible-recompiled",
+      "name": "Mission: Impossible Recompiled",
+      "platform": "N64",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Mission: Impossible",
+        "Mission Impossible"
+      ],
+      "repositoryOwner": "tijayfly",
+      "repositoryName": "mi_n64_exe",
+      "romRequirements": "Requires your own Mission: Impossible (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Mission: Impossible (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MIRecompiled",
+        "romFileName": "mi.n64.us.z64",
+        "romName": "MISSION IMPOSSIBLE",
+        "romXxh3": "D64AE25F3173CE5C",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^MIRecompiled-win64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MIRecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "hybrid-heaven-recompiled",
+      "name": "Hybrid Heaven: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Hybrid Heaven"
+      ],
+      "repositoryOwner": "ogdanimal",
+      "repositoryName": "HybridHeaven-Recomp",
+      "romRequirements": "Requires your own Hybrid Heaven (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Hybrid Heaven (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "HybridHeavenRecompiled",
+        "romFileName": "hybridheaven.us.z64",
+        "romName": "HYBRIDHEAVEN",
+        "romXxh3": "0F6A72F2C36A216D",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^HybridHeaven-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "HybridHeavenRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^HybridHeaven-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "HybridHeavenRecompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "beetle-adventure-racing-recompiled",
+      "name": "BeetleRecomp",
+      "platform": "N64",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Beetle Adventure Racing!",
+        "Beetle Adventure Racing"
+      ],
+      "repositoryOwner": "bryankruman",
+      "repositoryName": "BeetleRecomp",
+      "romRequirements": "Requires your own Beetle Adventure Racing! (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Beetle Adventure Racing! (USA) ROM",
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "BeetleRecomp",
+        "romFileName": "bar.n64.us.z64",
+        "romName": "Beetle Adventure Rac",
+        "romXxh3": "56CFEC69D7951F9F",
+        "romVersion": "North America",
+        "graphicsFile": "graphics.json"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^BeetleRecomp-v[0-9.]+-Linux-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BeetleRecomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BeetleRecomp-v[0-9.]+-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BeetleRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "pilotwings-64-recomp",
+      "name": "Pilotwings 64 Recomp",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Pilotwings 64"
+      ],
+      "repositoryOwner": "danielgomesvieira2000",
+      "repositoryName": "pilotwings-64-recomp",
+      "romRequirements": "Requires your own Pilotwings 64 (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Pilotwings 64 (USA) ROM",
+      "launch": {
+        "method": "romfolder",
+        "dataFolder": "Pilotwings64Recomp",
+        "romFileName": "pilotwings64.us.z64",
+        "romXxh3": "887AB02583C90111",
+        "romVersion": "North America"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Pilotwings64Recomp-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Pilotwings64Recomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Pilotwings64Recomp-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Pilotwings64Recomp.exe"
+        }
+      }
+    },
+    {
+      "id": "wave-race-64-recomp",
+      "name": "Wave Race 64 Recomp",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Wave Race 64"
+      ],
+      "repositoryOwner": "danielgomesvieira2000",
+      "repositoryName": "wave-race-64-recomp",
+      "romRequirements": "Requires your own Wave Race 64 (USA, Rev 1) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Wave Race 64 (USA, Rev 1) ROM",
+      "launch": {
+        "method": "romfolder",
+        "dataFolder": "WaveRace64Recomp",
+        "romFileName": "wr64.us.rev1.z64",
+        "romXxh3": "2B675E2250A604FC",
+        "romVersion": "North America"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^WaveRace64Recomp-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "WaveRace64Recomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^WaveRace64Recomp-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "WaveRace64Recomp.exe"
+        }
+      }
+    },
+    {
+      "id": "paxdino-turok-rage-wars",
+      "name": "PaxDino",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Turok: Rage Wars",
+        "Turok Rage Wars"
+      ],
+      "repositoryOwner": "wootbeer",
+      "repositoryName": "PaxDino",
+      "romRequirements": "Requires your own Turok: Rage Wars (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Turok: Rage Wars (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Start."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^PaxDino-[0-9.]+(-beta)?-linux\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "PaxDino-x86_64.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^PaxDino-[0-9.]+(-beta)?-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "PaxDino.exe"
+        }
+      }
+    },
+    {
+      "id": "rush-2-recompiled",
+      "name": "Rush 2: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Rush 2: Extreme Racing USA",
+        "Rush 2 Extreme Racing USA",
+        "Rush 2"
+      ],
+      "repositoryOwner": "bryantmh",
+      "repositoryName": "rush2recompiled",
+      "romRequirements": "Requires your own Rush 2: Extreme Racing USA (USA) ROM. No game data is included. RecompStation gives it to the launcher for you.",
+      "romFile": "Rush 2: Extreme Racing USA (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Start."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Rush2Recompiled-[0-9.]+-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Rush2Recompiled.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Rush2Recompiled-[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Rush2Recompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "sote-recomp",
+      "name": "Shadows of the Empire: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Star Wars: Shadows of the Empire",
+        "Star Wars - Shadows of the Empire",
+        "Shadows of the Empire"
+      ],
+      "repositoryOwner": "GTTeancum",
+      "repositoryName": "SotE-Recomp",
+      "romRequirements": "Requires your own Star Wars: Shadows of the Empire (USA, Rev 2) ROM. No game data is included. Play starts the game with it.",
+      "romFile": "Star Wars: Shadows of the Empire (USA, Rev 2) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "It has no launcher screen of its own, so Play starts the game straight away."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^SotE-Recomp-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "sote_recomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SotE-Recomp-[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Shadows of the Empire.exe"
+        }
+      }
     }
   ]
 }

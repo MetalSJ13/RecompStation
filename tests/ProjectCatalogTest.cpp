@@ -108,9 +108,15 @@ void ProjectCatalogTest::parsesDevelopmentStatus()
     QVERIFY(catalog.isLoaded());
     const QVariantList matches = catalog.projectsForGame(
         QStringLiteral("Conker's Bad Fur Day"), QStringLiteral("N64"));
-    QCOMPARE(matches.size(), 1);
-    QCOMPARE(matches.first().toMap().value(QStringLiteral("developmentStatus")).toString(),
-             QStringLiteral("beta"));
+    QCOMPARE(matches.size(), 2);
+    QHash<QString, QString> statusById;
+    for (const QVariant &match : matches) {
+        const QVariantMap project = match.toMap();
+        statusById.insert(project.value(QStringLiteral("id")).toString(),
+                          project.value(QStringLiteral("developmentStatus")).toString());
+    }
+    QCOMPARE(statusById.value(QStringLiteral("conkers-bad-fur-day-recompiled")), QStringLiteral("beta"));
+    QCOMPARE(statusById.value(QStringLiteral("conker-bfd-reloaded")), QStringLiteral("playable"));
 
     const QVariantList snapMatches = catalog.projectsForGame(
         QStringLiteral("Pokemon Snap"), QStringLiteral("N64"));
