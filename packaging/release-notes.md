@@ -14,7 +14,7 @@ If the AppImage doesn't start, your system may be missing FUSE 2 (`libfuse2`, or
 
 ## Changes
 
-The catalog grows from 42 to 119 projects, now covering Super Nintendo, Game Boy Advance, GameCube and Wii as well as Nintendo 64, PlayStation, Xbox and Xbox 360. [Compatibility.md](https://github.com/MetalSJ13/RecompStation/blob/main/Compatibility.md) lists the 50 games tested so far and the ones waiting for a test or a launcher.
+The catalog grows from 42 to 119 projects, now covering Super Nintendo, Game Boy Advance, GameCube and Wii as well as Nintendo 64, PlayStation, Xbox and Xbox 360. [Compatibility.md](https://github.com/MetalSJ13/RecompStation/blob/main/Compatibility.md) lists the 61 games tested so far and the ones waiting for a test or a launcher.
 
 ### Playing
 - Play hands your game to each launcher the way that launcher expects: started straight away, opened in its own launcher with your game already chosen, or placed where the launcher looks for it. Launchers that find or build the game themselves are left to do so.

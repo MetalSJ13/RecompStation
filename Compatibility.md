@@ -33,6 +33,7 @@ Installed, given the game and started through RecompStation.
 - [x] Pokémon Snap
 - [x] Quest 64
 - [x] Snowboard Kids
+- [x] Snowboard Kids 2
 - [x] Star Fox 64
 - [x] Super Mario 64
 - [x] Super Smash Bros.
@@ -46,6 +47,7 @@ Installed, given the game and started through RecompStation.
 - [x] Luigi's Mansion
 - [x] Paper Mario: The Thousand-Year Door
 - [x] Pikmin
+- [x] Super Mario Sunshine
 - [x] Super Smash Bros. Melee
 
 ### Wii
@@ -63,9 +65,21 @@ Installed, given the game and started through RecompStation.
 - [x] Mega Man X
 - [x] Mega Man X2
 - [x] Mega Man X3
+- [x] Star Fox
 - [x] Stunt Race FX
 - [x] Super Mario World
 - [x] Super Metroid
+
+### Game Boy Advance
+
+- [x] Dragon Ball Z: Buu's Fury
+- [x] Dragon Ball Z: The Legacy of Goku II
+- [x] The Legend of Zelda: The Minish Cap
+- [x] Mario & Luigi: Superstar Saga
+- [x] Metroid Fusion
+- [x] Metroid: Zero Mission
+- [x] Tactics Ogre: The Knight of Lodis
+- [x] Zoids Saga
 
 ### Xbox
 
@@ -89,7 +103,6 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Jet Force Gemini
 - [ ] Mario Golf
 - [ ] Rush 2: Extreme Racing USA
-- [ ] Snowboard Kids 2
 - [ ] Space Station Silicon Valley
 - [ ] Star Wars: Shadows of the Empire
 - [ ] Turok 2: Seeds of Evil
@@ -103,7 +116,6 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Mario Party 4
 - [ ] Scooby-Doo! Night of 100 Frights
 - [ ] Super Mario Strikers
-- [ ] Super Mario Sunshine
 
 #### Wii
 
@@ -114,24 +126,15 @@ These have a launcher in the catalog; they move up once one has been tried.
 #### Super Nintendo (SNES)
 
 - [ ] Kirby Super Star
-- [ ] Star Fox
 - [ ] Super Mario World 2: Yoshi's Island
 
 #### Game Boy Advance
 
 - [ ] Crash Bandicoot: The Huge Adventure
-- [ ] Dragon Ball Z: Buu's Fury
-- [ ] Dragon Ball Z: The Legacy of Goku II
 - [ ] Final Fantasy Tactics Advance
 - [ ] Fire Emblem: The Sacred Stones
 - [ ] Kirby: Nightmare in Dream Land
-- [ ] The Legend of Zelda: The Minish Cap
-- [ ] Mario & Luigi: Superstar Saga
-- [ ] Metroid Fusion
-- [ ] Metroid: Zero Mission
-- [ ] Tactics Ogre: The Knight of Lodis
 - [ ] Wario Land 4
-- [ ] Zoids Saga
 
 #### PlayStation
 
