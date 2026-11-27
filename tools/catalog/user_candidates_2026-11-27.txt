@@ -1,0 +1,29 @@
+# Launchers the user found (2026-11-27), Candidates sheet.
+# python3 tools/catalog/release_assets.py --repos-file tools/catalog/user_candidates_2026-11-27.txt --csv user_assets.csv
+sweatyeggs69/KNID
+sweatyeggs69/MetroFuse
+sweatyeggs69/SuperSaga
+serivt/re-zoids-saga
+arcanite24/mksc-neo
+xXGhostPantsXx/Mother3PC
+NitorikoSkye/N-Larged-XS
+lucdubois/KnightOfLodisRecomp
+DragonautMk/FFTA-DE-ReBuild
+ZenKazeX/NukkoroRecomp
+aidp2/tssm-ports
+digdat0/mkdd-nx
+chasem-dev/sms-launcher
+mstan/DragonBallZLegacyofGokuIIRecomp
+mstan/SuperMarioAdvance2Recomp
+999sian/tmc
+mstan/FireRedLeafGreenRecomp
+mstan/MarioKartSuperCircuitRecomp
+sweatyeggs69/MetroZero
+BioRhythmicStudios/warioland4
+mstan/WarioWareTwistedRecomp
+Shmargus/GSRecomp
+woodys-workshop/SpaceRanger
+Ieatzcrayonz/MarioTennisRecomp
+TemplarServant/BelthasarProject
+mstan/SuperMarioRPGRecomp
+mpolizel/KSSSNESRecomp
