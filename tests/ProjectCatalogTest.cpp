@@ -639,7 +639,8 @@ void ProjectCatalogTest::parsesLaunchRecipes()
     const QVariantList files = projects.first().toMap().value("launch").toMap().value("selectFiles").toList();
     QCOMPARE(files.first().toMap().value("section").toString(), QStringLiteral("game"));
     QCOMPARE(files.first().toMap().value("windowsBase").toString(), QStringLiteral("local"));
-    QCOMPARE(files.last().toMap().value("key").toString(), QStringLiteral("backend.discPath"));
+    QCOMPARE(files.at(1).toMap().value("key").toString(), QStringLiteral("backend.discPath"));
+    QCOMPARE(files.last().toMap().value("file").toString(), QStringLiteral("session/launcher.json"));
 
     const QByteArray place = R"({"method": "placefile", "fileExtensions": ["iso", "gcm"],
         "placeFile": {"folder": "launcher", "file": "roms/{name}"}, "arguments": [],
@@ -895,7 +896,8 @@ void ProjectCatalogTest::bundledWindowsBuildsMatchTheirReleases()
              QStringLiteral("tar.gz"));
     // Windows builds leave the program name to the installer.
     QVERIFY(catalog.buildRules("banjo-kazooie-recompiled", windows).value("executablePath").toString().isEmpty());
-    QCOMPARE(catalog.availableBuilds("quest-64-recompiled"), QStringList{linux});
+    // Quest 64: Recompiled only publishes a Windows zip.
+    QCOMPARE(catalog.availableBuilds("quest-64-recompiled"), QStringList{windows});
 }
 
 QTEST_GUILESS_MAIN(ProjectCatalogTest)
