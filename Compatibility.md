@@ -1,126 +1,144 @@
 # Compatibility
 
-Games RecompStation can play through a launcher (a recompilation or PC port it installs for you), and games that don't have one yet. You always need your own copy of each game; RecompStation never supplies game files.
-
-Games marked *(tested)* have been installed, given the game and started through RecompStation. The others have a launcher in the catalog but haven't been tried yet.
+Games RecompStation has played through a launcher (a recompilation or PC port it installs for you), and games that aren't there yet. You always need your own copy of each game; RecompStation never supplies game files.
 
 ## Supported games
 
+Installed, given the game and started through RecompStation.
+
 ### Nintendo 64
 
-- [x] Banjo-Kazooie *(tested)*
-- [x] Banjo-Tooie *(tested)*
-- [x] BattleTanx: Global Assault
-- [x] Beetle Adventure Racing!
-- [x] Blast Corps
-- [x] Body Harvest
-- [x] Bomberman 64 *(tested)*
-- [x] Bomberman Hero *(tested)*
-- [x] Conker's Bad Fur Day *(tested)*
-- [x] Diddy Kong Racing *(tested)*
-- [x] Donkey Kong 64 *(tested)*
-- [x] Dr. Mario 64
-- [x] Duke Nukem: Zero Hour
-- [x] F-Zero X
-- [x] Glover
-- [x] GoldenEye 007
-- [x] Harvest Moon 64
-- [x] Hybrid Heaven
-- [x] Jet Force Gemini
-- [x] The Legend of Zelda: Majora's Mask *(tested)*
-- [x] The Legend of Zelda: Ocarina of Time *(tested)*
-- [x] Mario Golf
-- [x] Mario Kart 64 *(tested)*
-- [x] Mario Party
-- [x] Mario Party 2
-- [x] Mario Party 3
-- [x] Mega Man 64 *(tested)*
-- [x] Mission: Impossible
-- [x] Paper Mario *(tested)*
-- [x] Perfect Dark *(tested)*
-- [x] Pilotwings 64
-- [x] Pokémon Snap *(tested)*
-- [x] Quest 64
-- [x] Rush 2: Extreme Racing USA
-- [x] Snowboard Kids
-- [x] Snowboard Kids 2
-- [x] Space Station Silicon Valley
-- [x] Star Fox 64 *(tested)*
-- [x] Star Wars: Shadows of the Empire
-- [x] Super Mario 64 *(tested)*
-- [x] Super Smash Bros.
-- [x] Turok 2: Seeds of Evil
-- [x] Turok: Rage Wars
-- [x] Wave Race 64
-- [x] WWF No Mercy
-- [x] Yoshi's Story *(tested)*
+- [x] Banjo-Kazooie
+- [x] Banjo-Tooie
+- [x] Bomberman 64
+- [x] Bomberman Hero
+- [x] Conker's Bad Fur Day
+- [x] Diddy Kong Racing
+- [x] Donkey Kong 64
+- [x] The Legend of Zelda: Majora's Mask
+- [x] The Legend of Zelda: Ocarina of Time
+- [x] Mario Kart 64
+- [x] Mega Man 64
+- [x] Paper Mario
+- [x] Perfect Dark
+- [x] Pokémon Snap
+- [x] Star Fox 64
+- [x] Super Mario 64
+- [x] Yoshi's Story
 
 ### GameCube
 
-- [x] Animal Crossing
-- [x] Eternal Darkness: Sanity's Requiem
-- [x] The Legend of Zelda: The Wind Waker *(tested)*
-- [x] The Legend of Zelda: Twilight Princess
-- [x] Luigi's Mansion *(tested)*
-- [x] Mario Party 4
-- [x] Paper Mario: The Thousand-Year Door *(tested)*
-- [x] Pikmin
-- [x] Scooby-Doo! Night of 100 Frights
-- [x] Super Mario Strikers
-- [x] Super Smash Bros. Melee *(tested)*
-
-### Wii
-
-- [x] Mario Strikers Charged
-- [x] New Super Mario Bros. Wii
-- [x] Resident Evil: The Umbrella Chronicles
-- [x] Super Paper Mario
+- [x] The Legend of Zelda: The Wind Waker
+- [x] Luigi's Mansion
+- [x] Paper Mario: The Thousand-Year Door
+- [x] Super Smash Bros. Melee
 
 ### Super Nintendo (SNES)
 
-- [x] Donkey Kong Country *(tested)*
-- [x] Donkey Kong Country 2: Diddy's Kong Quest *(tested)*
-- [x] Donkey Kong Country 3: Dixie Kong's Double Trouble! *(tested)*
-- [x] EarthBound
-- [x] The Legend of Zelda: A Link to the Past
-- [x] Lufia II: Rise of the Sinistrals
-- [x] Mega Man X *(tested)*
-- [x] Mega Man X2
-- [x] Mega Man X3
-- [x] Star Fox
-- [x] Stunt Race FX
-- [x] Super Mario World *(tested)*
-- [x] Super Mario World 2: Yoshi's Island
-- [x] Super Metroid *(tested)*
-
-### Game Boy Advance
-
-- [x] Dragon Ball Z: Buu's Fury
-- [x] Final Fantasy Tactics Advance
-- [x] Fire Emblem: The Sacred Stones
-- [x] The Legend of Zelda: The Minish Cap
-- [x] Metroid: Zero Mission
-
-### PlayStation
-
-- [x] Bloody Roar II
-- [x] MediEvil
+- [x] Donkey Kong Country
+- [x] Donkey Kong Country 2: Diddy's Kong Quest
+- [x] Donkey Kong Country 3: Dixie Kong's Double Trouble!
+- [x] Mega Man X
+- [x] Super Mario World
+- [x] Super Metroid
 
 ### Xbox
 
-- [x] Ninja Gaiden Black
-- [x] Shadow the Hedgehog *(tested)*
-
-### Xbox 360
-
-- [x] Lost Odyssey
-- [x] The Simpsons Game
+- [x] Shadow the Hedgehog
 
 ## Games that need launcher support
 
-No launcher RecompStation can install yet: no PC port or recompilation was found, the one there is doesn't have a regular release for Linux or Windows, or it hasn't been added to the catalog.
+### Launcher available, not tested yet
 
-### Nintendo 64
+These have a launcher in the catalog; they move up once one has been tried.
+
+#### Nintendo 64
+
+- [ ] BattleTanx: Global Assault
+- [ ] Beetle Adventure Racing!
+- [ ] Blast Corps
+- [ ] Body Harvest
+- [ ] Dr. Mario 64
+- [ ] Duke Nukem: Zero Hour
+- [ ] F-Zero X
+- [ ] Glover
+- [ ] GoldenEye 007
+- [ ] Harvest Moon 64
+- [ ] Hybrid Heaven
+- [ ] Jet Force Gemini
+- [ ] Mario Golf
+- [ ] Mario Party
+- [ ] Mario Party 2
+- [ ] Mario Party 3
+- [ ] Mission: Impossible
+- [ ] Pilotwings 64
+- [ ] Quest 64
+- [ ] Rush 2: Extreme Racing USA
+- [ ] Snowboard Kids
+- [ ] Snowboard Kids 2
+- [ ] Space Station Silicon Valley
+- [ ] Star Wars: Shadows of the Empire
+- [ ] Super Smash Bros.
+- [ ] Turok 2: Seeds of Evil
+- [ ] Turok: Rage Wars
+- [ ] Wave Race 64
+- [ ] WWF No Mercy
+
+#### GameCube
+
+- [ ] Animal Crossing
+- [ ] Eternal Darkness: Sanity's Requiem
+- [ ] The Legend of Zelda: Twilight Princess
+- [ ] Mario Party 4
+- [ ] Pikmin
+- [ ] Scooby-Doo! Night of 100 Frights
+- [ ] Super Mario Strikers
+
+#### Wii
+
+- [ ] Mario Strikers Charged
+- [ ] New Super Mario Bros. Wii
+- [ ] Resident Evil: The Umbrella Chronicles
+- [ ] Super Paper Mario
+
+#### Super Nintendo (SNES)
+
+- [ ] EarthBound
+- [ ] The Legend of Zelda: A Link to the Past
+- [ ] Lufia II: Rise of the Sinistrals
+- [ ] Mega Man X2
+- [ ] Mega Man X3
+- [ ] Star Fox
+- [ ] Stunt Race FX
+- [ ] Super Mario World 2: Yoshi's Island
+
+#### Game Boy Advance
+
+- [ ] Dragon Ball Z: Buu's Fury
+- [ ] Final Fantasy Tactics Advance
+- [ ] Fire Emblem: The Sacred Stones
+- [ ] The Legend of Zelda: The Minish Cap
+- [ ] Metroid: Zero Mission
+
+#### PlayStation
+
+- [ ] Bloody Roar II
+- [ ] MediEvil
+
+#### Xbox
+
+- [ ] Ninja Gaiden Black
+
+#### Xbox 360
+
+- [ ] Lost Odyssey
+- [ ] The Simpsons Game
+
+### No launcher yet
+
+No PC port or recompilation was found, the one there is has no regular release for Linux or Windows, or it hasn't been added to the catalog.
+
+#### Nintendo 64
 
 - [ ] 40 Winks
 - [ ] Bomberman 64: The Second Attack!
@@ -134,7 +152,7 @@ No launcher RecompStation can install yet: no PC port or recompilation was found
 - [ ] Pokémon Stadium
 - [ ] Toy Story 2: Buzz Lightyear to the Rescue!
 
-### GameCube
+#### GameCube
 
 - [ ] Metroid Prime
 - [ ] Metroid Prime 2: Echoes
@@ -148,7 +166,7 @@ No launcher RecompStation can install yet: no PC port or recompilation was found
 - [ ] Super Mario Sunshine
 - [ ] Wario World
 
-### Wii
+#### Wii
 
 - [ ] Donkey Kong Country Returns
 - [ ] Mario Kart Wii
@@ -166,7 +184,7 @@ No launcher RecompStation can install yet: no PC port or recompilation was found
 - [ ] Super Mario Galaxy 2
 - [ ] Super Smash Bros. Brawl
 
-### Super Nintendo (SNES)
+#### Super Nintendo (SNES)
 
 - [ ] Chrono Trigger
 - [ ] Doom
@@ -182,7 +200,7 @@ No launcher RecompStation can install yet: no PC port or recompilation was found
 - [ ] Super Mario RPG: Legend of the Seven Stars
 - [ ] Uniracers
 
-### Game Boy Advance
+#### Game Boy Advance
 
 - [ ] DK: King of Swing
 - [ ] Final Fantasy V Advance
@@ -210,22 +228,22 @@ No launcher RecompStation can install yet: no PC port or recompilation was found
 - [ ] Super Mario Advance 4: Super Mario Bros. 3
 - [ ] Wario Land 4
 
-### PlayStation
+#### PlayStation
 
 - [ ] Doom
 - [ ] Driver 2
 - [ ] Pepsiman
 - [ ] WipEout
 
-### PlayStation 2
+#### PlayStation 2
 
 - [ ] Jak and Daxter trilogy
 
-### Xbox
+#### Xbox
 
 - [ ] Halo: Combat Evolved
 
-### Xbox 360
+#### Xbox 360
 
 - [ ] Asura's Wrath
 - [ ] Blue Dragon
