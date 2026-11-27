@@ -40,7 +40,7 @@ private slots:
     void rejectsMissingExpectedExecutable();
     void matchesExecutableNameWithoutCase();
     void refusesExistingDestination();
-    void rejectsHardLinks();
+    void linksBecomeCopiesOfTheirFiles();
     void rejectsSpecialFiles();
     void rejectsDuplicatePaths();
     void rejectsWindowsStylePaths();
@@ -442,21 +442,42 @@ bool onlyTheArchiveRemains(const QString &folder, const QString &archiveName)
 }
 }
 
-void ArchiveExtractorTest::rejectsHardLinks()
+void ArchiveExtractorTest::linksBecomeCopiesOfTheirFiles()
 {
+    // Links are never made on disk: one to a file in the archive becomes a
+    // copy of it (a hard link, a library's .so name, a link to a link);
+    // one pointing outside, or at nothing, is left out.
     QTemporaryDir temp;
     QVERIFY(temp.isValid());
-    const QString archivePath = QDir(temp.path()).filePath("hardlink.tar.gz");
+    const QString archivePath = QDir(temp.path()).filePath("links.tar.gz");
     QVERIFY(createArchive(archivePath, {
         fileEntry(QStringLiteral("launcher")),
         {{QStringLiteral("name"), QStringLiteral("copy")}, {QStringLiteral("type"), QStringLiteral("hardlink")},
-         {QStringLiteral("target"), QStringLiteral("launcher")}}
+         {QStringLiteral("target"), QStringLiteral("launcher")}},
+        {{QStringLiteral("name"), QStringLiteral("lib/libfoo.so")}, {QStringLiteral("type"), QStringLiteral("symlink")},
+         {QStringLiteral("target"), QStringLiteral("libfoo.so.1")}},
+        {{QStringLiteral("name"), QStringLiteral("lib/libfoo.so.1")}, {QStringLiteral("type"), QStringLiteral("symlink")},
+         {QStringLiteral("target"), QStringLiteral("libfoo.so.1.2")}},
+        fileEntry(QStringLiteral("lib/libfoo.so.1.2"), QByteArray("library"), 0644),
+        {{QStringLiteral("name"), QStringLiteral("escape")}, {QStringLiteral("type"), QStringLiteral("symlink")},
+         {QStringLiteral("target"), QStringLiteral("../../outside")}},
+        {{QStringLiteral("name"), QStringLiteral("absolute")}, {QStringLiteral("type"), QStringLiteral("symlink")},
+         {QStringLiteral("target"), QStringLiteral("/etc/hostname")}},
+        {{QStringLiteral("name"), QStringLiteral("cache/id")}, {QStringLiteral("type"), QStringLiteral("symlink")},
+         {QStringLiteral("target"), QStringLiteral("missing")}}
     }));
-    const auto result = ArchiveExtractor::extractArchive(
-        archivePath, QDir(temp.path()).filePath("out"), QStringLiteral("launcher"));
-    QVERIFY(!result.success);
-    QVERIFY(result.error.contains(QStringLiteral("link")));
-    QVERIFY(onlyTheArchiveRemains(temp.path(), QStringLiteral("hardlink.tar.gz")));
+    const QString out = QDir(temp.path()).filePath("out");
+    const auto result = ArchiveExtractor::extractArchive(archivePath, out, QStringLiteral("launcher"));
+    QVERIFY2(result.success, qPrintable(result.error));
+    QCOMPARE(fileBytes(QDir(out).filePath("copy")), QByteArray("x"));
+    QCOMPARE(fileBytes(QDir(out).filePath("lib/libfoo.so")), QByteArray("library"));
+    QCOMPARE(fileBytes(QDir(out).filePath("lib/libfoo.so.1")), QByteArray("library"));
+    for (const char *name : {"copy", "lib/libfoo.so", "lib/libfoo.so.1"})
+        QVERIFY(!QFileInfo(QDir(out).filePath(QString::fromLatin1(name))).isSymLink());
+    QVERIFY(!QFileInfo::exists(QDir(out).filePath("escape")));
+    QVERIFY(!QFileInfo::exists(QDir(out).filePath("absolute")));
+    QVERIFY(!QFileInfo::exists(QDir(out).filePath("cache/id")));
+    QVERIFY(!QFileInfo::exists(QDir(temp.path()).filePath("outside")));
 }
 
 void ArchiveExtractorTest::rejectsSpecialFiles()

@@ -40,17 +40,30 @@ Installed, given the game and started through RecompStation.
 
 ### GameCube
 
+- [x] Animal Crossing
 - [x] The Legend of Zelda: The Wind Waker
+- [x] The Legend of Zelda: Twilight Princess
 - [x] Luigi's Mansion
 - [x] Paper Mario: The Thousand-Year Door
+- [x] Pikmin
 - [x] Super Smash Bros. Melee
+
+### Wii
+
+- [x] Super Paper Mario
 
 ### Super Nintendo (SNES)
 
 - [x] Donkey Kong Country
 - [x] Donkey Kong Country 2: Diddy's Kong Quest
 - [x] Donkey Kong Country 3: Dixie Kong's Double Trouble!
+- [x] EarthBound
+- [x] The Legend of Zelda: A Link to the Past
+- [x] Lufia II: Rise of the Sinistrals
 - [x] Mega Man X
+- [x] Mega Man X2
+- [x] Mega Man X3
+- [x] Stunt Race FX
 - [x] Super Mario World
 - [x] Super Metroid
 
@@ -86,11 +99,8 @@ These have a launcher in the catalog; they move up once one has been tried.
 
 #### GameCube
 
-- [ ] Animal Crossing
 - [ ] Eternal Darkness: Sanity's Requiem
-- [ ] The Legend of Zelda: Twilight Princess
 - [ ] Mario Party 4
-- [ ] Pikmin
 - [ ] Scooby-Doo! Night of 100 Frights
 - [ ] Super Mario Strikers
 
@@ -99,17 +109,10 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Mario Strikers Charged
 - [ ] New Super Mario Bros. Wii
 - [ ] Resident Evil: The Umbrella Chronicles
-- [ ] Super Paper Mario
 
 #### Super Nintendo (SNES)
 
-- [ ] EarthBound
-- [ ] The Legend of Zelda: A Link to the Past
-- [ ] Lufia II: Rise of the Sinistrals
-- [ ] Mega Man X2
-- [ ] Mega Man X3
 - [ ] Star Fox
-- [ ] Stunt Race FX
 - [ ] Super Mario World 2: Yoshi's Island
 
 #### Game Boy Advance

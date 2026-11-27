@@ -3009,40 +3009,6 @@
       }
     },
     {
-      "id": "lufia-ii-recompiled",
-      "name": "Lufia II Recompiled",
-      "platform": "SNES",
-      "developmentStatus": "playable",
-      "gameTitles": [
-        "Lufia II: Rise of the Sinistrals",
-        "Lufia II"
-      ],
-      "repositoryOwner": "aitorcachero",
-      "repositoryName": "Lufia-II-Recomp",
-      "romRequirements": "Requires your own Lufia II: Rise of the Sinistrals (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
-      "romFile": "Lufia II: Rise of the Sinistrals (USA) ROM",
-      "launch": {
-        "method": "fileargument",
-        "arguments": [
-          "--launcher",
-          "--rom",
-          "{gamePath}"
-        ],
-        "fileExtensions": [
-          "sfc",
-          "smc"
-        ],
-        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play."
-      },
-      "builds": {
-        "windows-x86_64": {
-          "assetNameRegex": "^Lufia_II_Recompiled_v[0-9.]+_Windows_x64\\.zip$",
-          "packageFormat": "zip",
-          "executablePath": "LufiaIiSNESRecomp.exe"
-        }
-      }
-    },
-    {
       "id": "lufia2-snes-recomp",
       "name": "Lufia 2 Recomp",
       "platform": "SNES",
@@ -3208,44 +3174,6 @@
           "assetNameRegex": "^StuntRaceFX-DECOMP-.*-windows-x86_64\\.zip$",
           "packageFormat": "zip",
           "executablePath": "Stunt Race FX - DECOMP.exe"
-        }
-      }
-    },
-    {
-      "id": "stunt-race-fx-builder",
-      "name": "Stunt Race FX Builder",
-      "platform": "SNES",
-      "developmentStatus": "beta",
-      "gameTitles": [
-        "Stunt Race FX",
-        "Wild Trax"
-      ],
-      "repositoryOwner": "jeff-strutb",
-      "repositoryName": "stuntracefx",
-      "romRequirements": "Requires your own Stunt Race FX (USA, Rev 1) ROM. No game data is included. RecompStation selects it in the launcher for you.",
-      "romFile": "Stunt Race FX (USA, Rev 1) ROM",
-      "launch": {
-        "method": "fileargument",
-        "arguments": [
-          "--rom",
-          "{gamePath}"
-        ],
-        "fileExtensions": [
-          "sfc",
-          "smc"
-        ],
-        "firstStartNote": "The builder opens with your ROM already chosen; press Build to make the game from it."
-      },
-      "builds": {
-        "linux-x86_64": {
-          "assetNameRegex": "^StuntRaceFXBuilder-[0-9.]+-Linux-x86_64\\.tar\\.gz$",
-          "packageFormat": "tar.gz",
-          "executablePath": "StuntRaceFXBuilder"
-        },
-        "windows-x86_64": {
-          "assetNameRegex": "^StuntRaceFXBuilder-[0-9.]+-Windows\\.zip$",
-          "packageFormat": "zip",
-          "executablePath": "StuntRaceFXBuilder.exe"
         }
       }
     },
@@ -3681,49 +3609,6 @@
           "assetNameRegex": "^Nookery-v[0-9.]+-windows-x86_64\\.zip$",
           "packageFormat": "zip",
           "executablePath": "Nookery.exe"
-        }
-      }
-    },
-    {
-      "id": "pikmin-recomp",
-      "name": "Pikmin Recomp",
-      "platform": "GameCube",
-      "developmentStatus": "beta",
-      "gameTitles": [
-        "Pikmin"
-      ],
-      "repositoryOwner": "noalexan",
-      "repositoryName": "PikminRecomp",
-      "romRequirements": "Requires your own Pikmin (USA) disc image. No game data is included. RecompStation selects it in the launcher for you.",
-      "romFile": "Pikmin (USA) disc image",
-      "launch": {
-        "method": "selectfile",
-        "fileExtensions": [
-          "iso",
-          "gcm"
-        ],
-        "selectFiles": [
-          {
-            "folder": "userdata",
-            "appName": "pikminrecomp-launcher",
-            "windowsBase": "local",
-            "file": "launcher.json",
-            "format": "jsonkey",
-            "key": "iso"
-          }
-        ],
-        "firstStartNote": "Its launcher opens with your disc selected; it builds the game from it before the first start."
-      },
-      "builds": {
-        "linux-x86_64": {
-          "assetNameRegex": "^PikminRecompLauncher-[0-9.]+-x86_64\\.AppImage$",
-          "packageFormat": "appimage",
-          "executablePath": "PikminRecompLauncher.AppImage"
-        },
-        "windows-x86_64": {
-          "assetNameRegex": "^PikminRecompLauncher-[0-9.]+-windows\\.zip$",
-          "packageFormat": "zip",
-          "executablePath": "PikminRecompLauncher.exe"
         }
       }
     },

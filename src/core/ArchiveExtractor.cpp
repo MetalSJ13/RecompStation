@@ -1,4 +1,5 @@
 #include "ArchiveExtractor.h"
+#include "Logging.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -149,6 +150,7 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
     QStringList executableNameMatches;
     QStringList windowsPrograms;
     QString failure;
+    QList<QPair<QString, QString>> links;   // path in the archive, the file it points at
 
     struct archive_entry *entry = nullptr;
     int status = ARCHIVE_OK;
@@ -183,9 +185,35 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
             continue;
         }
         const auto fileType = archive_entry_filetype(entry);
-        if (archive_entry_symlink(entry) || archive_entry_hardlink(entry)
-            || (fileType != AE_IFREG && fileType != AE_IFDIR)) {
-            failure = QStringLiteral("The archive contains a link or unsupported filesystem entry: %1")
+        // Links are never made on disk. One that points at a file inside the
+        // archive becomes a copy of that file once everything is extracted
+        // (libfoo.so -> libfoo.so.1, a build cache's id file); one that
+        // points anywhere else is left out.
+        const char *symlinkTarget = archive_entry_symlink(entry);
+        const char *hardlinkTarget = archive_entry_hardlink(entry);
+        if (symlinkTarget || hardlinkTarget) {
+            if (seenPaths.contains(normalizedPath)) {
+                failure = QStringLiteral("The archive contains a duplicate path: %1").arg(relativePath);
+                break;
+            }
+            seenPaths.insert(normalizedPath);
+            QString target;
+            if (hardlinkTarget) {
+                target = QDir::cleanPath(QString::fromUtf8(hardlinkTarget));
+            } else {
+                const QString written = QString::fromUtf8(symlinkTarget);
+                if (!written.startsWith(QLatin1Char('/')) && !written.contains(QLatin1Char('\\')))
+                    target = QDir::cleanPath(QFileInfo(normalizedPath).path() + QLatin1Char('/') + written);
+            }
+            if (!target.isEmpty() && isSafeRelativePath(target) && target != normalizedPath)
+                links.append({normalizedPath, target});
+            else
+                qCInfo(lcLauncher).noquote() << "Left out a link that points outside the download:" << relativePath;
+            archive_read_data_skip(reader);
+            continue;
+        }
+        if (fileType != AE_IFREG && fileType != AE_IFDIR) {
+            failure = QStringLiteral("The archive contains an unsupported filesystem entry: %1")
                           .arg(relativePath);
             break;
         }
@@ -270,6 +298,50 @@ ArchiveExtractor::Result ArchiveExtractor::extractArchive(
 
     if (failure.isEmpty() && status != ARCHIVE_EOF)
         failure = archiveError(reader, QStringLiteral("The archive could not be read completely."));
+
+    // Links as copies of the files they point at; a link to a link follows
+    // once that one is copied, so a few passes settle chains.
+    for (int pass = 0; failure.isEmpty() && !links.isEmpty() && pass < 8; ++pass) {
+        QList<QPair<QString, QString>> waiting;
+        for (const auto &link : std::as_const(links)) {
+            const QString source = QDir(extractionRoot).filePath(link.second);
+            const QString destination = QDir(extractionRoot).filePath(link.first);
+            const QFileInfo sourceInfo(source);
+            if (!sourceInfo.exists()) {
+                waiting.append(link);
+                continue;
+            }
+            if (!sourceInfo.isFile() || sourceInfo.isSymLink()
+                || !QFileInfo(sourceInfo.canonicalFilePath()).absoluteFilePath().startsWith(extractionRoot + QLatin1Char('/'))) {
+                qCInfo(lcLauncher).noquote() << "Left out a link to something that isn't a file:" << link.first;
+                continue;
+            }
+            if (totalWritten > MaximumExtractedBytes - sourceInfo.size()) {
+                failure = QStringLiteral("The archive contains a file with an invalid or excessive size.");
+                break;
+            }
+            if (!QDir().mkpath(QFileInfo(destination).absolutePath()) || !QFile::copy(source, destination)) {
+                failure = QStringLiteral("Could not create extracted file %1").arg(link.first);
+                break;
+            }
+            totalWritten += sourceInfo.size();
+            QFile::setPermissions(destination, QFile::permissions(source));
+            if (!chooseProgram && link.first == expectedExecutable)
+                exactExecutablePath = link.first;
+            if (!chooseProgram && QFileInfo(link.first).fileName().compare(
+                    QFileInfo(expectedExecutable).fileName(), Qt::CaseInsensitive) == 0)
+                executableNameMatches.append(link.first);
+            if (chooseProgram && link.first.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive))
+                windowsPrograms.append(link.first);
+        }
+        if (waiting.size() == links.size())
+            break;   // nothing more resolves
+        links = waiting;
+    }
+    for (const auto &link : std::as_const(links)) {
+        if (!QFileInfo::exists(QDir(extractionRoot).filePath(link.first)))
+            qCInfo(lcLauncher).noquote() << "Left out a link to a file the download doesn't have:" << link.first;
+    }
 
     archive_read_close(reader);
     archive_read_free(reader);
