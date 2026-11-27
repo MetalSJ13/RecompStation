@@ -16,6 +16,8 @@ Button {
     property color waveColor: "#3d8bff"
     // The Still pattern shown in the preview ("gradient", "crt", ...).
     property string pattern: "gradient"
+    // The Moving scene shown in the preview ("waves", "stars", ...).
+    property string scene: "waves"
     property bool compact: false
 
     activeFocusOnTab: true
@@ -53,10 +55,11 @@ Button {
                 topColor: theme.backgroundTop
                 bottomColor: theme.backgroundBottom
             }
-            // A still frame of the waves in the chosen color.
+            // A still frame of the Moving scene in the chosen color.
             WaveBackground {
                 anchors.fill: parent
                 visible: tile.styleValue === "animated"
+                scene: tile.scene
                 waveColor: tile.waveColor
                 topColor: theme.backgroundTop
                 bottomColor: theme.backgroundBottom

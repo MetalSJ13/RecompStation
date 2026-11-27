@@ -1,6 +1,9 @@
 import QtQuick
 
-// Animated "Waves" background, drawn live on the GPU by shaders/waves.frag.
+// The Moving background, drawn live on the GPU. scene picks the shader:
+//   "waves" (shaders/waves.frag), "stars" (stars.frag), "lights"
+//   (lights.frag) or "flow" (flow.frag). All four take the same color,
+//   motion and quality settings.
 //  - quality: share of the full resolution the shader renders at (1.0, 0.75
 //    or 0.5); lower values are scaled up smoothly and cost far less on
 //    integrated or older GPUs.
@@ -13,6 +16,7 @@ import QtQuick
 Item {
     id: root
 
+    property string scene: "waves"
     property color waveColor: "#3d8bff"
     property color topColor: "#172b40"
     property color bottomColor: "#0b111b"
@@ -25,6 +29,7 @@ Item {
 
     readonly property real pixelRatio: Screen.devicePixelRatio > 0 ? Screen.devicePixelRatio : 1
     readonly property bool shaderSupported: GraphicsInfo.api !== GraphicsInfo.Software
+    readonly property string shaderName: ["waves", "stars", "lights", "flow"].indexOf(scene) >= 0 ? scene : "waves"
 
     Rectangle {
         anchors.fill: parent
@@ -52,7 +57,10 @@ Item {
             property color waveColor: root.waveColor
             property color topColor: root.topColor
             property color bottomColor: root.bottomColor
-            fragmentShader: "qrc:/shaders/waves.frag.qsb"
+            // Rendered pixels per logical pixel (the stars are sized in
+            // logical pixels so they look the same on every screen).
+            property real pixel: root.pixelRatio * root.quality
+            fragmentShader: "qrc:/shaders/" + root.shaderName + ".frag.qsb"
         }
     }
 

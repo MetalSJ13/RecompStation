@@ -206,13 +206,16 @@ qt_add_qml_module(RecompStationApp
         assets/logo/png/recompstation-icon-256.png
 )
 
-# Library background shaders (waves, and the Still patterns), compiled to
+# Library background shaders (the Moving scenes and the Still patterns), compiled to
 # .qsb (Qt Shader Tools) and served as qrc:/shaders/<name>.frag.qsb.
 qt_add_shaders(RecompStationApp "recompstation_shaders"
     PREFIX "/"
     FILES
         shaders/waves.frag
         shaders/retro.frag
+        shaders/stars.frag
+        shaders/lights.frag
+        shaders/flow.frag
 )
 
 # GCC 16 enables -Wsfinae-incomplete by default. Qt 6's generated moc code

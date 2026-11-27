@@ -72,6 +72,9 @@ ApplicationWindow {
         // window.stillPatterns (drawn by RetroBackground.qml). New installs
         // switch to "crt" in first-time setup (Component.onCompleted).
         property string stillPattern: "gradient"
+        // Moving background: a scene from window.movingScenes, drawn live
+        // by WaveBackground.qml.
+        property string movingScene: "waves"
         Component.onCompleted: {
         syncLibraryOrder()
             if (wavePalette !== "migrated") {
@@ -1277,7 +1280,7 @@ ApplicationWindow {
         case "Background": {
             const type = settingsManager.libraryBackgroundType
             if (type === "animated")
-                return "Waves · " + window.wavePreset(libraryVisualSettings.waveColor).label
+                return window.movingScene(libraryVisualSettings.movingScene).label + " · " + window.wavePreset(libraryVisualSettings.waveColor).label
             if (type === "custom")
                 return settingsManager.customLibraryBackground.length > 0 ? "Image" : "Image · none chosen"
             return "Still · " + window.stillPattern(libraryVisualSettings.stillPattern).label
@@ -1314,6 +1317,28 @@ ApplicationWindow {
         { label: "Dithered sunset", value: "sunset" },
         { label: "Circuit board", value: "circuit" }
     ]
+    // The Moving background's scenes (approved 2026-11-27): at most four,
+    // like Still. All take the Color, Motion and Quality settings.
+    readonly property var movingScenes: [
+        { label: "Waves", value: "waves",
+          colorHint: "The color of the ribbons.", motionHint: "Calm drifts slowly; Lively moves faster." },
+        { label: "Twinkling stars", value: "stars",
+          colorHint: "Some stars take this color; the rest stay white.",
+          motionHint: "How quickly the stars twinkle, and how often a shooting star passes." },
+        { label: "Floating lights", value: "lights",
+          colorHint: "The color of the lights and the glow beneath them.", motionHint: "How quickly the lights rise and shimmer." },
+        { label: "Color flow", value: "flow",
+          colorHint: "The main color; the other pools are its neighbours on the color wheel.",
+          motionHint: "How quickly the colors drift and blend." }
+    ]
+    function movingScene(value) {
+        for (let i = 0; i < movingScenes.length; ++i) {
+            if (movingScenes[i].value === value)
+                return movingScenes[i]
+        }
+        return movingScenes[0]
+    }
+    readonly property var movingSceneValue: movingScene(libraryVisualSettings.movingScene).value
     function stillPattern(value) {
         for (let i = 0; i < stillPatterns.length; ++i) {
             if (stillPatterns[i].value === value)
@@ -4101,7 +4126,7 @@ ApplicationWindow {
                 }
             }
 
-            // Waves: drawn live by a GPU shader (WaveBackground.qml). The animation
+            // Moving: drawn live by a GPU shader (WaveBackground.qml). The animation
             // pauses (keeping its current frame) under Reduced motion, while a game
             // is running, and when the window is inactive or minimized.
             WaveBackground {
@@ -4109,6 +4134,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 visible: currentPage === "Library"
                     && settingsManager.libraryBackgroundType === "animated"
+                scene: window.movingSceneValue
                 waveColor: window.waveColorValue
                 topColor: theme.backgroundTop
                 bottomColor: theme.backgroundBottom
@@ -6661,7 +6687,7 @@ ApplicationWindow {
                                         Repeater {
                                             model: [
                                                 { value: "static", title: "Still", description: window.stillPattern(libraryVisualSettings.stillPattern).label },
-                                                { value: "animated", title: "Waves", description: "Animated ribbons" },
+                                                { value: "animated", title: "Moving", description: window.movingScene(libraryVisualSettings.movingScene).label },
                                                 { value: "custom", title: "Image", description: "Your own wallpaper" }
                                             ]
                                             delegate: BackgroundStyleTile {
@@ -6675,6 +6701,7 @@ ApplicationWindow {
                                                 wallpaper: settingsManager.customLibraryBackground
                                                 waveColor: window.waveColorValue
                                                 pattern: window.stillPattern(libraryVisualSettings.stillPattern).value
+                                                scene: window.movingSceneValue
                                                 onClicked: settingsManager.libraryBackgroundType = modelData.value
                                             }
                                         }
@@ -6711,13 +6738,43 @@ ApplicationWindow {
 
                                     SettingsGroupLabel {
                                         visible: settingsManager.libraryBackgroundType === "animated"
-                                        text: "WAVES"
+                                        text: "SCENE"
+                                    }
+                                    // Moving's scenes, shown while Moving is chosen (as the
+                                    // patterns are for Still). Each preview is a paused frame.
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        columns: width >= 520 ? 4 : 2
+                                        columnSpacing: 8
+                                        rowSpacing: 8
+                                        Repeater {
+                                            model: window.movingScenes
+                                            delegate: BackgroundStyleTile {
+                                                required property var modelData
+                                                Layout.fillWidth: true
+                                                Layout.preferredWidth: 1
+                                                implicitHeight: 104
+                                                styleValue: "animated"
+                                                scene: modelData.value
+                                                waveColor: window.waveColorValue
+                                                title: modelData.label
+                                                compact: true
+                                                current: window.movingSceneValue === modelData.value
+                                                onClicked: libraryVisualSettings.movingScene = modelData.value
+                                            }
+                                        }
+                                    }
+                                    SettingsGroupLabel {
+                                        visible: settingsManager.libraryBackgroundType === "animated"
+                                        text: window.movingScene(libraryVisualSettings.movingScene).label.toUpperCase()
                                     }
                                     SettingRow {
                                         visible: settingsManager.libraryBackgroundType === "animated"
                                         title: "Color"
                                         description: libraryVisualSettings.waveColor === "theme" ? "Follows your theme's accent."
-                                            : libraryVisualSettings.waveColor === "custom" ? "Pick the hue below." : ""
+                                            : libraryVisualSettings.waveColor === "custom" ? "Pick the hue below."
+                                            : window.movingScene(libraryVisualSettings.movingScene).colorHint
                                         ColorSwatchPicker {
                                             options: window.waveColorPresets
                                             value: libraryVisualSettings.waveColor
@@ -6740,7 +6797,7 @@ ApplicationWindow {
                                         title: "Motion"
                                         description: settingsManager.reducedMotion
                                             ? "Paused while Reduced motion is on (Appearance)."
-                                            : "Calm drifts slowly; Lively moves faster."
+                                            : window.movingScene(libraryVisualSettings.movingScene).motionHint
                                         ValueCycler {
                                             options: [
                                                 { label: "Calm", value: "calm" },
@@ -6755,7 +6812,7 @@ ApplicationWindow {
                                         visible: settingsManager.libraryBackgroundType === "animated"
                                         title: "Quality"
                                         description: softwareGraphics
-                                            ? "This computer draws without a graphics card, so Auto keeps the waves light."
+                                            ? "This computer draws without a graphics card, so Auto keeps the scene light."
                                             : "Lower settings are easier on older or built-in graphics."
                                         ValueCycler {
                                             options: [
@@ -8892,6 +8949,7 @@ ApplicationWindow {
                                         WaveBackground {
                                             anchors.fill: parent
                                             visible: settingsManager.libraryBackgroundType === "animated"
+                                            scene: window.movingSceneValue
                                             waveColor: window.waveColorValue
                                             topColor: theme.backgroundTop
                                             bottomColor: theme.backgroundBottom
