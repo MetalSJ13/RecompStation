@@ -4,12 +4,14 @@
 # commit message says [windows] (and the commit changes one of the paths
 # below: a commit that changes only DEVELOPMENT.md starts nothing); pushes to
 # ui/interface-redesign and main (merges) always run it, and so does the
-# Actions tab once it is on main.
+# Actions tab once it is on main. A tag such as v0.2.0 adds the zip to the
+# release the Linux workflow drafts for that tag.
 name: Windows build
 
 on:
   workflow_dispatch:
   push:
+    tags: ['v*']
     branches: ['**']
     # Any change to the program, so the Windows build stays working.
     paths:
@@ -23,12 +25,13 @@ on:
       - 'shaders/**'
 
 permissions:
-  contents: read
+  contents: write   # adding the zip to a drafted release
 
 jobs:
   windows-x86_64:
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.ref_type == 'tag' ||
       github.ref == 'refs/heads/main' ||
       github.ref == 'refs/heads/ui/interface-redesign' ||
       contains(github.event.head_commit.message, '[windows]')
@@ -155,3 +158,32 @@ jobs:
           name: RecompStation-windows-x86_64
           path: dist/*.zip
           if-no-files-found: error
+
+      # The Linux workflow drafts the release for the tag; this waits for it
+      # (up to 40 minutes), then adds the zip and its line in SHA256SUMS.
+      - name: Add the zip to the drafted release
+        if: github.ref_type == 'tag' && steps.build.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          for attempt in $(seq 1 80); do
+            gh release view "$tag" --json isDraft >/dev/null 2>&1 && break
+            if [ "$attempt" = 80 ]; then echo "No release drafted for $tag"; exit 1; fi
+            sleep 30
+          done
+          # SHA256SUMS only once the Linux files are on the release.
+          for attempt in $(seq 1 20); do
+            gh release download "$tag" --pattern SHA256SUMS --dir "$RUNNER_TEMP" --clobber 2>/dev/null && break
+            sleep 15
+          done
+          cd dist
+          zip="$(ls *.zip)"
+          gh release upload "$tag" "$zip" --clobber
+          if [ -f "$RUNNER_TEMP/SHA256SUMS" ]; then
+            grep -v "  $zip\$" "$RUNNER_TEMP/SHA256SUMS" > SHA256SUMS || true
+            sha256sum "$zip" >> SHA256SUMS
+            gh release upload "$tag" SHA256SUMS --clobber
+          fi

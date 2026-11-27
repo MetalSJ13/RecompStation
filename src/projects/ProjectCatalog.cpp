@@ -209,7 +209,8 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
         static const QRegularExpression key(QStringLiteral("^[A-Za-z][A-Za-z0-9_.]{0,40}$"));
         static const QRegularExpression section(QStringLiteral("^[A-Za-z][A-Za-z0-9_ .]{0,30}$"));
         static const QStringList keyed{QStringLiteral("quotedkey"), QStringLiteral("keyvalue"),
-                                       QStringLiteral("inikey"), QStringLiteral("jsonkey")};
+                                       QStringLiteral("inikey"), QStringLiteral("jsonkey"),
+                                       QStringLiteral("jsonlist")};
         const QJsonArray files = object.value(QStringLiteral("selectFiles")).toArray();
         if (files.isEmpty() || files.size() > 3)
             return false;
@@ -225,7 +226,7 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
             const QString sectionName = entry.value(QStringLiteral("section")).toString();
             if (!(QStringList{QStringLiteral("whole"), QStringLiteral("firstline"), QStringLiteral("listline")}
                       .contains(format) || keyed.contains(format))
-                || !validFileName(file)
+                || !validRelativePath(file)   // in at most one subfolder ("session/launcher.json")
                 || keyed.contains(format) == keyName.isEmpty()
                 || (!keyName.isEmpty() && !key.match(keyName).hasMatch())
                 || (!sectionName.isEmpty() && (format != QStringLiteral("inikey") || !section.match(sectionName).hasMatch())))

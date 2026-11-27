@@ -10,20 +10,32 @@ Installed, given the game and started through RecompStation.
 
 - [x] Banjo-Kazooie
 - [x] Banjo-Tooie
+- [x] Body Harvest
 - [x] Bomberman 64
 - [x] Bomberman Hero
 - [x] Conker's Bad Fur Day
 - [x] Diddy Kong Racing
 - [x] Donkey Kong 64
+- [x] Dr. Mario 64
+- [x] F-Zero X
+- [x] Harvest Moon 64
 - [x] The Legend of Zelda: Majora's Mask
 - [x] The Legend of Zelda: Ocarina of Time
 - [x] Mario Kart 64
+- [x] Mario Party
+- [x] Mario Party 2
+- [x] Mario Party 3
 - [x] Mega Man 64
+- [x] Mission: Impossible
 - [x] Paper Mario
 - [x] Perfect Dark
+- [x] Pilotwings 64
 - [x] Pokémon Snap
+- [x] Quest 64
+- [x] Snowboard Kids
 - [x] Star Fox 64
 - [x] Super Mario 64
+- [x] Super Smash Bros.
 - [x] Yoshi's Story
 
 ### GameCube
@@ -57,28 +69,16 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] BattleTanx: Global Assault
 - [ ] Beetle Adventure Racing!
 - [ ] Blast Corps
-- [ ] Body Harvest
-- [ ] Dr. Mario 64
 - [ ] Duke Nukem: Zero Hour
-- [ ] F-Zero X
 - [ ] Glover
 - [ ] GoldenEye 007
-- [ ] Harvest Moon 64
 - [ ] Hybrid Heaven
 - [ ] Jet Force Gemini
 - [ ] Mario Golf
-- [ ] Mario Party
-- [ ] Mario Party 2
-- [ ] Mario Party 3
-- [ ] Mission: Impossible
-- [ ] Pilotwings 64
-- [ ] Quest 64
 - [ ] Rush 2: Extreme Racing USA
-- [ ] Snowboard Kids
 - [ ] Snowboard Kids 2
 - [ ] Space Station Silicon Valley
 - [ ] Star Wars: Shadows of the Empire
-- [ ] Super Smash Bros.
 - [ ] Turok 2: Seeds of Evil
 - [ ] Turok: Rage Wars
 - [ ] Wave Race 64

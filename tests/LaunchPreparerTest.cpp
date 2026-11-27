@@ -6,6 +6,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTemporaryDir>
@@ -819,6 +820,26 @@ void LaunchPreparerTest::selectFileIniAndJsonKeys()
     QJsonObject object = QJsonDocument::fromJson(readFile(jsonFile)).object();
     QCOMPARE(object.value(QStringLiteral("backend.discPath")).toString(), game);
     QCOMPARE(object.value(QStringLiteral("version")).toInt(), 2);
+    // jsonlist: the game first in a list of recent paths, in a subfolder;
+    // its older entry (a path or {"path": …}) taken out, others kept.
+    const QVariantMap recent = project({{QStringLiteral("file"), QStringLiteral("session/launcher.json")},
+                                        {QStringLiteral("format"), QStringLiteral("jsonlist")},
+                                        {QStringLiteral("key"), QStringLiteral("recent_roms")}});
+    const QString recentFile = QDir(install).filePath(QStringLiteral("session/launcher.json"));
+    preparer.prepare(recent, game, install, opts);
+    QCOMPARE(QJsonDocument::fromJson(readFile(recentFile)).object().value(QStringLiteral("recent_roms")).toArray(),
+             QJsonArray{game});
+    QVERIFY(writeFile(recentFile, QByteArray("{\"active_profile\": \"default\", \"recent_roms\": "
+                                             "[{\"path\": \"other.z64\", \"game_id\": \"bh.us\"}, {\"path\": \"")
+                                      + game.toUtf8() + QByteArray("\", \"game_id\": \"bh.us\"}]}")));
+    preparer.prepare(recent, game, install, opts);
+    object = QJsonDocument::fromJson(readFile(recentFile)).object();
+    const QJsonArray recentRoms = object.value(QStringLiteral("recent_roms")).toArray();
+    QCOMPARE(recentRoms.size(), 2);
+    QCOMPARE(recentRoms.at(0).toString(), game);
+    QCOMPARE(recentRoms.at(1).toObject().value(QStringLiteral("path")).toString(), QStringLiteral("other.z64"));
+    QCOMPARE(object.value(QStringLiteral("active_profile")).toString(), QStringLiteral("default"));
+
     // A file that isn't plain JSON is left alone, and the step says so.
     const QByteArray commented("// mine\n{\"version\": 2}\n");
     QVERIFY(writeFile(jsonFile, commented));

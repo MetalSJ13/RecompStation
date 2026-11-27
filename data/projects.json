@@ -1529,10 +1529,10 @@
       "romRequirements": "Requires your own US Quest 64 ROM; the project does not include game assets.",
       "romFile": "Quest 64 (USA) ROM",
       "builds": {
-        "linux-x86_64": {
-          "assetNameRegex": "^Quest64Recompiled(?!.*(arm64|debug|flatpak|appimage|windows|macos)).*linux.*\\.zip$",
+        "windows-x86_64": {
+          "assetNameRegex": "^Quest64Recompiledv?[0-9.]+\\.zip$",
           "packageFormat": "zip",
-          "executablePath": "Quest64Recompiled"
+          "executablePath": "Quest64Recompiled.exe"
         }
       },
       "launch": {
@@ -2097,8 +2097,25 @@
       ],
       "repositoryOwner": "LunarLaurus",
       "repositoryName": "adams-ant-farm-recomp",
-      "romRequirements": "Requires your own Body Harvest ROM (USA, or the European preview). No game data is included. Choose the ROM in its launcher (bh-launcher) the first time.",
+      "romRequirements": "Requires your own Body Harvest ROM (USA, or the European preview). No game data is included. RecompStation selects it in the launcher (bh-launcher) for you.",
       "romFile": "Body Harvest (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "session/launcher.json",
+            "format": "jsonlist",
+            "key": "recent_roms"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already chosen; press Play there."
+      },
       "builds": {
         "linux-x86_64": {
           "assetNameRegex": "^adams-ant-farm-linux-x86_64-v[0-9.]+\\.tar\\.gz$",

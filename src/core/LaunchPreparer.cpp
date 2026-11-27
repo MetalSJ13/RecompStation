@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSaveFile>
@@ -219,7 +220,8 @@ QString quoted(const QString &value)
 // `key "value"` line replaced, other lines kept), keyvalue (a `key=value`
 // line with \\, \n and \r escaped, replaced, other lines kept), inikey (a
 // `key=value` line as it is, in [section] when one is given, other lines
-// kept) or jsonkey (a top-level "key" of a JSON object, other keys kept).
+// kept), jsonkey (a top-level "key" of a JSON object, other keys kept) or
+// jsonlist (the path put first in a top-level list of recent paths).
 // False when it can't be written; *changed says whether the file changed.
 bool writeSelectFile(const QString &path, const QString &format, const QString &key,
                      const QString &section, const QString &value, bool *changed)
@@ -251,6 +253,35 @@ bool writeSelectFile(const QString &path, const QString &format, const QString &
             return true;
         }
         object.insert(key, value);
+        text = QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Indented));
+    } else if (format == QStringLiteral("jsonlist")) {
+        // A top-level list of paths, most recent first ("recent_roms"): the
+        // game goes first; entries for it, as a path or as {"path": …},
+        // are taken out; the rest stay. Not a plain JSON object, or the key
+        // isn't a list: left alone.
+        QJsonObject object;
+        if (!existing.trimmed().isEmpty()) {
+            QJsonParseError error;
+            const QJsonDocument document = QJsonDocument::fromJson(existing.toUtf8(), &error);
+            if (error.error != QJsonParseError::NoError || !document.isObject())
+                return false;
+            object = document.object();
+        }
+        const QJsonValue current = object.value(key);
+        if (!current.isUndefined() && !current.isArray())
+            return false;
+        const QJsonArray list = current.toArray();
+        if (!list.isEmpty() && (list.first().toString() == value
+                                || list.first().toObject().value(QStringLiteral("path")).toString() == value)) {
+            *changed = false;
+            return true;
+        }
+        QJsonArray updated{value};
+        for (const QJsonValue &entry : list) {
+            if (entry.toString() != value && entry.toObject().value(QStringLiteral("path")).toString() != value)
+                updated.append(entry);
+        }
+        object.insert(key, updated);
         text = QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Indented));
     } else if (format == QStringLiteral("inikey")) {
         QStringList lines = existing.split(QLatin1Char('\n'));

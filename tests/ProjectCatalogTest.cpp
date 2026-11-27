@@ -582,6 +582,9 @@ void ProjectCatalogTest::parsesLaunchRecipes()
         R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.ini", "format": "keyvalue", "key": "a", "section": "game"}]})",
         R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.ini", "format": "inikey", "key": "a", "section": "[x]"}]})",
         R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a.json", "format": "jsonkey", "key": "a\"b"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "a/b/c.json", "format": "jsonlist", "key": "a"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "../c.json", "format": "jsonlist", "key": "a"}]})",
+        R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "file": "c.json", "format": "jsonlist"}]})",
         R"({"method": "selectfile", "selectFiles": [{"folder": "launcher", "linuxBase": "config", "file": "a.cfg", "format": "whole"}]})",
         R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "windowsBase": "system32", "file": "a.cfg", "format": "whole"}]})",
         R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "a", "linuxBase": "cache", "file": "a.cfg", "format": "whole"}]})",
@@ -630,7 +633,8 @@ void ProjectCatalogTest::parsesLaunchRecipes()
 
     const QByteArray ini = R"({"method": "selectfile", "selectFiles": [{"folder": "userdata", "appName": "Game",
         "linuxBase": "config", "windowsBase": "local", "file": "game.ini", "format": "inikey", "key": "disc",
-        "section": "game"}, {"folder": "launcher", "file": "config.json", "format": "jsonkey", "key": "backend.discPath"}]})";
+        "section": "game"}, {"folder": "launcher", "file": "config.json", "format": "jsonkey", "key": "backend.discPath"},
+        {"folder": "launcher", "file": "session/launcher.json", "format": "jsonlist", "key": "recent_roms"}]})";
     QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(ini), &projects, &error), qPrintable(error));
     const QVariantList files = projects.first().toMap().value("launch").toMap().value("selectFiles").toList();
     QCOMPARE(files.first().toMap().value("section").toString(), QStringLiteral("game"));
