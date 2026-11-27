@@ -803,8 +803,11 @@ void ProjectCatalogTest::acceptsOnlyPortableWindowsBuilds()
     QVERIFY(ProjectCatalog::parseCatalog(windowsRule("executable", "Game.exe"), &projects, &error));
     // No program name: the installer picks the download's main .exe.
     QVERIFY(ProjectCatalog::parseCatalog(windowsRule("zip", ""), &projects, &error));
+    // A tar archive is fine when it names its program (tmc publishes one).
+    QVERIFY(ProjectCatalog::parseCatalog(windowsRule("tar.gz", "Game.exe"), &projects, &error));
+    QVERIFY(ProjectCatalog::parseCatalog(windowsRule("tar.xz", "Game/Game.exe"), &projects, &error));
+    QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("tar.gz", ""), &projects, &error));
     // Not portable, or not a Windows program.
-    QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("tar.gz", "Game.exe"), &projects, &error));
     QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("appimage", "Game.exe"), &projects, &error));
     QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("msi", "Game.exe"), &projects, &error));
     QVERIFY(!ProjectCatalog::parseCatalog(windowsRule("zip", "Game.sh"), &projects, &error));
