@@ -49,6 +49,6 @@ Each game in the library is one entry with one details page. Its metadata (title
 ## Not planned or not yet done
 
 - ScreenScraper and other artwork providers are not planned; artwork comes from LaunchBox and TheGamesDB.
-- Fix match: a Game Details action to search either provider and pick the right game (planned).
-- Bounded retry and backoff for HTTP 429 and 5xx responses (planned).
+- Fix match: a Game Details action to search either provider and pick the right game (an idea for later, not planned yet).
+- Bounded retry and backoff for HTTP 429 and 5xx responses (an idea for later, not planned yet).
 - Matching by ROM hash: N64 ROM hashes are computed for launch checks (`N64RomHash`), not yet used for metadata.

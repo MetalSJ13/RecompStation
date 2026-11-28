@@ -1,6 +1,8 @@
 # RecompStation Development History
 
 > Archived on 2026-11-23. This is the detailed, step-by-step record of the work up to the Settings redesign and first-time setup, kept for reference (where logic lives, why decisions were made). The current roadmap and open work are in `DEVELOPMENT.md` at the repository root; items left unchecked below were either carried over there or retired.
+>
+> Open items below are kept as they were written; anything still planned is in `DEVELOPMENT.md`. The compatibility list is now `COMPATIBILITY.md`.
 
 This document is the authoritative development status and implementation order for RecompStation. The immediate focus is a user-experience redesign, followed by the library automation needed to make metadata maintenance hands-off, then the remaining launcher and platform work.
 
@@ -561,7 +563,7 @@ The following notes record focused implementation and user-validation updates. T
 - [ ] Review contrast, accessible labels, tab order, and scaling (global small/medium/large font sizes and reduced-motion preference implemented; validate locally)
 - [ ] Add lightweight navigation sounds with volume controls
 - [x] Validate Windowed, Fullscreen, and Maximized display modes and applying the preferred custom window size. User confirmed all four behaviors work.
-- [ ] Validate multi-display behavior and compositor placement across monitors.
+- [ ] Validate multi-display behavior and compositor placement across monitors. *(Dropped 2026-11-28: not planned.)*
 - [x] Run the full build and regression suite; manually exercise existing workflows. **User-confirmed 2026-11-22:** `./scripts/build.sh --test` completed successfully; all 19/19 CTest suites passed and the executable was produced. SDL2 controller support was enabled. The non-fatal `WrapVulkanHeaders` missing-header warning remains.
 - [ ] Fix regressions before considering the UI milestone complete
 

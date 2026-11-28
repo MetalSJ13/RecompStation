@@ -57,15 +57,15 @@ Four views share the same filtered games, selection and system choice. The view 
 ### Backgrounds
 
 Settings › Background, Library only:
-- **Gradient:** static, in the theme's colours (default).
-- **Waves:** two ribbons of thin glowing lines drawn live by a GPU shader (`shaders/waves.frag`, `WaveBackground.qml`): colour presets, the theme accent or a custom hue; Motion (Calm / Normal / Lively); Quality (Auto, High, Balanced at 75% resolution, Low at half resolution and 30 fps). It pauses on its current frame under Reduced motion, while a game runs, and when the window is inactive or minimized. Qt's software renderer falls back to the gradient.
+- **Still:** one tile with four patterns in the theme's colours, previewed when the tile is opened: Gradient, CRT glow (the default for new installs), Dithered sunset and Circuit board (`shaders/retro.frag`, `RetroBackground.qml`, drawn once into a cached layer).
+- **Moving:** one tile with four scenes drawn live by GPU shaders (`WaveBackground.qml`): Waves (two ribbons of thin glowing lines), Twinkling stars, Floating lights and Colour flow (`shaders/waves.frag`, `stars.frag`, `lights.frag`, `flow.frag`). Colour presets, the theme accent or a custom hue; Motion (Calm / Normal / Lively); Quality (Auto, High, Balanced at 75% resolution, Low at half resolution and 30 fps). It pauses on its current frame under Reduced motion, while a game runs, and when the window is inactive or minimized. Qt's software renderer falls back to the gradient.
 - **Image:** the user's still image (PNG, JPEG, WebP), decoded at screen size; Fill (crop) or Fit (whole image over a blurred copy) and an adjustable Dim.
 
 No wallpaper editor and no arbitrary colour or layout controls.
 
 ## Game Details
 
-A full-window overlay over the Library. Back to Library (B, Esc or the button) returns to the same selection; LB/RB switch to the previous or next game, with the position ("N of M") in the corner.
+A full-window overlay over the Library. Back to Library (B, Esc or the button) returns to the same selection; LB/RB switch to the previous or next game, sliding the page in from that side with the shoulder-button sound, with the position ("N of M") in the corner. Menu/Start opens the system menu on top of Game Details; closing it returns to the same game and button.
 
 **Hero.** The first screenshot as a backdrop, the cover at its true shape, chips for the system and the recompilation project with its state ("Installed", "Available"), the title, year and rating.
 
@@ -91,7 +91,7 @@ Layout: a category rail on the left, each entry with a one-line summary of its c
 
 - **Appearance:** theme tiles (each a miniature Library in its colours; selecting applies and saves), Text size, Reduced motion, and Sounds (Interface sounds on/off, volume).
 - **Display:** Interface scale (Auto from the screen's logical height, or 75–200%; applied at startup, so changing it offers a restart that reopens this page), Windowed / Maximized / Fullscreen, and window-size presets for Windowed mode. The screen is shown for information; RecompStation never changes the monitor's mode.
-- **Background:** Gradient, Waves or Image, with their options (see Backgrounds).
+- **Background:** Still, Moving or Image, with their options (see Backgrounds).
 - **Library:** library folder and system folders, Add games, startup scan and manual scan, and Playing (prepare games for their launcher, start games in fullscreen).
 - **Metadata:** provider cards (LaunchBox with catalog download, update, size and any systems missing from an old catalog; TheGamesDB with the user's own key, stored privately, its connection and requests left), which provider is asked first (LaunchBox by default), automatic matching and artwork switches, and Refresh all metadata.
 - **Controller:** connected devices, a drawing of the controller with a live button test, button symbols, and remapping. Capturing a button shows clear states: let go first, listening with a 15-second countdown, replacing (old inputs struck out), added (with a warning when another action uses it), and nothing pressed; other rows dim. No sounds while mapping.
