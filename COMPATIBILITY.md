@@ -43,6 +43,7 @@ Installed, given the game and started through RecompStation.
 - [x] Star Fox 64
 - [x] Super Mario 64
 - [x] Super Smash Bros.
+- [x] Toy Story 2: Buzz Lightyear to the Rescue!
 - [x] Turok 2: Seeds of Evil
 - [x] Turok: Rage Wars
 - [x] Yoshi's Story
@@ -107,7 +108,6 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Jet Force Gemini
 - [ ] Space Station Silicon Valley
 - [ ] Star Wars: Shadows of the Empire
-- [ ] Toy Story 2: Buzz Lightyear to the Rescue!
 - [ ] Wave Race 64
 - [ ] WWF No Mercy
 
