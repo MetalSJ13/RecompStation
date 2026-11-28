@@ -104,6 +104,43 @@ void GitHubManagerTest::picksNewestNonDraftReleaseFromList()
     QVERIFY(!GitHubManager::parseNewestReleaseFromList("{}", &release, &error));
 }
 
+// Projects that publish Linux and Windows in separate releases (Wario
+// Land 4): the newest release with a file for this system is used.
+void GitHubManagerTest::picksNewestReleaseWithThisSystemsFile()
+{
+    const auto asset = [](const char *tag, const char *name) {
+        return QStringLiteral(R"({"name": "%2", "browser_download_url": "https://github.com/o/r/releases/download/%1/%2", "content_type": "application/octet-stream", "size": 10})")
+            .arg(QLatin1String(tag), QLatin1String(name));
+    };
+    const QString json = QStringLiteral(R"([
+        {"tag_name": "v0.4.0-beta", "draft": false, "prerelease": true, "assets": [%1]},
+        {"tag_name": "v0.3.2-beta", "draft": false, "prerelease": false, "assets": [%2]},
+        {"tag_name": "linux-v0.1.1-beta", "draft": false, "prerelease": true, "assets": [%3]},
+        {"tag_name": "linux-v0.1.0-beta", "draft": false, "prerelease": false, "assets": [%4]}
+    ])").arg(asset("v0.4.0-beta", "WL4-v0.4.0-beta-Windows-x64.zip"),
+             asset("v0.3.2-beta", "WL4-v0.3.2-beta-Windows-x64.zip"),
+             asset("linux-v0.1.1-beta", "Wario_Land_4-v0.1.1-beta-x86_64.AppImage"),
+             asset("linux-v0.1.0-beta", "Wario_Land_4-v0.1.0-beta-x86_64.AppImage"));
+    const QByteArray data = json.toUtf8();
+    const QString linuxPattern = QStringLiteral("^Wario_Land_4-v[0-9.]+(-beta)?-x86_64\\.AppImage$");
+    const QString windowsPattern = QStringLiteral("-Windows-x64\\.zip$");
+
+    GitHubRelease release;
+    QString error;
+    // Full releases first, unless the project asks for pre-releases.
+    QVERIFY2(GitHubManager::parseNewestReleaseFromList(data, &release, &error, linuxPattern, true), qPrintable(error));
+    QCOMPARE(release.tagName, QStringLiteral("linux-v0.1.0-beta"));
+    QVERIFY(GitHubManager::parseNewestReleaseFromList(data, &release, &error, linuxPattern, false));
+    QCOMPARE(release.tagName, QStringLiteral("linux-v0.1.1-beta"));
+    QVERIFY(GitHubManager::parseNewestReleaseFromList(data, &release, &error, windowsPattern, true));
+    QCOMPARE(release.tagName, QStringLiteral("v0.3.2-beta"));
+    QVERIFY(GitHubManager::releaseHasAsset(release, windowsPattern));
+    QVERIFY(!GitHubManager::releaseHasAsset(release, linuxPattern));
+    // Nothing for this system: not found, with an explanation.
+    QVERIFY(!GitHubManager::parseNewestReleaseFromList(data, &release, &error, QStringLiteral("-macos\\.zip$"), true));
+    QVERIFY(!error.isEmpty());
+}
+
 void GitHubManagerTest::convertsReleaseToQmlData()
 {
     GitHubRelease release;

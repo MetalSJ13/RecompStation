@@ -2577,8 +2577,12 @@ ApplicationWindow {
             assets: previous.assets || []
         }
         releaseStates = nextStates
+        // The build's file pattern lets a project that publishes each
+        // system in its own release be found (Wario Land 4's Linux release).
+        const rules = projectCatalog.buildRules(project.id, window.launcherBuild(project))
         const requestId = githubManager.fetchLatestRelease(
-            project.repositoryOwner, project.repositoryName, project.includePrereleases === true)
+            project.repositoryOwner, project.repositoryName, project.includePrereleases === true,
+            String((rules && rules.assetNameRegex) || ""))
         let pending = Object.assign({}, pendingReleaseRequests)
         pending[requestId] = project.id
         pendingReleaseRequests = pending

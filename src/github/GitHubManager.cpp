@@ -133,7 +133,8 @@ int GitHubManager::fetchRepository(const QString &owner,
 
 int GitHubManager::fetchLatestRelease(const QString &owner,
                                       const QString &repository,
-                                      bool includePrereleases)
+                                      bool includePrereleases,
+                                      const QString &assetPattern)
 {
     const int requestId = m_nextRequestId++;
     const QString cleanOwner = owner.trimmed();
@@ -147,36 +148,49 @@ int GitHubManager::fetchLatestRelease(const QString &owner,
         return requestId;
     }
 
-    requestRelease(requestId, cleanOwner, cleanRepository, includePrereleases);
+    requestRelease(requestId, cleanOwner, cleanRepository,
+                   includePrereleases ? QStringLiteral("list") : QStringLiteral("latest"),
+                   includePrereleases, assetPattern.trimmed());
     return requestId;
 }
 
 void GitHubManager::requestRelease(int requestId, const QString &cleanOwner,
-                                   const QString &cleanRepository, bool fromList)
+                                   const QString &cleanRepository, const QString &stage,
+                                   bool includePrereleases, const QString &assetPattern,
+                                   const GitHubRelease &fallback)
 {
+    const bool fromList = stage != QStringLiteral("latest");
     const QUrl url(fromList
-        ? QStringLiteral("https://api.github.com/repos/%1/%2/releases?per_page=10")
-              .arg(cleanOwner, cleanRepository)
+        ? QStringLiteral("https://api.github.com/repos/%1/%2/releases?per_page=%3")
+              .arg(cleanOwner, cleanRepository,
+                   stage == QStringLiteral("match") ? QStringLiteral("30") : QStringLiteral("10"))
         : QStringLiteral("https://api.github.com/repos/%1/%2/releases/latest")
               .arg(cleanOwner, cleanRepository));
     QNetworkRequest request(url);
     setCommonHeaders(request);
 
     QNetworkReply *reply = m_network.get(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, requestId,
-                                                     cleanOwner, cleanRepository, fromList]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, requestId, cleanOwner,
+                                                     cleanRepository, stage, includePrereleases,
+                                                     assetPattern, fallback]() {
         const int statusCode =
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         const QByteArray response = reply->readAll();
+        reply->deleteLater();
 
         if (reply->error() != QNetworkReply::NoError) {
-            reply->deleteLater();
             // No full release yet: GitHub answers 404 for /releases/latest
             // when a project has only published pre-releases.
-            if (!fromList && statusCode == 404) {
+            if (stage == QStringLiteral("latest") && statusCode == 404) {
                 qCInfo(lcGitHub) << "No full release for" << cleanOwner << "/" << cleanRepository
                                  << "- checking pre-releases";
-                requestRelease(requestId, cleanOwner, cleanRepository, true);
+                requestRelease(requestId, cleanOwner, cleanRepository, QStringLiteral("list"),
+                               includePrereleases, assetPattern);
+                return;
+            }
+            // The newest release was found; only the search further back failed.
+            if (stage == QStringLiteral("match")) {
+                finishRelease(requestId, cleanOwner, cleanRepository, fallback);
                 return;
             }
             const QString message = apiErrorMessage(
@@ -190,36 +204,78 @@ void GitHubManager::requestRelease(int requestId, const QString &cleanOwner,
 
         GitHubRelease release;
         QString error;
-        const bool ok = fromList ? parseNewestReleaseFromList(response, &release, &error)
-                                 : parseLatestReleaseResponse(response, &release, &error);
-        reply->deleteLater();
+        if (stage == QStringLiteral("match")) {
+            // Keep the newest release (and its "no package" explanation)
+            // when no recent release has a file for this system.
+            if (!parseNewestReleaseFromList(response, &release, &error, assetPattern,
+                                            !includePrereleases)) {
+                qCInfo(lcGitHub) << "No recent release of" << cleanOwner << "/" << cleanRepository
+                                 << "has a file for this system";
+                release = fallback;
+            } else {
+                qCInfo(lcGitHub) << "Newest release" << fallback.tagName << "of" << cleanOwner
+                                 << "/" << cleanRepository << "has no file for this system; using"
+                                 << release.tagName;
+            }
+            finishRelease(requestId, cleanOwner, cleanRepository, release);
+            return;
+        }
+
+        const bool ok = stage == QStringLiteral("list")
+            ? parseNewestReleaseFromList(response, &release, &error)
+            : parseLatestReleaseResponse(response, &release, &error);
         if (!ok) {
             emit requestFailed(requestId, error);
             return;
         }
-        QSettings cache;
-        cache.beginGroup(QStringLiteral("GitHubReleaseCache"));
-        cache.setValue(cleanOwner + QLatin1Char('/') + cleanRepository,
-                       QJsonDocument(QJsonObject{
-                           {QStringLiteral("tagName"), release.tagName},
-                           {QStringLiteral("name"), release.name},
-                           {QStringLiteral("htmlUrl"), release.htmlUrl},
-                           {QStringLiteral("publishedAt"), release.publishedAt},
-                           {QStringLiteral("assets"), QJsonDocument::fromVariant(
-                                releaseToVariantMap(release)).object().value(QStringLiteral("assets"))}
-                       }).toJson(QJsonDocument::Compact));
-        cache.endGroup();
-
-        qCInfo(lcGitHub) << "Latest release loaded for" << cleanOwner << "/" << cleanRepository
-                         << "tag:" << release.tagName;
-        emit releaseLoaded(requestId, release);
-        emit releaseDataLoaded(requestId, releaseToVariantMap(release));
+        if (!assetPattern.isEmpty() && !releaseHasAsset(release, assetPattern)) {
+            requestRelease(requestId, cleanOwner, cleanRepository, QStringLiteral("match"),
+                           includePrereleases, assetPattern, release);
+            return;
+        }
+        finishRelease(requestId, cleanOwner, cleanRepository, release);
     });
+}
+
+void GitHubManager::finishRelease(int requestId, const QString &cleanOwner,
+                                  const QString &cleanRepository, const GitHubRelease &release)
+{
+    QSettings cache;
+    cache.beginGroup(QStringLiteral("GitHubReleaseCache"));
+    cache.setValue(cleanOwner + QLatin1Char('/') + cleanRepository,
+                   QJsonDocument(QJsonObject{
+                       {QStringLiteral("tagName"), release.tagName},
+                       {QStringLiteral("name"), release.name},
+                       {QStringLiteral("htmlUrl"), release.htmlUrl},
+                       {QStringLiteral("publishedAt"), release.publishedAt},
+                       {QStringLiteral("assets"), QJsonDocument::fromVariant(
+                            releaseToVariantMap(release)).object().value(QStringLiteral("assets"))}
+                   }).toJson(QJsonDocument::Compact));
+    cache.endGroup();
+
+    qCInfo(lcGitHub) << "Latest release loaded for" << cleanOwner << "/" << cleanRepository
+                     << "tag:" << release.tagName;
+    emit releaseLoaded(requestId, release);
+    emit releaseDataLoaded(requestId, releaseToVariantMap(release));
+}
+
+bool GitHubManager::releaseHasAsset(const GitHubRelease &release, const QString &assetPattern)
+{
+    const QRegularExpression pattern(assetPattern, QRegularExpression::CaseInsensitiveOption);
+    if (!pattern.isValid())
+        return false;
+    for (const GitHubReleaseAsset &asset : release.assets) {
+        if (pattern.match(asset.name).hasMatch())
+            return true;
+    }
+    return false;
 }
 
 bool GitHubManager::parseNewestReleaseFromList(const QByteArray &response,
                                                GitHubRelease *release,
-                                               QString *errorMessage)
+                                               QString *errorMessage,
+                                               const QString &assetPattern,
+                                               bool preferFullReleases)
 {
     QJsonParseError parseError;
     const QJsonDocument document = QJsonDocument::fromJson(response, &parseError);
@@ -229,16 +285,37 @@ bool GitHubManager::parseNewestReleaseFromList(const QByteArray &response,
         return false;
     }
     // GitHub lists releases newest first.
+    bool haveFallback = false;
+    GitHubRelease prerelease;
     for (const QJsonValue &value : document.array()) {
         const QJsonObject object = value.toObject();
         if (object.isEmpty() || object.value(QStringLiteral("draft")).toBool())
             continue;
-        if (parseLatestReleaseResponse(QJsonDocument(object).toJson(QJsonDocument::Compact),
-                                       release, errorMessage))
-            return true;
+        GitHubRelease candidate;
+        QString candidateError;
+        if (!parseLatestReleaseResponse(QJsonDocument(object).toJson(QJsonDocument::Compact),
+                                        &candidate, &candidateError))
+            continue;
+        if (!assetPattern.isEmpty() && !releaseHasAsset(candidate, assetPattern))
+            continue;
+        if (preferFullReleases && object.value(QStringLiteral("prerelease")).toBool()) {
+            if (!haveFallback) {
+                prerelease = candidate;
+                haveFallback = true;
+            }
+            continue;
+        }
+        *release = candidate;
+        return true;
+    }
+    if (haveFallback) {
+        *release = prerelease;
+        return true;
     }
     if (errorMessage)
-        *errorMessage = QStringLiteral("This project has not published a release yet.");
+        *errorMessage = assetPattern.isEmpty()
+            ? QStringLiteral("This project has not published a release yet.")
+            : QStringLiteral("No recent release has a file for this system.");
     return false;
 }
 

@@ -10,6 +10,7 @@ private slots:
     void parsesRepositoryResponse();
     void parsesLatestReleaseAndAssets();
     void picksNewestNonDraftReleaseFromList();
+    void picksNewestReleaseWithThisSystemsFile();
     void convertsReleaseToQmlData();
     void rejectsInvalidRepositoryAndReleaseResponses();
     void rejectsMissingOutputDestinations();

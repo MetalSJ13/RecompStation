@@ -4204,6 +4204,11 @@
         "method": "manual"
       },
       "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Wario_Land_4-v[0-9.]+(-beta)?-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "WarioLand4.AppImage"
+        },
         "windows-x86_64": {
           "assetNameRegex": "^WarioLand4-Native-PC-Port-v[0-9.]+(-beta)?-Windows-x64\\.zip$",
           "packageFormat": "zip",
