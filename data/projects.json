@@ -4999,13 +4999,11 @@
         }
       },
       "launch": {
-        "method": "n64recomp",
-        "dataFolder": "spaceranger",
-        "romFileName": "spaceranger.z64",
-        "romName": "Toy Story 2",
-        "romXxh3": "FD53C5EC8CE2530A",
-        "romVersion": "USA",
-        "graphicsFile": "graphics.json"
+        "method": "placefile",
+        "fileExtensions": ["z64", "n64", "v64"],
+        "placeFile": {"folder": "launcher", "file": "rom/{name}"},
+        "arguments": [],
+        "firstStartNote": "It finds your ROM in its rom folder, where Play puts it, and keeps its own copy after the first start."
       }
     },
     {
