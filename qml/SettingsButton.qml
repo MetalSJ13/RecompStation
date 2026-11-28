@@ -14,6 +14,8 @@ Button {
     // For dialogs read from the couch: the focused button grows a little
     // and gets a thick light ring with an accent glow outside it.
     property bool prominentFocus: false
+    // An action that removes something: filled in the theme's red.
+    property bool danger: false
 
     activeFocusOnTab: true
     focusPolicy: Qt.StrongFocus
@@ -29,11 +31,12 @@ Button {
 
     background: Rectangle {
         radius: 9
-        color: control.primary ? (control.hovered || control.activeFocus ? theme.accentHover : theme.accent)
+        color: control.danger ? (control.hovered || control.activeFocus ? Qt.lighter(theme.error, 1.08) : theme.error)
+            : control.primary ? (control.hovered || control.activeFocus ? theme.accentHover : theme.accent)
             : control.activeFocus ? theme.elevatedSurface
             : control.hovered ? theme.controlHover : theme.surface
         border.color: control.activeFocus
-            ? (control.primary || control.prominentFocus ? theme.textPrimary : theme.accent) : theme.divider
+            ? (control.primary || control.danger || control.prominentFocus ? theme.textPrimary : theme.accent) : theme.divider
         border.width: control.activeFocus ? (control.prominentFocus ? 3 : 2) : 1
         opacity: control.enabled ? 1 : 0.5
 
@@ -66,7 +69,7 @@ Button {
         Label {
             anchors.verticalCenter: parent.verticalCenter
             text: control.text
-            color: control.primary ? theme.accentText : theme.textPrimary
+            color: control.primary || control.danger ? theme.accentText : theme.textPrimary
             font.pixelSize: 13 * theme.fontScale
             font.weight: Font.DemiBold
         }

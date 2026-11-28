@@ -374,6 +374,7 @@ ApplicationWindow {
         const typing = focused && (focused instanceof TextInput || focused instanceof TextEdit)
         return window.visible && currentPage === "Settings"
             && !systemMenuVisible && !typing
+            && !uninstallDialog.visible && !launcherSwitchDialog.visible
             && !controllerManager.mappingCaptureActive
             && window.keyboardDirectionalNavigationAllowed()
     }
@@ -853,7 +854,8 @@ ApplicationWindow {
         activeInputDevice = inputDevice || "controller"
         // Back has somewhere to go unless the Library is already showing
         // with nothing open over it.
-        if (quitConfirmationVisible || updateDialog.visible || window.activeControllerComboBox() || systemPicker.visible
+        if (quitConfirmationVisible || updateDialog.visible || uninstallDialog.visible || launcherSwitchDialog.visible
+                || window.activeControllerComboBox() || systemPicker.visible
                 || newLibraryFolderDialog.visible || libraryFolderDialog.visible
                 || importGamesPopup.visible || firstRunSetup.visible || systemMenuVisible
                 || screenshotViewer.visible || gameDetailsPopup.visible || currentPage !== "Library"
@@ -865,6 +867,14 @@ ApplicationWindow {
         }
         if (updateDialog.visible) {
             updateDialog.back()
+            return
+        }
+        if (uninstallDialog.visible) {
+            uninstallDialog.back()
+            return
+        }
+        if (launcherSwitchDialog.visible) {
+            launcherSwitchDialog.back()
             return
         }
         const openCombo = window.activeControllerComboBox()
@@ -1207,9 +1217,9 @@ ApplicationWindow {
         if (libraryFolderDialog.visible)
             return libraryFolderDialog.contentItem
         if (uninstallDialog.visible)
-            return null
+            return uninstallDialog.contentItem
         if (launcherSwitchDialog.visible)
-            return null
+            return launcherSwitchDialog.contentItem
         if (systemPicker.visible)
             return systemPicker.contentItem
         if (importGamesPopup.visible)
@@ -1785,6 +1795,9 @@ ApplicationWindow {
         }
         function onMenuRequested() {
             window.activeInputDevice = "controller"
+            // A question on screen is answered first.
+            if (!window.systemMenuVisible && (uninstallDialog.visible || launcherSwitchDialog.visible))
+                return
             if (window.systemMenuVisible) {
                 window.closeSystemMenu()
                 window.quitConfirmationVisible = false
@@ -1796,7 +1809,7 @@ ApplicationWindow {
         // the Library page, and switch sections in Settings.
         function onPreviousSectionRequested() {
             window.activeInputDevice = "controller"
-            if (window.systemMenuVisible)
+            if (window.systemMenuVisible || uninstallDialog.visible || launcherSwitchDialog.visible)
                 return
             if (gameDetailsPopup.visible)
                 gameDetailsPopup.switchToAdjacentGame(-1)
@@ -1808,7 +1821,7 @@ ApplicationWindow {
         }
         function onNextSectionRequested() {
             window.activeInputDevice = "controller"
-            if (window.systemMenuVisible)
+            if (window.systemMenuVisible || uninstallDialog.visible || launcherSwitchDialog.visible)
                 return
             if (gameDetailsPopup.visible)
                 gameDetailsPopup.switchToAdjacentGame(1)
@@ -3782,21 +3795,21 @@ ApplicationWindow {
         }
     }
 
-    Dialog {
+    ConfirmDialog {
         id: uninstallDialog
         title: "Uninstall " + window.projectName(window.pendingUninstallProjectId) + "?"
-        modal: true
-        anchors.centerIn: parent
-        width: 420
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        Label {
-            width: 340
-            wrapMode: Text.Wrap
-            text: "This removes " + window.projectName(window.pendingUninstallProjectId)
-                  + ". Any other launcher for the game stays installed. Your games aren't touched. Saves and settings the launcher kept in its own folder are set aside and put back if you install it again."
-            color: theme.textPrimary
-        }
+        message: "This removes " + window.projectName(window.pendingUninstallProjectId)
+            + ". Any other launcher for the game stays installed. Your games aren't touched. Saves and settings the launcher kept in its own folder are set aside and put back if you install it again."
+        confirmText: "Uninstall"
+        cancelText: "Keep it"
+        destructive: true
         onAccepted: window.uninstallProjectLauncher(window.pendingUninstallProjectId)
+        // Back on the game page, focus lands on its main button (Install
+        // after an uninstall, Play if it was kept).
+        onClosed: {
+            if (gameDetailsPopup.visible)
+                Qt.callLater(gameDetailsPopup.contentFrame.focusPrimaryAction)
+        }
     }
 
     // The Windows version started under Wine on Linux: once per start, point
@@ -3825,28 +3838,16 @@ ApplicationWindow {
     // Switching an installed game between its Linux and Windows launcher.
     // Saves are never copied between the two; each launcher's stay where
     // they are, so switching back finds them again.
-    Dialog {
+    ConfirmDialog {
         id: launcherSwitchDialog
         readonly property bool toWindows: !!window.pendingSwitch && window.pendingSwitch.build === window.windowsBuildKey
         title: toWindows ? "Switch to the Windows launcher?" : "Switch to the Linux launcher?"
-        modal: true
-        anchors.centerIn: parent
-        width: 520
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        Label {
-            width: 460
-            wrapMode: Text.Wrap
-            color: theme.textPrimary
-            text: launcherSwitchDialog.toWindows
-                ? "Your saves from the Linux launcher won't carry over to the Windows one. They stay where they are, and switching back to Linux finds them again.\n\nThe Linux launcher will be uninstalled and the Windows launcher downloaded, to run through Wine " + wineSupport.version + "."
-                : "Your saves from the Windows launcher stay in Wine's folders and won't carry over to the Linux one. Switching back to Windows finds them again.\n\nThe Windows launcher will be uninstalled and the Linux launcher downloaded."
-        }
-        onAboutToShow: {
-            standardButton(Dialog.Ok).text = toWindows ? "Switch to Windows" : "Switch to Linux"
-            standardButton(Dialog.Cancel).text = toWindows ? "Keep Linux" : "Keep Windows"
-            // Keeping things as they are is the safe default.
-            Qt.callLater(function() { launcherSwitchDialog.standardButton(Dialog.Cancel).forceActiveFocus() })
-        }
+        message: toWindows
+            ? "Your saves from the Linux launcher won't carry over to the Windows one. They stay where they are, and switching back to Linux finds them again.\n\nThe Linux launcher will be uninstalled and the Windows launcher downloaded, to run through Wine " + wineSupport.version + "."
+            : "Your saves from the Windows launcher stay in Wine's folders and won't carry over to the Linux one. Switching back to Windows finds them again.\n\nThe Windows launcher will be uninstalled and the Linux launcher downloaded."
+        confirmText: toWindows ? "Switch to Windows" : "Switch to Linux"
+        // Keeping things as they are is the safe default.
+        cancelText: toWindows ? "Keep Linux" : "Keep Windows"
         onAccepted: window.confirmLauncherSwitch()
         onRejected: window.pendingSwitch = null
     }
@@ -7459,9 +7460,6 @@ ApplicationWindow {
                                                 onClicked: {
                                                     window.pendingUninstallProjectId = modelData.projectId
                                                     uninstallDialog.open()
-                                                    Qt.callLater(function() {
-                                                        uninstallDialog.standardButton(Dialog.Ok).forceActiveFocus()
-                                                    })
                                                 }
                                                 background: Rectangle {
                                                     radius: 9
