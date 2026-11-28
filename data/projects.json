@@ -3444,49 +3444,7 @@
         }
       }
     },
-    {
-      "id": "ffta-recomp",
-      "name": "FFTA Recomp",
-      "platform": "GBA",
-      "developmentStatus": "beta",
-      "gameTitles": [
-        "Final Fantasy Tactics Advance"
-      ],
-      "repositoryOwner": "james2doyle",
-      "repositoryName": "ffta-recomp",
-      "romRequirements": "Requires your own Final Fantasy Tactics Advance (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
-      "romFile": "Final Fantasy Tactics Advance (USA) ROM",
-      "launch": {
-        "method": "selectfile",
-        "arguments": [
-          "--launcher"
-        ],
-        "fileExtensions": [
-          "gba"
-        ],
-        "selectFiles": [
-          {
-            "folder": "launcher",
-            "file": "rom.cfg",
-            "format": "firstline"
-          }
-        ],
-        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting."
-      },
-      "builds": {
-        "linux-x86_64": {
-          "assetNameRegex": "^FFTARecomp-v[0-9.]+-linux-x64\\.zip$",
-          "packageFormat": "zip",
-          "executablePath": "FFTARecomp"
-        },
-        "windows-x86_64": {
-          "assetNameRegex": "^FFTARecomp-v[0-9.]+-windows-x64\\.zip$",
-          "packageFormat": "zip",
-          "executablePath": "FFTARecomp.exe"
-        }
-      }
-    },
-    {
+        {
       "id": "melee-unlocked",
       "name": "Melee Unlocked",
       "platform": "GameCube",
@@ -4323,6 +4281,665 @@
           "assetNameRegex": "^kirbysuperstar-[0-9.]+-windows-x64\\.zip$",
           "packageFormat": "zip",
           "executablePath": "KirbySuperStarSNESRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "belthasar",
+      "name": "Belthasar",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "includePrereleases": true,
+      "gameTitles": [
+        "Chrono Trigger"
+      ],
+      "repositoryOwner": "TemplarServant",
+      "repositoryName": "BelthasarProject",
+      "romRequirements": "Requires your own Chrono Trigger (USA) ROM. No game data is included. RecompStation gives the launcher a copy, and its setup builds the game's data from it the first time. On Linux the setup needs Python 3 installed.",
+      "romFile": "Chrono Trigger (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "Chrono_Trigger_USA_SNES.sfc",
+          "copy": true
+        },
+        "arguments": [],
+        "firstStartNote": "The first time, its setup builds the game's data from your copy (a few minutes); after that it starts straight away."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Belthasar-v[0-9.]+(-[a-z0-9.]+)?-linux-x64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Belthasar"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Belthasar-v[0-9.]+(-[a-z0-9.]+)?-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Belthasar.exe"
+        }
+      }
+    },
+    {
+      "id": "40-winks-recompiled",
+      "name": "40 Winks: Dreamcompiled",
+      "platform": "N64",
+      "developmentStatus": "alpha",
+      "includePrereleases": true,
+      "gameTitles": [
+        "40 Winks"
+      ],
+      "repositoryOwner": "DreaXer",
+      "repositoryName": "40WinksRecomp",
+      "romRequirements": "Requires your own 40 Winks ROM: the final Europe release by Piko Interactive (N4WZ). The earlier prototype isn't supported.",
+      "romFile": "40 Winks (Europe, Piko Interactive) ROM",
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^40WinksRecompiled-v[0-9.]+-linux\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "40WinksRecompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^40WinksRecompiled-v[0-9.]+-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "40WinksRecompiled.exe"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "40WinksRecompiled",
+        "romFileName": "40winks.z64",
+        "romName": "40 Winks",
+        "romXxh3": "A3C1BEF7EFB721E3",
+        "romVersion": "Europe (Piko Interactive)",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "jet-force-capricorn",
+      "name": "Jet Force Capricorn",
+      "platform": "N64",
+      "developmentStatus": "alpha",
+      "includePrereleases": true,
+      "gameTitles": [
+        "Jet Force Gemini"
+      ],
+      "repositoryOwner": "riseio",
+      "repositoryName": "Jet-Force-Capricorn",
+      "romRequirements": "Requires your own Jet Force Gemini (USA) ROM, revision 0. No game data is included. RecompStation hands it to the launcher, which checks it and starts the game.",
+      "romFile": "Jet Force Gemini (USA, revision 0) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "z64",
+          "n64",
+          "v64"
+        ],
+        "firstStartNote": "It starts the game straight away; its settings are in the game's pause menu."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^CadgPP-SteamDeck-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "JetForceCapricorn.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^CadgPP-Portable\\.exe$",
+          "packageFormat": "executable",
+          "executablePath": "CadgPP.exe"
+        }
+      }
+    },
+    {
+      "id": "super-mario-advance-2-recomp",
+      "name": "Super Mario Advance 2 Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "includePrereleases": true,
+      "gameTitles": [
+        "Super Mario Advance 2: Super Mario World",
+        "Super Mario World: Super Mario Advance 2",
+        "Super Mario Advance 2"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "SuperMarioAdvance2Recomp",
+      "romRequirements": "Requires your own Super Mario Advance 2 (USA/Australia) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Super Mario Advance 2 (USA/Australia) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^SuperMarioAdvance2Recomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SuperMarioWorldRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "golden-sun-recompiled",
+      "name": "Golden Sun Recompiled",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "includePrereleases": true,
+      "gameTitles": [
+        "Golden Sun",
+        "Golden Sun: The Lost Age"
+      ],
+      "repositoryOwner": "Shmargus",
+      "repositoryName": "GSRecomp",
+      "romRequirements": "Requires your own Golden Sun and/or Golden Sun: The Lost Age ROMs (USA or Europe). No game data is included. Choose each game's ROM once in its launcher, which builds the game from it and remembers it.",
+      "romFile": "Golden Sun (USA or Europe) ROM",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^GoldenSunRecompiled-[0-9.]+-linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "GoldenSunLauncher"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^GoldenSunRecompiled-[0-9.]+-windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "GoldenSunLauncher.exe"
+        }
+      }
+    },
+    {
+      "id": "black-knight-recomp",
+      "name": "BlackKnightRecomp",
+      "platform": "Wii",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Sonic and the Black Knight"
+      ],
+      "repositoryOwner": "yunophilia",
+      "repositoryName": "BlackKnightRecomp",
+      "romRequirements": "Requires your own Sonic and the Black Knight disc image (USA, Europe or Japan). No game data is included. Choose it once in its launcher, which installs the game's data from it.",
+      "romFile": "Sonic and the Black Knight disc image",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^BlackKnightRecomp-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "BlackKnightRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "sr-source",
+      "name": "Sonic Riders: Source",
+      "platform": "GameCube",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Sonic Riders",
+        "Sonic Riders: Zero Gravity"
+      ],
+      "repositoryOwner": "KnivesDevilish",
+      "repositoryName": "SR-Source",
+      "romRequirements": "Requires your own disc image of Sonic Riders (GameCube, USA) and/or Sonic Riders: Zero Gravity (Wii, USA). No game data is included. In its launcher, open Game Files, choose your disc image and press Extract Game, once for each game.",
+      "romFile": "Sonic Riders (USA) disc image",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^SR-Source-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "SR-Source"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SR-Source-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SR-Source.exe"
+        }
+      }
+    },
+    {
+      "id": "brawl-recompiled",
+      "name": "Brawl Recompiled",
+      "platform": "Wii",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Super Smash Bros. Brawl"
+      ],
+      "repositoryOwner": "josiahg2502-glitch",
+      "repositoryName": "BrawlRecompiled",
+      "romRequirements": "Requires your own Super Smash Bros. Brawl disc image (USA, RSBE01). No game data is included. Choose it once in its launcher, which installs the game from it.",
+      "romFile": "Super Smash Bros. Brawl (USA) disc image",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^BrawlRecompiled-v[0-9.]+-Linux\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "Brawl Recompiled"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^BrawlRecompiled-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Brawl Recompiled.exe"
+        }
+      }
+    },
+    {
+      "id": "firered-recomp",
+      "name": "FireRed Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Pokémon FireRed Version",
+        "Pokemon FireRed Version",
+        "Pokémon FireRed",
+        "Pokemon FireRed"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "FireRedLeafGreenRecomp",
+      "romRequirements": "Requires your own Pokémon FireRed (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Pokémon FireRed (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^FireRedRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "FireRedRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "leafgreen-recomp",
+      "name": "LeafGreen Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Pokémon LeafGreen Version",
+        "Pokemon LeafGreen Version",
+        "Pokémon LeafGreen",
+        "Pokemon LeafGreen"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "FireRedLeafGreenRecomp",
+      "romRequirements": "Requires your own Pokémon LeafGreen (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Pokémon LeafGreen (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^LeafGreenRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "LeafGreenRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "ruby-recomp",
+      "name": "Ruby Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Pokémon Ruby Version",
+        "Pokemon Ruby Version",
+        "Pokémon Ruby",
+        "Pokemon Ruby"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "RubySapphireRecomp",
+      "romRequirements": "Requires your own Pokémon Ruby (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Pokémon Ruby (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom_ruby.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^RubyRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "RubyRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "sapphire-recomp",
+      "name": "Sapphire Recomp",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Pokémon Sapphire Version",
+        "Pokemon Sapphire Version",
+        "Pokémon Sapphire",
+        "Pokemon Sapphire"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "RubySapphireRecomp",
+      "romRequirements": "Requires your own Pokémon Sapphire (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Pokémon Sapphire (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom_sapphire.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^SapphireRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SapphireRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "green-rescue-team",
+      "name": "Green Rescue Team",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Pokémon Mystery Dungeon: Red Rescue Team",
+        "Pokemon Mystery Dungeon: Red Rescue Team",
+        "Pokémon Mystery Dungeon - Red Rescue Team"
+      ],
+      "repositoryOwner": "Asphaltian",
+      "repositoryName": "pmd-green",
+      "romRequirements": "Requires your own Pokémon Mystery Dungeon: Red Rescue Team (USA) ROM. No game data is included. RecompStation hands it to the game, which keeps its own copy.",
+      "romFile": "Pokémon Mystery Dungeon: Red Rescue Team (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "firstStartNote": "The first time, it checks your ROM and keeps its own copy; after that it starts as usual."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^GreenRescueTeam-v[0-9.]+-Linux\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "pmd_green"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^GreenRescueTeam-v[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "pmd_green.exe"
+        }
+      }
+    },
+    {
+      "id": "buus-fury-recomp-novapowers",
+      "name": "Buu's Fury Recomp (novapowers0)",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Dragon Ball Z: Buu's Fury",
+        "Dragon Ball Z Buu's Fury"
+      ],
+      "repositoryOwner": "novapowers0",
+      "repositoryName": "DragonBallZBuusFuryRecomp",
+      "romRequirements": "Requires your own Dragon Ball Z: Buu's Fury (USA) ROM and GBA BIOS. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Dragon Ball Z: Buu's Fury (USA) ROM",
+      "launch": {
+        "method": "selectfile",
+        "arguments": [
+          "--launcher"
+        ],
+        "fileExtensions": [
+          "gba"
+        ],
+        "selectFiles": [
+          {
+            "folder": "launcher",
+            "file": "rom.cfg",
+            "format": "firstline"
+          }
+        ],
+        "firstStartNote": "Its launcher opens with your copy already selected, so you can change settings before starting. Its launcher also asks once for your own GBA BIOS file."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^DragonBallZBuusFuryRecomp-(windows-x64-)?v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "DragonBallZBuusFuryRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "mksc-neo",
+      "name": "MKSC Neo",
+      "platform": "GBA",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Mario Kart: Super Circuit",
+        "Mario Kart Super Circuit"
+      ],
+      "repositoryOwner": "arcanite24",
+      "repositoryName": "mksc-neo",
+      "romRequirements": "Requires your own Mario Kart: Super Circuit (USA) ROM. No game data is included. Choose it once when the game first starts; it imports it and remembers it.",
+      "romFile": "Mario Kart: Super Circuit (USA) ROM",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^mksc-neo-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "mksc"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^mksc-neo-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "mksc.exe"
+        }
+      }
+    },
+    {
+      "id": "mother-3-recomp",
+      "name": "MOTHER 3 Recomp",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Mother 3",
+        "MOTHER 3"
+      ],
+      "repositoryOwner": "xXGhostPantsXx",
+      "repositoryName": "Mother3PC",
+      "romRequirements": "Requires your own MOTHER 3 ROM (the English fan translation v1.3, or the Japanese ROM plus a translation patch) and GBA BIOS. No game data is included. Its launcher asks for them once.",
+      "romFile": "MOTHER 3 ROM",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^Mother3Recomp-Linux-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Mother3Recomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^Mother3Recomp-Windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "Mother3Recomp.exe"
+        }
+      }
+    },
+    {
+      "id": "hamtaro-native",
+      "name": "Hamtaro Native",
+      "platform": "GBA",
+      "developmentStatus": "playable",
+      "gameTitles": [
+        "Hamtaro: Ham-Ham Heartbreak",
+        "Hamtaro - Ham-Ham Heartbreak"
+      ],
+      "repositoryOwner": "josealmon",
+      "repositoryName": "hamtaro-native",
+      "romRequirements": "Requires your own Hamtaro: Ham-Ham Heartbreak (Europe) ROM. No game data is included. Choose it once in its launcher, which checks it and keeps a copy.",
+      "romFile": "Hamtaro: Ham-Ham Heartbreak (Europe) ROM",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^Hamtaro-Ham-Ham-Heartbreak-[0-9.]+\\.zip$",
+          "packageFormat": "zip"
+        }
+      }
+    },
+    {
+      "id": "fftarecomp",
+      "name": "FFTARecomp",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Final Fantasy Tactics Advance"
+      ],
+      "repositoryOwner": "Jorge262007",
+      "repositoryName": "FFTARecomp",
+      "romRequirements": "Requires your own Final Fantasy Tactics Advance ROM (USA or Europe). No game data is included. Choose it in its installer and press Recompile & Install; it builds the game from it.",
+      "romFile": "Final Fantasy Tactics Advance (USA or Europe) ROM",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^FFTARecomp-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "FFTAInstaller"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^FFTARecomp-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "FFTARecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "ffta-de-rebuild",
+      "name": "FFTA DE-ReBuild",
+      "platform": "GBA",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Final Fantasy Tactics Advance"
+      ],
+      "repositoryOwner": "DragonautMk",
+      "repositoryName": "FFTA-DE-ReBuild",
+      "romRequirements": "Requires your own Final Fantasy Tactics Advance ROM (USA or Europe). No game data is included. Choose it once on first start; everything stays in its own folder.",
+      "romFile": "Final Fantasy Tactics Advance (USA or Europe) ROM",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^FFTARecomp-linux-portable\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "FFTARecomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^FFTARecomp-windows-portable\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "FFTARecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "tssm-ports",
+      "name": "TSSM Dehydrated",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "The SpongeBob SquarePants Movie",
+        "SpongeBob SquarePants: The Movie"
+      ],
+      "repositoryOwner": "aidp2",
+      "repositoryName": "tssm-ports",
+      "romRequirements": "Requires the files of your own The SpongeBob SquarePants Movie disc, extracted first (in Dolphin: right-click the game, Extract Entire Disc); a disc image isn't read directly. No game data is included. Its launcher asks for the folder once.",
+      "romFile": "The SpongeBob SquarePants Movie (GameCube) extracted disc",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^TSSM-Dehydrated-[0-9.]+-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "tssm.exe"
         }
       }
     }

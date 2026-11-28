@@ -595,7 +595,8 @@ void ProjectCatalogTest::parsesLaunchRecipes()
         R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "{name}.bak"}})",
         R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher"}})",
         R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "/tmp", "file": "{name}"}})",
-        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "{name}"}, "arguments": ["{gamePath}"]})"
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "{name}"}, "arguments": ["{gamePath}"]})",
+        R"({"method": "placefile", "fileExtensions": ["iso"], "placeFile": {"folder": "launcher", "file": "{name}", "copy": "yes"}})"
     };
     for (const QByteArray &launchJson : invalid)
         QVERIFY2(!ProjectCatalog::parseCatalog(catalogWithLaunch(launchJson), &projects, &error),
@@ -649,6 +650,11 @@ void ProjectCatalogTest::parsesLaunchRecipes()
     const QVariantMap placeRecipe = projects.first().toMap().value("launch").toMap();
     QCOMPARE(placeRecipe.value("placeFile").toMap().value("file").toString(), QStringLiteral("roms/{name}"));
     QCOMPARE(placeRecipe.value("windowsArguments").toStringList().at(2), QStringLiteral("{placedPath}"));
+    QVERIFY(!placeRecipe.value("placeFile").toMap().value("copy").toBool());
+    const QByteArray copied = R"({"method": "placefile", "fileExtensions": ["sfc"],
+        "placeFile": {"folder": "launcher", "file": "Game.sfc", "copy": true}})";
+    QVERIFY2(ProjectCatalog::parseCatalog(catalogWithLaunch(copied), &projects, &error), qPrintable(error));
+    QVERIFY(projects.first().toMap().value("launch").toMap().value("placeFile").toMap().value("copy").toBool());
 }
 
 void ProjectCatalogTest::noGameHasMoreThanTwoProjects()

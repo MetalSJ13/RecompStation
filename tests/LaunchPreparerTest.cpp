@@ -11,6 +11,8 @@
 #include <QJsonObject>
 #include <QTemporaryDir>
 
+#include <filesystem>
+
 namespace {
 // A small synthetic N64 image: big-endian magic, a header title and game code.
 QByteArray makeRom(const QByteArray &title, char region, char revision = 0, char fill = 'x')
@@ -967,6 +969,25 @@ void LaunchPreparerTest::placeFilePutsTheGameWhereTheLauncherLooks()
     QVERIFY(writeFile(zip, QByteArray("zip")));
     QVERIFY(preparer.prepare(project, zip, install, opts).steps.isEmpty());
     QVERIFY(!QFileInfo::exists(QDir(install).filePath(QStringLiteral("roms/Party.zip"))));
+
+    // "copy": a launcher that rewrites the file it is given gets a copy, so
+    // its writes never reach the library's file; a link left there earlier
+    // is replaced by a copy.
+    const QString linked = QDir(install).filePath(QStringLiteral("roms/Party (USA).rvz"));
+    QVERIFY(QFile::remove(linked));
+    std::error_code linkError;
+    std::filesystem::create_hard_link(std::filesystem::path(disc.toStdU16String()),
+                                      std::filesystem::path(linked.toStdU16String()), linkError);
+    launch.insert(QStringLiteral("placeFile"), QVariantMap{{QStringLiteral("folder"), QStringLiteral("launcher")},
+                                                           {QStringLiteral("file"), QStringLiteral("roms/{name}")},
+                                                           {QStringLiteral("copy"), true}});
+    project.insert(QStringLiteral("launch"), launch);
+    preparer.prepare(project, disc, install, opts);
+    QFile rewrite(linked);
+    QVERIFY(rewrite.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    rewrite.write("rewritten");
+    rewrite.close();
+    QCOMPARE(readFile(disc), QByteArray("disc image"));
 }
 
 void LaunchPreparerTest::backgroundReadsNeverReadOnTheCallersThread()

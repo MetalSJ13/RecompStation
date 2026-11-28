@@ -93,6 +93,7 @@ These have a launcher in the catalog; they move up once one has been tried.
 
 #### Nintendo 64
 
+- [ ] 40 Winks
 - [ ] BattleTanx: Global Assault
 - [ ] Beetle Adventure Racing!
 - [ ] Blast Corps
@@ -115,6 +116,8 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Eternal Darkness: Sanity's Requiem
 - [ ] Mario Party 4
 - [ ] Scooby-Doo! Night of 100 Frights
+- [ ] Sonic Riders
+- [ ] The SpongeBob SquarePants Movie
 - [ ] Super Mario Strikers
 
 #### Wii
@@ -122,9 +125,13 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Mario Strikers Charged
 - [ ] New Super Mario Bros. Wii
 - [ ] Resident Evil: The Umbrella Chronicles
+- [ ] Sonic and the Black Knight
+- [ ] Sonic Riders: Zero Gravity
+- [ ] Super Smash Bros. Brawl
 
 #### Super Nintendo (SNES)
 
+- [ ] Chrono Trigger
 - [ ] Kirby Super Star
 - [ ] Super Mario World 2: Yoshi's Island
 
@@ -133,7 +140,18 @@ These have a launcher in the catalog; they move up once one has been tried.
 - [ ] Crash Bandicoot: The Huge Adventure
 - [ ] Final Fantasy Tactics Advance
 - [ ] Fire Emblem: The Sacred Stones
+- [ ] Golden Sun
+- [ ] Golden Sun: The Lost Age
+- [ ] Hamtaro: Ham-Ham Heartbreak
 - [ ] Kirby: Nightmare in Dream Land
+- [ ] Mario Kart: Super Circuit
+- [ ] Mother 3
+- [ ] Pokémon FireRed Version
+- [ ] Pokémon LeafGreen Version
+- [ ] Pokémon Mystery Dungeon: Red Rescue Team
+- [ ] Pokémon Ruby Version
+- [ ] Pokémon Sapphire Version
+- [ ] Super Mario Advance 2: Super Mario World
 - [ ] Wario Land 4
 
 #### PlayStation
@@ -156,7 +174,6 @@ No PC port or recompilation was found, the one there is has no regular release f
 
 #### Nintendo 64
 
-- [ ] 40 Winks
 - [ ] Bomberman 64: The Second Attack!
 - [ ] Dinosaur Planet
 - [ ] Doom 64
@@ -176,7 +193,6 @@ No PC port or recompilation was found, the one there is has no regular release f
 - [ ] Shadow the Hedgehog
 - [ ] Skies of Arcadia Legends
 - [ ] Sonic Adventure 2: Battle
-- [ ] Sonic Riders
 - [ ] Star Fox Adventures
 - [ ] Star Wars Rogue Squadron II
 - [ ] Wario World
@@ -191,17 +207,13 @@ No PC port or recompilation was found, the one there is has no regular release f
 - [ ] MLB Power Pros 2008
 - [ ] Pandora's Tower
 - [ ] PokéPark 2: Wonders Beyond
-- [ ] Sonic and the Black Knight
 - [ ] Sonic and the Secret Rings
 - [ ] Sonic Colors
-- [ ] Sonic Riders: Zero Gravity
 - [ ] Super Mario Galaxy
 - [ ] Super Mario Galaxy 2
-- [ ] Super Smash Bros. Brawl
 
 #### Super Nintendo (SNES)
 
-- [ ] Chrono Trigger
 - [ ] Doom
 - [ ] Earthworm Jim
 - [ ] F-Zero
@@ -219,19 +231,12 @@ No PC port or recompilation was found, the one there is has no regular release f
 - [ ] DK: King of Swing
 - [ ] Final Fantasy V Advance
 - [ ] Final Fantasy VI Advance
-- [ ] Hamtaro: Ham-Ham Heartbreak
 - [ ] Kirby & The Amazing Mirror
 - [ ] The Legend of Zelda: A Link to the Past & Four Swords
 - [ ] Mario Golf: Advance Tour
-- [ ] Mario Kart: Super Circuit
 - [ ] Mario Tennis: Power Tour
 - [ ] Mario vs. Donkey Kong
 - [ ] Pokémon Emerald Version
-- [ ] Pokémon FireRed Version
-- [ ] Pokémon LeafGreen Version
-- [ ] Pokémon Mystery Dungeon: Red Rescue Team
-- [ ] Pokémon Ruby Version
-- [ ] Pokémon Sapphire Version
 - [ ] Sonic Advance
 - [ ] Sonic Advance 2
 - [ ] Sonic Advance 3

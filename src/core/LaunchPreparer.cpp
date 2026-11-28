@@ -406,18 +406,26 @@ bool sameGameFile(const QString &first, const QString &second)
 }
 
 // Puts the game file at target: a hard link where the file system allows
-// one (no second copy of a disc image), else a copy. The same game already
-// there is left as it is; a different file under that name is replaced,
-// nothing else is touched.
-bool placeGameFile(const QString &source, const QString &target, QString *detail)
+// one (no second copy of a disc image), else a copy; always a copy when
+// copyOnly is set (a launcher that rewrites the file it is given must never
+// reach the library's file through a link). The same game already there is
+// left as it is; a different file under that name is replaced, nothing else
+// is touched.
+bool placeGameFile(const QString &source, const QString &target, QString *detail, bool copyOnly = false)
 {
     const QFileInfo existing(target);
     if (existing.isSymLink() || existing.isDir()) {
         *detail = QStringLiteral("Something else is already there");
         return false;
     }
-    if (existing.isFile() && sameGameFile(source, target))
-        return true;
+    if (existing.isFile() && sameGameFile(source, target)) {
+        std::error_code linked;
+        const bool isLink = std::filesystem::equivalent(std::filesystem::path(source.toStdU16String()),
+                                                        std::filesystem::path(target.toStdU16String()), linked);
+        if (!copyOnly || !isLink)
+            return true;
+        // A link left by an earlier version: replaced by a copy below.
+    }
     if (!QDir().mkpath(existing.absolutePath())) {
         *detail = QStringLiteral("Its folder can't be created");
         return false;
@@ -425,8 +433,11 @@ bool placeGameFile(const QString &source, const QString &target, QString *detail
     const QString partial = target + QStringLiteral(".part");
     QFile::remove(partial);
     std::error_code error;
-    std::filesystem::create_hard_link(std::filesystem::path(source.toStdU16String()),
-                                      std::filesystem::path(partial.toStdU16String()), error);
+    if (copyOnly)
+        error = std::make_error_code(std::errc::operation_not_supported);
+    else
+        std::filesystem::create_hard_link(std::filesystem::path(source.toStdU16String()),
+                                          std::filesystem::path(partial.toStdU16String()), error);
     if (error && !QFile::copy(source, partial)) {
         QFile::remove(partial);
         *detail = QStringLiteral("There may not be enough free space");
@@ -817,7 +828,7 @@ LaunchPreparer::Plan LaunchPreparer::prepare(const QVariantMap &project,
             .replace(QStringLiteral("{ext}"), game.suffix().toLower());
         const QString target = QDir(selectFileFolder(entry, installDirectory, options)).filePath(name);
         QString detail;
-        if (placeGameFile(game.absoluteFilePath(), target, &detail)) {
+        if (placeGameFile(game.absoluteFilePath(), target, &detail, entry.value(QStringLiteral("copy")).toBool())) {
             plan.steps.append(step(QStringLiteral("Gave your copy to the launcher"), shortPath(target, options)));
             const bool windowsLauncher = onWindows(options) && recipe.contains(QStringLiteral("windowsArguments"));
             plan.arguments.clear();

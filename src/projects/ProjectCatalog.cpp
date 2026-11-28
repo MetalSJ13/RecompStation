@@ -274,6 +274,13 @@ bool parseLaunchRecipe(const QJsonObject &object, QVariantMap *recipe)
             || !validRelativePath(checked))
             return false;
         parsed.insert(QStringLiteral("file"), file);
+        // "copy": the launcher rewrites the file it is given (Chrono Trigger's
+        // Belthasar re-saves the ROM it takes), so it gets a copy, never a
+        // link to the library's file.
+        const QJsonValue copy = entry.value(QStringLiteral("copy"));
+        if (!copy.isUndefined() && !copy.isBool())
+            return false;
+        parsed.insert(QStringLiteral("copy"), copy.toBool());
         const QString note = object.value(QStringLiteral("firstStartNote")).toString().trimmed();
         if (note.size() > 200)
             return false;
