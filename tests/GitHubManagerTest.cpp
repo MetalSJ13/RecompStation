@@ -113,10 +113,10 @@ void GitHubManagerTest::picksNewestReleaseWithThisSystemsFile()
             .arg(QLatin1String(tag), QLatin1String(name));
     };
     const QString json = QStringLiteral(R"([
-        {"tag_name": "v0.4.0-beta", "draft": false, "prerelease": true, "assets": [%1]},
-        {"tag_name": "v0.3.2-beta", "draft": false, "prerelease": false, "assets": [%2]},
-        {"tag_name": "linux-v0.1.1-beta", "draft": false, "prerelease": true, "assets": [%3]},
-        {"tag_name": "linux-v0.1.0-beta", "draft": false, "prerelease": false, "assets": [%4]}
+        {"tag_name": "v0.4.0-beta", "draft": false, "prerelease": true, "html_url": "https://github.com/o/r/releases/tag/v0.4.0-beta", "assets": [%1]},
+        {"tag_name": "v0.3.2-beta", "draft": false, "prerelease": false, "html_url": "https://github.com/o/r/releases/tag/v0.3.2-beta", "assets": [%2]},
+        {"tag_name": "linux-v0.1.1-beta", "draft": false, "prerelease": true, "html_url": "https://github.com/o/r/releases/tag/linux-v0.1.1-beta", "assets": [%3]},
+        {"tag_name": "linux-v0.1.0-beta", "draft": false, "prerelease": false, "html_url": "https://github.com/o/r/releases/tag/linux-v0.1.0-beta", "assets": [%4]}
     ])").arg(asset("v0.4.0-beta", "WL4-v0.4.0-beta-Windows-x64.zip"),
              asset("v0.3.2-beta", "WL4-v0.3.2-beta-Windows-x64.zip"),
              asset("linux-v0.1.1-beta", "Wario_Land_4-v0.1.1-beta-x86_64.AppImage"),
