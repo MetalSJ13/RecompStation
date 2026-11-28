@@ -2984,7 +2984,7 @@
         "Rockman X3"
       ],
       "repositoryOwner": "mstan",
-      "repositoryName": "MegamanX3SNESRecomp",
+      "repositoryName": "MegaManX3Recomp",
       "romRequirements": "Requires your own Mega Man X3 (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
       "romFile": "Mega Man X3 (USA) ROM",
       "launch": {
@@ -4940,6 +4940,295 @@
           "assetNameRegex": "^TSSM-Dehydrated-[0-9.]+-Windows\\.zip$",
           "packageFormat": "zip",
           "executablePath": "tssm.exe"
+        }
+      }
+    },
+    {
+      "id": "mario-tennis-recompiled",
+      "name": "Mario Tennis: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Mario Tennis"
+      ],
+      "repositoryOwner": "Ieatzcrayonz",
+      "repositoryName": "MarioTennisRecomp",
+      "romRequirements": "Requires your own Mario Tennis (USA) ROM in .z64 byte order. No game data is included.",
+      "romFile": "Mario Tennis (USA) ROM",
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^MarioTennisRecompiled-Windows\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MarioTennisRecompiled.exe"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "MarioTennisRecompiled",
+        "romFileName": "mt.n64.us.z64",
+        "romName": "Mario Tennis",
+        "romXxh3": "4E535EA5C4BB222F",
+        "romVersion": "USA",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "spaceranger",
+      "name": "SpaceRanger",
+      "platform": "N64",
+      "developmentStatus": "alpha",
+      "includePrereleases": true,
+      "gameTitles": [
+        "Toy Story 2: Buzz Lightyear to the Rescue!",
+        "Toy Story 2"
+      ],
+      "repositoryOwner": "woodys-workshop",
+      "repositoryName": "SpaceRanger",
+      "romRequirements": "Requires your own Toy Story 2: Buzz Lightyear to the Rescue! (USA) ROM. No game data is included.",
+      "romFile": "Toy Story 2 (USA) ROM",
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^SpaceRanger-v[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SpaceRanger.exe"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "spaceranger",
+        "romFileName": "spaceranger.z64",
+        "romName": "Toy Story 2",
+        "romXxh3": "FD53C5EC8CE2530A",
+        "romVersion": "USA",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "wave-race-64-recompiled",
+      "name": "Wave Race 64: Recompiled",
+      "platform": "N64",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Wave Race 64"
+      ],
+      "repositoryOwner": "elliotttate",
+      "repositoryName": "wave-race-64-recomp",
+      "romRequirements": "Requires your own Wave Race 64 (USA, Rev A / v1.1) ROM. The original v1.0, Japanese, European and Shindou versions won't work. No game data is included.",
+      "romFile": "Wave Race 64 (USA, Rev A) ROM",
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^WaveRace64Recomp-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "WaveRace64Recomp.exe"
+        }
+      },
+      "launch": {
+        "method": "n64recomp",
+        "dataFolder": "WaveRace64Recomp",
+        "romFileName": "wr64.us.rev1.z64",
+        "romName": "Wave Race 64",
+        "romXxh3": "2B675E2250A604FC",
+        "romVersion": "USA, Rev A",
+        "graphicsFile": "graphics.json"
+      }
+    },
+    {
+      "id": "super-mario-rpg-recomp",
+      "name": "Super Mario RPG SNES Recomp",
+      "platform": "SNES",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Super Mario RPG: Legend of the Seven Stars",
+        "Super Mario RPG"
+      ],
+      "repositoryOwner": "mstan",
+      "repositoryName": "SuperMarioRPGRecomp",
+      "romRequirements": "Requires your own Super Mario RPG: Legend of the Seven Stars (USA) ROM. No game data is included. RecompStation selects it in the launcher for you.",
+      "romFile": "Super Mario RPG (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--launcher",
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected, so you can change settings before pressing Play. It's an early preview: most of the game still runs through its built-in interpreter."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^SuperMarioRPGSNESRecomp-windows-x64-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SuperMarioRPGSNESRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "alttp-recomp-argox",
+      "name": "ALttP Recomp (snes-port)",
+      "platform": "SNES",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "The Legend of Zelda: A Link to the Past",
+        "Legend of Zelda, The: A Link to the Past"
+      ],
+      "repositoryOwner": "ArgoxDevs",
+      "repositoryName": "alttp-recomp",
+      "romRequirements": "Requires your own The Legend of Zelda: A Link to the Past (USA) ROM. No game data is included. RecompStation puts it in the launcher's roms folder and opens it; the first time, it builds the game from it (a few seconds to a minute, with the compiler it brings).",
+      "romFile": "The Legend of Zelda: A Link to the Past (USA) ROM",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "roms/{name}"
+        },
+        "arguments": [
+          "{placedPath}"
+        ],
+        "firstStartNote": "The first time, it builds the game from your ROM; after that it starts straight away. Its options are in the menu (Esc or F1)."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^alttp-recomp-[0-9.]+-linux-x86_64\\.tar\\.gz$",
+          "packageFormat": "tar.gz",
+          "executablePath": "alttp-recomp"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^alttp-recomp-[0-9.]+-win64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "alttp-recomp.exe"
+        }
+      }
+    },
+    {
+      "id": "redcomp-dream",
+      "name": "Uniracers recomp (redcomp-dream)",
+      "platform": "SNES",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Uniracers",
+        "Unirally"
+      ],
+      "repositoryOwner": "fselich",
+      "repositoryName": "redcomp-dream",
+      "romRequirements": "Requires your own Uniracers (USA) ROM. No game data is included. RecompStation opens its launcher with the ROM selected.",
+      "romFile": "Uniracers (USA) ROM",
+      "launch": {
+        "method": "fileargument",
+        "arguments": [
+          "--rom",
+          "{gamePath}"
+        ],
+        "fileExtensions": [
+          "sfc",
+          "smc"
+        ],
+        "firstStartNote": "Its launcher opens with your ROM already selected."
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^redcomp-dream-[0-9.]+-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "Uniracers.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^redcomp-dream-[0-9.]+-windows-x64\\.zip$",
+          "packageFormat": "zip"
+        }
+      }
+    },
+    {
+      "id": "wario-world-recomp",
+      "name": "Wario World Recomp",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Wario World"
+      ],
+      "repositoryOwner": "BigSnek9",
+      "repositoryName": "wario-world-recomp",
+      "romRequirements": "Requires your own Wario World (USA, GWWE01, revision 0) disc image as a plain .iso. No game data is included. Choose it once when it first starts; it checks it and copies the game files next to itself.",
+      "romFile": "Wario World (USA) disc image (.iso)",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^WarioWorldRecomp-v[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "WarioWorldRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "sonic-colors-recomp",
+      "name": "SonicColorsRecomp",
+      "platform": "Wii",
+      "developmentStatus": "alpha",
+      "gameTitles": [
+        "Sonic Colors",
+        "Sonic Colours"
+      ],
+      "repositoryOwner": "VoltTMC",
+      "repositoryName": "SonicColorsRecomp",
+      "romRequirements": "Requires your own Sonic Colours disc image, Europe (SNCP8P) only; the USA disc doesn't work. No game data is included. In its launcher, choose Install from disc image… once.",
+      "romFile": "Sonic Colours (Europe, SNCP8P) disc image",
+      "launch": {
+        "method": "manual"
+      },
+      "builds": {
+        "linux-x86_64": {
+          "assetNameRegex": "^SonicColorsRecomp-v[0-9.]+-linux-x86_64\\.AppImage$",
+          "packageFormat": "appimage",
+          "executablePath": "SonicColorsRecomp.AppImage"
+        },
+        "windows-x86_64": {
+          "assetNameRegex": "^SonicColorsRecomp-v[0-9.]+-windows-x86_64\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "SonicColorsRecomp.exe"
+        }
+      }
+    },
+    {
+      "id": "mkdd-nx",
+      "name": "MKDD-NX",
+      "platform": "GameCube",
+      "developmentStatus": "beta",
+      "gameTitles": [
+        "Mario Kart: Double Dash!!",
+        "Mario Kart Double Dash"
+      ],
+      "repositoryOwner": "digdat0",
+      "repositoryName": "mkdd-nx",
+      "romRequirements": "Requires your own Mario Kart: Double Dash!! (USA, GM4E01) disc image (.iso, .gcm, .ciso or .rvz). Other regions don't work. No game data is included. RecompStation puts it next to the program, where it looks.",
+      "romFile": "Mario Kart: Double Dash!! (USA) disc image",
+      "launch": {
+        "method": "placefile",
+        "fileExtensions": [
+          "iso",
+          "gcm",
+          "ciso",
+          "rvz"
+        ],
+        "placeFile": {
+          "folder": "launcher",
+          "file": "{name}"
+        },
+        "arguments": [],
+        "firstStartNote": "Its launcher opens first, with your disc already found next to it."
+      },
+      "builds": {
+        "windows-x86_64": {
+          "assetNameRegex": "^MKDD-NX-Windows-[0-9.]+\\.zip$",
+          "packageFormat": "zip",
+          "executablePath": "MKDD-NX.exe"
         }
       }
     }
