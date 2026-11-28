@@ -209,9 +209,10 @@ Popup {
             RowLayout {
                 Layout.fillWidth: true
                 Layout.topMargin: 4
-                spacing: 10
+                spacing: 16
 
                 SettingsButton {
+                    prominentFocus: true
                     id: primaryOfferButton
                     visible: dialog.phase === "offer"
                     primary: true
@@ -230,6 +231,7 @@ Popup {
                     }
                 }
                 SettingsButton {
+                    prominentFocus: true
                     id: laterButton
                     visible: dialog.phase === "offer"
                     text: "Remind me later"
@@ -238,6 +240,7 @@ Popup {
                 }
                 Item { Layout.fillWidth: true; visible: dialog.phase === "offer" }
                 SettingsButton {
+                    prominentFocus: true
                     id: skipButton
                     visible: dialog.phase === "offer"
                     text: "Skip " + appUpdater.latestVersion
@@ -250,6 +253,7 @@ Popup {
                 }
 
                 SettingsButton {
+                    prominentFocus: true
                     id: hideButton
                     visible: dialog.phase === "downloading"
                     text: "Hide"
@@ -257,6 +261,7 @@ Popup {
                     onClicked: dialog.close()
                 }
                 SettingsButton {
+                    prominentFocus: true
                     visible: dialog.phase === "downloading"
                     text: "Cancel"
                     property string explanation: "Stops the download. You can update later from Settings."
@@ -267,6 +272,7 @@ Popup {
                 }
 
                 SettingsButton {
+                    prominentFocus: true
                     id: restartButton
                     visible: dialog.phase === "ready"
                     primary: true
@@ -275,6 +281,7 @@ Popup {
                     onClicked: appUpdater.restartNow()
                 }
                 SettingsButton {
+                    prominentFocus: true
                     visible: dialog.phase === "ready"
                     text: "Later"
                     property string explanation: "The next time you start RecompStation, it opens " + appUpdater.latestVersion + "."
@@ -282,6 +289,7 @@ Popup {
                 }
 
                 SettingsButton {
+                    prominentFocus: true
                     id: retryButton
                     visible: dialog.phase === "failed"
                     primary: true
@@ -290,6 +298,7 @@ Popup {
                     onClicked: appUpdater.startUpdate()
                 }
                 SettingsButton {
+                    prominentFocus: true
                     visible: dialog.phase === "failed"
                     text: "Close"
                     property string explanation: ""
@@ -297,6 +306,7 @@ Popup {
                 }
                 Item { Layout.fillWidth: true; visible: dialog.phase === "failed" }
                 SettingsButton {
+                    prominentFocus: true
                     visible: dialog.phase === "failed"
                     text: "Download from the website"
                     property string explanation: "Opens the release page in your browser."

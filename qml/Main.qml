@@ -35,6 +35,7 @@ ApplicationWindow {
     property string activeInputDevice: controllerManager.connected ? "controller" : "keyboard"
     property bool systemMenuVisible: false
     property bool systemMenuClosing: false
+    property Item systemMenuReturnFocus: null
     property bool quitConfirmationVisible: false
     // Tracks the ComboBox whose popup is currently owned by controller input.
     property var controllerOpenComboBox: null
@@ -827,6 +828,25 @@ ApplicationWindow {
         systemMenuSilentClose = silent === true
         systemMenuClosing = true
         systemMenuVisible = false
+        // Back to the button that had focus before (in Game Details, the
+        // same game and button), unless the menu sent the player elsewhere.
+        const target = systemMenuReturnFocus
+        systemMenuReturnFocus = null
+        if (!silent && target && target.visible)
+            Qt.callLater(function() {
+                if (!window.systemMenuVisible && target.visible)
+                    target.forceActiveFocus()
+            })
+    }
+    // Opens the system menu over whatever is showing, Game Details included.
+    function openSystemMenu() {
+        const focused = window.activeFocusItem
+        systemMenuReturnFocus = focused && !window.isDescendantOf(focused, systemMenuOverlay)
+            ? focused : null
+        systemMenuClosing = false
+        quitConfirmationVisible = false
+        systemMenuVisible = true
+        Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
     }
 
     function controllerBack(inputDevice) {
@@ -1084,9 +1104,9 @@ ApplicationWindow {
         sequence: "Ctrl+Q"
         context: Qt.ApplicationShortcut
         onActivated: {
-            window.systemMenuClosing = false
+            if (!window.systemMenuVisible)
+                window.openSystemMenu()
             window.quitConfirmationVisible = true
-            window.systemMenuVisible = true
             Qt.callLater(function() { cancelQuitButton.forceActiveFocus() })
         }
     }
@@ -1765,19 +1785,19 @@ ApplicationWindow {
         }
         function onMenuRequested() {
             window.activeInputDevice = "controller"
-            if (window.systemMenuVisible)
+            if (window.systemMenuVisible) {
                 window.closeSystemMenu()
-            else
-                window.systemMenuVisible = true
-            window.systemMenuClosing = false
-            window.quitConfirmationVisible = false
-            if (window.systemMenuVisible)
-                Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
+                window.quitConfirmationVisible = false
+            } else {
+                window.openSystemMenu()
+            }
         }
         // LB / RB: switch games inside Game Details, cycle platform filters on
         // the Library page, and switch sections in Settings.
         function onPreviousSectionRequested() {
             window.activeInputDevice = "controller"
+            if (window.systemMenuVisible)
+                return
             if (gameDetailsPopup.visible)
                 gameDetailsPopup.switchToAdjacentGame(-1)
             else if (currentPage === "Library" && !window.systemMenuVisible)
@@ -1788,6 +1808,8 @@ ApplicationWindow {
         }
         function onNextSectionRequested() {
             window.activeInputDevice = "controller"
+            if (window.systemMenuVisible)
+                return
             if (gameDetailsPopup.visible)
                 gameDetailsPopup.switchToAdjacentGame(1)
             else if (currentPage === "Library" && !window.systemMenuVisible)
@@ -9741,206 +9763,226 @@ ApplicationWindow {
             }
         }
 
-        Item {
-            id: systemMenuOverlay
-            anchors.fill: parent
-            z: 100
+        // A popup of its own, above Game Details (also a popup) and the
+        // rest of the window, so Menu/Start opens it from anywhere.
+        Popup {
+            id: systemMenuPopup
+            parent: Overlay.overlay
+            x: 0
+            y: 0
+            z: 1000
+            width: window.width
+            height: window.height
+            padding: 0
+            modal: true
+            dim: false
+            focus: true
+            closePolicy: Popup.NoAutoClose
             visible: window.systemMenuVisible || window.systemMenuClosing
-            opacity: window.systemMenuVisible ? 1 : 0
-            focus: window.systemMenuVisible
-            enabled: window.systemMenuVisible
-            Behavior on opacity {
-                enabled: !settingsManager.reducedMotion
-                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
-            }
-            onOpacityChanged: {
-                if (!window.systemMenuVisible && opacity <= 0.001)
-                    window.systemMenuClosing = false
-            }
+            background: null
+            enter: null
+            exit: null
 
-            Rectangle {
-                anchors.fill: parent
-                color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
-                               theme.windowBackground.b, 0.84)
-            }
-
-            Rectangle {
-                id: systemMenuPanel
-                anchors.centerIn: parent
-                scale: window.systemMenuVisible ? 1 : 0.94
-                Behavior on scale {
+            contentItem: Item {
+                id: systemMenuOverlay
+                opacity: window.systemMenuVisible ? 1 : 0
+                focus: window.systemMenuVisible
+                enabled: window.systemMenuVisible
+                Behavior on opacity {
                     enabled: !settingsManager.reducedMotion
-                    NumberAnimation { duration: 220; easing.type: Easing.OutBack }
+                    NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
                 }
-                width: Math.min(parent.width - 48, 600)
-                height: systemMenuContent.implicitHeight + 76
-                radius: theme.radiusLarge
-                color: theme.sidebarBackground
-                border.color: theme.divider
-                border.width: 1
+                onOpacityChanged: {
+                    if (!window.systemMenuVisible && opacity <= 0.001)
+                        window.systemMenuClosing = false
+                }
 
-                ColumnLayout {
-                    id: systemMenuContent
+                Rectangle {
                     anchors.fill: parent
-                    anchors.margins: 36
-                    spacing: 14
+                    color: Qt.rgba(theme.windowBackground.r, theme.windowBackground.g,
+                                   theme.windowBackground.b, 0.84)
+                }
 
-                    Label {
-                        Layout.fillWidth: true
-                        text: window.quitConfirmationVisible ? "Quit RecompStation?" : "RecompStation"
-                        color: theme.textPrimary
-                        font.pixelSize: 29 * theme.fontScale
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
+                Rectangle {
+                    id: systemMenuPanel
+                    anchors.centerIn: parent
+                    scale: window.systemMenuVisible ? 1 : 0.94
+                    Behavior on scale {
+                        enabled: !settingsManager.reducedMotion
+                        NumberAnimation { duration: 220; easing.type: Easing.OutBack }
                     }
-                    Label {
-                        Layout.fillWidth: true
-                        text: window.quitConfirmationVisible
-                              ? "Are you sure you want to close RecompStation?"
-                              : "What would you like to do?"
-                        color: theme.textSecondary
-                        font.pixelSize: 15 * theme.fontScale
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.Wrap
-                    }
+                    width: Math.min(parent.width - 48, 600)
+                    height: systemMenuContent.implicitHeight + 76
+                    radius: theme.radiusLarge
+                    color: theme.sidebarBackground
+                    border.color: theme.divider
+                    border.width: 1
 
-                    component MenuChoice: Button {
-                        id: choice
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 62
-                        activeFocusOnTab: true
-                        focusPolicy: Qt.StrongFocus
-                        leftPadding: 18
-                        rightPadding: 18
-                        background: Rectangle {
-                            radius: theme.radiusCard
-                            color: choice.activeFocus ? theme.controlHover : theme.surface
-                            border.width: choice.activeFocus ? 2 : 1
-                            border.color: choice.activeFocus ? theme.accent : theme.divider
-                            Rectangle {
-                                width: 4
-                                radius: 2
-                                anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                anchors.margins: 8
-                                color: choice.activeFocus ? theme.accent : "transparent"
-                            }
-                        }
-                        contentItem: RowLayout {
-                            spacing: 12
-                            Label {
-                                Layout.fillWidth: true
-                                text: choice.text
-                                color: choice.activeFocus ? theme.textPrimary : theme.textSecondary
-                                font.pixelSize: 17 * theme.fontScale
-                                font.bold: choice.activeFocus
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            Label {
-                                text: choice.activeFocus ? "●" : ""
-                                color: theme.accent
-                                font.pixelSize: 13
-                            }
-                        }
-                    }
+                    ColumnLayout {
+                        id: systemMenuContent
+                        anchors.fill: parent
+                        anchors.margins: 36
+                        spacing: 14
 
-                    MenuChoice {
-                        id: resumeMenuButton
-                        text: "Resume"
-                        visible: !window.quitConfirmationVisible
-                        onClicked: {
-                            window.quitConfirmationVisible = false
-                            window.closeSystemMenu()
+                        Label {
+                            Layout.fillWidth: true
+                            text: window.quitConfirmationVisible ? "Quit RecompStation?" : "RecompStation"
+                            color: theme.textPrimary
+                            font.pixelSize: 29 * theme.fontScale
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
                         }
-                    }
-                    MenuChoice {
-                        id: settingsMenuButton
-                        text: "Settings"
-                        visible: !window.quitConfirmationVisible
-                        onClicked: {
-                            window.closeSystemMenu(true)
-                            window.navigateToPage("Settings")
+                        Label {
+                            Layout.fillWidth: true
+                            text: window.quitConfirmationVisible
+                                  ? "Are you sure you want to close RecompStation?"
+                                  : "What would you like to do?"
+                            color: theme.textSecondary
+                            font.pixelSize: 15 * theme.fontScale
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.Wrap
                         }
-                    }
-                    MenuChoice {
-                        id: quitMenuButton
-                        text: "Quit RecompStation"
-                        visible: !window.quitConfirmationVisible
-                        onClicked: {
-                            window.quitConfirmationVisible = true
-                            Qt.callLater(function() { confirmQuitButton.forceActiveFocus() })
-                        }
-                    }
-                    MenuChoice {
-                        id: confirmQuitButton
-                        text: "Yes, quit"
-                        visible: window.quitConfirmationVisible
-                        onClicked: Qt.quit()
-                    }
-                    MenuChoice {
-                        id: cancelQuitButton
-                        text: "Cancel"
-                        visible: window.quitConfirmationVisible
-                        onClicked: {
-                            window.quitConfirmationVisible = false
-                            Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
-                        }
-                    }
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 1
-                        color: theme.divider
-                    }
-                    Row {
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.topMargin: 2
-                        spacing: 18
-                        Repeater {
-                            model: window.systemMenuHintItems()
-                            delegate: Row {
-                                required property var modelData
-                                spacing: 6
-                                Image {
-                                    visible: modelData.icon !== ""
-                                    source: modelData.icon
-                                    width: 18
-                                    height: 18
-                                    sourceSize: Qt.size(36, 36)
-                                    anchors.verticalCenter: parent.verticalCenter
+                        component MenuChoice: Button {
+                            id: choice
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 62
+                            activeFocusOnTab: true
+                            focusPolicy: Qt.StrongFocus
+                            leftPadding: 18
+                            rightPadding: 18
+                            background: Rectangle {
+                                radius: theme.radiusCard
+                                color: choice.activeFocus ? theme.controlHover : theme.surface
+                                border.width: choice.activeFocus ? 2 : 1
+                                border.color: choice.activeFocus ? theme.accent : theme.divider
+                                Rectangle {
+                                    width: 4
+                                    radius: 2
+                                    anchors.left: parent.left
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.margins: 8
+                                    color: choice.activeFocus ? theme.accent : "transparent"
                                 }
-                                InputKeyChip {
-                                    visible: modelData.key !== ""
-                                    key: modelData.key
-                                    token: modelData.token || ""
-                                    keyColor: modelData.color
-                                    round: modelData.round
-                                    anchors.verticalCenter: parent.verticalCenter
+                            }
+                            contentItem: RowLayout {
+                                spacing: 12
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: choice.text
+                                    color: choice.activeFocus ? theme.textPrimary : theme.textSecondary
+                                    font.pixelSize: 17 * theme.fontScale
+                                    font.bold: choice.activeFocus
+                                    verticalAlignment: Text.AlignVCenter
                                 }
                                 Label {
-                                    text: modelData.label
-                                    color: theme.textSecondary
-                                    font.pixelSize: 12 * theme.fontScale
-                                    font.weight: Font.DemiBold
-                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: choice.activeFocus ? "●" : ""
+                                    color: theme.accent
+                                    font.pixelSize: 13
+                                }
+                            }
+                        }
+
+                        MenuChoice {
+                            id: resumeMenuButton
+                            text: "Resume"
+                            visible: !window.quitConfirmationVisible
+                            onClicked: {
+                                window.quitConfirmationVisible = false
+                                window.closeSystemMenu()
+                            }
+                        }
+                        MenuChoice {
+                            id: settingsMenuButton
+                            text: "Settings"
+                            visible: !window.quitConfirmationVisible
+                            onClicked: {
+                                window.closeSystemMenu(true)
+                                if (gameDetailsPopup.visible)
+                                    gameDetailsPopup.close()
+                                window.navigateToPage("Settings")
+                            }
+                        }
+                        MenuChoice {
+                            id: quitMenuButton
+                            text: "Quit RecompStation"
+                            visible: !window.quitConfirmationVisible
+                            onClicked: {
+                                window.quitConfirmationVisible = true
+                                Qt.callLater(function() { confirmQuitButton.forceActiveFocus() })
+                            }
+                        }
+                        MenuChoice {
+                            id: confirmQuitButton
+                            text: "Yes, quit"
+                            visible: window.quitConfirmationVisible
+                            onClicked: Qt.quit()
+                        }
+                        MenuChoice {
+                            id: cancelQuitButton
+                            text: "Cancel"
+                            visible: window.quitConfirmationVisible
+                            onClicked: {
+                                window.quitConfirmationVisible = false
+                                Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: theme.divider
+                        }
+                        Row {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.topMargin: 2
+                            spacing: 18
+                            Repeater {
+                                model: window.systemMenuHintItems()
+                                delegate: Row {
+                                    required property var modelData
+                                    spacing: 6
+                                    Image {
+                                        visible: modelData.icon !== ""
+                                        source: modelData.icon
+                                        width: 18
+                                        height: 18
+                                        sourceSize: Qt.size(36, 36)
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    InputKeyChip {
+                                        visible: modelData.key !== ""
+                                        key: modelData.key
+                                        token: modelData.token || ""
+                                        keyColor: modelData.color
+                                        round: modelData.round
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    Label {
+                                        text: modelData.label
+                                        color: theme.textSecondary
+                                        font.pixelSize: 12 * theme.fontScale
+                                        font.weight: Font.DemiBold
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Keys.onPressed: function(event) {
-                if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
-                    window.controllerBack("keyboard")
-                    event.accepted = true
+                Keys.onPressed: function(event) {
+                    if (event.key === Qt.Key_Escape || event.key === Qt.Key_Back) {
+                        window.controllerBack("keyboard")
+                        event.accepted = true
+                    }
                 }
-            }
 
-            onVisibleChanged: {
-                if (visible)
-                    Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
+                onVisibleChanged: {
+                    if (visible)
+                        Qt.callLater(function() { resumeMenuButton.forceActiveFocus() })
+                }
             }
         }
 

@@ -69,7 +69,7 @@ A full-window overlay over the Library. Back to Library (B, Esc or the button) r
 
 **Hero.** The first screenshot as a backdrop, the cover at its true shape, chips for the system and the recompilation project with its state ("Installed", "Available"), the title, year and rating.
 
-**Actions.** One primary action that follows the launcher's state: Find compatible launcher → Install → Downloading/Installing → Play. Beside it: Check for updates, which becomes "Update to <version>" when a newer release is out (not while the game runs), and ⋯, a drop-down with Show install folder, Open launcher log and Uninstall… (set apart in red, with a confirmation).
+**Actions.** One primary action that follows the launcher's state: Find compatible launcher → Install → Downloading/Installing → Play. Install asks first ("Install this launcher?" Yes / No, with Yes focused); the focused choice grows and gets a thick ring, as do the update prompt's buttons. Beside it: Check for updates, which becomes "Update to <version>" when a newer release is out (not while the game runs), and ⋯, a drop-down with Show install folder, Open launcher log and Uninstall… (set apart in red, with a confirmation).
 
 **Status line.** One line under the actions with a coloured dot: ready to play, checking your copy, wrong version or wrong game (region and revision read from the ROM), update available ("your saves are kept"), up to date, or why no package fits this system (Windows or macOS only, ARM only, Flatpak only, no downloads).
 

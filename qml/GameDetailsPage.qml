@@ -179,6 +179,8 @@ Popup {
         }
         switchDirection = direction < 0 ? -1 : 1
         switchAnimating = true
+        // The same swoosh as stepping through the Library's systems.
+        uiSounds.play("cycle")
         beginAdjacentGameSwitch()
     }
 
@@ -256,6 +258,7 @@ Popup {
             backgroundFadePending = true
             detailsOutgoingSnapshot.source = result.url
             detailsOutgoingSnapshot.x = 0
+            detailsOutgoingSnapshot.opacity = 1
             detailsOutgoingSnapshot.visible = true
 
             window.selectedGame = gameDetailsPopup.switchTargetGame
@@ -280,7 +283,7 @@ Popup {
             gameDetailsPopup.resettingProjectSelection = false
 
             detailsContentFrame.x =
-                gameDetailsPopup.switchDirection * window.width
+                gameDetailsPopup.switchDirection * gameDetailsPopup.switchTravel
             detailsContentFrame.opacity = 0
             detailsContentFrame.enabled = false
             detailsGameSwitchAnimation.start()
@@ -288,38 +291,56 @@ Popup {
         })
     }
 
+    // Switching games: the old page slides a short way out and fades while
+    // the new one glides in from the same side, so the two overlap as a
+    // cross-fade instead of two full-width pages chasing each other.
+    readonly property real switchTravel: Math.round(window.width * 0.16)
+
     ParallelAnimation {
         id: detailsGameSwitchAnimation
 
         NumberAnimation {
             target: detailsOutgoingSnapshot
             property: "x"
-            to: -gameDetailsPopup.switchDirection * window.width
-            duration: settingsManager.reducedMotion ? 0 : 420
-            easing.type: Easing.InOutCubic
-        }
-
-        NumberAnimation {
-            target: detailsContentFrame
-            property: "x"
-            to: 0
-            duration: settingsManager.reducedMotion ? 0 : 420
-            easing.type: Easing.InOutCubic
-        }
-
-        NumberAnimation {
-            target: detailsContentFrame
-            property: "opacity"
-            from: 0
-            to: 1
-            duration: settingsManager.reducedMotion ? 0 : 360
+            to: -gameDetailsPopup.switchDirection * gameDetailsPopup.switchTravel
+            duration: settingsManager.reducedMotion ? 0 : 300
             easing.type: Easing.OutCubic
+        }
+        NumberAnimation {
+            target: detailsOutgoingSnapshot
+            property: "opacity"
+            from: 1
+            to: 0
+            duration: settingsManager.reducedMotion ? 0 : 240
+            easing.type: Easing.OutQuad
+        }
+
+        SequentialAnimation {
+            PauseAnimation { duration: settingsManager.reducedMotion ? 0 : 60 }
+            ParallelAnimation {
+                NumberAnimation {
+                    target: detailsContentFrame
+                    property: "x"
+                    to: 0
+                    duration: settingsManager.reducedMotion ? 0 : 380
+                    easing.type: Easing.OutQuint
+                }
+                NumberAnimation {
+                    target: detailsContentFrame
+                    property: "opacity"
+                    from: 0
+                    to: 1
+                    duration: settingsManager.reducedMotion ? 0 : 300
+                    easing.type: Easing.OutCubic
+                }
+            }
         }
 
         onFinished: {
             detailsOutgoingSnapshot.visible = false
             detailsOutgoingSnapshot.source = ""
             detailsOutgoingSnapshot.x = 0
+            detailsOutgoingSnapshot.opacity = 1
             detailsContentFrame.opacity = 1
             detailsContentFrame.enabled = true
             gameDetailsPopup.switchAnimating = false
@@ -894,7 +915,11 @@ Popup {
                             border.width: detailsInstallButton.activeFocus ? 3 : 0
                             border.color: theme.textPrimary
                         }
-                        onClicked: gameDetailsPopup.installPromptVisible = true
+                        onClicked: {
+                            gameDetailsPopup.installPromptVisible = true
+                            // Yes takes focus, so the choice is visible straight away.
+                            Qt.callLater(function() { detailsInstallYesButton.forceActiveFocus() })
+                        }
                     }
                     // Install confirmation (unchanged behavior).
                     Label {
@@ -910,16 +935,12 @@ Popup {
                         font.pixelSize: 15 * theme.fontScale
                         font.bold: true
                     }
-                    Button {
+                    PromptChoiceButton {
                         id: detailsInstallYesButton
                         visible: gameDetailsPopup.installPromptVisible && !detailsActions.installed
-                        highlighted: true
+                        primary: true
                         text: "Yes"
-                        icon.source: "qrc:/icons/check.svg"
-                        icon.width: 16
-                        icon.height: 16
-                        implicitHeight: 46
-                        Layout.minimumWidth: 96
+                        glyph: "✓"
                         onClicked: {
                             gameDetailsPopup.installPromptVisible = false
                             const asset = gameDetailsPopup.selectedAsset
@@ -928,15 +949,14 @@ Popup {
                                     { releaseTag: String(gameDetailsPopup.releaseInfo.tagName || "") })
                         }
                     }
-                    Button {
+                    PromptChoiceButton {
                         visible: gameDetailsPopup.installPromptVisible && !detailsActions.installed
                         text: "No"
-                        icon.source: "qrc:/icons/close.svg"
-                        icon.width: 16
-                        icon.height: 16
-                        implicitHeight: 46
-                        Layout.minimumWidth: 96
-                        onClicked: gameDetailsPopup.installPromptVisible = false
+                        glyph: "✕"
+                        onClicked: {
+                            gameDetailsPopup.installPromptVisible = false
+                            Qt.callLater(function() { detailsInstallButton.forceActiveFocus() })
+                        }
                     }
                     // Windows-only project with Windows launchers not available:
                     // go to the switch in Settings › Library.
